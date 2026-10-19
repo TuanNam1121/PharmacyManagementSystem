@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JpaBuddyIdeaProjectConfig">
+    <option name="reLastEntityCreationPackage" value="BE/sba/src/main/java/com/pharmacy/entity" />
+    <option name="reverseEngineeringLastDbConnectionId" value="786b279e-3430-4353-bc39-6fa4357d2670__PMS_dbo" />
+  </component>
+  <component name="PersistenceUnitSettings">
+    <persistence-units>
+      <persistence-unit name="Default">
+        <packages>
+          <package value="com.pharmacy" />
+        </packages>
+      </persistence-unit>
+    </persistence-units>
+  </component>
+</project>

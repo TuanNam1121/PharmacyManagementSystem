@@ -1,0 +1,43 @@
+package com.pharmacy.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
+
+@Getter
+@Setter
+@Entity
+@Table(name = "warehouse_locations")
+public class WarehouseLocation {
+    @Id
+    @Column(name = "id", nullable = false)
+    private Long id;
+
+    @Size(max = 30)
+    @NotNull
+    @Column(name = "code", nullable = false, length = 30)
+    private String code;
+
+    @Size(max = 10)
+    @Column(name = "aisle", length = 10)
+    private String aisle;
+
+    @Size(max = 10)
+    @Column(name = "shelf", length = 10)
+    private String shelf;
+
+    @Size(max = 10)
+    @Column(name = "bin", length = 10)
+    private String bin;
+
+    @ColumnDefault("1")
+    @Column(name = "status", columnDefinition = "tinyint not null")
+    private Short status;
+
+}
