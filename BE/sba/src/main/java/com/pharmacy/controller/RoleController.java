@@ -27,6 +27,6 @@ public class RoleController {
     @Operation(summary = "Lấy danh sách các vai trò (Roles)")
     public ResponseEntity<ApiResponse<List<RoleDto>>> getAllRoles() {
         List<RoleDto> roles = roleService.getAllRoles();
-        return ResponseEntity.ok(ApiResponse.success(roles, "Lấy danh sách vai trò thành công"));
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách vai trò thành công", roles));
     }
 }

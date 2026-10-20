@@ -25,7 +25,7 @@ public class AccountController {
             @Valid @RequestBody AccountCreateRequest request) {
         AccountResponse response = accountService.createAccount(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response, "Tạo tài khoản thành công"));
+                .body(ApiResponse.success("Tạo tài khoản thành công", response));
     }
 
     @PutMapping("/{id}")
@@ -34,7 +34,7 @@ public class AccountController {
             @PathVariable Long id,
             @Valid @RequestBody AccountUpdateRequest request) {
         AccountResponse response = accountService.updateAccount(id, request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Cập nhật tài khoản thành công"));
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật tài khoản thành công", response));
     }
 
     @GetMapping("/{id}")
@@ -42,7 +42,7 @@ public class AccountController {
     public ResponseEntity<ApiResponse<AccountDetailResponse>> getAccountDetail(
             @PathVariable Long id) {
         AccountDetailResponse response = accountService.getAccountDetail(id);
-        return ResponseEntity.ok(ApiResponse.success(response, "Lấy thông tin tài khoản thành công"));
+        return ResponseEntity.ok(ApiResponse.success("Lấy thông tin tài khoản thành công", response));
     }
 
     @GetMapping
@@ -57,7 +57,7 @@ public class AccountController {
             @RequestParam(defaultValue = "desc") String sortDir) {
         PageResponse<AccountResponse> response = accountService.getAccounts(
                 keyword, status, roleId, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách tài khoản thành công"));
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách tài khoản thành công", response));
     }
 
     @PatchMapping("/{id}/status")
@@ -66,6 +66,6 @@ public class AccountController {
             @PathVariable Long id,
             @RequestParam Short status) {
         accountService.updateAccountStatus(id, status);
-        return ResponseEntity.ok(ApiResponse.success(null, "Cập nhật trạng thái tài khoản thành công"));
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái tài khoản thành công", null));
     }
 }

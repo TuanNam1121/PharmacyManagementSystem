@@ -196,9 +196,9 @@ public class AccountServiceImpl implements AccountService {
                 .collect(Collectors.toList());
 
         return PageResponse.<AccountResponse>builder()
-                .items(items)
-                .page(accountPage.getNumber())
-                .size(accountPage.getSize())
+                .content(items)
+                .pageNumber(accountPage.getNumber())
+                .pageSize(accountPage.getSize())
                 .totalElements(accountPage.getTotalElements())
                 .totalPages(accountPage.getTotalPages())
                 .last(accountPage.isLast())
