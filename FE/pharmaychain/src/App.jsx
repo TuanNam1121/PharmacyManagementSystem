@@ -1,13 +1,28 @@
-import getAllMedicines from './api/MedicineAPI';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Layout from './components/Layout';
+import UserListPage from './page/user/UserListPage';
+import UserFormPage from './page/user/UserFormPage';
+import UserDetailPage from './page/user/UserDetailPage';
 
-function App() {
-
-  const response = getAllMedicines();
+export default function App() {
   return (
-    <>
-      ${response}
-    </>
-  )
-}
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          {/* Default redirect to users list */}
+          <Route index element={<Navigate to="/users" replace />} />
 
-export default App
+          {/* User Management routes */}
+          <Route path="users" element={<UserListPage />} />
+          <Route path="users/add" element={<UserFormPage />} />
+          <Route path="users/edit/:id" element={<UserFormPage />} />
+          <Route path="users/:id" element={<UserDetailPage />} />
+
+          {/* Catch-all redirect */}
+          <Route path="*" element={<Navigate to="/users" replace />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+}
