@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.pharmacy.dto.supplier.CreateSupplierRequest;
 import com.pharmacy.dto.supplier.SupplierResponse;
+import com.pharmacy.dto.supplier.UpdateSupplierRequest;
 import com.pharmacy.entity.Supplier;
 import com.pharmacy.repository.SupplierRepository;
 import com.pharmacy.service.SupplierService;
@@ -38,21 +39,35 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public SupplierResponse viewSupplierDetail(Long id) {
-        if(id == null) throw new IllegalArgumentException("Yêu cầu xem chi tiết nhà cung cấp không hợp lệ");
+        if (id == null)
+            throw new IllegalArgumentException("Yêu cầu xem chi tiết nhà cung cấp không hợp lệ");
         return supplierRepository.findById(id)
                 .map(SupplierResponse::fromEntityToDetail)
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Không tìm thấy nhà cung cấp với id: " + id));
     }
 
-    @Transactional 
-	@Override
-	public SupplierResponse deleteSupplier(Long id) {
-		if(id == null) throw new IllegalArgumentException("Yêu cầu xóa nhà cung cấp không hợp lệ");
-		Supplier supplier = supplierRepository.findById(id)
-                                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy nhà cung cấp"));
+    @Transactional
+    @Override
+    public SupplierResponse updateSupplierInformation(Long id, UpdateSupplierRequest request) {
+        if (id == null) {
+            throw new IllegalArgumentException("Yêu cầu cập nhật nhà cung cấp không hợp lệ");
+        }
+        return supplierRepository.findById(id)
+                .map(SupplierResponse::fromEntityToUpdate)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Không tìm thấy nhà cung cấp với id: " + id));
+    }
+
+    @Transactional
+    @Override
+    public SupplierResponse deleteSupplier(Long id) {
+        if (id == null)
+            throw new IllegalArgumentException("Yêu cầu xóa nhà cung cấp không hợp lệ");
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy nhà cung cấp"));
         supplier.setStatus((short) 0);
         return SupplierResponse.fromEntityToDelete(supplier);
-	}
+    }
 
 }

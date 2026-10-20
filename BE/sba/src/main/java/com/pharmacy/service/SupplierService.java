@@ -5,11 +5,14 @@ import org.springframework.data.domain.Pageable;
 
 import com.pharmacy.dto.supplier.CreateSupplierRequest;
 import com.pharmacy.dto.supplier.SupplierResponse;
+import com.pharmacy.dto.supplier.UpdateSupplierRequest;
 
 
 public interface SupplierService {
     SupplierResponse createSupplier(CreateSupplierRequest request);
+
     Page<SupplierResponse> viewSupplierList(Pageable pageable);
     SupplierResponse viewSupplierDetail(Long id);
-    SupplierResponse deleteSupplier(Long id);
+    SupplierResponse updateSupplierInformation(Long id, UpdateSupplierRequest request);
+    SupplierResponse deleteSupplier(Long id); 
 }
