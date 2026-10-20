@@ -10,7 +10,6 @@ public class MedicineController {
 
     @GetMapping("/")
     public ResponseEntity<String> getMedicineList(){
-        ResponseEntity<String> result = new ResponseEntity<>(HttpStatus.ACCEPTED);
-        return result.ok("Medicine");
+        return ResponseEntity.ok("Medicine");
     }
 }
