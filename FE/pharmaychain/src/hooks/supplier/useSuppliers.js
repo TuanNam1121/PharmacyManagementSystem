@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { viewSupplierList, viewSupplierDetail } from '../../api/SupplierAPI';
+import { viewSupplierList, viewSupplierDetail, createSupplier, updateSupplier } from '../../api/SupplierAPI';
 
 export const useSuppliers = () => {
   const [data, setData] = useState([]);
@@ -11,6 +11,7 @@ export const useSuppliers = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
@@ -30,13 +31,13 @@ export const useSuppliers = () => {
             (x.phone || '').toLowerCase().includes(s)
         );
       }
-      if (statusFilter) {
-        items = items.filter((x) => x.status === statusFilter);
+      if (statusFilter !== '' && statusFilter !== null) {
+        items = items.filter((x) => String(x.status) === String(statusFilter));
       }
       setData(items);
       setTotal(res.totalElements ?? items.length);
     } catch (err) {
-      setError(err.message || 'Lấy danh sách nhà cung cấp thất bại');
+      setError(err.message || 'Failed to fetch supplier list');
     } finally {
       setLoading(false);
     }
@@ -49,16 +50,66 @@ export const useSuppliers = () => {
       setDetail(res);
       return res;
     } catch (err) {
-      setError(err.message || 'Lấy chi tiết nhà cung cấp thất bại');
+      setError(err.message || 'Failed to fetch supplier details');
       throw err;
     } finally {
       setDetailLoading(false);
     }
   }, []);
 
+  const handleCreate = useCallback(async (payload) => {
+    try {
+      setError(null);
+      await createSupplier(payload);
+      setSuccessMsg('Supplier partner added successfully!');
+      await fetchList();
+      return true;
+    } catch (err) {
+      setError(err.message || 'Failed to create supplier');
+      throw err;
+    }
+  }, [fetchList]);
+
+  const handleUpdate = useCallback(async (id, payload) => {
+    try {
+      setError(null);
+      await updateSupplier(id, payload);
+      setSuccessMsg('Supplier partner updated successfully!');
+      await fetchList();
+      if (detail && detail.id === id) {
+        await fetchDetail(id);
+      }
+      return true;
+    } catch (err) {
+      setError(err.message || 'Failed to update supplier');
+      throw err;
+    }
+  }, [fetchList, detail, fetchDetail]);
+
   return {
-    data, total, page, size, sort, search, statusFilter, loading, error,
-    setPage, setSize, setSort, setSearch, setStatusFilter,
-    fetchList, fetchDetail, detail, detailLoading, setDetail,
+    data,
+    total,
+    page,
+    size,
+    sort,
+    search,
+    statusFilter,
+    loading,
+    error,
+    setError,
+    successMsg,
+    setSuccessMsg,
+    setPage,
+    setSize,
+    setSort,
+    setSearch,
+    setStatusFilter,
+    fetchList,
+    fetchDetail,
+    handleCreate,
+    handleUpdate,
+    detail,
+    detailLoading,
+    setDetail,
   };
 };

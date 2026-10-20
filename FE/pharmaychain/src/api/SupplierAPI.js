@@ -1,4 +1,4 @@
-import { get, post } from './FetchData';
+import { get, post, patch } from './FetchData';
 
 const SUPPLIER_BASE_URL = 'http://localhost:8080/api/v1/supplier';
 
@@ -14,6 +14,14 @@ export const createSupplier = async (payload) => {
   return unwrapApiResponse(json);
 };
 
+export const updateSupplier = async (id, payload) => {
+  if (id === null || id === undefined || id === '') {
+    throw new Error('Supplier ID is required');
+  }
+  const json = await patch(`${SUPPLIER_BASE_URL}/${encodeURIComponent(id)}`, payload);
+  return unwrapApiResponse(json);
+};
+
 export const viewSupplierList = async ({ page = 0, size = 10, sort = 'id' } = {}) => {
   const params = new URLSearchParams({
     page: String(page),
@@ -26,7 +34,7 @@ export const viewSupplierList = async ({ page = 0, size = 10, sort = 'id' } = {}
 
 export const viewSupplierDetail = async (id) => {
   if (id === null || id === undefined || id === '') {
-    throw new Error('Không tìm thấy nhà cung cấp');
+    throw new Error('Supplier not found');
   }
   const json = await get(`${SUPPLIER_BASE_URL}/${encodeURIComponent(id)}`);
   return unwrapApiResponse(json);
@@ -34,6 +42,7 @@ export const viewSupplierDetail = async (id) => {
 
 export default {
   createSupplier,
+  updateSupplier,
   viewSupplierList,
   viewSupplierDetail,
 };

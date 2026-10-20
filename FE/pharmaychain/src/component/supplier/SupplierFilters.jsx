@@ -1,34 +1,52 @@
-export default function SupplierFilters({ search, statusFilter, onSearch, onStatus, total }) {
+export default function SupplierFilters({
+  search,
+  statusFilter,
+  onSearch,
+  onStatus,
+  onAddNew,
+  total = 0,
+}) {
   return (
-    <div className="card border-0 shadow-sm mb-4 rounded-4">
-      <div className="card-body p-3">
-        <div className="row g-3 align-items-end">
-          <div className="col-md-4">
-            <div className="input-group">
-              <span className="input-group-text bg-light border-end-0">
-                <svg className="bi bi-search" width="16" height="16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.397h-.001c.03.04.062.078.098.115l1.57 1.57a1 1 0 0 0 1.414 0l.004-.004-1.57-1.57a1 1 0 0 0-1.414 0zm0-9A8 8 0 1 1 0 8a8 8 0 0 1 11.742-9zM12 6.5a5.5 5.5 0 1 0-11 0 5.5 5.5 0 0 0 11 0z"/></svg>
-              </span>
-              <input
-                type="text"
-                className="form-control border-start-0"
-                placeholder="Tìm theo tên, mã NCC, SĐT..."
-                value={search}
-                onChange={(e) => onSearch(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="col-md-3">
-            <select className="form-select border-0 shadow-none" value={statusFilter} onChange={(e) => onStatus(e.target.value)}>
-              <option value="">Tất cả trạng thái</option>
-              <option value="1">Hoạt động</option>
-              <option value="0">Không hoạt động</option>
-            </select>
-          </div>
-          <div className="col-md-5 d-flex justify-content-end">
-            <span className="text-muted small me-2">Tổng: {total} nhà cung cấp</span>
-          </div>
-        </div>
+    <div className="pms-filters-bar">
+      {/* Search Input */}
+      <div className="pms-input-wrap" style={{ flex: 1, maxWidth: 360 }}>
+        <span className="pms-input-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
+        <input
+          className="pms-input"
+          type="text"
+          placeholder="Search by supplier name, code, contact, phone…"
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
+        />
       </div>
+
+      {/* Status Filter */}
+      <select
+        className="pms-select"
+        value={statusFilter}
+        onChange={(e) => onStatus(e.target.value)}
+      >
+        <option value="">All Statuses</option>
+        <option value="1">Active</option>
+        <option value="0">Inactive</option>
+      </select>
+
+      {/* Results Count */}
+      <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
+        Found <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> suppliers
+      </span>
+
+      {/* Add Supplier Button */}
+      <button className="btn-pms btn-pms-primary" onClick={onAddNew}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        New Supplier
+      </button>
     </div>
   );
 }
