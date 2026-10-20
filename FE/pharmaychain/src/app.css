@@ -1,0 +1,61 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+
+/* Token cố định (không đổi theo theme) */
+@theme {
+    --color-primary-50: #eef7ff;
+    --color-primary-100: #d9edff;
+    --color-primary-400: #5b9bf0;
+    --color-primary-500: #2b7de9;
+    --color-primary-600: #1f63c4;
+    --color-primary-700: #194fa0;
+    --color-accent-600: #c9303a;
+    /* nền nút CTA, trắng trên nền này đạt AA */
+    --color-accent-700: #a82730;
+    --color-teal-500: #14b8a6;
+
+    --font-sans: "Inter", system-ui, sans-serif;
+    --font-heading: "Plus Jakarta Sans", system-ui, sans-serif;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+
+    --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
+    --shadow-md: 0 6px 16px -4px rgb(15 23 42 / 0.10);
+    --shadow-lg: 0 16px 40px -12px rgb(31 99 196 / 0.25);
+}
+
+/* Token đổi theo theme → class như bg-surface, text-muted tự đổi màu */
+:root {
+    --bg: #ffffff;
+    --bg-subtle: #f8fafc;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --text-muted: #64748b;
+}
+
+.dark {
+    --bg: #0f172a;
+    --bg-subtle: #111c33;
+    --surface: #16213a;
+    --border: #26334f;
+    --text: #e6ebf5;
+    --text-muted: #94a3b8;
+}
+
+@theme inline {
+    --color-bg: var(--bg);
+    --color-bg-subtle: var(--bg-subtle);
+    --color-surface: var(--surface);
+    --color-border: var(--border);
+    --color-text: var(--text);
+    --color-text-muted: var(--text-muted);
+}
+
+body {
+    @apply bg-bg text-text font-sans antialiased;
+}
