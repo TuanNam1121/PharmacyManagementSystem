@@ -5,6 +5,10 @@ import SupplierPage from './page/supplier/SupplierPage';
 import WarehouseInventoryPage from './page/warehouse/WarehouseInventoryPage';
 import UsersPage from './page/users/UsersPage';
 import DailySalesPage from './page/sales/DailySalesPage';
+import BranchInventoryPage from './page/inventory/BranchInventoryPage';
+import InventoryAuditPage from './page/inventory/InventoryAuditPage';
+import StockRequisitionsPage from './page/inventory/StockRequisitionsPage';
+import GoodsReceiptsPage from './page/inventory/GoodsReceiptsPage';
 
 /* ── Placeholder for unbuilt pages ── */
 function ComingSoon({ title, module }) {
@@ -60,9 +64,10 @@ function App() {
         <Route path="/customers" element={<ComingSoon title="Customer Directory" module="Customer Management" />} />
 
         {/* Branch Stock & Requisitions (Store Inventory) */}
-        <Route path="/store/inventory" element={<ComingSoon title="Branch Stock" module="Branch Stock & Requisitions" />} />
-        <Route path="/store/requisitions" element={<ComingSoon title="Stock Requisitions" module="Branch Stock & Requisitions" />} />
-        <Route path="/store/receipts" element={<ComingSoon title="Store Goods Receipts" module="Branch Stock & Requisitions" />} />
+        <Route path="/store/inventory" element={<BranchInventoryPage />} />
+        <Route path="/store/requisitions" element={<StockRequisitionsPage />} />
+        <Route path="/store/receipts" element={<GoodsReceiptsPage />} />
+        <Route path="/store/audit" element={<InventoryAuditPage />} />
 
         {/* Central Warehouse (LIVE - All BE endpoints wired) */}
         <Route path="/warehouse/inventory" element={<WarehouseInventoryPage defaultTab="inventory" />} />

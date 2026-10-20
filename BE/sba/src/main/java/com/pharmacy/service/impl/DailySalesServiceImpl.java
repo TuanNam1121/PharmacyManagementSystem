@@ -178,7 +178,7 @@ public class DailySalesServiceImpl implements DailySalesService {
 
                 // Cập nhật giá trị thực tế
                 reconciliation.setActualCash(request.getActualCash());
-                reconciliation.setDifference(request.getActualCash().subtract(systemCash));
+                // reconciliation.setDifference(request.getActualCash().subtract(systemCash));
                 reconciliation.setNote(request.getNote());
                 reconciliation.setStatus((short) 1); // 1: Đã đối soát
                 // reconciliation.setReconciledBy(actor);

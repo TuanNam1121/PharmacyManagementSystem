@@ -8,7 +8,7 @@ import {
 
 export const useDailySales = () => {
     const todayStr = new Date().toISOString().split('T')[0];
-    const [storeId, setStoreId] = useState(1);
+    const [storeId, setStoreId] = useState(7);
     const [date, setDate] = useState(todayStr);
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'invoices' | 'shifts'
 

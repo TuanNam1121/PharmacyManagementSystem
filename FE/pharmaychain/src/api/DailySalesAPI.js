@@ -12,7 +12,7 @@ function unwrapApiResponse(json) {
 /**
  * UC27 - Main Flow Step 2: Lấy dữ liệu tổng quan doanh thu ngày & chỉ số đối soát
  */
-export const getDailySalesOverview = async ({ storeId = 1, date = '' } = {}) => {
+export const getDailySalesOverview = async ({ storeId = 7, date = '' } = {}) => {
     const params = new URLSearchParams({ storeId: String(storeId) });
     if (date) params.append('date', date);
     const json = await get(`${BASE_URL}/overview?${params.toString()}`);
@@ -22,7 +22,7 @@ export const getDailySalesOverview = async ({ storeId = 1, date = '' } = {}) => 
 /**
  * UC27 - Step 2 (Chi tiết): Danh sách hóa đơn bán hàng trong ngày có phân trang
  */
-export const getDailyInvoices = async ({ storeId = 1, date = '', page = 0, size = 10 } = {}) => {
+export const getDailyInvoices = async ({ storeId = 7, date = '', page = 0, size = 10 } = {}) => {
     const params = new URLSearchParams({
         storeId: String(storeId),
         page: String(page),
@@ -36,7 +36,7 @@ export const getDailyInvoices = async ({ storeId = 1, date = '', page = 0, size 
 /**
  * UC27 - Step 2 (Chi tiết): Danh sách ca làm việc trong ngày
  */
-export const getDailyShifts = async ({ storeId = 1, date = '' } = {}) => {
+export const getDailyShifts = async ({ storeId = 7, date = '' } = {}) => {
     const params = new URLSearchParams({ storeId: String(storeId) });
     if (date) params.append('date', date);
     const json = await get(`${BASE_URL}/shifts?${params.toString()}`);
