@@ -6,7 +6,7 @@ export const formatDate = (iso) => {
 };
 
 export const formatStatus = (status) => {
-  return { label: String(status) === '1' ? 'Hoạt động' : 'Không hoạt động', variant: 'dark' };
+  return { label: String(status) === '1' ? 'Active' : 'Inactive', variant: 'dark' };
 };
 
 export const getInitials = (text) => {

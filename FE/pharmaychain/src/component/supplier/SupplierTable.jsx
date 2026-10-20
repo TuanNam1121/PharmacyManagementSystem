@@ -1,65 +1,179 @@
-import { formatDate, formatStatus, getInitials } from '../../utils/format';
+import { formatDate, getInitials } from '../../utils/format';
 
-export default function SupplierTable({ data, loading, onView }) {
+export default function SupplierTable({
+  data = [],
+  loading = false,
+  page = 0,
+  size = 10,
+  onView,
+  onEdit,
+}) {
   if (loading) {
     return (
-      <div className="text-center py-5">
-        <div className="spinner-border text-success" role="status"></div>
-        <p className="mt-2 text-muted">Đang tải danh sách nhà cung cấp...</p>
+      <div className="pms-card">
+        <div className="pms-spinner-wrap">
+          <div className="pms-spinner" />
+          <span className="pms-spinner-text">Loading suppliers directory…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="pms-card">
+        <div className="pms-empty">
+          <div className="pms-empty-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div className="pms-empty-title">No suppliers found</div>
+          <div className="pms-empty-sub">No supplier records matched your search or status filter.</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
-      <div className="table-responsive">
-        <table className="table table-hover mb-0 align-middle">
-          <thead className="table-light">
+    <div className="pms-card">
+      <div className="pms-table-wrap">
+        <table className="pms-table">
+          <thead>
             <tr>
-              <th className="border-0 fw-medium text-muted small" style={{ width: 40 }}>#</th>
-              <th className="border-0 fw-medium text-muted small" style={{ width: 52 }}></th>
-              <th className="border-0 fw-medium text-muted small">Mã NCC</th>
-              <th className="border-0 fw-medium text-muted small">Nhà cung cấp</th>
-              <th className="border-0 fw-medium text-muted small">Người liên hệ</th>
-              <th className="border-0 fw-medium text-muted small">SĐT</th>
-              <th className="border-0 fw-medium text-muted small">Email</th>
-              <th className="border-0 fw-medium text-muted small">Địa chỉ</th>
-              <th className="border-0 fw-medium text-muted small" style={{ width: 130 }}>Trạng thái</th>
-              <th className="border-0 fw-medium text-muted small" style={{ width: 110 }}>Ngày tạo</th>
-              <th className="border-0 fw-medium text-muted small text-end" style={{ width: 110 }}>Thao tác</th>
+              <th style={{ width: 44 }}>#</th>
+              <th>Supplier / Partner</th>
+              <th>Contact Person</th>
+              <th>Contact Details</th>
+              <th>Tax Code</th>
+              <th>Status</th>
+              <th>Created Date</th>
+              <th className="text-right" style={{ width: 110 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {data.map((row, i) => {
-              const st = formatStatus(row.status);
+              const isActive = String(row.status) === '1';
+
               return (
                 <tr key={row.id || i}>
-                  <td className="border-0 text-muted small">{i + 1}</td>
-                  <td className="border-0">
-                    <div className="avatar-sm rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style={{ width: 32, height: 32, fontSize: '0.75rem' }}>
-                      {getInitials(row.code)}
+                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+                    {page * size + i + 1}
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 8,
+                          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.15))',
+                          color: 'var(--brand-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          fontSize: 12,
+                          flexShrink: 0,
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                        }}
+                      >
+                        {getInitials(row.code || row.name)}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13.5 }}>
+                          {row.name}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                          <span className="pms-badge pms-badge-neutral mono" style={{ fontSize: 10.5 }}>
+                            {row.code}
+                          </span>
+                          {row.address && (
+                            <span
+                              style={{
+                                fontSize: 11.5,
+                                color: 'var(--text-muted)',
+                                maxWidth: 220,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                              title={row.address}
+                            >
+                              • {row.address}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </td>
-                  <td className="border-0 fw-medium">{row.code}</td>
-                  <td className="border-0 fw-medium">{row.name}</td>
-                  <td className="border-0">{row.contactPerson || '-'}</td>
-                  <td className="border-0">{row.phone || '-'}</td>
-                  <td className="border-0 text-muted small">{row.email || '-'}</td>
-                  <td className="border-0 text-muted small">{row.address || '-'}</td>
-                  <td className="border-0">
-                    <span className="badge bg-light text-dark border border-dark rounded-pill">{st.label}</span>
+                  <td>
+                    <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>
+                      {row.contactPerson || '—'}
+                    </div>
                   </td>
-                  <td className="border-0 text-muted small">{formatDate(row.createdAt)}</td>
-                  <td className="border-0 text-end">
-                    <div className="d-inline-flex gap-1">
-                      <button className="btn btn-sm btn-outline-primary" title="Xem chi tiết" onClick={() => onView(row.id)}>
-                        <svg className="bi bi-eye" width="14" height="14"><path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13 13 0 0 1 1.602-2.805C1.4 6.651 1 8 1 8s0.55 1.349 1.373 2.417.4.681.217 1.193C1.72 13.088 5.5 16 5.5 16s3.779-2.912 6.83-4.704c0.29-0.613 0.09-1.434-0.217-1.797C9.513 9.349 9 8 9 8s-0.39-1.349-1.173-2.805c-0.434-0.802-0.833-1.568-0.833-2.805S3.739 5.197 4.173 4.39 4.8 2.885 5.19 2.29C6.582 1.035 8.521 0 8.521 0S10.439 1.035 11.81 2.29c0.39 0.595 0.588 1.519 0.588 2.29s-0.198 1.695-0.833 2.805C11.393 10.651 11 12 11 12s0.4-1.349 1.227-2.417c0.414-0.568 0.318-1.298 0.217-1.797C13.898 5.195 14.827 8 14.827 8s-0.4 1.349-1.227 2.417c-0.414 0.568-0.318 1.298-0.217 1.797C9.379 13.088 5.5 16 5.5 16s-3.78-2.912-6.83-4.704c-0.29-0.613-0.09-1.434 0.217-1.797C4.463 9.349 5 8 5 8s0.4-1.349 1.173-2.805c0.434-0.802 0.833-1.568 0.833-2.805z"/></svg>
+                  <td>
+                    <div style={{ fontSize: 12.5, color: 'var(--text-primary)' }}>
+                      {row.phone || '—'}
+                    </div>
+                    {row.email && (
+                      <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                        {row.email}
+                      </div>
+                    )}
+                  </td>
+                  <td>
+                    <span className="mono" style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                      {row.taxCode || '—'}
+                    </span>
+                  </td>
+                  <td>
+                    {isActive ? (
+                      <span className="pms-badge pms-badge-success">
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+                          <circle cx="12" cy="12" r="10" />
+                        </svg>
+                        Active
+                      </span>
+                    ) : (
+                      <span className="pms-badge pms-badge-danger">
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+                          <circle cx="12" cy="12" r="10" />
+                        </svg>
+                        Inactive
+                      </span>
+                    )}
+                  </td>
+                  <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                    {formatDate(row.createdAt)}
+                  </td>
+                  <td className="text-right">
+                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                      {/* View Details */}
+                      <button
+                        className="btn-pms btn-pms-ghost btn-pms-sm"
+                        title="View Supplier Details"
+                        onClick={() => onView(row.id)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
                       </button>
-                      <button className="btn btn-sm btn-outline-secondary" title="Sửa" disabled>
-                        <svg className="bi bi-pencil" width="14" height="14"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10a.5.5 0 0 1 .708 0zM2.5 3.5a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1H2.5zm1 4a.5.5 0 0 1 0-1h3a.5.5 0 0 1 0 1h-3z"/></svg>
-                      </button>
-                      <button className="btn btn-sm btn-outline-danger" title="Xóa" disabled>
-                        <svg className="bi bi-trash" width="14" height="14"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0V6a.5.5 0 0 0-1 0V6a.5.5 0 0 0-1 0V6a.5.5 0 0 0-1 0V6a.5.5 0 0 0-1 0V6a.5.5 0 0 0-1 0V6a.5.5 0 0 0-1 0V6a.5.5 0 0 0-1 0V6a.5.5 0 0 0-1 0V6a.5.5 0 0 0-1 0zM8 4a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0V4.5A.5.5 0 0 1 8 4zM3.5 9a.5.5 0 0 0-1 0V7a.5.5 0 0 0-1 0V7a.5.5 0 0 0-1 0V7a.5.5 0 0 0-1 0V7a.5.5 0 0 0-1 0V7a.5.5 0 0 0-1 0zM11 7.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V8a.5.5 0 0 1 .5-.5zM4.5 5.5A.5.5 0 0 1 5 5v6a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5zM6 4.5a.5.5 0 0 0 0-1H5.5a.5.5 0 0 0 0 1H6z"/></svg>
+
+                      {/* Edit Supplier */}
+                      <button
+                        className="btn-pms btn-pms-ghost btn-pms-sm"
+                        title="Edit Supplier"
+                        onClick={() => onEdit(row)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
                       </button>
                     </div>
                   </td>
