@@ -34,7 +34,7 @@ async function sendRequest(url, method = 'GET', payload = null) {
     } catch (err) {
         throw new ApiError(
             'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau.',
-            null
+            err.message
         );
     }
 
