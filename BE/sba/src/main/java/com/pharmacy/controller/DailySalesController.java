@@ -1,10 +1,10 @@
 package com.pharmacy.controller;
 
 import com.pharmacy.dto.ApiResponse;
-import com.pharmacy.dto.DailySalesOverviewDto;
-import com.pharmacy.dto.DailySalesReconcileRequest;
-import com.pharmacy.dto.SalesInvoiceSummaryDto;
-import com.pharmacy.dto.ShiftSummaryDto;
+import com.pharmacy.dto.sales.DailySalesOverviewDto;
+import com.pharmacy.dto.sales.DailySalesReconcileRequest;
+import com.pharmacy.dto.sales.SalesInvoiceSummaryDto;
+import com.pharmacy.dto.sales.ShiftSummaryDto;
 import com.pharmacy.service.DailySalesService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -27,7 +27,8 @@ public class DailySalesController {
     private final DailySalesService dailySalesService;
 
     /**
-     * UC27 - Main Flow Step 2: Hiển thị giao diện dữ liệu doanh thu ngày & chỉ số đối soát
+     * UC27 - Main Flow Step 2: Hiển thị giao diện dữ liệu doanh thu ngày & chỉ số
+     * đối soát
      */
     @GetMapping("/overview")
     public ResponseEntity<ApiResponse<DailySalesOverviewDto>> getDailySalesOverview(
@@ -50,7 +51,8 @@ public class DailySalesController {
             @RequestParam(defaultValue = "10") int size) {
 
         LocalDate targetDate = (date != null) ? date : LocalDate.now();
-        Page<SalesInvoiceSummaryDto> invoices = dailySalesService.getDailyInvoices(storeId, targetDate, PageRequest.of(page, size));
+        Page<SalesInvoiceSummaryDto> invoices = dailySalesService.getDailyInvoices(storeId, targetDate,
+                PageRequest.of(page, size));
         return ResponseEntity.ok(ApiResponse.success("Tải danh sách hóa đơn thành công", invoices));
     }
 
@@ -68,7 +70,8 @@ public class DailySalesController {
     }
 
     /**
-     * UC27 - Main Flow Step 3, 4, 5: Store Manager xác nhận đối soát & chốt sổ doanh thu ngày
+     * UC27 - Main Flow Step 3, 4, 5: Store Manager xác nhận đối soát & chốt sổ
+     * doanh thu ngày
      * Validate ràng buộc nghiệp vụ (BR-01, BR-02, BR-03)
      */
     @PostMapping("/reconcile")

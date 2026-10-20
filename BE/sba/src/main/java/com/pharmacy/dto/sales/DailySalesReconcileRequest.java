@@ -1,4 +1,4 @@
-package com.pharmacy.dto;
+package com.pharmacy.dto.sales;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
