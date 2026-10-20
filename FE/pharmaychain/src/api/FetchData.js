@@ -2,25 +2,17 @@ export class ApiError extends Error {
   constructor(message, status) {
     super(message);
     this.name = 'ApiError';
-    this.status = status;
+    this.status = status;   
   }
 }
 
-function getToken() {
-  try {
-    return localStorage.getItem('token') || null;
-  } catch {
-    return null;
-  }
-}
+
 
 async function sendRequest(url, method = 'GET', payload = null) {
-    const token = getToken();
     const options = {
         method: method,
         headers: {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
     };
 
