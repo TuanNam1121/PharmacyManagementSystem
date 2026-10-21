@@ -4,11 +4,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import com.pharmacy.dto.supplier.CreateSupplierRequest;
 import com.pharmacy.dto.supplier.SupplierResponse;
 import com.pharmacy.dto.supplier.UpdateSupplierRequest;
 import com.pharmacy.entity.Supplier;
+import com.pharmacy.entity.enums.SupplierStatus;
 import com.pharmacy.repository.SupplierRepository;
 import com.pharmacy.service.SupplierService;
 
@@ -33,8 +35,28 @@ public class SupplierServiceImpl implements SupplierService {
     }
 
     @Override
-    public Page<SupplierResponse> viewSupplierList(Pageable pageable) {
-        return supplierRepository.findAll(pageable).map(SupplierResponse::fromEntityToList);
+    public Page<SupplierResponse> viewSupplierList(String keyword, SupplierStatus status, Pageable pageable) {
+        boolean hasKeyword = StringUtils.hasText(keyword);
+        boolean hasStatus = (status != null);
+        int state = (hasKeyword ? 1 : 0) | (hasStatus ? 2 : 0);
+
+        Page<Supplier> page;
+
+        switch (state) {
+            case 1:
+                page = supplierRepository.findByNameContainingIgnoreCase(keyword.trim(), pageable);
+                break;
+            case 2:
+                page = supplierRepository.findByStatus(status, pageable);
+                break;
+            case 3:
+                page = supplierRepository.findByNameContainingIgnoreCaseAndStatus(keyword.trim(), status, pageable);
+                break;
+            default:
+                page = supplierRepository.findAll(pageable);
+        }
+
+        return page.map(SupplierResponse::fromEntityToList);
     }
 
     @Override
@@ -53,10 +75,26 @@ public class SupplierServiceImpl implements SupplierService {
         if (id == null) {
             throw new IllegalArgumentException("Yêu cầu cập nhật nhà cung cấp không hợp lệ");
         }
-        return supplierRepository.findById(id)
-                .map(SupplierResponse::fromEntityToUpdate)
+        
+        Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Không tìm thấy nhà cung cấp với id: " + id));
+        
+        System.out.println("DEBUG - Updating supplier id=" + id + " with request: name=" + request.name() + ", phone=" + request.phone());
+        System.out.println("DEBUG - Before update: name=" + supplier.getName() + ", phone=" + supplier.getPhone());
+        
+        // Cập nhật thông tin supplier với dữ liệu từ request
+        supplier.setName(request.name());
+        supplier.setContactPerson(request.contactPerson());
+        supplier.setPhone(request.phone());
+        supplier.setEmail(request.email());
+        supplier.setAddress(request.address());
+        supplier.setTaxCode(request.taxCode());
+        supplier.setNote(request.note());
+        
+        Supplier updatedSupplier = supplierRepository.save(supplier);
+        System.out.println("DEBUG - After update: name=" + updatedSupplier.getName() + ", phone=" + updatedSupplier.getPhone());
+        return SupplierResponse.fromEntityToUpdate(updatedSupplier);
     }
 
     @Transactional
@@ -66,7 +104,9 @@ public class SupplierServiceImpl implements SupplierService {
             throw new IllegalArgumentException("Yêu cầu xóa nhà cung cấp không hợp lệ");
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy nhà cung cấp"));
-        supplier.setStatus((short) 0);
+        System.out.println("DEBUG - Deleting (soft delete) supplier id=" + id + ", current status=" + supplier.getStatus());
+        supplier.setStatus(SupplierStatus.INACTIVE);
+        System.out.println("DEBUG - After soft delete, status=" + supplier.getStatus());
         return SupplierResponse.fromEntityToDelete(supplier);
     }
 

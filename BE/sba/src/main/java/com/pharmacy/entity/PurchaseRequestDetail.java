@@ -3,16 +3,14 @@ package com.pharmacy.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Nationalized;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "purchase_request_details")
 public class PurchaseRequestDetail {
@@ -40,4 +38,5 @@ public class PurchaseRequestDetail {
     @Nationalized
     @Column(name = "note", length = 500)
     private String note;
+
 }

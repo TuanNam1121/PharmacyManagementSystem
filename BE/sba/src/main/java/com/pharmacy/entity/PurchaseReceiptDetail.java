@@ -3,7 +3,8 @@ package com.pharmacy.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -13,9 +14,6 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "purchase_receipt_details")
 public class PurchaseReceiptDetail {
@@ -48,6 +46,7 @@ public class PurchaseReceiptDetail {
     @Column(name = "unit_cost", nullable = false, precision = 18, scale = 2)
     private BigDecimal unitCost;
 
+    @ColumnDefault("CONVERT([decimal](18,2),[quantity]*[unit_cost])")
     @Column(name = "subtotal", precision = 18, scale = 2)
     private BigDecimal subtotal;
 
@@ -70,4 +69,5 @@ public class PurchaseReceiptDetail {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "batch_id")
     private ProductBatch batch;
+
 }

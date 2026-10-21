@@ -3,19 +3,16 @@ package com.pharmacy.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Nationalized;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "stock_requisitions")
 public class StockRequisition {
@@ -45,7 +42,7 @@ public class StockRequisition {
 
     @ColumnDefault("0")
     @Column(name = "status", columnDefinition = "tinyint not null")
-    private Short status; // 0 draft, 1 pending, 2 approved, 3 rejected, 4 dispatched, 5 received, 6 cancelled, 7 partially received
+    private Short status;
 
     @Size(max = 500)
     @Nationalized
@@ -66,7 +63,4 @@ public class StockRequisition {
     @Column(name = "received_at")
     private LocalDateTime receivedAt;
 
-    @Builder.Default
-    @OneToMany(mappedBy = "stockRequisition", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<StockRequisitionDetail> details = new ArrayList<>();
 }

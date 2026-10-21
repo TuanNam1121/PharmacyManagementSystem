@@ -10,8 +10,6 @@ import lombok.Builder;
 
 @Builder 
 public record UpdateSupplierRequest(
-    @NotBlank(message = "Mã nhà cung cấp không được để trống")
-    String code,
     @NotBlank(message = "Tên nhà cung cấp không được để trống")
     String name,
     String contactPerson,
@@ -27,7 +25,6 @@ public record UpdateSupplierRequest(
 ) {
     public Supplier toEntity(){
         return Supplier.builder()
-        .code(this.code)
         .name(this.name)
         .contactPerson(this.contactPerson)
         .phone(this.phone)

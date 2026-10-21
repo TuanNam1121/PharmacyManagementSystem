@@ -10,6 +10,8 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Nationalized;
 
+import com.pharmacy.entity.enums.SupplierStatus;
+
 import java.time.LocalDateTime;
 
 @Builder 
@@ -49,10 +51,9 @@ public class Supplier {
     @Column(name = "tax_code", length = 20)
     private String taxCode;
 
-    @ColumnDefault("1")
     @Column(name = "status", columnDefinition = "tinyint not null")
     @Builder.Default
-    private Short status = 1;
+    private SupplierStatus status = SupplierStatus.ACTIVE;
 
     @Nationalized
     @Column(name = "note", length = 1000)
