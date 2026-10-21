@@ -1,10 +1,11 @@
+import React from 'react';
 import { useInventoryAudit } from '../../hooks/inventory/useInventoryAudit';
 
 // ── Status badge helper ────────────────────────────────────────────────────────
 const STATUS_MAP = {
-    0: { label: 'Chờ xét duyệt', cls: 'pms-badge pms-badge-neutral' },
-    1: { label: 'Đã xác nhận', cls: 'pms-badge pms-badge-success' },
-    2: { label: 'Từ chối', cls: 'pms-badge pms-badge-danger' },
+    0: { label: 'Pending Review', cls: 'pms-badge pms-badge-neutral' },
+    1: { label: 'Confirmed', cls: 'pms-badge pms-badge-success' },
+    2: { label: 'Rejected', cls: 'pms-badge pms-badge-danger' },
 };
 
 function StatusBadge({ status }) {
@@ -34,7 +35,7 @@ function ReviewModal({ show, audit, onHide, onConfirm, submitting }) {
         <div className="pms-modal-overlay" onClick={onHide}>
             <div className="pms-modal" style={{ maxWidth: 520 }} onClick={e => e.stopPropagation()}>
                 <div className="pms-modal-header">
-                    <h3 className="pms-modal-title">Xét duyệt phiếu kiểm kê</h3>
+                    <h3 className="pms-modal-title">Review Inventory Audit</h3>
                     <button type="button" className="pms-modal-close" onClick={onHide}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -43,13 +44,13 @@ function ReviewModal({ show, audit, onHide, onConfirm, submitting }) {
                 </div>
                 <div className="pms-modal-body">
                     <div style={{ marginBottom: 16 }}>
-                        <span style={{ fontWeight: 600 }}>Phiếu:</span> {audit.code}
+                        <span style={{ fontWeight: 600 }}>Audit:</span> {audit.code}
                         {' '}<StatusBadge status={audit.status} />
                     </div>
 
                     <div style={{ marginBottom: 12 }}>
                         <label style={{ display: 'block', fontWeight: 600, marginBottom: 8, fontSize: 14 }}>
-                            Kết quả xét duyệt <span style={{ color: 'var(--danger)' }}>*</span>
+                            Review Decision <span style={{ color: 'var(--danger)' }}>*</span>
                         </label>
                         <div style={{ display: 'flex', gap: 12 }}>
                             <button
@@ -60,7 +61,7 @@ function ReviewModal({ show, audit, onHide, onConfirm, submitting }) {
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
-                                Xác nhận
+                                Confirm & Approve
                             </button>
                             <button
                                 type="button"
@@ -70,25 +71,25 @@ function ReviewModal({ show, audit, onHide, onConfirm, submitting }) {
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                                 </svg>
-                                Từ chối & Kiểm lại
+                                Reject & Recount
                             </button>
                         </div>
                         {touched && !decision && (
                             <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 6 }}>
-                                Vui lòng chọn kết quả xét duyệt
+                                Please select a review decision
                             </p>
                         )}
                     </div>
 
                     <div>
                         <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>
-                            Ghi chú
+                            Review Notes
                         </label>
                         <textarea
                             className="pms-input"
                             rows={4}
                             maxLength={500}
-                            placeholder="Nhập ghi chú xét duyệt (tùy chọn)..."
+                            placeholder="Enter review notes (optional)..."
                             value={reviewNote}
                             onChange={e => setReviewNote(e.target.value)}
                             style={{ width: '100%', resize: 'vertical' }}
@@ -100,7 +101,7 @@ function ReviewModal({ show, audit, onHide, onConfirm, submitting }) {
                 </div>
                 <div className="pms-modal-footer">
                     <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-                        Hủy
+                        Cancel
                     </button>
                     <button
                         type="button"
@@ -108,7 +109,7 @@ function ReviewModal({ show, audit, onHide, onConfirm, submitting }) {
                         onClick={handleSubmit}
                         disabled={submitting}
                     >
-                        {submitting ? 'Đang xử lý...' : 'Xác nhận'}
+                        {submitting ? 'Processing...' : 'Confirm'}
                     </button>
                 </div>
             </div>
@@ -123,7 +124,7 @@ function DetailModal({ show, audit, loading, onHide, onReview }) {
         <div className="pms-modal-overlay" onClick={onHide}>
             <div className="pms-modal" style={{ maxWidth: 780 }} onClick={e => e.stopPropagation()}>
                 <div className="pms-modal-header">
-                    <h3 className="pms-modal-title">Chi tiết phiếu kiểm kê</h3>
+                    <h3 className="pms-modal-title">Inventory Audit Details</h3>
                     <button type="button" className="pms-modal-close" onClick={onHide}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -132,34 +133,34 @@ function DetailModal({ show, audit, loading, onHide, onReview }) {
                 </div>
                 <div className="pms-modal-body">
                     {loading ? (
-                        <div style={{ textAlign: 'center', padding: 40 }}>Đang tải...</div>
+                        <div style={{ textAlign: 'center', padding: 40 }}>Loading...</div>
                     ) : audit ? (
                         <>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-                                <div><span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Mã phiếu</span><br /><strong>{audit.code}</strong></div>
-                                <div><span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Trạng thái</span><br /><StatusBadge status={audit.status} /></div>
-                                <div><span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Ngày kiểm</span><br /><strong>{audit.auditDate ?? '—'}</strong></div>
-                                <div><span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Tạo lúc</span><br /><strong>{audit.createdAt ? new Date(audit.createdAt).toLocaleString('vi-VN') : '—'}</strong></div>
+                                <div><span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Audit Code</span><br /><strong>{audit.code}</strong></div>
+                                <div><span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Status</span><br /><StatusBadge status={audit.status} /></div>
+                                <div><span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Audit Date</span><br /><strong>{audit.auditDate ?? '—'}</strong></div>
+                                <div><span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Created At</span><br /><strong>{audit.createdAt ? new Date(audit.createdAt).toLocaleString('en-US') : '—'}</strong></div>
                                 {audit.reviewNote && (
                                     <div style={{ gridColumn: '1/-1' }}>
-                                        <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Ghi chú xét duyệt</span><br />
+                                        <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Review Notes</span><br />
                                         <strong>{audit.reviewNote}</strong>
                                     </div>
                                 )}
                             </div>
 
-                            <h4 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Chi tiết sản phẩm kiểm kê</h4>
+                            <h4 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Counted Products Breakdown</h4>
                             {audit.details?.length > 0 ? (
                                 <div style={{ overflowX: 'auto' }}>
                                     <table className="pms-table">
                                         <thead>
                                             <tr>
-                                                <th>Sản phẩm</th>
-                                                <th>Số lô</th>
-                                                <th style={{ textAlign: 'right' }}>Tồn hệ thống</th>
-                                                <th style={{ textAlign: 'right' }}>Thực đếm</th>
-                                                <th style={{ textAlign: 'right' }}>Chênh lệch</th>
-                                                <th>Ghi chú</th>
+                                                <th>Product</th>
+                                                <th>Batch Number</th>
+                                                <th style={{ textAlign: 'right' }}>System Stock</th>
+                                                <th style={{ textAlign: 'right' }}>Counted Qty</th>
+                                                <th style={{ textAlign: 'right' }}>Variance</th>
+                                                <th>Note</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -179,16 +180,16 @@ function DetailModal({ show, audit, loading, onHide, onReview }) {
                                     </table>
                                 </div>
                             ) : (
-                                <p style={{ color: 'var(--text-secondary)' }}>Không có chi tiết sản phẩm.</p>
+                                <p style={{ color: 'var(--text-secondary)' }}>No product details found.</p>
                             )}
                         </>
                     ) : null}
                 </div>
                 <div className="pms-modal-footer">
-                    <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide}>Đóng</button>
+                    <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide}>Close</button>
                     {audit?.status === 0 && (
                         <button type="button" className="btn-pms btn-pms-primary" onClick={() => { onHide(); onReview(audit); }}>
-                            Xét duyệt
+                            Review & Decide
                         </button>
                     )}
                 </div>
@@ -198,8 +199,6 @@ function DetailModal({ show, audit, loading, onHide, onReview }) {
 }
 
 // ── Main Page ──────────────────────────────────────────────────────────────────
-import React from 'react';
-
 export default function InventoryAuditPage() {
     const {
         auditList, total, page, setPage, size,
@@ -222,10 +221,10 @@ export default function InventoryAuditPage() {
     const totalPages = Math.ceil(total / size);
 
     const STATUS_TABS = [
-        { value: '', label: 'Tất cả' },
-        { value: '0', label: 'Chờ xét duyệt' },
-        { value: '1', label: 'Đã xác nhận' },
-        { value: '2', label: 'Từ chối' },
+        { value: '', label: 'All' },
+        { value: '0', label: 'Pending Review' },
+        { value: '1', label: 'Confirmed' },
+        { value: '2', label: 'Rejected' },
     ];
 
     return (
@@ -234,20 +233,19 @@ export default function InventoryAuditPage() {
             <div className="pms-page-header" style={{ marginBottom: 16 }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <h1 className="pms-page-title" style={{ margin: 0 }}>Xét duyệt Phiếu Kiểm kê Chi nhánh</h1>
-                        <span className="pms-badge pms-badge-neutral" style={{ fontSize: 11 }}>UC34</span>
+                        <h1 className="pms-page-title" style={{ margin: 0 }}>Branch Inventory Audits</h1>
                         <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Store Manager</span>
                     </div>
                     <p className="pms-page-sub">
-                        Xem kết quả kiểm kê tồn kho, xác nhận hoặc từ chối và yêu cầu kiểm lại.
+                        Review inventory count results, approve stock reconciliations or reject and request a recount.
                     </p>
                 </div>
                 <div>
-                    <button type="button" className="btn-pms btn-pms-secondary" onClick={fetchList} title="Làm mới">
+                    <button type="button" className="btn-pms btn-pms-secondary" onClick={fetchList} title="Refresh">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
                         </svg>
-                        Làm mới
+                        Refresh
                     </button>
                 </div>
             </div>
@@ -296,7 +294,7 @@ export default function InventoryAuditPage() {
                                 className="pms-input"
                                 value={search}
                                 onChange={e => { setSearch(e.target.value); setPage(0); }}
-                                placeholder="Tìm theo mã phiếu kiểm kê..."
+                                placeholder="Search by audit code..."
                             />
                         </div>
 
@@ -324,20 +322,20 @@ export default function InventoryAuditPage() {
                         <table className="pms-table">
                             <thead>
                                 <tr>
-                                    <th>Mã phiếu</th>
-                                    <th>Ngày kiểm</th>
-                                    <th>Trạng thái</th>
-                                    <th>Ghi chú xét duyệt</th>
-                                    <th>Tạo lúc</th>
-                                    <th>Xét duyệt lúc</th>
-                                    <th style={{ textAlign: 'center' }}>Thao tác</th>
+                                    <th>Audit Code</th>
+                                    <th>Audit Date</th>
+                                    <th>Status</th>
+                                    <th>Review Note</th>
+                                    <th>Created At</th>
+                                    <th>Reviewed At</th>
+                                    <th style={{ textAlign: 'center' }}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {listLoading ? (
-                                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40 }}>Đang tải...</td></tr>
+                                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40 }}>Loading...</td></tr>
                                 ) : auditList.length === 0 ? (
-                                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-secondary)' }}>Không có phiếu kiểm kê nào</td></tr>
+                                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-secondary)' }}>No inventory audits found</td></tr>
                                 ) : auditList.map(audit => (
                                     <tr key={audit.id}>
                                         <td><strong>{audit.code}</strong></td>
@@ -346,8 +344,8 @@ export default function InventoryAuditPage() {
                                         <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                             {audit.reviewNote || '—'}
                                         </td>
-                                        <td>{audit.createdAt ? new Date(audit.createdAt).toLocaleDateString('vi-VN') : '—'}</td>
-                                        <td>{audit.reviewedAt ? new Date(audit.reviewedAt).toLocaleDateString('vi-VN') : '—'}</td>
+                                        <td>{audit.createdAt ? new Date(audit.createdAt).toLocaleDateString('en-US') : '—'}</td>
+                                        <td>{audit.reviewedAt ? new Date(audit.reviewedAt).toLocaleDateString('en-US') : '—'}</td>
                                         <td style={{ textAlign: 'center' }}>
                                             <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
                                                 <button
@@ -355,9 +353,9 @@ export default function InventoryAuditPage() {
                                                     className="btn-pms btn-pms-secondary"
                                                     style={{ padding: '4px 10px', fontSize: 12 }}
                                                     onClick={() => openDetail(audit)}
-                                                    title="Xem chi tiết"
+                                                    title="View details"
                                                 >
-                                                    Chi tiết
+                                                    Details
                                                 </button>
                                                 {audit.status === 0 && (
                                                     <button
@@ -365,9 +363,9 @@ export default function InventoryAuditPage() {
                                                         className="btn-pms btn-pms-primary"
                                                         style={{ padding: '4px 10px', fontSize: 12 }}
                                                         onClick={() => openReview(audit)}
-                                                        title="Xét duyệt"
+                                                        title="Review"
                                                     >
-                                                        Xét duyệt
+                                                        Review
                                                     </button>
                                                 )}
                                             </div>
@@ -382,15 +380,15 @@ export default function InventoryAuditPage() {
                     {totalPages > 1 && (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderTop: '1px solid var(--border)' }}>
                             <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                                Hiển thị {auditList.length} / {total} phiếu
+                                Showing {auditList.length} / {total} audits
                             </span>
                             <div style={{ display: 'flex', gap: 6 }}>
                                 <button type="button" className="btn-pms btn-pms-secondary" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-                                    ← Trước
+                                    ← Previous
                                 </button>
-                                <span style={{ padding: '4px 10px', fontSize: 13 }}>Trang {page + 1}/{totalPages}</span>
+                                <span style={{ padding: '4px 10px', fontSize: 13 }}>Page {page + 1}/{totalPages}</span>
                                 <button type="button" className="btn-pms btn-pms-secondary" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-                                    Sau →
+                                    Next →
                                 </button>
                             </div>
                         </div>

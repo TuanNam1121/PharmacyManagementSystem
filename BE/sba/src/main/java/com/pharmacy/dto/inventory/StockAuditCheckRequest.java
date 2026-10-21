@@ -6,11 +6,11 @@ import lombok.Data;
 
 @Data
 public class StockAuditCheckRequest {
-    @NotNull(message = "storeId không được để trống")
+    @NotNull(message = "Store ID is required")
     private Long storeId;
 
     private Long inventoryId;
 
-    @Size(max = 1000, message = "Ghi chú kiểm tra không được vượt quá 1000 ký tự")
+    @Size(max = 1000, message = "Audit note cannot exceed 1000 characters")
     private String note;
 }

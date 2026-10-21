@@ -7,13 +7,13 @@ import lombok.Data;
 
 @Data
 public class UpdateStockThresholdRequest {
-    @NotNull(message = "productId không được để trống")
+    @NotNull(message = "Product ID is required")
     private Long productId;
 
-    @NotNull(message = "minQuantity không được để trống")
-    @Min(value = 0, message = "Ngưỡng tồn tối thiểu không được âm")
+    @NotNull(message = "Minimum quantity is required")
+    @Min(value = 0, message = "Minimum stock threshold cannot be negative")
     private Integer minQuantity;
 
-    @Size(max = 500, message = "Ghi chú không được vượt quá 500 ký tự")
+    @Size(max = 500, message = "Note cannot exceed 500 characters")
     private String note;
 }

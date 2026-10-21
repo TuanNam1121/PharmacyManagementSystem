@@ -5,6 +5,9 @@ import com.pharmacy.dto.inventory.BranchInventorySummaryDto;
 import com.pharmacy.dto.inventory.StockAuditCheckRequest;
 import com.pharmacy.dto.inventory.UpdateStockThresholdRequest;
 import com.pharmacy.entity.*;
+import com.pharmacy.entity.enums.ExpiryStatus;
+import com.pharmacy.entity.enums.StockStatus;
+import com.pharmacy.entity.enums.StockWarningLevel;
 import com.pharmacy.repository.*;
 import com.pharmacy.service.BranchInventoryService;
 import jakarta.persistence.EntityNotFoundException;
@@ -50,7 +53,7 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
     @Transactional(readOnly = true)
     public BranchInventorySummaryDto getBranchInventorySummary(Long storeId) {
         Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy cửa hàng với ID: " + storeId));
+                .orElseThrow(() -> new EntityNotFoundException("Store not found with ID: " + storeId));
 
         List<Inventory> allItems = inventoryRepository.findByStoreId(storeId);
         List<BranchInventoryResponse> dtoList = allItems.stream()
@@ -63,10 +66,10 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         long distinctProducts = dtoList.stream().map(BranchInventoryResponse::getProductId).distinct().count();
-        long lowStockCount = dtoList.stream().filter(i -> "LOW_STOCK".equals(i.getStockStatus())).count();
-        long outOfStockCount = dtoList.stream().filter(i -> "OUT_OF_STOCK".equals(i.getStockStatus())).count();
-        long expiringSoonCount = dtoList.stream().filter(i -> "EXPIRING_SOON".equals(i.getExpiryStatus())).count();
-        long expiredCount = dtoList.stream().filter(i -> "EXPIRED".equals(i.getExpiryStatus())).count();
+        long lowStockCount = dtoList.stream().filter(i -> StockStatus.LOW_STOCK.getValue().equals(i.getStockStatus())).count();
+        long outOfStockCount = dtoList.stream().filter(i -> StockStatus.OUT_OF_STOCK.getValue().equals(i.getStockStatus())).count();
+        long expiringSoonCount = dtoList.stream().filter(i -> ExpiryStatus.EXPIRING_SOON.getValue().equals(i.getExpiryStatus())).count();
+        long expiredCount = dtoList.stream().filter(i -> ExpiryStatus.EXPIRED.getValue().equals(i.getExpiryStatus())).count();
 
         return BranchInventorySummaryDto.builder()
                 .storeId(store.getId())
@@ -86,7 +89,7 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
     @Transactional(readOnly = true)
     public BranchInventoryResponse getInventoryDetail(Long id) {
         Inventory inventory = inventoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy dữ liệu tồn kho với ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Inventory not found with ID: " + id));
         return mapToBranchResponse(inventory);
     }
 
@@ -96,14 +99,14 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
             String clientIp) {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(
-                        () -> new EntityNotFoundException("Không tìm thấy sản phẩm với ID: " + request.getProductId()));
+                        () -> new EntityNotFoundException("Product not found with ID: " + request.getProductId()));
 
         Integer oldMin = product.getMinQuantity();
         product.setMinQuantity(request.getMinQuantity());
         product.setUpdatedAt(LocalDateTime.now());
         productRepository.save(product);
 
-        // Ghi Audit Log (BR-02)
+        // Record Audit Log
         AuditLog auditLog = new AuditLog();
         auditLog.setAction((short) 2); // 2: UPDATE
         auditLog.setEntityName("Product_MinQuantity");
@@ -150,11 +153,11 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
             return true;
         }
         return switch (filter.toUpperCase()) {
-            case "LOW_STOCK" -> "LOW_STOCK".equals(res.getStockStatus()) || "OUT_OF_STOCK".equals(res.getStockStatus());
-            case "OUT_OF_STOCK" -> "OUT_OF_STOCK".equals(res.getStockStatus());
-            case "EXPIRING_SOON" -> "EXPIRING_SOON".equals(res.getExpiryStatus());
-            case "EXPIRED" -> "EXPIRED".equals(res.getExpiryStatus());
-            case "SAFE" -> "NORMAL".equals(res.getWarningLevel());
+            case "LOW_STOCK" -> StockStatus.LOW_STOCK.getValue().equals(res.getStockStatus()) || StockStatus.OUT_OF_STOCK.getValue().equals(res.getStockStatus());
+            case "OUT_OF_STOCK" -> StockStatus.OUT_OF_STOCK.getValue().equals(res.getStockStatus());
+            case "EXPIRING_SOON" -> ExpiryStatus.EXPIRING_SOON.getValue().equals(res.getExpiryStatus());
+            case "EXPIRED" -> ExpiryStatus.EXPIRED.getValue().equals(res.getExpiryStatus());
+            case "SAFE" -> StockWarningLevel.NORMAL.getValue().equals(res.getWarningLevel());
             default -> true;
         };
     }
@@ -167,35 +170,18 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
 
         LocalDate exp = (b != null) ? b.getExpiryDate() : null;
         Long days = null;
-        String expiryStatus = "SAFE";
+        String expiryStatus = ExpiryStatus.SAFE.getValue();
 
         if (exp != null) {
             days = ChronoUnit.DAYS.between(LocalDate.now(), exp);
-            if (days < 0) {
-                expiryStatus = "EXPIRED";
-            } else if (days <= 90) {
-                expiryStatus = "EXPIRING_SOON";
-            } else {
-                expiryStatus = "SAFE";
-            }
+            expiryStatus = ExpiryStatus.fromDays(days).getValue();
         }
 
         int qty = i.getQuantity() != null ? i.getQuantity() : 0;
         int minQ = (p != null && p.getMinQuantity() != null) ? p.getMinQuantity() : 20;
 
-        String stockStatus = "IN_STOCK";
-        if (qty == 0) {
-            stockStatus = "OUT_OF_STOCK";
-        } else if (qty <= minQ) {
-            stockStatus = "LOW_STOCK";
-        }
-
-        String warningLevel = "NORMAL";
-        if ("EXPIRED".equals(expiryStatus) || "OUT_OF_STOCK".equals(stockStatus)) {
-            warningLevel = "DANGER";
-        } else if ("EXPIRING_SOON".equals(expiryStatus) || "LOW_STOCK".equals(stockStatus)) {
-            warningLevel = "WARNING";
-        }
+        String stockStatus = StockStatus.fromQuantity(qty, minQ).getValue();
+        String warningLevel = StockWarningLevel.resolve(expiryStatus, stockStatus).getValue();
 
         BigDecimal cost = (p != null && p.getCostPrice() != null) ? p.getCostPrice() : BigDecimal.ZERO;
         BigDecimal sell = (p != null && p.getSellingPrice() != null) ? p.getSellingPrice() : BigDecimal.ZERO;
@@ -225,7 +211,7 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
                 .stockStatus(stockStatus)
                 .expiryStatus(expiryStatus)
                 .warningLevel(warningLevel)
-                .locationCode(l != null ? l.getCode() : "Quầy chính")
+                .locationCode(l != null ? l.getCode() : "Main Counter")
                 .updatedAt(i.getUpdatedAt())
                 .build();
     }

@@ -25,8 +25,7 @@ public class BranchInventoryController {
     private final BranchInventoryService branchInventoryService;
 
     /**
-     * UC33 - Step 2: Lấy danh sách tồn kho chi nhánh có phân trang, search, cảnh
-     * báo
+     * Get branch inventory with pagination, search, and warning level filter
      */
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<BranchInventoryResponse>>> getBranchInventory(
@@ -38,31 +37,31 @@ public class BranchInventoryController {
         Page<BranchInventoryResponse> page = branchInventoryService.getBranchInventory(storeId, pageable, search,
                 warningFilter);
         return ResponseEntity
-                .ok(ApiResponse.success("Tải dữ liệu tồn kho chi nhánh thành công", PageResponse.from(page)));
+                .ok(ApiResponse.success("Branch inventory retrieved successfully", PageResponse.from(page)));
     }
 
     /**
-     * UC33 - Step 2: Lấy thống kê tổng quan chỉ số cảnh báo tồn kho chi nhánh
+     * Get branch inventory summary and warning metrics
      */
     @GetMapping("/summary")
     public ResponseEntity<ApiResponse<BranchInventorySummaryDto>> getBranchInventorySummary(
             @RequestParam(defaultValue = "1") Long storeId) {
 
         BranchInventorySummaryDto summary = branchInventoryService.getBranchInventorySummary(storeId);
-        return ResponseEntity.ok(ApiResponse.success("Tải tổng quan tồn kho chi nhánh thành công", summary));
+        return ResponseEntity.ok(ApiResponse.success("Branch inventory summary retrieved successfully", summary));
     }
 
     /**
-     * UC33 - Step 2 (Chi tiết): Xem chi tiết 1 sản phẩm tồn kho
+     * View inventory item details
      */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<BranchInventoryResponse>> getInventoryDetail(@PathVariable Long id) {
         BranchInventoryResponse response = branchInventoryService.getInventoryDetail(id);
-        return ResponseEntity.ok(ApiResponse.success("Tải chi tiết tồn kho thành công", response));
+        return ResponseEntity.ok(ApiResponse.success("Inventory detail retrieved successfully", response));
     }
 
     /**
-     * UC33 - Step 3, 4, 5: Cập nhật ngưỡng cảnh báo tồn tối thiểu
+     * Update product minimum stock threshold
      */
     @PatchMapping("/threshold")
     public ResponseEntity<ApiResponse<BranchInventoryResponse>> updateMinQuantity(
@@ -72,12 +71,11 @@ public class BranchInventoryController {
         String username = "store_manager_or_pharmacist";
         String clientIp = servletRequest.getRemoteAddr();
         BranchInventoryResponse response = branchInventoryService.updateMinQuantity(request, username, clientIp);
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật ngưỡng cảnh báo tồn kho thành công", response));
+        return ResponseEntity.ok(ApiResponse.success("Stock threshold updated successfully", response));
     }
 
     /**
-     * UC33 - Step 3, 4, 5: Xác nhận kiểm tra kiểm kê tồn kho chi nhánh (BR-02 Audit
-     * Log)
+     * Confirm stock audit check and record AuditLog
      */
     @PostMapping("/audit-check")
     public ResponseEntity<ApiResponse<String>> logStockAuditCheck(
@@ -88,6 +86,6 @@ public class BranchInventoryController {
         String clientIp = servletRequest.getRemoteAddr();
         branchInventoryService.logStockAuditCheck(request, username, clientIp);
         return ResponseEntity
-                .ok(ApiResponse.success("Ghi nhận biên bản kiểm tra tồn kho thành công", "Audit Log ID saved"));
+                .ok(ApiResponse.success("Stock audit inspection recorded successfully", "Audit Log ID saved"));
     }
 }

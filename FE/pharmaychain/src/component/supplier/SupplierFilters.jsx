@@ -31,8 +31,9 @@ export default function SupplierFilters({
         onChange={(e) => onStatus(e.target.value)}
       >
         <option value="">All Statuses</option>
-        <option value="1">Active</option>
-        <option value="0">Inactive</option>
+        <option value="ACTIVE">Active</option>
+        <option value="INACTIVE">Inactive</option>
+        <option value="PENDING">Pending</option>
       </select>
 
       {/* Results Count */}

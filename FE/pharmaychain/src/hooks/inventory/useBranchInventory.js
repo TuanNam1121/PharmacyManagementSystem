@@ -36,7 +36,7 @@ export const useBranchInventory = () => {
             const data = await getBranchInventorySummary(storeId);
             setSummary(data);
         } catch (err) {
-            console.error('Lỗi tải thống kê kho:', err);
+            console.error('Error loading branch inventory summary:', err);
         } finally {
             setSummaryLoading(false);
         }
@@ -57,7 +57,7 @@ export const useBranchInventory = () => {
             setInventoryList(data?.content || []);
             setTotal(data?.totalElements || 0);
         } catch (err) {
-            setError(err?.message || 'Không thể tải danh sách tồn kho chi nhánh');
+            setError(err?.message || 'Failed to load branch inventory list');
         } finally {
             setLoading(false);
         }
@@ -78,7 +78,7 @@ export const useBranchInventory = () => {
         setError(null);
         try {
             await updateStockThreshold({ productId, minQuantity: Number(minQuantity), note });
-            setSuccessMsg('Cập nhật ngưỡng cảnh báo tồn tối thiểu thành công!');
+            setSuccessMsg('Minimum stock threshold updated successfully!');
             setThresholdModalOpen(false);
             reloadAll();
         } catch (err) {
@@ -98,7 +98,7 @@ export const useBranchInventory = () => {
                 inventoryId: selectedItem?.id || null,
                 note,
             });
-            setSuccessMsg('Xác nhận kiểm kê và ghi nhận nhật ký kiểm toán thành công!');
+            setSuccessMsg('Stock audit check confirmed and recorded successfully!');
             setAuditModalOpen(false);
             reloadAll();
         } catch (err) {

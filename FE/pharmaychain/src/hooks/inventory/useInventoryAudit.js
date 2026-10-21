@@ -33,7 +33,7 @@ export const useInventoryAudit = () => {
             setAuditList(data?.content ?? []);
             setTotal(data?.totalElements ?? 0);
         } catch (e) {
-            setError(e.message || 'Lỗi tải danh sách phiếu kiểm kê');
+            setError(e.message || 'Failed to load inventory audits list');
         } finally {
             setListLoading(false);
         }
@@ -50,7 +50,7 @@ export const useInventoryAudit = () => {
             const detail = await getAuditDetail(audit.id);
             setSelectedAudit(detail);
         } catch (e) {
-            setError(e.message || 'Lỗi tải chi tiết phiếu');
+            setError(e.message || 'Failed to load audit details');
         } finally {
             setDetailLoading(false);
         }
@@ -71,13 +71,13 @@ export const useInventoryAudit = () => {
             await reviewAudit({ auditId: selectedAudit.id, decision, reviewNote });
             setSuccessMsg(
                 decision === 1
-                    ? `Đã xác nhận phiếu kiểm kê ${selectedAudit.code}`
-                    : `Đã từ chối & yêu cầu kiểm lại phiếu ${selectedAudit.code}`
+                    ? `Successfully confirmed audit ${selectedAudit.code}`
+                    : `Successfully rejected audit ${selectedAudit.code} (recount requested)`
             );
             setReviewModalOpen(false);
             fetchList();
         } catch (e) {
-            setError(e.message || 'Xét duyệt thất bại');
+            setError(e.message || 'Audit review failed');
         } finally {
             setSubmitting(false);
         }

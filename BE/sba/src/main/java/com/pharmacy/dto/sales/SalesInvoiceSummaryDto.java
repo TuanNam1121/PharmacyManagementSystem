@@ -19,7 +19,7 @@ public class SalesInvoiceSummaryDto {
     private BigDecimal totalAmount;
     private BigDecimal discount;
     private BigDecimal finalAmount;
-    private Short status; // 1: Hoàn tất, 2: Đã hủy
+    private Short status; // 1: Completed, 2: Cancelled
     private LocalDateTime createdAt;
     private LocalDateTime paidAt;
     private String paymentMethod; // "CASH", "BANK_TRANSFER", "VNPAY"

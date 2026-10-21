@@ -81,7 +81,7 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
       setInventoryList(res?.content || []);
       setInvTotal(res?.totalElements ?? 0);
     } catch (err) {
-      setError(err?.message || 'Không thể tải danh sách tồn kho');
+      setError(err?.message || 'Failed to load inventory list');
     } finally {
       setInvLoading(false);
     }
@@ -110,7 +110,7 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
       setHistoryList(res?.content || []);
       setHistTotal(res?.totalElements ?? 0);
     } catch (err) {
-      setError(err?.message || 'Không thể tải lịch sử nhập hàng');
+      setError(err?.message || 'Failed to load purchase history');
     } finally {
       setHistLoading(false);
     }
@@ -128,7 +128,7 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
       setAdjustmentList(res?.content || []);
       setAdjTotal(res?.totalElements ?? 0);
     } catch (err) {
-      setError(err?.message || 'Không thể tải danh sách phiếu điều chỉnh');
+      setError(err?.message || 'Failed to load inventory adjustments');
     } finally {
       setAdjLoading(false);
     }
@@ -152,12 +152,12 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
     setError(null);
     try {
       await assignLocation(inventoryId, locationId);
-      setSuccessMsg('Gán vị trí ô/kệ thành công!');
+      setSuccessMsg('Shelf/bin location assigned successfully!');
       setLocationModalOpen(false);
       setSelectedInventory(null);
       await fetchInventory();
     } catch (err) {
-      setError(err?.message || 'Gán vị trí thất bại');
+      setError(err?.message || 'Failed to assign location');
       throw err;
     } finally {
       setLocationLoading(false);
@@ -171,7 +171,7 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
       await fetchLocations();
       return created;
     } catch (err) {
-      setError(err?.message || 'Tạo vị trí ô/kệ thất bại');
+      setError(err?.message || 'Failed to create shelf/bin location');
       throw err;
     }
   };
@@ -184,7 +184,7 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
       const res = await getPurchaseReceiptDetail(id);
       setReceiptDetail(res);
     } catch (err) {
-      setError(err?.message || 'Không thể tải chi tiết phiếu nhập kho');
+      setError(err?.message || 'Failed to load purchase receipt details');
     } finally {
       setReceiptLoading(false);
     }
@@ -196,7 +196,7 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
     setError(null);
     try {
       await createInventoryAdjustment(payload);
-      setSuccessMsg('Tạo phiếu điều chỉnh tồn kho thành công!');
+      setSuccessMsg('Inventory adjustment created successfully!');
       setAdjModalOpen(false);
       setSelectedForAdj(null);
       if (activeTab === 'inventory') {
@@ -205,7 +205,7 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
         await fetchAdjustments();
       }
     } catch (err) {
-      setError(err?.message || 'Tạo phiếu điều chỉnh thất bại');
+      setError(err?.message || 'Failed to create inventory adjustment');
       throw err;
     } finally {
       setAdjLoading(false);

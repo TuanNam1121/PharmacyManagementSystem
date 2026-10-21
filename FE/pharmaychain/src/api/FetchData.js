@@ -25,13 +25,13 @@ async function sendRequest(url, method = 'GET', payload = null) {
         res = await fetch(url, options);
     } catch (err) {
         throw new ApiError(
-            'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau.',
+            'Cannot connect to the server. Please check your network connection or try again later.',
             err.message
         );
     }
 
     if (!res.ok) {
-        let message = `Lỗi ${res.status}`;
+        let message = `Error ${res.status}`;
         try {
             const text = await res.text();
             if (text) {

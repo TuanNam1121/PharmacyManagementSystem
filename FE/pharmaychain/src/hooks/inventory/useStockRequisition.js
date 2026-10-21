@@ -30,7 +30,7 @@ export const useStockRequisition = () => {
             setList(data?.content ?? []);
             setTotal(data?.totalElements ?? 0);
         } catch (e) {
-            setError(e.message || 'Lỗi tải danh sách đơn yêu cầu');
+            setError(e.message || 'Failed to load stock requisitions list');
         } finally {
             setListLoading(false);
         }
@@ -47,7 +47,7 @@ export const useStockRequisition = () => {
             const detail = await getRequisitionDetail(item.id);
             setSelectedItem(detail);
         } catch (e) {
-            setError(e.message || 'Lỗi tải chi tiết đơn yêu cầu');
+            setError(e.message || 'Failed to load requisition details');
         } finally {
             setDetailLoading(false);
         }

@@ -7,12 +7,12 @@ import org.springframework.data.domain.Pageable;
 
 public interface InventoryAuditService {
 
-    /** UC34 - Step 2: Lấy danh sách phiếu kiểm kê (có phân trang, lọc) */
+    /** Get list of branch inventory audits with pagination and filter */
     PageResponse<InventoryAuditDto> getAuditList(Short status, String search, Pageable pageable);
 
-    /** UC34 - Step 2 (chi tiết): Xem chi tiết 1 phiếu */
+    /** View detailed information of an inventory audit */
     InventoryAuditDto getAuditDetail(Long auditId);
 
-    /** UC34 - Step 3,4,5: Xét duyệt (Approve/Reject) + ghi AuditLog */
+    /** Review (Approve/Reject) audit and record AuditLog */
     InventoryAuditDto reviewAudit(InventoryAuditReviewRequest request, String username, String clientIp);
 }

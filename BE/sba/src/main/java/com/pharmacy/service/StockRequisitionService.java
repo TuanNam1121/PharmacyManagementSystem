@@ -6,9 +6,9 @@ import org.springframework.data.domain.Pageable;
 
 public interface StockRequisitionService {
 
-    /** UC36 - Step 2: Lấy danh sách đơn đặt hàng nội bộ (phân trang, lọc) */
+    /** Get list of internal stock requisitions with pagination and filter */
     PageResponse<StockRequisitionDto> getRequisitionList(Long storeId, Short status, String search, Pageable pageable);
 
-    /** UC36 - Step 2 (chi tiết): Xem chi tiết 1 đơn */
+    /** View detailed information of a stock requisition */
     StockRequisitionDto getRequisitionDetail(Long requisitionId);
 }

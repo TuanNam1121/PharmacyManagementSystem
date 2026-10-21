@@ -3,11 +3,11 @@ import { useStockRequisition } from '../../hooks/inventory/useStockRequisition';
 
 // ── Status config ──────────────────────────────────────────────────────────────
 const STATUS_MAP = {
-    0: { label: 'Chờ duyệt', cls: 'pms-badge pms-badge-neutral' },
-    1: { label: 'Đã duyệt', cls: 'pms-badge pms-badge-info' },
-    2: { label: 'Đã xuất kho', cls: 'pms-badge pms-badge-warning' },
-    3: { label: 'Đã nhận', cls: 'pms-badge pms-badge-success' },
-    4: { label: 'Từ chối', cls: 'pms-badge pms-badge-danger' },
+    0: { label: 'Pending Review', cls: 'pms-badge pms-badge-neutral' },
+    1: { label: 'Approved', cls: 'pms-badge pms-badge-info' },
+    2: { label: 'Dispatched', cls: 'pms-badge pms-badge-warning' },
+    3: { label: 'Received', cls: 'pms-badge pms-badge-success' },
+    4: { label: 'Rejected', cls: 'pms-badge pms-badge-danger' },
 };
 
 function StatusBadge({ status }) {
@@ -18,13 +18,13 @@ function StatusBadge({ status }) {
 // ── Progress Timeline ──────────────────────────────────────────────────────────
 function RequisitionTimeline({ item }) {
     const steps = [
-        { label: 'Tạo đơn', time: item.createdAt, done: true },
-        { label: 'Duyệt đơn', time: item.approvedAt, done: item.status >= 1 && item.status !== 4 },
-        { label: 'Xuất kho', time: item.dispatchedAt, done: item.status >= 2 },
-        { label: 'Đã nhận', time: item.receivedAt, done: item.status === 3 },
+        { label: 'Created', time: item.createdAt, done: true },
+        { label: 'Approved', time: item.approvedAt, done: item.status >= 1 && item.status !== 4 },
+        { label: 'Dispatched', time: item.dispatchedAt, done: item.status >= 2 },
+        { label: 'Received', time: item.receivedAt, done: item.status === 3 },
     ];
 
-    const fmt = (dt) => dt ? new Date(dt).toLocaleString('vi-VN') : '—';
+    const fmt = (dt) => dt ? new Date(dt).toLocaleString('en-US') : '—';
 
     return (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0, marginBottom: 24, overflowX: 'auto' }}>
@@ -67,7 +67,7 @@ function DetailModal({ show, item, loading, onHide }) {
         <div className="pms-modal-overlay" onClick={onHide}>
             <div className="pms-modal" style={{ maxWidth: 820 }} onClick={e => e.stopPropagation()}>
                 <div className="pms-modal-header">
-                    <h3 className="pms-modal-title">Chi tiết đơn yêu cầu nhập hàng</h3>
+                    <h3 className="pms-modal-title">Stock Requisition Details</h3>
                     <button type="button" className="pms-modal-close" onClick={onHide}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -76,7 +76,7 @@ function DetailModal({ show, item, loading, onHide }) {
                 </div>
                 <div className="pms-modal-body">
                     {loading ? (
-                        <div style={{ textAlign: 'center', padding: 48 }}>Đang tải...</div>
+                        <div style={{ textAlign: 'center', padding: 48 }}>Loading...</div>
                     ) : item ? (
                         <>
                             {/* Timeline */}
@@ -85,47 +85,47 @@ function DetailModal({ show, item, loading, onHide }) {
                             {/* Info grid */}
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 20 }}>
                                 <div>
-                                    <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Mã đơn</span>
+                                    <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Requisition Code</span>
                                     <div style={{ fontWeight: 700 }}>{item.code}</div>
                                 </div>
                                 <div>
-                                    <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Chi nhánh</span>
+                                    <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Branch</span>
                                     <div style={{ fontWeight: 600 }}>{item.storeName ?? '—'}</div>
                                 </div>
                                 <div>
-                                    <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Trạng thái</span>
+                                    <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Status</span>
                                     <div><StatusBadge status={item.status} /></div>
                                 </div>
                                 <div>
-                                    <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Người tạo</span>
+                                    <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Created By</span>
                                     <div style={{ fontWeight: 600 }}>{item.createdByUsername ?? '—'}</div>
                                 </div>
                                 <div>
-                                    <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Người duyệt</span>
+                                    <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Approved By</span>
                                     <div style={{ fontWeight: 600 }}>{item.approvedByUsername ?? '—'}</div>
                                 </div>
                                 {item.rejectReason && (
                                     <div style={{ gridColumn: '1/-1' }}>
-                                        <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Lý do từ chối</span>
+                                        <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Rejection Reason</span>
                                         <div style={{ color: 'var(--danger)', fontWeight: 600 }}>{item.rejectReason}</div>
                                     </div>
                                 )}
                             </div>
 
                             {/* Detail table */}
-                            <h4 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Danh sách sản phẩm yêu cầu</h4>
+                            <h4 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Requested Products List</h4>
                             {item.details?.length > 0 ? (
                                 <div style={{ overflowX: 'auto' }}>
                                     <table className="pms-table">
                                         <thead>
                                             <tr>
                                                 <th>#</th>
-                                                <th>Sản phẩm</th>
+                                                <th>Product</th>
                                                 <th>Barcode</th>
-                                                <th>Đơn vị</th>
-                                                <th style={{ textAlign: 'right' }}>SL Yêu cầu</th>
-                                                <th style={{ textAlign: 'right' }}>SL Duyệt</th>
-                                                <th style={{ textAlign: 'right' }}>SL Nhận</th>
+                                                <th>Unit</th>
+                                                <th style={{ textAlign: 'right' }}>Requested Qty</th>
+                                                <th style={{ textAlign: 'right' }}>Approved Qty</th>
+                                                <th style={{ textAlign: 'right' }}>Received Qty</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -148,13 +148,13 @@ function DetailModal({ show, item, loading, onHide }) {
                                     </table>
                                 </div>
                             ) : (
-                                <p style={{ color: 'var(--text-secondary)' }}>Không có sản phẩm trong đơn này.</p>
+                                <p style={{ color: 'var(--text-secondary)' }}>No products in this requisition.</p>
                             )}
                         </>
                     ) : null}
                 </div>
                 <div className="pms-modal-footer">
-                    <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide}>Đóng</button>
+                    <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide}>Close</button>
                 </div>
             </div>
         </div>
@@ -180,12 +180,12 @@ export default function StockRequisitionsPage() {
     const totalPages = Math.ceil(total / size);
 
     const STATUS_TABS = [
-        { value: '', label: 'Tất cả' },
-        { value: '0', label: 'Chờ duyệt' },
-        { value: '1', label: 'Đã duyệt' },
-        { value: '2', label: 'Đã xuất kho' },
-        { value: '3', label: 'Đã nhận' },
-        { value: '4', label: 'Từ chối' },
+        { value: '', label: 'All' },
+        { value: '0', label: 'Pending Review' },
+        { value: '1', label: 'Approved' },
+        { value: '2', label: 'Dispatched' },
+        { value: '3', label: 'Received' },
+        { value: '4', label: 'Rejected' },
     ];
 
     return (
@@ -194,20 +194,19 @@ export default function StockRequisitionsPage() {
             <div className="pms-page-header" style={{ marginBottom: 16 }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <h1 className="pms-page-title" style={{ margin: 0 }}>Đơn Yêu Cầu Nhập Hàng Nội Bộ</h1>
-                        <span className="pms-badge pms-badge-neutral" style={{ fontSize: 11 }}>UC36</span>
+                        <h1 className="pms-page-title" style={{ margin: 0 }}>Branch Stock Requisitions</h1>
                         <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Store Manager</span>
                     </div>
                     <p className="pms-page-sub">
-                        Xem và theo dõi trạng thái, tiến độ giao hàng các đơn yêu cầu nhập hàng nội bộ từ kho trung tâm.
+                        View and track status, delivery progress of internal replenishment requisitions from the central warehouse.
                     </p>
                 </div>
                 <div>
-                    <button type="button" className="btn-pms btn-pms-secondary" onClick={fetchList} title="Làm mới">
+                    <button type="button" className="btn-pms btn-pms-secondary" onClick={fetchList} title="Refresh">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
                         </svg>
-                        Làm mới
+                        Refresh
                     </button>
                 </div>
             </div>
@@ -233,17 +232,17 @@ export default function StockRequisitionsPage() {
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14 }}>
                         {/* Store selector */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Chi nhánh:</label>
+                            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Branch:</label>
                             <select
                                 className="pms-select"
                                 style={{ minWidth: 200 }}
                                 value={storeId}
                                 onChange={e => { setStoreId(e.target.value); setPage(0); }}
                             >
-                                <option value="">Tất cả chi nhánh</option>
-                                <option value="1">Store #1 — Nhà thuốc Trung Tâm</option>
-                                <option value="2">Store #2 — Nhà thuốc Cầu Giấy</option>
-                                <option value="3">Store #3 — Nhà thuốc Đống Đa</option>
+                                <option value="">All Branches</option>
+                                <option value="1">Store #1 — Central Pharmacy</option>
+                                <option value="2">Store #2 — Cau Giay Pharmacy</option>
+                                <option value="3">Store #3 — Dong Da Pharmacy</option>
                             </select>
                         </div>
 
@@ -259,7 +258,7 @@ export default function StockRequisitionsPage() {
                                 className="pms-input"
                                 value={search}
                                 onChange={e => { setSearch(e.target.value); setPage(0); }}
-                                placeholder="Tìm theo mã đơn yêu cầu..."
+                                placeholder="Search by requisition code..."
                             />
                         </div>
 
@@ -287,20 +286,20 @@ export default function StockRequisitionsPage() {
                         <table className="pms-table">
                             <thead>
                                 <tr>
-                                    <th>Mã đơn</th>
-                                    <th>Chi nhánh</th>
-                                    <th>Người tạo</th>
-                                    <th>Trạng thái</th>
-                                    <th>Ngày tạo</th>
-                                    <th>Ngày duyệt</th>
-                                    <th>Ngày xuất kho</th>
-                                    <th>Ngày nhận</th>
-                                    <th style={{ textAlign: 'center' }}>Thao tác</th>
+                                    <th>Requisition Code</th>
+                                    <th>Branch</th>
+                                    <th>Created By</th>
+                                    <th>Status</th>
+                                    <th>Created Date</th>
+                                    <th>Approved Date</th>
+                                    <th>Dispatched Date</th>
+                                    <th>Received Date</th>
+                                    <th style={{ textAlign: 'center' }}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {listLoading ? (
-                                    <tr><td colSpan={9} style={{ textAlign: 'center', padding: 40 }}>Đang tải...</td></tr>
+                                    <tr><td colSpan={9} style={{ textAlign: 'center', padding: 40 }}>Loading...</td></tr>
                                 ) : list.length === 0 ? (
                                     <tr>
                                         <td colSpan={9} style={{ textAlign: 'center', padding: 48, color: 'var(--text-secondary)' }}>
@@ -308,7 +307,7 @@ export default function StockRequisitionsPage() {
                                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                                                 <polyline points="14 2 14 8 20 8" />
                                             </svg>
-                                            Không có đơn yêu cầu nào
+                                            No stock requisitions found
                                         </td>
                                     </tr>
                                 ) : list.map(item => (
@@ -317,10 +316,10 @@ export default function StockRequisitionsPage() {
                                         <td>{item.storeName ?? '—'}</td>
                                         <td>{item.createdByUsername ?? '—'}</td>
                                         <td><StatusBadge status={item.status} /></td>
-                                        <td style={{ fontSize: 13 }}>{item.createdAt ? new Date(item.createdAt).toLocaleDateString('vi-VN') : '—'}</td>
-                                        <td style={{ fontSize: 13 }}>{item.approvedAt ? new Date(item.approvedAt).toLocaleDateString('vi-VN') : '—'}</td>
-                                        <td style={{ fontSize: 13 }}>{item.dispatchedAt ? new Date(item.dispatchedAt).toLocaleDateString('vi-VN') : '—'}</td>
-                                        <td style={{ fontSize: 13 }}>{item.receivedAt ? new Date(item.receivedAt).toLocaleDateString('vi-VN') : '—'}</td>
+                                        <td style={{ fontSize: 13 }}>{item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US') : '—'}</td>
+                                        <td style={{ fontSize: 13 }}>{item.approvedAt ? new Date(item.approvedAt).toLocaleDateString('en-US') : '—'}</td>
+                                        <td style={{ fontSize: 13 }}>{item.dispatchedAt ? new Date(item.dispatchedAt).toLocaleDateString('en-US') : '—'}</td>
+                                        <td style={{ fontSize: 13 }}>{item.receivedAt ? new Date(item.receivedAt).toLocaleDateString('en-US') : '—'}</td>
                                         <td style={{ textAlign: 'center' }}>
                                             <button
                                                 type="button"
@@ -328,7 +327,7 @@ export default function StockRequisitionsPage() {
                                                 style={{ padding: '4px 12px', fontSize: 12 }}
                                                 onClick={() => openDetail(item)}
                                             >
-                                                Chi tiết
+                                                Details
                                             </button>
                                         </td>
                                     </tr>
@@ -341,15 +340,15 @@ export default function StockRequisitionsPage() {
                     {totalPages > 1 && (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderTop: '1px solid var(--border)' }}>
                             <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                                Hiển thị {list.length} / {total} đơn yêu cầu
+                                Showing {list.length} / {total} requisitions
                             </span>
                             <div style={{ display: 'flex', gap: 6 }}>
                                 <button type="button" className="btn-pms btn-pms-secondary" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-                                    ← Trước
+                                    ← Previous
                                 </button>
-                                <span style={{ padding: '4px 10px', fontSize: 13 }}>Trang {page + 1}/{totalPages}</span>
+                                <span style={{ padding: '4px 10px', fontSize: 13 }}>Page {page + 1}/{totalPages}</span>
                                 <button type="button" className="btn-pms btn-pms-secondary" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-                                    Sau →
+                                    Next →
                                 </button>
                             </div>
                         </div>

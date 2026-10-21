@@ -8,7 +8,7 @@ export const useGoodsReceipt = () => {
     const [page, setPage] = useState(0);
     const [size] = useState(10);
     const [search, setSearch] = useState('');
-    const [storeId, setStoreId] = useState(7); // Mặc định chi nhánh mẫu
+    const [storeId, setStoreId] = useState(7); // Default sample branch
     const [statusFilter, setStatusFilter] = useState('');
     const [listLoading, setListLoading] = useState(false);
 
@@ -38,7 +38,7 @@ export const useGoodsReceipt = () => {
             setList(data?.content ?? []);
             setTotal(data?.totalElements ?? 0);
         } catch (e) {
-            setError(e.message || 'Lỗi tải danh sách phiếu nhập kho');
+            setError(e.message || 'Failed to load goods receipts list');
         } finally {
             setListLoading(false);
         }
@@ -57,7 +57,7 @@ export const useGoodsReceipt = () => {
             const detail = await getGoodsReceiptDetail(item.id);
             setSelectedItem(detail);
         } catch (e) {
-            setError(e.message || 'Lỗi tải chi tiết phiếu');
+            setError(e.message || 'Failed to load receipt details');
         } finally {
             setDetailLoading(false);
         }
@@ -71,7 +71,7 @@ export const useGoodsReceipt = () => {
             const detail = await getGoodsReceiptDetail(item.id);
             setSelectedItem(detail);
         } catch (e) {
-            setError(e.message || 'Lỗi tải chi tiết phiếu để kiểm nhận');
+            setError(e.message || 'Failed to load receipt details for inspection');
         } finally {
             setDetailLoading(false);
         }
@@ -83,12 +83,12 @@ export const useGoodsReceipt = () => {
         setError(null);
         try {
             await confirmGoodsReceipt(receiptId, payload);
-            setSuccessMsg('Xác nhận nhập kho thành công! Tồn kho chi nhánh đã được cập nhật.');
+            setSuccessMsg('Goods receipt confirmed successfully! Branch inventory has been updated.');
             setConfirmModalOpen(false);
             setDetailModalOpen(false);
             fetchList();
         } catch (e) {
-            setError(e.message || 'Lỗi khi xác nhận nhập kho');
+            setError(e.message || 'Error confirming goods receipt');
             throw e;
         } finally {
             setSubmitting(false);

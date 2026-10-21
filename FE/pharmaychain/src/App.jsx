@@ -7,6 +7,7 @@ import WarehouseReplenishmentPage from './page/warehouse/WarehouseReplenishmentP
 import WarehousePurchaseRequestsPage from './page/warehouse/WarehousePurchaseRequestsPage';
 import UsersPage from './page/users/UsersPage';
 import DailySalesPage from './page/sales/DailySalesPage';
+import ProductCatalogPage from './page/products/ProductCatalogPage';
 import BranchInventoryPage from './page/inventory/BranchInventoryPage';
 import InventoryAuditPage from './page/inventory/InventoryAuditPage';
 import StockRequisitionsPage from './page/inventory/StockRequisitionsPage';
@@ -54,13 +55,13 @@ function App() {
         <Route path="/audit-log" element={<ComingSoon title="Audit Log" module="User & Security" />} />
 
         {/* Products & Catalog */}
-        <Route path="/products" element={<ComingSoon title="Product Catalog" module="Products & Catalog" />} />
+        <Route path="/products" element={<ProductCatalogPage />} />
         <Route path="/categories" element={<ComingSoon title="Categories" module="Products & Catalog" />} />
 
         {/* POS & Sales */}
         <Route path="/pos" element={<ComingSoon title="POS Counter" module="POS & Sales" />} />
-        <Route path="/shifts" element={<ComingSoon title="Shift Management" module="POS & Sales" />} />
-        <Route path="/sales" element={<ComingSoon title="Sales Invoices" module="POS & Sales" />} />
+        <Route path="/shifts" element={<DailySalesPage defaultTab="shifts" />} />
+        <Route path="/sales" element={<DailySalesPage defaultTab="invoices" />} />
 
         {/* Customers */}
         <Route path="/customers" element={<ComingSoon title="Customer Directory" module="Customer Management" />} />

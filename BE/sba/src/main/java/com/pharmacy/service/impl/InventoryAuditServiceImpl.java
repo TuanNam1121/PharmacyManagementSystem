@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.pharmacy.entity.enums.InventoryAuditStatus;
+
 @Service
 @RequiredArgsConstructor
 public class InventoryAuditServiceImpl implements InventoryAuditService {
@@ -30,12 +32,7 @@ public class InventoryAuditServiceImpl implements InventoryAuditService {
     // ─── helpers ────────────────────────────────────────────────────────────────
 
     private static String resolveStatusLabel(Short status) {
-        return switch (status == null ? 0 : status.intValue()) {
-            case 0 -> "Chờ xét duyệt";
-            case 1 -> "Đã xác nhận";
-            case 2 -> "Từ chối – Kiểm lại";
-            default -> "Không xác định";
-        };
+        return InventoryAuditStatus.resolveLabel(status);
     }
 
     private InventoryAuditDto.InventoryAuditDetailDto mapDetail(InventoryAuditDetail d) {
@@ -69,7 +66,7 @@ public class InventoryAuditServiceImpl implements InventoryAuditService {
         return builder.build();
     }
 
-    // ─── UC34 flows ─────────────────────────────────────────────────────────────
+    // ─── Inventory Audit flows ─────────────────────────────────────────────────────────────
 
     @Override
     @Transactional(readOnly = true)
@@ -83,32 +80,32 @@ public class InventoryAuditServiceImpl implements InventoryAuditService {
     @Transactional(readOnly = true)
     public InventoryAuditDto getAuditDetail(Long auditId) {
         InventoryAudit audit = auditRepository.findById(auditId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu kiểm kê ID: " + auditId));
+                .orElseThrow(() -> new IllegalArgumentException("Inventory audit not found with ID: " + auditId));
         return mapAudit(audit, true);
     }
 
     @Override
     @Transactional
     public InventoryAuditDto reviewAudit(InventoryAuditReviewRequest request, String username, String clientIp) {
-        // BR-01: phải có session hợp lệ (username truyền vào từ controller)
+        // Validate user session from controller
         InventoryAudit audit = auditRepository.findById(request.getAuditId())
                 .orElseThrow(
-                        () -> new IllegalArgumentException("Không tìm thấy phiếu kiểm kê ID: " + request.getAuditId()));
+                        () -> new IllegalArgumentException("Inventory audit not found with ID: " + request.getAuditId()));
 
-        // AT01: chỉ cho phép xét duyệt phiếu ở trạng thái Chờ (status=0)
-        if (audit.getStatus() != null && audit.getStatus() != 0) {
-            throw new IllegalStateException("Phiếu kiểm kê này đã được xét duyệt trước đó.");
+        // Only allow reviewing pending audits
+        if (audit.getStatus() != null && !audit.getStatus().equals(InventoryAuditStatus.PENDING.getCode())) {
+            throw new IllegalStateException("This inventory audit has already been reviewed.");
         }
 
         String oldValue = String.format("status=%s, reviewNote=%s", audit.getStatus(), audit.getReviewNote());
 
-        // Cập nhật trạng thái
+        // Update status
         audit.setStatus(request.getDecision()); // 1=Approved, 2=Rejected
         audit.setReviewNote(request.getReviewNote());
         audit.setReviewedAt(LocalDateTime.now());
         audit = auditRepository.save(audit);
 
-        // BR-02: ghi AuditLog bất biến
+        // Immutable AuditLog
         AuditLog log = new AuditLog();
         log.setAction((short) 2); // UPDATE/REVIEW
         log.setEntityName("InventoryAudit");

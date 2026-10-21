@@ -3,27 +3,27 @@ import { useGoodsReceipt } from '../../hooks/inventory/useGoodsReceipt';
 
 // ── Status Config ─────────────────────────────────────────────────────────────
 const STATUS_MAP = {
-    0: { label: 'Đang chuẩn bị', cls: 'pms-badge pms-badge-neutral' },
-    1: { label: 'Đang vận chuyển', cls: 'pms-badge pms-badge-info' },
-    2: { label: 'Đã nhận đủ', cls: 'pms-badge pms-badge-success' },
-    3: { label: 'Nhận có lệch', cls: 'pms-badge pms-badge-warning' },
-    4: { label: 'Đã hủy', cls: 'pms-badge pms-badge-danger' },
+    0: { label: 'Picking', cls: 'pms-badge pms-badge-neutral' },
+    1: { label: 'In Transit', cls: 'pms-badge pms-badge-info' },
+    2: { label: 'Received', cls: 'pms-badge pms-badge-success' },
+    3: { label: 'Discrepancy', cls: 'pms-badge pms-badge-warning' },
+    4: { label: 'Cancelled', cls: 'pms-badge pms-badge-danger' },
 };
 
 function StatusBadge({ status }) {
-    const s = STATUS_MAP[status] ?? { label: 'Không xác định', cls: 'pms-badge pms-badge-neutral' };
+    const s = STATUS_MAP[status] ?? { label: 'Unknown', cls: 'pms-badge pms-badge-neutral' };
     return <span className={s.cls}>{s.label}</span>;
 }
 
 // ── Progress Timeline ─────────────────────────────────────────────────────────
 function DeliveryTimeline({ item }) {
     const steps = [
-        { label: 'Tạo phiếu xuất', time: item.createdAt, done: true },
-        { label: 'Xuất kho / Vận chuyển', time: item.dispatchedAt, done: item.status >= 1 && item.status !== 4 },
-        { label: 'Chi nhánh đã nhận', time: item.receivedAt, done: item.status === 2 || item.status === 3 },
+        { label: 'Issue Note Created', time: item.createdAt, done: true },
+        { label: 'Dispatched / In Transit', time: item.dispatchedAt, done: item.status >= 1 && item.status !== 4 },
+        { label: 'Received by Branch', time: item.receivedAt, done: item.status === 2 || item.status === 3 },
     ];
 
-    const fmt = (dt) => dt ? new Date(dt).toLocaleString('vi-VN') : '—';
+    const fmt = (dt) => dt ? new Date(dt).toLocaleString('en-US') : '—';
 
     return (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0, marginBottom: 24, overflowX: 'auto' }}>
@@ -65,12 +65,12 @@ function DetailModal({ show, item, loading, onHide, onOpenConfirm }) {
         <div className="pms-modal-overlay" onClick={onHide}>
             <div className="pms-modal" style={{ maxWidth: 860 }} onClick={e => e.stopPropagation()}>
                 <div className="pms-modal-header">
-                    <h3 className="pms-modal-title">Chi tiết phiếu nhập kho hàng</h3>
+                    <h3 className="pms-modal-title">Goods Receipt Details</h3>
                     <button type="button" className="pms-modal-close" onClick={onHide}>✕</button>
                 </div>
                 <div className="pms-modal-body">
                     {loading ? (
-                        <div style={{ textAlign: 'center', padding: 48 }}>Đang tải thông tin...</div>
+                        <div style={{ textAlign: 'center', padding: 48 }}>Loading details...</div>
                     ) : item ? (
                         <>
                             {/* Timeline */}
@@ -79,51 +79,51 @@ function DetailModal({ show, item, loading, onHide, onOpenConfirm }) {
                             {/* Header Info */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
                                 <div>
-                                    <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Mã phiếu</span>
+                                    <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Receipt Code</span>
                                     <div style={{ fontWeight: 700, fontSize: 15 }}>{item.code}</div>
                                 </div>
                                 <div>
-                                    <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Đơn yêu cầu gốc</span>
+                                    <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Origin Requisition</span>
                                     <div style={{ fontWeight: 600 }}>{item.stockRequisitionCode || '—'}</div>
                                 </div>
                                 <div>
-                                    <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Trạng thái</span>
+                                    <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Status</span>
                                     <div><StatusBadge status={item.status} /></div>
                                 </div>
                                 <div>
-                                    <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Kho xuất hàng</span>
-                                    <div style={{ fontWeight: 600 }}>{item.fromStoreName || 'Kho Tổng'}</div>
+                                    <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Dispatching Warehouse</span>
+                                    <div style={{ fontWeight: 600 }}>{item.fromStoreName || 'Central Warehouse'}</div>
                                 </div>
                                 <div>
-                                    <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Đơn vị vận chuyển</span>
-                                    <div style={{ fontWeight: 600 }}>{item.carrier || 'Nội bộ công ty'}</div>
+                                    <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Carrier</span>
+                                    <div style={{ fontWeight: 600 }}>{item.carrier || 'Internal Fleet'}</div>
                                 </div>
                                 <div>
-                                    <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Người nhận</span>
-                                    <div style={{ fontWeight: 600 }}>{item.receivedByUsername || 'Chưa nhận'}</div>
+                                    <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Received By</span>
+                                    <div style={{ fontWeight: 600 }}>{item.receivedByUsername || 'Pending'}</div>
                                 </div>
                                 {item.note && (
                                     <div style={{ gridColumn: '1 / -1' }}>
-                                        <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Ghi chú</span>
+                                        <span style={{ color: 'var(--text-secondary, #64748b)', fontSize: 12 }}>Note</span>
                                         <div style={{ fontWeight: 500 }}>{item.note}</div>
                                     </div>
                                 )}
                             </div>
 
                             {/* Table of Items */}
-                            <h4 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Danh sách mặt hàng & số lô</h4>
+                            <h4 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Item List & Batch Tracking</h4>
                             {item.details && item.details.length > 0 ? (
                                 <div style={{ overflowX: 'auto' }}>
                                     <table className="pms-table">
                                         <thead>
                                             <tr>
                                                 <th>#</th>
-                                                <th>Tên thuốc / Sản phẩm</th>
-                                                <th>Số lô</th>
-                                                <th>Hạn dùng</th>
-                                                <th style={{ textAlign: 'right' }}>SL Gửi</th>
-                                                <th style={{ textAlign: 'right' }}>SL Nhận</th>
-                                                <th style={{ textAlign: 'right' }}>Chênh lệch</th>
+                                                <th>Medicine / Product</th>
+                                                <th>Batch Number</th>
+                                                <th>Expiry Date</th>
+                                                <th style={{ textAlign: 'right' }}>Dispatched Qty</th>
+                                                <th style={{ textAlign: 'right' }}>Received Qty</th>
+                                                <th style={{ textAlign: 'right' }}>Variance</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -135,7 +135,7 @@ function DetailModal({ show, item, loading, onHide, onOpenConfirm }) {
                                                         <div style={{ fontSize: 11, color: 'var(--text-secondary, #64748b)' }}>{d.barcode}</div>
                                                     </td>
                                                     <td><span className="pms-badge pms-badge-neutral">{d.batchNumber || '—'}</span></td>
-                                                    <td>{d.expiryDate ? new Date(d.expiryDate).toLocaleDateString('vi-VN') : '—'}</td>
+                                                    <td>{d.expiryDate ? new Date(d.expiryDate).toLocaleDateString('en-US') : '—'}</td>
                                                     <td style={{ textAlign: 'right', fontWeight: 600 }}>{d.quantity}</td>
                                                     <td style={{ textAlign: 'right', color: d.receivedQuantity != null ? 'var(--primary, #0284c7)' : 'var(--text-muted, #64748b)' }}>
                                                         {d.receivedQuantity ?? '—'}
@@ -153,7 +153,7 @@ function DetailModal({ show, item, loading, onHide, onOpenConfirm }) {
                                     </table>
                                 </div>
                             ) : (
-                                <p style={{ color: 'var(--text-secondary, #64748b)' }}>Không có sản phẩm nào.</p>
+                                <p style={{ color: 'var(--text-secondary, #64748b)' }}>No items found.</p>
                             )}
                         </>
                     ) : null}
@@ -166,11 +166,11 @@ function DetailModal({ show, item, loading, onHide, onOpenConfirm }) {
                                 className="btn-pms btn-pms-primary"
                                 onClick={() => { onHide(); onOpenConfirm(item); }}
                             >
-                                Kiểm nhận hàng vào kho
+                                Inspect & Receive Stock
                             </button>
                         )}
                     </div>
-                    <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide}>Đóng</button>
+                    <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide}>Close</button>
                 </div>
             </div>
         </div>
@@ -218,7 +218,7 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
         for (const d of item.details) {
             const q = receivedQuantities[d.id];
             if (q === '' || q === undefined || isNaN(q) || q < 0) {
-                setValidationError(`Số lượng thực nhận cho thuốc "${d.productName}" không hợp lệ (phải >= 0).`);
+                setValidationError(`Received quantity for product "${d.productName}" is invalid (must be >= 0).`);
                 return;
             }
             itemsPayload.push({ detailId: d.id, receivedQuantity: q });
@@ -226,7 +226,7 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
 
         const payload = {
             note,
-            receivedByUsername: 'admin', // Hoặc lấy từ session context
+            receivedByUsername: 'admin',
             items: itemsPayload,
         };
 
@@ -238,7 +238,7 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
             <div className="pms-modal" style={{ maxWidth: 860 }} onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleConfirm}>
                     <div className="pms-modal-header">
-                        <h3 className="pms-modal-title">Xác nhận kiểm nhận hàng vào kho chi nhánh</h3>
+                        <h3 className="pms-modal-title">Confirm Goods Receipt into Branch Inventory</h3>
                         <button type="button" className="pms-modal-close" onClick={onHide}>✕</button>
                     </div>
 
@@ -251,7 +251,7 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                             <div>
-                                <strong>Mã phiếu: {item.code}</strong> | Kho xuất: {item.fromStoreName || 'Kho Tổng'}
+                                <strong>Receipt Code: {item.code}</strong> | Origin: {item.fromStoreName || 'Central Warehouse'}
                             </div>
                             <button
                                 type="button"
@@ -259,7 +259,7 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
                                 style={{ fontSize: 12, padding: '4px 8px' }}
                                 onClick={fillAllEqual}
                             >
-                                Điền đủ theo SL gửi
+                                Autofill with dispatched qty
                             </button>
                         </div>
 
@@ -268,11 +268,11 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
                                 <thead>
                                     <tr>
                                         <th>#</th>
-                                        <th>Sản phẩm</th>
-                                        <th>Số lô / Hạn dùng</th>
-                                        <th style={{ textAlign: 'right' }}>SL Gửi</th>
-                                        <th style={{ width: 140, textAlign: 'right' }}>SL Thực nhận</th>
-                                        <th>Ghi chú dòng</th>
+                                        <th>Product</th>
+                                        <th>Batch / Expiry</th>
+                                        <th style={{ textAlign: 'right' }}>Dispatched Qty</th>
+                                        <th style={{ width: 140, textAlign: 'right' }}>Actual Received Qty</th>
+                                        <th>Variance</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -289,7 +289,7 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
                                                 <td>
                                                     <div><strong>{d.batchNumber}</strong></div>
                                                     <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                                                        HSD: {d.expiryDate ? new Date(d.expiryDate).toLocaleDateString('vi-VN') : '—'}
+                                                        EXP: {d.expiryDate ? new Date(d.expiryDate).toLocaleDateString('en-US') : '—'}
                                                     </div>
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontWeight: 600 }}>{d.quantity}</td>
@@ -307,10 +307,10 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
                                                 <td>
                                                     {diff !== 0 && (
                                                         <span style={{ fontSize: 12, fontWeight: 600, color: diff < 0 ? 'var(--danger, #ef4444)' : 'var(--warning, #eab308)' }}>
-                                                            {diff < 0 ? `Thiếu ${Math.abs(diff)}` : `Thừa ${diff}`}
+                                                            {diff < 0 ? `Short ${Math.abs(diff)}` : `Over +${diff}`}
                                                         </span>
                                                     )}
-                                                    {diff === 0 && <span style={{ color: 'var(--success, #22c55e)', fontSize: 12 }}>Đủ</span>}
+                                                    {diff === 0 && <span style={{ color: 'var(--success, #22c55e)', fontSize: 12 }}>Match</span>}
                                                 </td>
                                             </tr>
                                         );
@@ -321,12 +321,12 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
 
                         <div>
                             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-                                Ghi chú biên bản nhận hàng:
+                                Inspection & Receipt Note:
                             </label>
                             <textarea
                                 className="pms-input"
                                 rows="2"
-                                placeholder="Ghi nhận tình trạng thùng hàng, niêm phong, tài xế..."
+                                placeholder="Note packaging condition, seal integrity, carrier info..."
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
                             />
@@ -335,10 +335,10 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
 
                     <div className="pms-modal-footer">
                         <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-                            Hủy bỏ (AT02)
+                            Cancel
                         </button>
                         <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting}>
-                            {submitting ? 'Đang lưu vào kho...' : 'Xác nhận nhập kho'}
+                            {submitting ? 'Saving to Inventory...' : 'Confirm Receipt'}
                         </button>
                     </div>
                 </form>
@@ -380,12 +380,12 @@ export default function GoodsReceiptsPage() {
     const totalPages = Math.ceil(total / size);
 
     const STATUS_TABS = [
-        { value: '', label: 'Tất cả' },
-        { value: '1', label: 'Đang vận chuyển' },
-        { value: '2', label: 'Đã nhận đủ' },
-        { value: '3', label: 'Nhận có chênh lệch' },
-        { value: '0', label: 'Chuẩn bị' },
-        { value: '4', label: 'Đã hủy' },
+        { value: '', label: 'All' },
+        { value: '1', label: 'In Transit' },
+        { value: '2', label: 'Received' },
+        { value: '3', label: 'Discrepancy' },
+        { value: '0', label: 'Picking' },
+        { value: '4', label: 'Cancelled' },
     ];
 
     return (
@@ -394,17 +394,16 @@ export default function GoodsReceiptsPage() {
             <div className="pms-page-header" style={{ marginBottom: 16 }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <h1 className="pms-page-title" style={{ margin: 0 }}>Danh Sách Phiếu Nhập Kho</h1>
-                        <span className="pms-badge pms-badge-neutral" style={{ fontSize: 11 }}>UC38</span>
+                        <h1 className="pms-page-title" style={{ margin: 0 }}>Branch Goods Receipts</h1>
                         <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Store Manager</span>
                     </div>
                     <p className="pms-page-subtitle" style={{ margin: 0 }}>
-                        Theo dõi phiếu điều chuyển hàng từ kho tổng, kiểm nhận số lô, hạn dùng và nhập vào kho chi nhánh
+                        Track inter-store transfers from central warehouse, inspect batches & expiry dates, and accept into branch inventory
                     </p>
                 </div>
                 <div>
                     <button type="button" className="btn-pms btn-pms-secondary" onClick={fetchList} disabled={listLoading}>
-                        🔄 Làm mới
+                        🔄 Refresh
                     </button>
                 </div>
             </div>
@@ -426,23 +425,23 @@ export default function GoodsReceiptsPage() {
             {/* Summary Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 20 }}>
                 <div className="pms-card" style={{ padding: '16px 20px' }}>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600 }}>TỔNG PHIẾU NHẬP</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600 }}>TOTAL RECEIPTS</div>
                     <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{total}</div>
                 </div>
                 <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--info, #0284c7)' }}>
-                    <div style={{ color: 'var(--info, #0284c7)', fontSize: 12, fontWeight: 600 }}>ĐANG VẬN CHUYỂN</div>
+                    <div style={{ color: 'var(--info, #0284c7)', fontSize: 12, fontWeight: 600 }}>IN TRANSIT</div>
                     <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>
                         {list.filter(x => x.status === 1).length}
                     </div>
                 </div>
                 <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--success, #22c55e)' }}>
-                    <div style={{ color: 'var(--success, #22c55e)', fontSize: 12, fontWeight: 600 }}>ĐÃ NHẬP KHO THÀNH CÔNG</div>
+                    <div style={{ color: 'var(--success, #22c55e)', fontSize: 12, fontWeight: 600 }}>SUCCESSFULLY RECEIVED</div>
                     <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>
                         {list.filter(x => x.status === 2).length}
                     </div>
                 </div>
                 <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--warning, #eab308)' }}>
-                    <div style={{ color: 'var(--warning, #eab308)', fontSize: 12, fontWeight: 600 }}>CÓ CHÊNH LỆCH</div>
+                    <div style={{ color: 'var(--warning, #eab308)', fontSize: 12, fontWeight: 600 }}>WITH DISCREPANCY</div>
                     <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>
                         {list.filter(x => x.status === 3).length}
                     </div>
@@ -473,7 +472,7 @@ export default function GoodsReceiptsPage() {
                             type="text"
                             className="pms-input"
                             style={{ width: 260 }}
-                            placeholder="Mã phiếu, mã yêu cầu, vận chuyển..."
+                            placeholder="Receipt code, requisition, carrier..."
                             value={search}
                             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
                         />
@@ -487,27 +486,27 @@ export default function GoodsReceiptsPage() {
                     <table className="pms-table">
                         <thead>
                             <tr>
-                                <th>Mã phiếu</th>
-                                <th>Đơn yêu cầu</th>
-                                <th>Nơi gửi</th>
-                                <th>Đơn vị vận chuyển</th>
-                                <th style={{ textAlign: 'right' }}>Mặt hàng</th>
-                                <th style={{ textAlign: 'right' }}>Tổng SL gửi</th>
-                                <th>Ngày xuất</th>
-                                <th>Ngày nhận</th>
-                                <th>Trạng thái</th>
-                                <th style={{ textAlign: 'center' }}>Thao tác</th>
+                                <th>Receipt Code</th>
+                                <th>Requisition</th>
+                                <th>Origin</th>
+                                <th>Carrier</th>
+                                <th style={{ textAlign: 'right' }}>SKUs</th>
+                                <th style={{ textAlign: 'right' }}>Total Dispatched Qty</th>
+                                <th>Dispatched Date</th>
+                                <th>Received Date</th>
+                                <th>Status</th>
+                                <th style={{ textAlign: 'center' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {listLoading ? (
                                 <tr>
-                                    <td colSpan="10" style={{ textAlign: 'center', padding: 32 }}>Đang tải danh sách...</td>
+                                    <td colSpan="10" style={{ textAlign: 'center', padding: 32 }}>Loading list...</td>
                                 </tr>
                             ) : list.length === 0 ? (
                                 <tr>
                                     <td colSpan="10" style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
-                                        Không tìm thấy phiếu nhập kho nào.
+                                        No goods receipts found.
                                     </td>
                                 </tr>
                             ) : (
@@ -523,12 +522,12 @@ export default function GoodsReceiptsPage() {
                                             </button>
                                         </td>
                                         <td>{item.stockRequisitionCode || '—'}</td>
-                                        <td>{item.fromStoreName || 'Kho Tổng'}</td>
+                                        <td>{item.fromStoreName || 'Central Warehouse'}</td>
                                         <td>{item.carrier || '—'}</td>
                                         <td style={{ textAlign: 'right' }}>{item.totalItems ?? 0}</td>
                                         <td style={{ textAlign: 'right', fontWeight: 600 }}>{item.totalQuantity ?? 0}</td>
-                                        <td>{item.dispatchedAt ? new Date(item.dispatchedAt).toLocaleDateString('vi-VN') : '—'}</td>
-                                        <td>{item.receivedAt ? new Date(item.receivedAt).toLocaleDateString('vi-VN') : '—'}</td>
+                                        <td>{item.dispatchedAt ? new Date(item.dispatchedAt).toLocaleDateString('en-US') : '—'}</td>
+                                        <td>{item.receivedAt ? new Date(item.receivedAt).toLocaleDateString('en-US') : '—'}</td>
                                         <td><StatusBadge status={item.status} /></td>
                                         <td style={{ textAlign: 'center' }}>
                                             <div style={{ display: 'inline-flex', gap: 6 }}>
@@ -538,7 +537,7 @@ export default function GoodsReceiptsPage() {
                                                     style={{ fontSize: 12, padding: '4px 8px' }}
                                                     onClick={() => openDetail(item)}
                                                 >
-                                                    Chi tiết
+                                                    Details
                                                 </button>
                                                 {item.status === 1 && (
                                                     <button
@@ -547,7 +546,7 @@ export default function GoodsReceiptsPage() {
                                                         style={{ fontSize: 12, padding: '4px 8px' }}
                                                         onClick={() => openConfirmModal(item)}
                                                     >
-                                                        Kiểm nhận
+                                                        Inspect & Receive
                                                     </button>
                                                 )}
                                             </div>
@@ -563,7 +562,7 @@ export default function GoodsReceiptsPage() {
                 {totalPages > 1 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid var(--border)' }}>
                         <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                            Trang {page + 1} / {totalPages} (Tổng {total} phiếu)
+                            Page {page + 1} / {totalPages} (Total {total} receipts)
                         </span>
                         <div style={{ display: 'flex', gap: 6 }}>
                             <button
@@ -572,7 +571,7 @@ export default function GoodsReceiptsPage() {
                                 disabled={page === 0}
                                 onClick={() => setPage(p => p - 1)}
                             >
-                                Trước
+                                Previous
                             </button>
                             <button
                                 type="button"
@@ -580,7 +579,7 @@ export default function GoodsReceiptsPage() {
                                 disabled={page >= totalPages - 1}
                                 onClick={() => setPage(p => p + 1)}
                             >
-                                Sau
+                                Next
                             </button>
                         </div>
                     </div>

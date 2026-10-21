@@ -2,6 +2,7 @@ package com.pharmacy.service.impl;
 
 import com.pharmacy.dto.warehouse.*;
 import com.pharmacy.entity.*;
+import com.pharmacy.entity.enums.*;
 import com.pharmacy.repository.*;
 import com.pharmacy.service.WarehouseInventoryService;
 import jakarta.persistence.EntityNotFoundException;
@@ -214,7 +215,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                 .batch(batch)
                 .createdBy(currentUser)
                 .type(request.getType() != null ? request.getType() : 3)
-                .status((short) 1) // Approved directly upon creation
+                .status(InventoryAdjustmentStatus.APPROVED.getCode()) // Approved directly upon creation
                 .quantityBefore(qtyBefore)
                 .quantityAfter(qtyAfter)
                 .difference(difference)
@@ -249,12 +250,12 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         InventoryAdjustment adj = adjustmentRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Adjustment not found with ID: " + id));
 
-        if (adj.getStatus() != null && adj.getStatus() == 1) {
+        if (adj.getStatus() != null && adj.getStatus().equals(InventoryAdjustmentStatus.APPROVED.getCode())) {
             throw new IllegalStateException("Adjustment is already approved");
         }
 
         Account approver = approverId != null ? accountRepository.findById(approverId).orElse(null) : null;
-        adj.setStatus((short) 1);
+        adj.setStatus(InventoryAdjustmentStatus.APPROVED.getCode());
         adj.setApprovedBy(approver);
         adj.setApprovedAt(LocalDateTime.now());
 
@@ -281,7 +282,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                 .orElseThrow(() -> new EntityNotFoundException("Adjustment not found with ID: " + id));
 
         Account approver = approverId != null ? accountRepository.findById(approverId).orElse(null) : null;
-        adj.setStatus((short) 2);
+        adj.setStatus(InventoryAdjustmentStatus.REJECTED.getCode());
         adj.setApprovedBy(approver);
         adj.setApprovedAt(LocalDateTime.now());
         if (reason != null && !reason.trim().isEmpty()) {
@@ -301,7 +302,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         Supplier supplier = supplierRepository.findById(request.getSupplierId())
                 .orElseThrow(() -> new EntityNotFoundException("Supplier not found with ID: " + request.getSupplierId()));
 
-        Store warehouse = storeRepository.findFirstByType((short) 2)
+        Store warehouse = storeRepository.findFirstByType(StoreType.CENTRAL_WAREHOUSE.getCode())
                 .orElseGet(() -> storeRepository.findAll().stream().findFirst().orElseThrow());
 
         Account creator = creatorId != null ? accountRepository.findById(creatorId).orElse(null) : null;
@@ -319,8 +320,8 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                 .supplier(supplier)
                 .store(warehouse)
                 .createdBy(creator)
-                .deliveryType(request.getDeliveryType() != null ? request.getDeliveryType() : 1)
-                .status((short) 0) // 0 draft / pending inspection
+                .deliveryType(request.getDeliveryType() != null ? request.getDeliveryType() : PurchaseDeliveryType.DIRECT.getCode())
+                .status(PurchaseReceiptStatus.DRAFT.getCode()) // Draft / pending inspection
                 .totalAmount(total)
                 .note(request.getNote())
                 .createdAt(LocalDateTime.now())
@@ -361,17 +362,17 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         PurchaseReceipt pr = purchaseReceiptRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Purchase receipt not found with ID: " + id));
 
-        if (pr.getStatus() != null && pr.getStatus() == 1) {
+        if (pr.getStatus() != null && pr.getStatus().equals(PurchaseReceiptStatus.CONFIRMED.getCode())) {
             throw new IllegalStateException("Receipt is already confirmed and accepted into inventory");
         }
 
         Account confirmer = confirmerId != null ? accountRepository.findById(confirmerId).orElse(null) : null;
-        pr.setStatus((short) 1);
+        pr.setStatus(PurchaseReceiptStatus.CONFIRMED.getCode());
         pr.setConfirmedBy(confirmer);
         pr.setConfirmedAt(LocalDateTime.now());
 
         List<PurchaseReceiptDetail> details = purchaseReceiptDetailRepository.findByPurchaseReceiptIdWithDetails(id);
-        Store warehouse = pr.getStore() != null ? pr.getStore() : storeRepository.findFirstByType((short) 2).orElse(null);
+        Store warehouse = pr.getStore() != null ? pr.getStore() : storeRepository.findFirstByType(StoreType.CENTRAL_WAREHOUSE.getCode()).orElse(null);
 
         for (PurchaseReceiptDetail detail : details) {
             Product product = detail.getProduct();
@@ -474,7 +475,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         PurchaseRequest pr = PurchaseRequest.builder()
                 .code(code)
                 .createdBy(creator)
-                .status((short) 1) // 1 = Submitted
+                .status(PurchaseRequestStatus.SUBMITTED.getCode()) // Submitted
                 .reason(request.getReason())
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -550,12 +551,13 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         StockRequisition sr = stockRequisitionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Requisition not found with ID: " + id));
 
-        if (sr.getStatus() != null && sr.getStatus() != 1 && sr.getStatus() != 0) {
+        if (sr.getStatus() != null && !sr.getStatus().equals(StockRequisitionStatus.PENDING.getCode())
+                && !sr.getStatus().equals(StockRequisitionStatus.DRAFT.getCode())) {
             throw new IllegalStateException("Requisition cannot be approved from current state");
         }
 
         Account approver = approverId != null ? accountRepository.findById(approverId).orElse(null) : null;
-        sr.setStatus((short) 2); // 2 = Approved
+        sr.setStatus(StockRequisitionStatus.APPROVED.getCode()); // Approved
         sr.setApprovedBy(approver);
         sr.setApprovedAt(LocalDateTime.now());
 
@@ -578,7 +580,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                 .orElseThrow(() -> new EntityNotFoundException("Requisition not found with ID: " + id));
 
         Account approver = approverId != null ? accountRepository.findById(approverId).orElse(null) : null;
-        sr.setStatus((short) 3); // 3 = Rejected
+        sr.setStatus(StockRequisitionStatus.REJECTED.getCode()); // Rejected
         sr.setApprovedBy(approver);
         sr.setRejectReason(reason);
         sr.setApprovedAt(LocalDateTime.now());
@@ -593,11 +595,11 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         StockRequisition sr = stockRequisitionRepository.findById(requisitionId)
                 .orElseThrow(() -> new EntityNotFoundException("Requisition not found with ID: " + requisitionId));
 
-        if (sr.getStatus() != null && sr.getStatus() != 2) {
+        if (sr.getStatus() != null && !sr.getStatus().equals(StockRequisitionStatus.APPROVED.getCode())) {
             throw new IllegalStateException("Requisition must be Approved before dispatching goods");
         }
 
-        Store warehouse = storeRepository.findFirstByType((short) 2)
+        Store warehouse = storeRepository.findFirstByType(StoreType.CENTRAL_WAREHOUSE.getCode())
                 .orElseGet(() -> storeRepository.findAll().stream().findFirst().orElseThrow());
         Store destinationStore = sr.getStore();
 
@@ -612,7 +614,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                 .toStore(destinationStore)
                 .createdBy(sr.getCreatedBy())
                 .dispatchedBy(dispatcher)
-                .status((short) 1) // 1 = Dispatched / in transit
+                .status(GoodsIssueStatus.DISPATCHED.getCode()) // Dispatched / in transit
                 .carrier(request.getCarrier() != null ? request.getCarrier() : "Standard Fleet")
                 .note(request.getNote())
                 .createdAt(LocalDateTime.now())
@@ -663,7 +665,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         }
 
         // Update requisition status
-        sr.setStatus((short) 4); // 4 = Dispatched
+        sr.setStatus(StockRequisitionStatus.DISPATCHED.getCode()); // Dispatched
         sr.setDispatchedAt(LocalDateTime.now());
         stockRequisitionRepository.save(sr);
 
@@ -674,7 +676,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                 .fromStoreName(warehouse.getName())
                 .toStoreName(destinationStore != null ? destinationStore.getName() : "Branch Store")
                 .status(savedGi.getStatus())
-                .statusText("Dispatched / In Transit")
+                .statusText(GoodsIssueStatus.resolveText(savedGi.getStatus()))
                 .carrier(savedGi.getCarrier())
                 .note(savedGi.getNote())
                 .createdAt(savedGi.getCreatedAt())
@@ -693,7 +695,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
 
         LocalDate exp = b != null ? b.getExpiryDate() : null;
         long days = exp != null ? ChronoUnit.DAYS.between(LocalDate.now(), exp) : 999;
-        String status = days < 0 ? "EXPIRED" : (days <= 90 ? "EXPIRING_SOON" : "GOOD");
+        String status = exp != null ? ExpiryStatus.resolveWarehouseExpiry(days) : ExpiryStatus.GOOD.getValue();
 
         BigDecimal cost = (p != null && p.getCostPrice() != null) ? p.getCostPrice() : BigDecimal.ZERO;
         BigDecimal totalVal = cost.multiply(BigDecimal.valueOf(i.getQuantity() != null ? i.getQuantity() : 0));
@@ -723,8 +725,8 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
     }
 
     private WarehousePurchaseHistoryResponse mapToPurchaseHistoryResponse(PurchaseReceipt pr) {
-        String deliveryLabel = (pr.getDeliveryType() != null && pr.getDeliveryType() == 1) ? "Direct Delivery" : "Freight Transport";
-        String statusLabel = (pr.getStatus() != null && pr.getStatus() == 1) ? "Received / In Stock" : "Pending Inspection";
+        String deliveryLabel = PurchaseDeliveryType.resolveLabel(pr.getDeliveryType());
+        String statusLabel = PurchaseReceiptStatus.resolveLabel(pr.getStatus());
 
         return WarehousePurchaseHistoryResponse.builder()
                 .id(pr.getId())
@@ -743,18 +745,8 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
     }
 
     private InventoryAdjustmentResponse mapToAdjustmentResponse(InventoryAdjustment a) {
-        String typeLabel = switch (a.getType() != null ? a.getType() : 0) {
-            case 1 -> "Damaged / Broken";
-            case 2 -> "Expired Lot";
-            case 3 -> "Cycle Count Variance";
-            default -> "Other Discrepancy";
-        };
-
-        String statusLabel = switch (a.getStatus() != null ? a.getStatus() : 0) {
-            case 1 -> "Approved";
-            case 2 -> "Rejected";
-            default -> "Pending Review";
-        };
+        String typeLabel = InventoryAdjustmentType.resolveLabel(a.getType());
+        String statusLabel = InventoryAdjustmentStatus.resolveLabel(a.getStatus());
 
         return InventoryAdjustmentResponse.builder()
                 .id(a.getId())
@@ -778,14 +770,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
     }
 
     private PurchaseRequestResponse mapToPurchaseRequestResponse(PurchaseRequest pr) {
-        String statusText = switch (pr.getStatus() != null ? pr.getStatus() : 0) {
-            case 1 -> "Submitted";
-            case 2 -> "RFQ Sent";
-            case 3 -> "Proposal Created";
-            case 4 -> "Completed";
-            case 5 -> "Cancelled";
-            default -> "Draft";
-        };
+        String statusText = PurchaseRequestStatus.resolveText(pr.getStatus());
 
         return PurchaseRequestResponse.builder()
                 .id(pr.getId())
@@ -801,15 +786,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
     }
 
     private StoreReplenishmentResponse mapToReplenishmentResponse(StockRequisition sr) {
-        String statusText = switch (sr.getStatus() != null ? sr.getStatus() : 0) {
-            case 1 -> "Pending Review";
-            case 2 -> "Approved";
-            case 3 -> "Rejected";
-            case 4 -> "Dispatched";
-            case 5 -> "Received";
-            case 6 -> "Cancelled";
-            default -> "Draft";
-        };
+        String statusText = StockRequisitionStatus.resolveWarehouseText(sr.getStatus());
 
         return StoreReplenishmentResponse.builder()
                 .id(sr.getId())

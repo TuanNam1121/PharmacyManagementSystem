@@ -28,5 +28,5 @@ public class CreateAdjustmentRequest {
     private String reason;
 
     @NotNull(message = "Adjustment type is required")
-    private Short type; // 1: Hỏng vỡ (Damaged), 2: Hết hạn (Expired), 3: Kiểm kê (Cycle Count Variance), 4: Khác (Other)
+    private Short type; // 1: Damaged, 2: Expired, 3: Cycle Count Variance, 4: Other
 }

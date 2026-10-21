@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.pharmacy.entity.enums.StockRequisitionStatus;
+
 import java.util.List;
 
 @Service
@@ -25,16 +27,7 @@ public class StockRequisitionServiceImpl implements StockRequisitionService {
     // ─── helpers ────────────────────────────────────────────────────────────────
 
     private static String resolveStatusLabel(Short status) {
-        if (status == null)
-            return "Không xác định";
-        return switch (status.intValue()) {
-            case 0 -> "Chờ duyệt";
-            case 1 -> "Đã duyệt";
-            case 2 -> "Đã xuất kho";
-            case 3 -> "Đã nhận";
-            case 4 -> "Từ chối";
-            default -> "Không xác định";
-        };
+        return StockRequisitionStatus.resolveBranchLabel(status);
     }
 
     private StockRequisitionDto.DetailDto mapDetail(StockRequisitionDetail d) {
@@ -73,7 +66,7 @@ public class StockRequisitionServiceImpl implements StockRequisitionService {
         return builder.build();
     }
 
-    // ─── UC36 flows ─────────────────────────────────────────────────────────────
+    // ─── Stock Requisition flows ─────────────────────────────────────────────────────────────
 
     @Override
     @Transactional(readOnly = true)
@@ -88,7 +81,7 @@ public class StockRequisitionServiceImpl implements StockRequisitionService {
     @Transactional(readOnly = true)
     public StockRequisitionDto getRequisitionDetail(Long requisitionId) {
         StockRequisition r = requisitionRepository.findById(requisitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn yêu cầu ID: " + requisitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Stock requisition not found with ID: " + requisitionId));
         return mapRequisition(r, true);
     }
 }

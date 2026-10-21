@@ -6,17 +6,16 @@ import com.pharmacy.dto.inventory.GoodsReceiptDto;
 import org.springframework.data.domain.Pageable;
 
 public interface GoodsReceiptService {
-    /** UC38 - Step 1, 2: Lấy danh sách phiếu nhập kho phân trang & bộ lọc */
+    /** Get list of goods receipts with pagination and filter */
     PageResponse<GoodsReceiptDto> getGoodsReceiptList(Long storeId, Short status, String search, Pageable pageable);
 
     /**
-     * UC38 - Step 2 (chi tiết): Xem chi tiết phiếu nhập kho và danh sách lô thuốc
+     * View detailed information of goods receipt and product batch list
      */
     GoodsReceiptDto getGoodsReceiptDetail(Long id);
 
     /**
-     * UC38 - Step 3,4,5: Xác nhận nhận hàng, cập nhật tồn kho chi nhánh & ghi
-     * AuditLog (BR-02)
+     * Confirm goods receipt, update branch inventory and record AuditLog
      */
     GoodsReceiptDto confirmGoodsReceipt(Long id, ConfirmGoodsReceiptRequest request, String clientIp);
 }

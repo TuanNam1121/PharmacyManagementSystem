@@ -10,7 +10,7 @@ function unwrapApiResponse(json) {
 }
 
 /**
- * UC33 - Step 2: Lấy danh sách tồn kho chi nhánh
+ * Get branch inventory list
  */
 export const getBranchInventory = async ({ storeId = 7, page = 0, size = 10, search = '', warningFilter = '' } = {}) => {
     const params = new URLSearchParams({
@@ -26,7 +26,7 @@ export const getBranchInventory = async ({ storeId = 7, page = 0, size = 10, sea
 };
 
 /**
- * UC33 - Step 2: Lấy thống kê KPI tổng quan tồn kho chi nhánh
+ * Get branch inventory KPI summary
  */
 export const getBranchInventorySummary = async (storeId = 7) => {
     const json = await get(`${BASE_URL}/summary?storeId=${encodeURIComponent(storeId)}`);
@@ -34,7 +34,7 @@ export const getBranchInventorySummary = async (storeId = 7) => {
 };
 
 /**
- * UC33 - Chi tiết 1 mặt hàng tồn kho
+ * Branch inventory item detail
  */
 export const getInventoryDetail = async (id) => {
     const json = await get(`${BASE_URL}/${encodeURIComponent(id)}`);
@@ -42,7 +42,7 @@ export const getInventoryDetail = async (id) => {
 };
 
 /**
- * UC33 - Step 3, 4, 5: Cập nhật ngưỡng cảnh báo tồn tối thiểu (minQuantity)
+ * Update min stock threshold (minQuantity)
  */
 export const updateStockThreshold = async (payload) => {
     const json = await patch(`${BASE_URL}/threshold`, payload);
@@ -50,7 +50,7 @@ export const updateStockThreshold = async (payload) => {
 };
 
 /**
- * UC33 - Step 3, 4, 5: Ghi nhận kiểm kê tồn kho quầy (Audit Log)
+ * Record counter inventory audit check (Audit Log)
  */
 export const auditStockCheck = async (payload) => {
     const json = await post(`${BASE_URL}/audit-check`, payload);

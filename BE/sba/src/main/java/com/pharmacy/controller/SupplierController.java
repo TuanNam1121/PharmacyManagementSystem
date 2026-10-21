@@ -48,7 +48,7 @@ public class SupplierController {
                 Page<SupplierResponse> page = supplierService.viewSupplierList(keyword, status, pageable);
                 PageResponse<SupplierResponse> pageResponse = PageResponse.from(page);
                 return ResponseEntity.ok(
-                                ApiResponse.success("Lấy danh sách nhà cung cấp thành công", pageResponse));
+                                ApiResponse.success("Suppliers retrieved successfully", pageResponse));
         }
 
         @GetMapping("/{id}")
@@ -56,7 +56,7 @@ public class SupplierController {
                         @PathVariable Long id) {
                 SupplierResponse data = supplierService.viewSupplierDetail(id);
                 return ResponseEntity.ok(
-                                ApiResponse.success("Lấy chi tiết nhà cung cấp thành công", data));
+                                ApiResponse.success("Supplier details retrieved successfully", data));
         }
 
         @PostMapping
@@ -65,7 +65,7 @@ public class SupplierController {
                 SupplierResponse data = supplierService.createSupplier(request);
                 ApiResponse<SupplierResponse> body = ApiResponse.<SupplierResponse>builder()
                                 .status(HttpStatus.CREATED.value())
-                                .message("Tạo nhà cung cấp thành công")
+                                .message("Supplier created successfully")
                                 .data(data)
                                 .timestamp(LocalDateTime.now())
                                 .build();
@@ -79,7 +79,7 @@ public class SupplierController {
                 SupplierResponse data = supplierService.updateSupplierInformation(id, request);
                 ApiResponse<SupplierResponse> body = ApiResponse.<SupplierResponse>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("Cập nhật nhà cung cấp thành công")
+                                .message("Supplier updated successfully")
                                 .data(data)
                                 .timestamp(LocalDateTime.now())
                                 .build();
@@ -97,7 +97,7 @@ public class SupplierController {
                         @PathVariable Long id) {
                 SupplierResponse data = supplierService.deleteSupplier(id);
                 return ResponseEntity.ok(
-                                ApiResponse.success("Xóa nhà cung cấp thành công", data));
+                                ApiResponse.success("Supplier deleted successfully", data));
         }
 
         @ExceptionHandler(IllegalArgumentException.class)

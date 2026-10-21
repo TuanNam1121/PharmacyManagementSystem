@@ -57,21 +57,20 @@ export default function BranchInventoryPage() {
             <div className="pms-page-header" style={{ marginBottom: 16 }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <h1 className="pms-page-title" style={{ margin: 0 }}>Tồn kho Chi nhánh & Cảnh báo</h1>
-                        <span className="pms-badge pms-badge-neutral" style={{ fontSize: 11 }}>UC33</span>
+                        <h1 className="pms-page-title" style={{ margin: 0 }}>Branch Stock & Warning System</h1>
                         <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Pharmacist & Store Manager</span>
                     </div>
                     <p className="pms-page-sub">
-                        Theo dõi mức tồn thuốc thực tế, số lô sản xuất, hạn sử dụng và hệ thống cảnh báo thuốc sắp hết/cận date tại chi nhánh.
+                        Monitor live stock levels, batch numbers, expiry dates, and real-time low-stock/expiring alerts at branch pharmacies.
                     </p>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <button type="button" className="btn-pms btn-pms-secondary" onClick={reloadAll} title="Làm mới">
+                    <button type="button" className="btn-pms btn-pms-secondary" onClick={reloadAll} title="Refresh">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
                         </svg>
-                        Làm mới
+                        Refresh
                     </button>
 
                     <button
@@ -87,7 +86,6 @@ export default function BranchInventoryPage() {
                         </svg>
                         Create Requisition
                     </button>
-
                 </div>
             </div>
 
@@ -138,7 +136,7 @@ export default function BranchInventoryPage() {
                         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14, flex: 1 }}>
                             {/* Store Selector */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Chi nhánh:</label>
+                                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Branch:</label>
                                 <select
                                     className="pms-select"
                                     style={{ minWidth: 220 }}
@@ -148,9 +146,9 @@ export default function BranchInventoryPage() {
                                         setPage(0);
                                     }}
                                 >
-                                    <option value="1">Store #1 — Nhà thuốc Trung Tâm</option>
-                                    <option value="2">Store #2 — Nhà thuốc Cầu Giấy</option>
-                                    <option value="3">Store #3 — Nhà thuốc Đống Đa</option>
+                                    <option value="1">Store #1 — Central Pharmacy</option>
+                                    <option value="2">Store #2 — Cau Giay Pharmacy</option>
+                                    <option value="3">Store #3 — Dong Da Pharmacy</option>
                                 </select>
                             </div>
 
@@ -170,7 +168,7 @@ export default function BranchInventoryPage() {
                                         setSearch(e.target.value);
                                         setPage(0);
                                     }}
-                                    placeholder="Tìm theo tên biệt dược, hoạt chất, barcode, số lô..."
+                                    placeholder="Search by product name, active ingredient, barcode, batch..."
                                 />
                             </div>
                         </div>
@@ -182,28 +180,28 @@ export default function BranchInventoryPage() {
                                 className={`pms-tab ${warningFilter === 'ALL' ? 'active' : ''}`}
                                 onClick={() => { setWarningFilter('ALL'); setPage(0); }}
                             >
-                                Tất cả
+                                All Items
                             </button>
                             <button
                                 type="button"
                                 className={`pms-tab ${warningFilter === 'LOW_STOCK' ? 'active' : ''}`}
                                 onClick={() => { setWarningFilter('LOW_STOCK'); setPage(0); }}
                             >
-                                Sắp hết hàng
+                                Low Stock
                             </button>
                             <button
                                 type="button"
                                 className={`pms-tab ${warningFilter === 'EXPIRING_SOON' ? 'active' : ''}`}
                                 onClick={() => { setWarningFilter('EXPIRING_SOON'); setPage(0); }}
                             >
-                                Cận hạn (90d)
+                                Expiring Soon (≤90d)
                             </button>
                             <button
                                 type="button"
                                 className={`pms-tab ${warningFilter === 'EXPIRED' ? 'active' : ''}`}
                                 onClick={() => { setWarningFilter('EXPIRED'); setPage(0); }}
                             >
-                                Đã hết hạn
+                                Expired
                             </button>
                         </div>
                     </div>
@@ -240,7 +238,7 @@ export default function BranchInventoryPage() {
             <BranchStockAuditModal
                 show={auditModalOpen}
                 onHide={() => setAuditModalOpen(false)}
-                storeName={summary?.storeName || 'Nhà thuốc'}
+                storeName={summary?.storeName || 'Pharmacy Branch'}
                 onConfirm={handleAuditCheck}
                 submitting={submitting}
             />

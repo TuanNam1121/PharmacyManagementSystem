@@ -9,7 +9,6 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Nationalized;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -48,14 +47,14 @@ public class DailySalesReconciliation {
     private BigDecimal systemVnpay;
 
     @ColumnDefault("[system_cash]+[system_bank]+[system_vnpay]")
-    @Column(name = "system_total", precision = 20, scale = 2)
+    @Column(name = "system_total", precision = 20, scale = 2, insertable = false, updatable = false)
     private BigDecimal systemTotal;
 
     @Column(name = "actual_cash", precision = 18, scale = 2)
     private BigDecimal actualCash;
 
     @ColumnDefault("[actual_cash]-[system_cash]")
-    @Column(name = "difference", precision = 19, scale = 2)
+    @Column(name = "difference", precision = 19, scale = 2, insertable = false, updatable = false)
     private BigDecimal difference;
 
     @ColumnDefault("0")

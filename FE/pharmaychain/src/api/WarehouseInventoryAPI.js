@@ -29,7 +29,7 @@ export const getWarehouseInventory = async ({ page = 0, size = 10, search = '', 
  */
 export const assignLocation = async (inventoryId, locationId) => {
   if (!inventoryId || !locationId) {
-    throw new Error('Cần cung cấp mã tồn kho và mã vị trí kệ/ô');
+    throw new Error('Both inventory ID and shelf/bin location ID are required');
   }
   const json = await patch(`${BASE_URL}/inventory/${encodeURIComponent(inventoryId)}/location`, { locationId });
   return unwrapApiResponse(json);

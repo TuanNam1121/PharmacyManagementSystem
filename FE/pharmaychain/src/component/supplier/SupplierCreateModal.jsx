@@ -54,7 +54,7 @@ export default function SupplierCreateModal({
 
   const validate = () => {
     const e = {};
-    if (!form.code.trim()) e.code = 'Supplier code is required';
+    if (!isEdit && !form.code.trim()) e.code = 'Supplier code is required';
     if (!form.name.trim()) e.name = 'Supplier name is required';
     if (!form.phone.trim()) e.phone = 'Phone number is required';
     if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
@@ -162,6 +162,7 @@ export default function SupplierCreateModal({
                     value={form.code}
                     onChange={(e) => setField('code', e.target.value)}
                     placeholder="e.g. NCC001"
+                    disabled={isEdit}
                     required
                   />
                   {errors.code && <div style={{ color: 'var(--status-danger)', fontSize: 11.5, marginTop: 4 }}>{errors.code}</div>}

@@ -40,27 +40,27 @@ public class AccountServiceImpl implements AccountService {
     @Transactional
     public AccountResponse createAccount(AccountCreateRequest request) {
         if (accountRepository.existsByUsername(request.getUsername().trim())) {
-            throw new DuplicateResourceException("Tên đăng nhập '" + request.getUsername() + "' đã tồn tại");
+            throw new DuplicateResourceException("Username '" + request.getUsername() + "' already exists");
         }
 
         if (accountRepository.existsByEmail(request.getEmail().trim())) {
-            throw new DuplicateResourceException("Email '" + request.getEmail() + "' đã tồn tại");
+            throw new DuplicateResourceException("Email '" + request.getEmail() + "' already exists");
         }
 
         if (request.getPhone() != null && !request.getPhone().trim().isEmpty()
                 && accountRepository.existsByPhone(request.getPhone().trim())) {
-            throw new DuplicateResourceException("Số điện thoại '" + request.getPhone() + "' đã tồn tại");
+            throw new DuplicateResourceException("Phone number '" + request.getPhone() + "' already exists");
         }
 
         Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy vai trò với ID: " + request.getRoleId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + request.getRoleId()));
 
         Account account = new Account();
         account.setUsername(request.getUsername().trim());
         account.setEmail(request.getEmail().trim());
         account.setPhone(request.getPhone() != null ? request.getPhone().trim() : null);
         account.setPassword(passwordEncoder.encode(request.getPassword()));
-        account.setStatus(request.getStatus() != null ? request.getStatus() : 1);
+        account.setStatus(request.getStatus() != null ? request.getStatus() : com.pharmacy.entity.enums.AccountStatus.ACTIVE.getCode());
         account.setFailedLoginCount(0);
         account.setCreatedAt(LocalDateTime.now());
         account.setRole(role);
@@ -85,17 +85,17 @@ public class AccountServiceImpl implements AccountService {
     @Transactional
     public AccountResponse updateAccount(Long id, AccountUpdateRequest request) {
         Account account = accountRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + id));
 
         String email = request.getEmail().trim();
         if (accountRepository.existsByEmailAndIdNot(email, id)) {
-            throw new DuplicateResourceException("Email '" + email + "' đã tồn tại cho tài khoản khác");
+            throw new DuplicateResourceException("Email '" + email + "' already exists for another account");
         }
 
         if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
             String phone = request.getPhone().trim();
             if (accountRepository.existsByPhoneAndIdNot(phone, id)) {
-                throw new DuplicateResourceException("Số điện thoại '" + phone + "' đã tồn tại cho tài khoản khác");
+                throw new DuplicateResourceException("Phone number '" + phone + "' already exists for another account");
             }
             account.setPhone(phone);
         } else {
@@ -103,7 +103,7 @@ public class AccountServiceImpl implements AccountService {
         }
 
         Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy vai trò với ID: " + request.getRoleId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + request.getRoleId()));
 
         account.setEmail(email);
         account.setRole(role);
@@ -134,7 +134,7 @@ public class AccountServiceImpl implements AccountService {
     @Transactional(readOnly = true)
     public AccountDetailResponse getAccountDetail(Long id) {
         Account account = accountRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + id));
 
         AccountInformation info = account.getAccountInformation();
         Role role = account.getRole();
@@ -209,7 +209,7 @@ public class AccountServiceImpl implements AccountService {
     @Transactional
     public void updateAccountStatus(Long id, Short status) {
         Account account = accountRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + id));
         account.setStatus(status);
         account.setUpdatedAt(LocalDateTime.now());
         accountRepository.save(account);
