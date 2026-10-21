@@ -14,12 +14,13 @@ import java.util.List;
 @Repository
 public interface SalesInvoiceRepository extends JpaRepository<SalesInvoice, Long> {
 
-    @Query("SELECT i FROM SalesInvoice i WHERE i.createdAt >= :startDate AND i.createdAt <= :endDate ORDER BY i.createdAt DESC")
-    List<SalesInvoice> findInvoicesByDateRange(@Param("startDate") LocalDateTime startDate,
-                                               @Param("endDate") LocalDateTime endDate);
+    @Query("SELECT i FROM SalesInvoice i WHERE i.store.id = :storeId AND i.createdAt >= :startDate AND i.createdAt <= :endDate ORDER BY i.createdAt DESC")
+    List<SalesInvoice> findInvoicesByDateRange(@Param("storeId") Long storeId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
 
     @Query("SELECT i FROM SalesInvoice i WHERE i.createdAt >= :startDate AND i.createdAt <= :endDate")
     Page<SalesInvoice> findInvoicesByDateRangePaged(@Param("startDate") LocalDateTime startDate,
-                                                    @Param("endDate") LocalDateTime endDate,
-                                                    Pageable pageable);
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable);
 }
