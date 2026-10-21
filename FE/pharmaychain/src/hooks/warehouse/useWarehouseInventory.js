@@ -8,6 +8,10 @@ import {
   getPurchaseReceiptDetail,
   createInventoryAdjustment,
   getInventoryAdjustments,
+  approveInventoryAdjustment,
+  rejectInventoryAdjustment,
+  createPurchaseReceipt,
+  confirmPurchaseReceipt,
 } from '../../api/WarehouseInventoryAPI';
 
 export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryFilter = '' } = {}) => {
@@ -208,6 +212,81 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
     }
   };
 
+  // Function #45: Approve Adjustment action
+  const handleApproveAdjustment = async (id) => {
+    setAdjLoading(true);
+    setError(null);
+    try {
+      await approveInventoryAdjustment(id);
+      setSuccessMsg('Inventory adjustment approved successfully and stock updated!');
+      await fetchAdjustments();
+      await fetchInventory();
+    } catch (err) {
+      setError(err?.message || 'Failed to approve adjustment');
+      throw err;
+    } finally {
+      setAdjLoading(false);
+    }
+  };
+
+  // Function #45: Reject Adjustment action
+  const handleRejectAdjustment = async (id, reason) => {
+    setAdjLoading(true);
+    setError(null);
+    try {
+      await rejectInventoryAdjustment(id, reason);
+      setSuccessMsg('Inventory adjustment rejected.');
+      await fetchAdjustments();
+    } catch (err) {
+      setError(err?.message || 'Failed to reject adjustment');
+      throw err;
+    } finally {
+      setAdjLoading(false);
+    }
+  };
+
+  // Function #53: Create Purchase Receipt action
+  const [createReceiptModalOpen, setCreateReceiptModalOpen] = useState(false);
+  const [createReceiptLoading, setCreateReceiptLoading] = useState(false);
+
+  const handleCreateReceipt = async (payload) => {
+    setCreateReceiptLoading(true);
+    setError(null);
+    try {
+      const created = await createPurchaseReceipt(payload);
+      setSuccessMsg(`Purchase receipt ${created?.code || ''} created successfully (Pending inspection)!`);
+      setCreateReceiptModalOpen(false);
+      await fetchHistory();
+      return created;
+    } catch (err) {
+      setError(err?.message || 'Failed to create purchase receipt');
+      throw err;
+    } finally {
+      setCreateReceiptLoading(false);
+    }
+  };
+
+  // Function #54: Confirm Purchase Receipt action
+  const [confirmReceiptLoading, setConfirmReceiptLoading] = useState(false);
+
+  const handleConfirmReceipt = async (id) => {
+    setConfirmReceiptLoading(true);
+    setError(null);
+    try {
+      const confirmed = await confirmPurchaseReceipt(id);
+      setSuccessMsg(`Receipt ${confirmed?.code || ''} confirmed and stock accepted into warehouse inventory!`);
+      setReceiptDetail(confirmed);
+      await fetchHistory();
+      await fetchInventory();
+      return confirmed;
+    } catch (err) {
+      setError(err?.message || 'Failed to confirm purchase receipt');
+      throw err;
+    } finally {
+      setConfirmReceiptLoading(false);
+    }
+  };
+
   return {
     activeTab,
     setActiveTab,
@@ -236,7 +315,7 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
     handleAssignLocation,
     handleCreateLocation,
 
-    // Purchase History
+    // Purchase History & Receipts
     historyList,
     histTotal,
     histPage,
@@ -246,11 +325,18 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
     histSearch,
     setHistSearch,
     histLoading,
+    fetchHistory,
     receiptDetail,
     receiptModalOpen,
     setReceiptModalOpen,
     receiptLoading,
     handleViewReceiptDetail,
+    createReceiptModalOpen,
+    setCreateReceiptModalOpen,
+    createReceiptLoading,
+    handleCreateReceipt,
+    confirmReceiptLoading,
+    handleConfirmReceipt,
 
     // Adjustments
     adjustmentList,
@@ -266,6 +352,8 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
     adjLoading,
     handleCreateAdjustment,
     fetchAdjustments,
+    handleApproveAdjustment,
+    handleRejectAdjustment,
 
     // Common feedback
     error,

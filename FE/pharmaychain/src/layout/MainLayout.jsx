@@ -108,6 +108,7 @@ const NAV_MODULES = [
       { to: "/warehouse/alerts", label: "Expiry & Low Stock Alerts" },
       { to: "/warehouse/replenishment", label: "Store Replenishment" },
       { to: "/warehouse/receipts", label: "Purchase Receipts" },
+      { to: "/warehouse/requests", label: "Purchase Requests" },
     ],
   },
   {

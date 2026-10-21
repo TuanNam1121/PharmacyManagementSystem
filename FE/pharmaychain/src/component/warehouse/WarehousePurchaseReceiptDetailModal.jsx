@@ -1,7 +1,9 @@
 import { formatDate, money } from '../../utils/format';
 
-export default function WarehousePurchaseReceiptDetailModal({ show, onHide, detail, loading }) {
+export default function WarehousePurchaseReceiptDetailModal({ show, onHide, detail, loading, onConfirm, confirmLoading }) {
   if (!show) return null;
+
+  const isConfirmed = detail?.status === 1 || detail?.statusLabel === 'Confirmed';
 
   return (
     <div className="pms-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onHide(); }}>
@@ -113,8 +115,33 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
         </div>
 
         {/* Footer */}
-        <div className="pms-modal-footer">
-          <button className="btn-pms btn-pms-secondary" onClick={onHide}>Close</button>
+        <div className="pms-modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            {!isConfirmed && (
+              <span className="text-xs text-muted-color">
+                Inspect items before accepting into warehouse inventory.
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn-pms btn-pms-secondary" onClick={onHide}>Close</button>
+            {!isConfirmed && onConfirm && detail && (
+              <button
+                className="btn-pms btn-pms-primary"
+                onClick={() => onConfirm(detail.id)}
+                disabled={confirmLoading}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: 'var(--color-success)', borderColor: 'var(--color-success)',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                {confirmLoading ? 'Confirming…' : 'Confirm Receipt & Accept Stock'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

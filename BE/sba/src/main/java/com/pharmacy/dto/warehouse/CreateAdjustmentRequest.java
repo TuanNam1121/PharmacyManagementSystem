@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateAdjustmentRequest {
+    private Long inventoryId;
     private Long storeId;
 
     @NotNull(message = "Product ID must not be null")
