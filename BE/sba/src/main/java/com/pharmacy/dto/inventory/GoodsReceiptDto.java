@@ -17,23 +17,23 @@ public class GoodsReceiptDto {
     private Long id;
     private String code;
 
-    // Liên kết Requisition
+    // Linked Requisition
     private Long stockRequisitionId;
     private String stockRequisitionCode;
 
-    // Kho gửi & nhận
+    // From and To stores
     private Long fromStoreId;
     private String fromStoreName;
     private Long toStoreId;
     private String toStoreName;
 
-    // Trạng thái & Vận chuyển
+    // Status and Carrier
     private Short status;
     private String statusLabel;
     private String carrier;
     private String note;
 
-    // Nhân sự & Thời gian
+    // Personnel and Timestamps
     private String createdByUsername;
     private String dispatchedByUsername;
     private String receivedByUsername;
@@ -41,12 +41,12 @@ public class GoodsReceiptDto {
     private LocalDateTime dispatchedAt;
     private LocalDateTime receivedAt;
 
-    // Tổng quan số lượng
+    // Quantity summaries
     private Integer totalItems;
     private Integer totalQuantity;
     private Integer totalReceivedQuantity;
 
-    // Danh sách dòng sản phẩm chi tiết
+    // Detailed item lines
     private List<DetailDto> details;
 
     @Data
@@ -65,8 +65,8 @@ public class GoodsReceiptDto {
         private LocalDate expiryDate;
         private LocalDate manufactureDate;
 
-        private Integer quantity; // SL xuất từ kho tổng
-        private Integer receivedQuantity; // SL chi nhánh thực nhận
-        private Integer difference; // Chênh lệch (received - quantity)
+        private Integer quantity; // Dispatched quantity from central warehouse
+        private Integer receivedQuantity; // Actual received quantity at branch
+        private Integer difference; // Discrepancy (received - dispatched)
     }
 }

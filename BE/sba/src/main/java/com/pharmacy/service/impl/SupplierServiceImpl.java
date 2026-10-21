@@ -27,7 +27,7 @@ public class SupplierServiceImpl implements SupplierService {
     @Override
     public SupplierResponse createSupplier(CreateSupplierRequest request) {
         if (request == null) {
-            throw new IllegalArgumentException("Yêu cầu tạo nhà cung cấp không hợp lệ");
+            throw new IllegalArgumentException("Invalid request to create supplier");
         }
         Supplier supplier = request.toEntity();
         Supplier savedSupplier = supplierRepository.save(supplier);
@@ -62,28 +62,28 @@ public class SupplierServiceImpl implements SupplierService {
     @Override
     public SupplierResponse viewSupplierDetail(Long id) {
         if (id == null)
-            throw new IllegalArgumentException("Yêu cầu xem chi tiết nhà cung cấp không hợp lệ");
+            throw new IllegalArgumentException("Invalid request to view supplier details");
         return supplierRepository.findById(id)
                 .map(SupplierResponse::fromEntityToDetail)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "Không tìm thấy nhà cung cấp với id: " + id));
+                        "Supplier not found with id: " + id));
     }
 
     @Transactional
     @Override
     public SupplierResponse updateSupplierInformation(Long id, UpdateSupplierRequest request) {
         if (id == null) {
-            throw new IllegalArgumentException("Yêu cầu cập nhật nhà cung cấp không hợp lệ");
+            throw new IllegalArgumentException("Invalid request to update supplier");
         }
         
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "Không tìm thấy nhà cung cấp với id: " + id));
+                        "Supplier not found with id: " + id));
         
         System.out.println("DEBUG - Updating supplier id=" + id + " with request: name=" + request.name() + ", phone=" + request.phone());
         System.out.println("DEBUG - Before update: name=" + supplier.getName() + ", phone=" + supplier.getPhone());
         
-        // Cập nhật thông tin supplier với dữ liệu từ request
+        // Update supplier fields
         supplier.setName(request.name());
         supplier.setContactPerson(request.contactPerson());
         supplier.setPhone(request.phone());
@@ -101,9 +101,9 @@ public class SupplierServiceImpl implements SupplierService {
     @Override
     public SupplierResponse deleteSupplier(Long id) {
         if (id == null)
-            throw new IllegalArgumentException("Yêu cầu xóa nhà cung cấp không hợp lệ");
+            throw new IllegalArgumentException("Invalid request to delete supplier");
         Supplier supplier = supplierRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy nhà cung cấp"));
+                .orElseThrow(() -> new EntityNotFoundException("Supplier not found with id: " + id));
         System.out.println("DEBUG - Deleting (soft delete) supplier id=" + id + ", current status=" + supplier.getStatus());
         supplier.setStatus(SupplierStatus.INACTIVE);
         System.out.println("DEBUG - After soft delete, status=" + supplier.getStatus());

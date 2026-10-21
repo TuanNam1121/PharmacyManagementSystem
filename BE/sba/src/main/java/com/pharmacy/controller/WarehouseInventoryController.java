@@ -37,7 +37,7 @@ public class WarehouseInventoryController {
         Page<WarehouseInventoryResponse> page = warehouseInventoryService.getWarehouseInventory(pageable, search, expiryStatus);
         PageResponse<WarehouseInventoryResponse> pageResponse = PageResponse.from(page);
 
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách tồn kho tổng thành công", pageResponse));
+        return ResponseEntity.ok(ApiResponse.success("Warehouse inventory retrieved successfully", pageResponse));
     }
 
     /**
@@ -49,7 +49,7 @@ public class WarehouseInventoryController {
             @Valid @RequestBody AssignLocationRequest request) {
 
         WarehouseInventoryResponse response = warehouseInventoryService.assignLocation(id, request.getLocationId());
-        return ResponseEntity.ok(ApiResponse.success("Gán vị trí ô/kệ thành công", response));
+        return ResponseEntity.ok(ApiResponse.success("Location assigned successfully", response));
     }
 
     /**
@@ -58,7 +58,7 @@ public class WarehouseInventoryController {
     @GetMapping("/locations")
     public ResponseEntity<ApiResponse<List<WarehouseLocationResponse>>> getLocations() {
         List<WarehouseLocationResponse> list = warehouseInventoryService.getLocations();
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh mục vị trí ô/kệ thành công", list));
+        return ResponseEntity.ok(ApiResponse.success("Warehouse locations retrieved successfully", list));
     }
 
     /**
@@ -71,7 +71,7 @@ public class WarehouseInventoryController {
         WarehouseLocationResponse response = warehouseInventoryService.createLocation(request);
         ApiResponse<WarehouseLocationResponse> body = ApiResponse.<WarehouseLocationResponse>builder()
                 .status(HttpStatus.CREATED.value())
-                .message("Tạo vị trí ô/kệ mới thành công")
+                .message("Warehouse location created successfully")
                 .data(response)
                 .timestamp(LocalDateTime.now())
                 .build();
@@ -89,7 +89,7 @@ public class WarehouseInventoryController {
         Page<WarehousePurchaseHistoryResponse> page = warehouseInventoryService.getPurchaseHistory(pageable, search);
         PageResponse<WarehousePurchaseHistoryResponse> pageResponse = PageResponse.from(page);
 
-        return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử nhập kho thành công", pageResponse));
+        return ResponseEntity.ok(ApiResponse.success("Purchase history retrieved successfully", pageResponse));
     }
 
     /**
@@ -100,7 +100,7 @@ public class WarehouseInventoryController {
             @PathVariable Long id) {
 
         WarehousePurchaseHistoryResponse response = warehouseInventoryService.getPurchaseReceiptDetail(id);
-        return ResponseEntity.ok(ApiResponse.success("Lấy chi tiết phiếu nhập kho thành công", response));
+        return ResponseEntity.ok(ApiResponse.success("Purchase receipt details retrieved successfully", response));
     }
 
     /**
@@ -113,7 +113,7 @@ public class WarehouseInventoryController {
         InventoryAdjustmentResponse response = warehouseInventoryService.createAdjustment(request);
         ApiResponse<InventoryAdjustmentResponse> body = ApiResponse.<InventoryAdjustmentResponse>builder()
                 .status(HttpStatus.CREATED.value())
-                .message("Tạo phiếu điều chỉnh tồn kho thành công")
+                .message("Inventory adjustment created successfully")
                 .data(response)
                 .timestamp(LocalDateTime.now())
                 .build();
@@ -125,12 +125,12 @@ public class WarehouseInventoryController {
      */
     @GetMapping("/inventory-adjustments")
     public ResponseEntity<ApiResponse<PageResponse<InventoryAdjustmentResponse>>> getAdjustments(
-            @PageableDefault(page = 0, size = 10, sort = "id") Pageable pageable) {
+            @PageableDefault(page = 0, size = 10, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
 
         Page<InventoryAdjustmentResponse> page = warehouseInventoryService.getAdjustments(pageable);
         PageResponse<InventoryAdjustmentResponse> pageResponse = PageResponse.from(page);
 
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách phiếu điều chỉnh thành công", pageResponse));
+        return ResponseEntity.ok(ApiResponse.success("Inventory adjustments retrieved successfully", pageResponse));
     }
 
     /**
@@ -142,7 +142,7 @@ public class WarehouseInventoryController {
             @RequestParam(required = false) Long approverId) {
 
         InventoryAdjustmentResponse response = warehouseInventoryService.approveAdjustment(id, approverId);
-        return ResponseEntity.ok(ApiResponse.success("Phê duyệt phiếu điều chỉnh thành công", response));
+        return ResponseEntity.ok(ApiResponse.success("Inventory adjustment approved successfully", response));
     }
 
     /**
@@ -156,7 +156,7 @@ public class WarehouseInventoryController {
 
         String reason = (request != null && request.getReason() != null) ? request.getReason() : "Rejected by manager";
         InventoryAdjustmentResponse response = warehouseInventoryService.rejectAdjustment(id, approverId, reason);
-        return ResponseEntity.ok(ApiResponse.success("Từ chối phiếu điều chỉnh thành công", response));
+        return ResponseEntity.ok(ApiResponse.success("Inventory adjustment rejected successfully", response));
     }
 
     /**
@@ -170,7 +170,7 @@ public class WarehouseInventoryController {
         WarehousePurchaseHistoryResponse response = warehouseInventoryService.createPurchaseReceipt(request, creatorId);
         ApiResponse<WarehousePurchaseHistoryResponse> body = ApiResponse.<WarehousePurchaseHistoryResponse>builder()
                 .status(HttpStatus.CREATED.value())
-                .message("Tạo phiếu nhập kho thành công")
+                .message("Purchase receipt created successfully")
                 .data(response)
                 .timestamp(LocalDateTime.now())
                 .build();
@@ -186,7 +186,7 @@ public class WarehouseInventoryController {
             @RequestParam(required = false) Long confirmerId) {
 
         WarehousePurchaseHistoryResponse response = warehouseInventoryService.confirmPurchaseReceipt(id, confirmerId);
-        return ResponseEntity.ok(ApiResponse.success("Xác nhận nhập kho thành công, đã cập nhật số lượng tồn kho", response));
+        return ResponseEntity.ok(ApiResponse.success("Purchase receipt confirmed successfully, inventory updated", response));
     }
 
     /**
@@ -200,7 +200,7 @@ public class WarehouseInventoryController {
 
         Page<PurchaseRequestResponse> page = warehouseInventoryService.getPurchaseRequests(pageable, search, status);
         PageResponse<PurchaseRequestResponse> pageResponse = PageResponse.from(page);
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách yêu cầu mua hàng thành công", pageResponse));
+        return ResponseEntity.ok(ApiResponse.success("Purchase requests retrieved successfully", pageResponse));
     }
 
     /**
@@ -209,7 +209,7 @@ public class WarehouseInventoryController {
     @GetMapping("/purchase-requests/{id}")
     public ResponseEntity<ApiResponse<PurchaseRequestResponse>> getPurchaseRequestDetail(@PathVariable Long id) {
         PurchaseRequestResponse response = warehouseInventoryService.getPurchaseRequestDetail(id);
-        return ResponseEntity.ok(ApiResponse.success("Lấy chi tiết yêu cầu mua hàng thành công", response));
+        return ResponseEntity.ok(ApiResponse.success("Purchase request details retrieved successfully", response));
     }
 
     /**
@@ -223,7 +223,7 @@ public class WarehouseInventoryController {
         PurchaseRequestResponse response = warehouseInventoryService.createPurchaseRequest(request, creatorId);
         ApiResponse<PurchaseRequestResponse> body = ApiResponse.<PurchaseRequestResponse>builder()
                 .status(HttpStatus.CREATED.value())
-                .message("Tạo yêu cầu mua hàng thành công")
+                .message("Purchase request created successfully")
                 .data(response)
                 .timestamp(LocalDateTime.now())
                 .build();
@@ -241,7 +241,7 @@ public class WarehouseInventoryController {
 
         Page<StoreReplenishmentResponse> page = warehouseInventoryService.getReplenishmentRequests(pageable, search, status);
         PageResponse<StoreReplenishmentResponse> pageResponse = PageResponse.from(page);
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách yêu cầu xuất bổ sung chi nhánh thành công", pageResponse));
+        return ResponseEntity.ok(ApiResponse.success("Store replenishment requests retrieved successfully", pageResponse));
     }
 
     /**
@@ -250,7 +250,7 @@ public class WarehouseInventoryController {
     @GetMapping("/replenishment-requests/{id}")
     public ResponseEntity<ApiResponse<StoreReplenishmentResponse>> getReplenishmentRequestDetail(@PathVariable Long id) {
         StoreReplenishmentResponse response = warehouseInventoryService.getReplenishmentRequestDetail(id);
-        return ResponseEntity.ok(ApiResponse.success("Lấy chi tiết yêu cầu xuất bổ sung thành công", response));
+        return ResponseEntity.ok(ApiResponse.success("Replenishment request details retrieved successfully", response));
     }
 
     /**
@@ -262,7 +262,7 @@ public class WarehouseInventoryController {
             @RequestParam(required = false) Long approverId) {
 
         StoreReplenishmentResponse response = warehouseInventoryService.approveReplenishmentRequest(id, approverId);
-        return ResponseEntity.ok(ApiResponse.success("Phê duyệt yêu cầu xuất hàng bổ sung thành công", response));
+        return ResponseEntity.ok(ApiResponse.success("Replenishment request approved successfully", response));
     }
 
     /**
@@ -274,9 +274,9 @@ public class WarehouseInventoryController {
             @RequestParam(required = false) Long approverId,
             @RequestBody(required = false) RejectRequest request) {
 
-        String reason = (request != null && request.getReason() != null) ? request.getReason() : "Yêu cầu bị từ chối";
+        String reason = (request != null && request.getReason() != null) ? request.getReason() : "Request rejected";
         StoreReplenishmentResponse response = warehouseInventoryService.rejectReplenishmentRequest(id, approverId, reason);
-        return ResponseEntity.ok(ApiResponse.success("Từ chối yêu cầu xuất bổ sung thành công", response));
+        return ResponseEntity.ok(ApiResponse.success("Replenishment request rejected successfully", response));
     }
 
     /**
@@ -289,12 +289,12 @@ public class WarehouseInventoryController {
             @RequestParam(required = false) Long dispatcherId) {
 
         if (request == null) {
-            request = new DispatchGoodsRequest("Standard Fleet", "Xuất kho điều chuyển");
+            request = new DispatchGoodsRequest("Standard Fleet", "Inter-store transfer");
         }
         GoodsIssueResponse response = warehouseInventoryService.confirmGoodsDispatch(id, request, dispatcherId);
         ApiResponse<GoodsIssueResponse> body = ApiResponse.<GoodsIssueResponse>builder()
                 .status(HttpStatus.CREATED.value())
-                .message("Xác nhận xuất kho chuyển giao cho chi nhánh thành công")
+                .message("Goods dispatched successfully for branch transfer")
                 .data(response)
                 .timestamp(LocalDateTime.now())
                 .build();
@@ -307,7 +307,7 @@ public class WarehouseInventoryController {
     @GetMapping("/products")
     public ResponseEntity<ApiResponse<List<ProductOptionDto>>> getProducts() {
         List<ProductOptionDto> list = warehouseInventoryService.getProductOptions();
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh mục sản phẩm thành công", list));
+        return ResponseEntity.ok(ApiResponse.success("Product catalog retrieved successfully", list));
     }
 
     @ExceptionHandler(EntityNotFoundException.class)

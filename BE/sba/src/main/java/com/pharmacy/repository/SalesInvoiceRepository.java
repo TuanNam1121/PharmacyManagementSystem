@@ -18,7 +18,7 @@ public interface SalesInvoiceRepository extends JpaRepository<SalesInvoice, Long
     List<SalesInvoice> findInvoicesByDateRange(@Param("startDate") LocalDateTime startDate,
                                                @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT i FROM SalesInvoice i WHERE i.createdAt >= :startDate AND i.createdAt <= :endDate ORDER BY i.createdAt DESC")
+    @Query("SELECT i FROM SalesInvoice i WHERE i.createdAt >= :startDate AND i.createdAt <= :endDate")
     Page<SalesInvoice> findInvoicesByDateRangePaged(@Param("startDate") LocalDateTime startDate,
                                                     @Param("endDate") LocalDateTime endDate,
                                                     Pageable pageable);

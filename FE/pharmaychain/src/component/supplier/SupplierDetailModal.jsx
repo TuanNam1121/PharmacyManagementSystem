@@ -76,17 +76,31 @@ export default function SupplierDetailModal({
                     <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>
                       {detail.name}
                     </h3>
-                    {isActive ? (
-                      <span className="pms-badge pms-badge-success">
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                        Active
-                      </span>
-                    ) : (
-                      <span className="pms-badge pms-badge-danger">
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                        Inactive
-                      </span>
-                    )}
+                    {(() => {
+                      const s = String(detail.status || '').toUpperCase();
+                      if (s === '1' || s === 'ACTIVE') {
+                        return (
+                          <span className="pms-badge pms-badge-success">
+                            <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                            Active
+                          </span>
+                        );
+                      }
+                      if (s === '3' || s === 'PENDING') {
+                        return (
+                          <span className="pms-badge pms-badge-warning">
+                            <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                            Pending
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className="pms-badge pms-badge-danger">
+                          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                          Inactive
+                        </span>
+                      );
+                    })()}
                   </div>
                   <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 4, display: 'flex', gap: 10 }}>
                     <span>Supplier Code: <strong className="mono" style={{ color: 'var(--text-primary)' }}>{detail.code}</strong></span>

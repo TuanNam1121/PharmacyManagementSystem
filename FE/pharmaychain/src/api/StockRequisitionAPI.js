@@ -7,7 +7,7 @@ function unwrap(json) {
 }
 
 /**
- * UC36 - Step 2: Lấy danh sách đơn yêu cầu nội bộ
+ * Get internal stock requisitions list
  */
 export const getRequisitionList = async ({ storeId = '', status = '', search = '', page = 0, size = 10 } = {}) => {
     const params = new URLSearchParams({ page: String(page), size: String(size) });
@@ -19,7 +19,7 @@ export const getRequisitionList = async ({ storeId = '', status = '', search = '
 };
 
 /**
- * UC36 - Step 2 (chi tiết): Xem chi tiết 1 đơn
+ * View requisition details
  */
 export const getRequisitionDetail = async (id) => {
     const json = await get(`${BASE_URL}/${encodeURIComponent(id)}`);

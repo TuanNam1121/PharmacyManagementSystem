@@ -2,13 +2,15 @@ package com.pharmacy.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "goods_issue_details")
 public class GoodsIssueDetail {
@@ -39,5 +41,4 @@ public class GoodsIssueDetail {
 
     @Column(name = "received_quantity")
     private Integer receivedQuantity;
-
 }

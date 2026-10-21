@@ -13,7 +13,6 @@ public interface InventoryAuditRepository extends JpaRepository<InventoryAudit, 
             SELECT a FROM InventoryAudit a
             WHERE (:status IS NULL OR a.status = :status)
               AND (:search IS NULL OR LOWER(a.code) LIKE LOWER(CONCAT('%', :search, '%')))
-            ORDER BY a.createdAt DESC
             """)
     Page<InventoryAudit> findAllWithFilter(
             @Param("status") Short status,

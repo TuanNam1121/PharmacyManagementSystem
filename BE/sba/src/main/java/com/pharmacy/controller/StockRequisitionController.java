@@ -20,7 +20,7 @@ public class StockRequisitionController {
     private final StockRequisitionService stockRequisitionService;
 
     /**
-     * UC36 - Step 2: Lấy danh sách đơn yêu cầu nhập hàng nội bộ
+     * Get list of internal stock requisitions
      */
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<StockRequisitionDto>>> getRequisitionList(
@@ -31,15 +31,15 @@ public class StockRequisitionController {
 
         PageResponse<StockRequisitionDto> result = stockRequisitionService.getRequisitionList(storeId, status, search,
                 pageable);
-        return ResponseEntity.ok(ApiResponse.success("Tải danh sách đơn yêu cầu thành công", result));
+        return ResponseEntity.ok(ApiResponse.success("Stock requisitions retrieved successfully", result));
     }
 
     /**
-     * UC36 - Step 2 (chi tiết): Xem chi tiết 1 đơn yêu cầu
+     * View requisition details
      */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<StockRequisitionDto>> getRequisitionDetail(@PathVariable Long id) {
         StockRequisitionDto result = stockRequisitionService.getRequisitionDetail(id);
-        return ResponseEntity.ok(ApiResponse.success("Tải chi tiết đơn yêu cầu thành công", result));
+        return ResponseEntity.ok(ApiResponse.success("Stock requisition details retrieved successfully", result));
     }
 }

@@ -10,7 +10,7 @@ function unwrapApiResponse(json) {
 }
 
 /**
- * UC27 - Main Flow Step 2: Lấy dữ liệu tổng quan doanh thu ngày & chỉ số đối soát
+ * Get daily sales overview & reconciliation metrics
  */
 export const getDailySalesOverview = async ({ storeId = 7, date = '' } = {}) => {
     const params = new URLSearchParams({ storeId: String(storeId) });
@@ -20,7 +20,7 @@ export const getDailySalesOverview = async ({ storeId = 7, date = '' } = {}) => 
 };
 
 /**
- * UC27 - Step 2 (Chi tiết): Danh sách hóa đơn bán hàng trong ngày có phân trang
+ * List daily sales invoices with pagination
  */
 export const getDailyInvoices = async ({ storeId = 7, date = '', page = 0, size = 10 } = {}) => {
     const params = new URLSearchParams({
@@ -34,7 +34,7 @@ export const getDailyInvoices = async ({ storeId = 7, date = '', page = 0, size 
 };
 
 /**
- * UC27 - Step 2 (Chi tiết): Danh sách ca làm việc trong ngày
+ * List daily shifts
  */
 export const getDailyShifts = async ({ storeId = 7, date = '' } = {}) => {
     const params = new URLSearchParams({ storeId: String(storeId) });
@@ -44,7 +44,7 @@ export const getDailyShifts = async ({ storeId = 7, date = '' } = {}) => {
 };
 
 /**
- * UC27 - Step 3, 4, 5: Store Manager chốt sổ và đối soát doanh thu ngày
+ * Store Manager reconciles and closes daily sales
  * Payload: { storeId, businessDate, actualCash, note }
  */
 export const reconcileDailySales = async (payload) => {

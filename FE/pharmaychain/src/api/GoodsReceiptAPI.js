@@ -7,7 +7,7 @@ function unwrap(json) {
 }
 
 /**
- * UC38 - Step 1, 2: Lấy danh sách phiếu nhập kho (có phân trang & lọc)
+ * Get goods receipts list (with pagination & filtering)
  */
 export const getGoodsReceiptList = async ({ storeId, status, search, page = 0, size = 10 }) => {
     const params = new URLSearchParams();
@@ -22,7 +22,7 @@ export const getGoodsReceiptList = async ({ storeId, status, search, page = 0, s
 };
 
 /**
- * UC38 - Step 2 (chi tiết): Lấy thông tin chi tiết phiếu
+ * Get goods receipt detail
  */
 export const getGoodsReceiptDetail = async (id) => {
     const json = await get(`${BASE_URL}/${encodeURIComponent(id)}`);
@@ -30,7 +30,7 @@ export const getGoodsReceiptDetail = async (id) => {
 };
 
 /**
- * UC38 - Step 3, 4, 5: Xác nhận kiểm nhận phiếu nhập kho
+ * Confirm goods receipt inspection
  */
 export const confirmGoodsReceipt = async (id, payload) => {
     const json = await post(`${BASE_URL}/${encodeURIComponent(id)}/confirm`, payload);

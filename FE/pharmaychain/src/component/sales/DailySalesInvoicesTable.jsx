@@ -30,7 +30,7 @@ export default function DailySalesInvoicesTable({ invoices, loading, total, page
         if (!iso) return '-';
         try {
             const d = new Date(iso);
-            return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + formatDate(iso);
+            return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ' ' + formatDate(iso);
         } catch {
             return iso;
         }
@@ -41,40 +41,40 @@ export default function DailySalesInvoicesTable({ invoices, loading, total, page
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
-                        Danh sách hóa đơn bán hàng trong ngày
+                        Daily Sales Invoices
                     </div>
                     <div style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
-                        Toàn bộ hóa đơn phát sinh trong phiên kinh doanh tại cửa hàng
+                        All transactions completed during the store's business day
                     </div>
                 </div>
-                <span className="pms-badge pms-badge-neutral">{total} hóa đơn</span>
+                <span className="pms-badge pms-badge-neutral">{total} invoices</span>
             </div>
 
             <div style={{ overflowX: 'auto' }}>
                 <table className="pms-table">
                     <thead>
                         <tr>
-                            <th>Mã hóa đơn</th>
-                            <th>Đơn thuốc</th>
-                            <th>Thời gian</th>
-                            <th>PT Thanh toán</th>
-                            <th style={{ textAlign: 'right' }}>Tổng tiền</th>
-                            <th style={{ textAlign: 'right' }}>Chiết khấu</th>
-                            <th style={{ textAlign: 'right' }}>Thực thu</th>
-                            <th style={{ textAlign: 'center' }}>Trạng thái</th>
+                            <th>Invoice Code</th>
+                            <th>Prescription</th>
+                            <th>Time</th>
+                            <th>Payment Method</th>
+                            <th style={{ textAlign: 'right' }}>Subtotal</th>
+                            <th style={{ textAlign: 'right' }}>Discount</th>
+                            <th style={{ textAlign: 'right' }}>Final Amount</th>
+                            <th style={{ textAlign: 'center' }}>Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
                                 <td colSpan={8} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)' }}>
-                                    Đang tải danh sách hóa đơn...
+                                    Loading invoices...
                                 </td>
                             </tr>
                         ) : !invoices || invoices.length === 0 ? (
                             <tr>
                                 <td colSpan={8} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)' }}>
-                                    Không có hóa đơn nào trong ngày đã chọn
+                                    No sales invoices found for the selected date
                                 </td>
                             </tr>
                         ) : (
@@ -95,7 +95,7 @@ export default function DailySalesInvoicesTable({ invoices, loading, total, page
                                     </td>
                                     <td>
                                         <span className="pms-badge pms-badge-info" style={{ fontSize: 11.5 }}>
-                                            {inv.paymentMethod || 'Tiền mặt'}
+                                            {inv.paymentMethod || 'Cash'}
                                         </span>
                                     </td>
                                     <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>
@@ -109,7 +109,7 @@ export default function DailySalesInvoicesTable({ invoices, loading, total, page
                                     </td>
                                     <td style={{ textAlign: 'center' }}>
                                         <span className={`pms-badge ${inv.status === 1 ? 'pms-badge-success' : 'pms-badge-danger'}`}>
-                                            {inv.status === 1 ? 'Hoàn tất' : 'Đã hủy'}
+                                            {inv.status === 1 ? 'Paid' : 'Cancelled'}
                                         </span>
                                     </td>
                                 </tr>

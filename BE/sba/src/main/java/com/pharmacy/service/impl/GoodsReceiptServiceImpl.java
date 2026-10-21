@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.pharmacy.entity.enums.GoodsIssueStatus;
+import com.pharmacy.entity.enums.StockRequisitionStatus;
+
 @Service
 @RequiredArgsConstructor
 public class GoodsReceiptServiceImpl implements GoodsReceiptService {
@@ -30,16 +33,7 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
     private final AuditLogRepository auditLogRepository;
 
     private static String resolveStatusLabel(Short status) {
-        if (status == null)
-            return "Không xác định";
-        return switch (status.intValue()) {
-            case 0 -> "Đang chuẩn bị (Picking)";
-            case 1 -> "Đang vận chuyển (In Transit)";
-            case 2 -> "Đã nhận đủ";
-            case 3 -> "Nhận có chênh lệch";
-            case 4 -> "Đã hủy";
-            default -> "Không xác định";
-        };
+        return GoodsIssueStatus.resolveLabel(status);
     }
 
     private GoodsReceiptDto.DetailDto mapDetail(GoodsIssueDetail d) {
@@ -128,7 +122,7 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
     @Transactional(readOnly = true)
     public GoodsReceiptDto getGoodsReceiptDetail(Long id) {
         GoodsIssue gi = goodsIssueRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu nhập kho với ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Goods receipt not found with ID: " + id));
         return mapGoodsReceipt(gi, true);
     }
 
@@ -137,13 +131,14 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
     public GoodsReceiptDto confirmGoodsReceipt(Long id, ConfirmGoodsReceiptRequest request, String clientIp) {
         // Step 4: Validate operational inputs against business constraints
         GoodsIssue gi = goodsIssueRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu nhập kho ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Goods receipt not found with ID: " + id));
 
-        if (gi.getStatus() == 2 || gi.getStatus() == 3) {
-            throw new IllegalStateException("Phiếu này đã được xác nhận nhập kho trước đó!");
+        if (gi.getStatus() != null && (gi.getStatus().equals(GoodsIssueStatus.RECEIVED.getCode())
+                || gi.getStatus().equals(GoodsIssueStatus.RECEIVED_DISCREPANCY.getCode()))) {
+            throw new IllegalStateException("This receipt has already been confirmed!");
         }
-        if (gi.getStatus() == 4) {
-            throw new IllegalStateException("Phiếu này đã bị hủy, không thể xác nhận nhận hàng!");
+        if (gi.getStatus() != null && gi.getStatus().equals(GoodsIssueStatus.CANCELLED.getCode())) {
+            throw new IllegalStateException("This receipt has been cancelled and cannot be confirmed!");
         }
 
         List<GoodsIssueDetail> details = goodsIssueDetailRepository.findByGoodsIssueIdWithProductAndBatch(gi.getId());
@@ -154,11 +149,11 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
         boolean hasDiscrepancy = false;
         Store destinationStore = gi.getToStore();
 
-        // Step 5: Cập nhật chi tiết & tăng tồn kho chi nhánh
+        // Step 5: Update details and increment branch inventory
         for (GoodsIssueDetail d : details) {
             Integer recQty = inputMap.getOrDefault(d.getId(), d.getQuantity());
             if (recQty == null || recQty < 0) {
-                throw new IllegalArgumentException("Số lượng thực nhận không hợp lệ đối với sản phẩm: "
+                throw new IllegalArgumentException("Invalid actual received quantity for product: "
                         + (d.getProduct() != null ? d.getProduct().getName() : d.getId()));
             }
             d.setReceivedQuantity(recQty);
@@ -167,7 +162,7 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
             }
             goodsIssueDetailRepository.save(d);
 
-            // Cập nhật tồn kho (inventories) tại chi nhánh nhận
+            // Update inventory at destination store
             if (recQty > 0) {
                 Inventory inv = inventoryRepository.findByStoreIdAndProductIdAndBatchId(
                         destinationStore.getId(),
@@ -189,7 +184,7 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
                 inv.setUpdatedAt(LocalDateTime.now());
                 inventoryRepository.save(inv);
 
-                // Ghi nhận biến động kho: movement_type = 3 (goods issue in)
+                // Record stock movement: movement_type = 3 (goods issue in)
                 StockMovement sm = new StockMovement();
                 sm.setStore(destinationStore);
                 sm.setProduct(d.getProduct());
@@ -200,13 +195,13 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
                 sm.setReferenceType("goods_issues");
                 sm.setReferenceId(gi.getId());
                 sm.setCreatedAt(LocalDateTime.now());
-                sm.setNote("Nhập kho từ phiếu " + gi.getCode());
+                sm.setNote("Goods receipt from voucher " + gi.getCode());
                 stockMovementRepository.save(sm);
             }
         }
 
-        // Cập nhật GoodsIssue status: 2 (Đã nhận đủ) hoặc 3 (Nhận có chênh lệch)
-        Short finalStatus = hasDiscrepancy ? (short) 3 : (short) 2;
+        // Update GoodsIssue status: RECEIVED or RECEIVED_DISCREPANCY
+        Short finalStatus = hasDiscrepancy ? GoodsIssueStatus.RECEIVED_DISCREPANCY.getCode() : GoodsIssueStatus.RECEIVED.getCode();
         gi.setStatus(finalStatus);
         gi.setReceivedAt(LocalDateTime.now());
         if (request.getNote() != null && !request.getNote().trim().isEmpty()) {
@@ -220,15 +215,15 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
         gi.setReceivedBy(receiver);
         goodsIssueRepository.save(gi);
 
-        // Đồng bộ trạng thái đơn yêu cầu (StockRequisition -> 3: Đã nhận)
+        // Sync StockRequisition status -> RECEIVED
         if (gi.getStockRequisition() != null) {
             StockRequisition sr = gi.getStockRequisition();
-            sr.setStatus((short) 3);
+            sr.setStatus(StockRequisitionStatus.RECEIVED.getCode());
             sr.setReceivedAt(LocalDateTime.now());
             stockRequisitionRepository.save(sr);
         }
 
-        // BR-02: Ghi AuditLog bất biến
+        // Immutable AuditLog
         AuditLog log = new AuditLog();
         log.setAccount(receiver);
         log.setAction((short) 2); // 2: UPDATE / CONFIRM

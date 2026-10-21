@@ -22,7 +22,7 @@ public class GoodsReceiptController {
     private final GoodsReceiptService goodsReceiptService;
 
     /**
-     * UC38 - Step 1, 2: Xem danh sách phiếu nhập kho theo chi nhánh
+     * View list of goods receipts by branch
      */
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<GoodsReceiptDto>>> getGoodsReceiptList(
@@ -33,20 +33,20 @@ public class GoodsReceiptController {
 
         PageResponse<GoodsReceiptDto> result = goodsReceiptService.getGoodsReceiptList(storeId, status, search,
                 pageable);
-        return ResponseEntity.ok(ApiResponse.success("Tải danh sách phiếu nhập kho thành công", result));
+        return ResponseEntity.ok(ApiResponse.success("Goods receipts retrieved successfully", result));
     }
 
     /**
-     * UC38 - Step 2 (chi tiết): Xem chi tiết 1 phiếu nhập kho
+     * View goods receipt details
      */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<GoodsReceiptDto>> getGoodsReceiptDetail(@PathVariable Long id) {
         GoodsReceiptDto result = goodsReceiptService.getGoodsReceiptDetail(id);
-        return ResponseEntity.ok(ApiResponse.success("Tải chi tiết phiếu nhập kho thành công", result));
+        return ResponseEntity.ok(ApiResponse.success("Goods receipt details retrieved successfully", result));
     }
 
     /**
-     * UC38 - Step 3, 4, 5: Xác nhận nhận hàng / kiểm nhận tại chi nhánh
+     * Confirm receipt inspection
      */
     @PostMapping("/{id}/confirm")
     public ResponseEntity<ApiResponse<GoodsReceiptDto>> confirmGoodsReceipt(
@@ -56,6 +56,6 @@ public class GoodsReceiptController {
 
         String clientIp = httpServletRequest.getRemoteAddr();
         GoodsReceiptDto result = goodsReceiptService.confirmGoodsReceipt(id, request, clientIp);
-        return ResponseEntity.ok(ApiResponse.success("Xác nhận kiểm nhận hàng vào kho chi nhánh thành công", result));
+        return ResponseEntity.ok(ApiResponse.success("Goods receipt confirmed successfully", result));
     }
 }

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { viewSupplierList, viewSupplierDetail, createSupplier, updateSupplier } from '../../api/SupplierAPI';
+import { viewSupplierList, viewSupplierDetail, createSupplier, updateSupplier, deleteSupplier } from '../../api/SupplierAPI';
 
 export const useSuppliers = () => {
   const [data, setData] = useState([]);
@@ -19,23 +19,16 @@ export const useSuppliers = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await viewSupplierList({ page, size, sort });
-      let items = res.content || [];
-      if (search) {
-        const s = search.toLowerCase();
-        items = items.filter(
-          (x) =>
-            (x.code || '').toLowerCase().includes(s) ||
-            (x.name || '').toLowerCase().includes(s) ||
-            (x.contactPerson || '').toLowerCase().includes(s) ||
-            (x.phone || '').toLowerCase().includes(s)
-        );
-      }
-      if (statusFilter !== '' && statusFilter !== null) {
-        items = items.filter((x) => String(x.status) === String(statusFilter));
-      }
+      const res = await viewSupplierList({
+        page,
+        size,
+        sort,
+        keyword: search,
+        status: statusFilter,
+      });
+      const items = res?.content || [];
       setData(items);
-      setTotal(res.totalElements ?? items.length);
+      setTotal(res?.totalElements ?? items.length);
     } catch (err) {
       setError(err.message || 'Failed to fetch supplier list');
     } finally {
@@ -86,6 +79,19 @@ export const useSuppliers = () => {
     }
   }, [fetchList, detail, fetchDetail]);
 
+  const handleDelete = useCallback(async (id) => {
+    try {
+      setError(null);
+      await deleteSupplier(id);
+      setSuccessMsg('Supplier partner deactivated successfully!');
+      await fetchList();
+      return true;
+    } catch (err) {
+      setError(err.message || 'Failed to delete supplier');
+      throw err;
+    }
+  }, [fetchList]);
+
   return {
     data,
     total,
@@ -108,6 +114,7 @@ export const useSuppliers = () => {
     fetchDetail,
     handleCreate,
     handleUpdate,
+    handleDelete,
     detail,
     detailLoading,
     setDetail,

@@ -7,7 +7,7 @@ function unwrap(json) {
 }
 
 /**
- * UC34 - Step 2: Lấy danh sách phiếu kiểm kê
+ * Get inventory audit list
  */
 export const getAuditList = async ({ status = '', search = '', page = 0, size = 10 } = {}) => {
     const params = new URLSearchParams({ page: String(page), size: String(size) });
@@ -18,7 +18,7 @@ export const getAuditList = async ({ status = '', search = '', page = 0, size = 
 };
 
 /**
- * UC34 - Step 2 (chi tiết): Xem chi tiết 1 phiếu
+ * View audit details
  */
 export const getAuditDetail = async (id) => {
     const json = await get(`${BASE_URL}/${encodeURIComponent(id)}`);
@@ -26,7 +26,7 @@ export const getAuditDetail = async (id) => {
 };
 
 /**
- * UC34 - Step 3,4,5: Xét duyệt phiếu (Approve=1 / Reject=2)
+ * Review audit (Approve=1 / Reject=2)
  */
 export const reviewAudit = async (payload) => {
     // payload: { auditId, decision, reviewNote }

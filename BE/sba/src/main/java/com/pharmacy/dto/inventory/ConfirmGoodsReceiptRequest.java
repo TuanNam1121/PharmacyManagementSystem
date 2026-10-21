@@ -10,7 +10,7 @@ public class ConfirmGoodsReceiptRequest {
     private String note;
     private String receivedByUsername;
 
-    @NotEmpty(message = "Danh sách sản phẩm kiểm nhận không được để trống")
+    @NotEmpty(message = "Received item list must not be empty")
     private List<ItemConfirmDto> items;
 
     @Data

@@ -2,7 +2,7 @@ export const formatDate = (iso) => {
   if (!iso) return '-';
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('vi-VN');
+  return d.toLocaleDateString('en-US');
 };
 
 export const formatStatus = (status) => {
@@ -22,5 +22,5 @@ export const getInitials = (text) => {
 
 export const money = (n) => {
   if (n == null) return '-';
-  return Number(n).toLocaleString('vi-VN') + ' đ';
+  return Number(n).toLocaleString('en-US') + ' VND';
 };

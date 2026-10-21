@@ -21,7 +21,7 @@ public class StockRequisitionDto {
     private String approvedByUsername;
 
     /**
-     * 0 = Chờ duyệt, 1 = Đã duyệt, 2 = Đã xuất kho, 3 = Đã nhận, 4 = Từ chối
+     * 0 = PENDING, 1 = APPROVED, 2 = DISPATCHED, 3 = RECEIVED, 4 = REJECTED
      */
     private Short status;
     private String statusLabel;

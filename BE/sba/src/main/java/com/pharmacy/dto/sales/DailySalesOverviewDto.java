@@ -19,24 +19,24 @@ public class DailySalesOverviewDto {
     private String storeCode;
     private LocalDate businessDate;
 
-    // Doanh thu hệ thống tính từ các hóa đơn & ca làm việc
+    // System revenue computed from sales invoices and cashier shifts
     private BigDecimal systemCash;
     private BigDecimal systemBank;
     private BigDecimal systemVnpay;
     private BigDecimal systemTotal;
 
-    // Số liệu kiểm đếm thực tế của Store Manager
+    // Actual count from Store Manager
     private BigDecimal actualCash;
     private BigDecimal difference;
-    private Short status; // 0: Chờ đối soát (Draft), 1: Đã chốt (Reconciled)
+    private Short status; // 0: Open / Draft, 1: Reconciled
     private String note;
 
-    // Thông tin người chốt & thời gian
+    // Reconciled by and timestamp
     private Long reconciledById;
     private String reconciledByName;
     private LocalDateTime reconciledAt;
 
-    // Thống kê phụ
+    // Metrics
     private Integer totalInvoices;
     private Integer totalShifts;
     private Double growthPercentageVsYesterday;
