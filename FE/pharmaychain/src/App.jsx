@@ -5,6 +5,8 @@ import SupplierPage from './page/supplier/SupplierPage';
 import WarehouseInventoryPage from './page/warehouse/WarehouseInventoryPage';
 import UsersPage from './page/users/UsersPage';
 import DailySalesPage from './page/sales/DailySalesPage';
+import CategoryPage from './page/category/CategoryPage';
+import ProductPage from './page/product/ProductPage';
 
 /* ── Placeholder for unbuilt pages ── */
 function ComingSoon({ title, module }) {
@@ -48,8 +50,8 @@ function App() {
         <Route path="/audit-log" element={<ComingSoon title="Audit Log" module="User & Security" />} />
 
         {/* Products & Catalog */}
-        <Route path="/products" element={<ComingSoon title="Product Catalog" module="Products & Catalog" />} />
-        <Route path="/categories" element={<ComingSoon title="Categories" module="Products & Catalog" />} />
+        <Route path="/products" element={<ProductPage />} />
+        <Route path="/categories" element={<CategoryPage />} />
 
         {/* POS & Sales */}
         <Route path="/pos" element={<ComingSoon title="POS Counter" module="POS & Sales" />} />

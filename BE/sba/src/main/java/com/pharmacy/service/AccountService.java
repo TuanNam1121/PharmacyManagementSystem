@@ -1,6 +1,10 @@
 package com.pharmacy.service;
 
 import com.pharmacy.dto.*;
+import com.pharmacy.dto.account.AccountCreateRequest;
+import com.pharmacy.dto.account.AccountDetailResponse;
+import com.pharmacy.dto.account.AccountResponse;
+import com.pharmacy.dto.account.AccountUpdateRequest;
 
 public interface AccountService {
 
