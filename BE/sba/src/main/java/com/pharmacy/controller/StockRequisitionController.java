@@ -6,6 +6,7 @@ import com.pharmacy.dto.inventory.StockRequisitionDto;
 import com.pharmacy.service.StockRequisitionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class StockRequisitionController {
             @RequestParam(required = false) Long storeId,
             @RequestParam(required = false) Short status,
             @RequestParam(required = false) String search,
-            @PageableDefault(page = 0, size = 10, sort = "createdAt") Pageable pageable) {
+            @PageableDefault(page = 0, size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
         PageResponse<StockRequisitionDto> result = stockRequisitionService.getRequisitionList(storeId, status, search,
                 pageable);
