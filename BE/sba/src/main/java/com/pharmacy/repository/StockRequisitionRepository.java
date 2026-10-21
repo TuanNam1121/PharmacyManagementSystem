@@ -28,4 +28,20 @@ public interface StockRequisitionRepository extends JpaRepository<StockRequisiti
                         @Param("status") Short status,
                         @Param("search") String search,
                         Pageable pageable);
+
+        @Query(value = """
+                        SELECT r FROM StockRequisition r
+                        LEFT JOIN FETCH r.store s
+                        LEFT JOIN FETCH r.createdBy cb
+                        WHERE (:status IS NULL OR r.status = :status)
+                          AND (:search IS NULL OR LOWER(r.code) LIKE LOWER(CONCAT('%', :search, '%')))
+                        """, countQuery = """
+                        SELECT count(r) FROM StockRequisition r
+                        WHERE (:status IS NULL OR r.status = :status)
+                          AND (:search IS NULL OR LOWER(r.code) LIKE LOWER(CONCAT('%', :search, '%')))
+                        """)
+        Page<StockRequisition> findAllWithFilters(
+                        @Param("search") String search,
+                        @Param("status") Short status,
+                        Pageable pageable);
 }

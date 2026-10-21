@@ -1,6 +1,6 @@
 import { formatDate, money } from '../../utils/format';
 
-export default function WarehousePurchaseHistoryTable({ data, loading, onViewDetail }) {
+export default function WarehousePurchaseHistoryTable({ data, loading, onViewDetail, onConfirm, confirmLoading }) {
   if (loading) {
     return (
       <div className="pms-card">
@@ -61,17 +61,33 @@ export default function WarehousePurchaseHistoryTable({ data, loading, onViewDet
                   <td className="text-sm text-muted-color">{formatDate(row.createdAt)}</td>
                   <td className="text-sm text-muted-color">{formatDate(row.confirmedAt) || '—'}</td>
                   <td className="text-right">
-                    <button
-                      className="btn-pms btn-pms-sm btn-pms-secondary"
-                      title="View receipt details"
-                      onClick={() => onViewDetail(row.id)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                      </svg>
-                      Details
-                    </button>
+                    <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'flex-end' }}>
+                      {!isConfirmed && onConfirm && (
+                        <button
+                          className="btn-pms btn-pms-sm btn-pms-primary"
+                          title="Confirm receipt and accept into inventory"
+                          onClick={() => onConfirm(row.id)}
+                          disabled={confirmLoading}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--color-success)', borderColor: 'var(--color-success)' }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                          Confirm
+                        </button>
+                      )}
+                      <button
+                        className="btn-pms btn-pms-sm btn-pms-secondary"
+                        title="View receipt details"
+                        onClick={() => onViewDetail(row.id)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        Details
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

@@ -3,6 +3,8 @@ import MainLayout from './layout/MainLayout';
 import HomePage from './page/home/HomePage';
 import SupplierPage from './page/supplier/SupplierPage';
 import WarehouseInventoryPage from './page/warehouse/WarehouseInventoryPage';
+import WarehouseReplenishmentPage from './page/warehouse/WarehouseReplenishmentPage';
+import WarehousePurchaseRequestsPage from './page/warehouse/WarehousePurchaseRequestsPage';
 import UsersPage from './page/users/UsersPage';
 import DailySalesPage from './page/sales/DailySalesPage';
 import BranchInventoryPage from './page/inventory/BranchInventoryPage';
@@ -69,19 +71,20 @@ function App() {
         <Route path="/store/receipts" element={<GoodsReceiptsPage />} />
         <Route path="/store/audit" element={<InventoryAuditPage />} />
 
-        {/* Central Warehouse (LIVE - All BE endpoints wired) */}
-        <Route path="/warehouse/inventory" element={<WarehouseInventoryPage defaultTab="inventory" />} />
-        <Route path="/warehouse/adjustments" element={<WarehouseInventoryPage defaultTab="adjustments" />} />
-        <Route path="/warehouse/alerts" element={<WarehouseInventoryPage defaultTab="inventory" defaultExpiryFilter="EXPIRING_SOON" />} />
-        <Route path="/warehouse/receipts" element={<WarehouseInventoryPage defaultTab="history" />} />
-        <Route path="/warehouse/replenishment" element={<ComingSoon title="Store Replenishment" module="Central Warehouse" />} />
+        {/* Central Warehouse (LIVE - All 14 functions completed) */}
+        <Route path="/warehouse/inventory"     element={<WarehouseInventoryPage defaultTab="inventory" />} />
+        <Route path="/warehouse/adjustments"   element={<WarehouseInventoryPage defaultTab="adjustments" />} />
+        <Route path="/warehouse/alerts"        element={<WarehouseInventoryPage defaultTab="inventory" defaultExpiryFilter="EXPIRING_SOON" />} />
+        <Route path="/warehouse/receipts"      element={<WarehouseInventoryPage defaultTab="history" />} />
+        <Route path="/warehouse/replenishment" element={<WarehouseReplenishmentPage />} />
+        <Route path="/warehouse/requests"      element={<WarehousePurchaseRequestsPage />} />
 
-        {/* Procurement (LIVE: suppliers) */}
-        <Route path="/supplier" element={<SupplierPage />} />
-        <Route path="/procurement/requests" element={<ComingSoon title="Purchase Requests" module="Procurement" />} />
-        <Route path="/procurement/rfq" element={<ComingSoon title="RFQ & Quotations" module="Procurement" />} />
-        <Route path="/procurement/proposals" element={<ComingSoon title="Purchase Proposals" module="Procurement" />} />
-        <Route path="/procurement/orders" element={<ComingSoon title="Purchase Orders" module="Procurement" />} />
+        {/* Procurement (LIVE: suppliers, purchase requests) */}
+        <Route path="/supplier"               element={<SupplierPage />} />
+        <Route path="/procurement/requests"   element={<WarehousePurchaseRequestsPage />} />
+        <Route path="/procurement/rfq"        element={<ComingSoon title="RFQ & Quotations" module="Procurement" />} />
+        <Route path="/procurement/proposals"  element={<ComingSoon title="Purchase Proposals" module="Procurement" />} />
+        <Route path="/procurement/orders"     element={<ComingSoon title="Purchase Orders" module="Procurement" />} />
 
         {/* Reports */}
         <Route path="/reports/profit" element={<ComingSoon title="Profit Report" module="Reports & BI" />} />
