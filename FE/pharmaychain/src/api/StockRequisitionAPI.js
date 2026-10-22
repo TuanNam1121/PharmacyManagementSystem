@@ -1,4 +1,4 @@
-import { get } from './FetchData';
+import { get, post } from './FetchData';
 
 const BASE_URL = 'http://localhost:8080/api/v1/stock-requisitions';
 
@@ -26,4 +26,25 @@ export const getRequisitionDetail = async (id) => {
     return unwrap(json);
 };
 
-export default { getRequisitionList, getRequisitionDetail };
+/**
+ * Create a new stock requisition
+ */
+export const createStockRequisition = async (payload) => {
+    const json = await post(BASE_URL, payload);
+    return unwrap(json);
+};
+/**
+ * Search products from backend
+ */
+export const searchProductsForRequisition = async (search = '') => {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    const json = await get(`${BASE_URL}/products?${params.toString()}`);
+    return unwrap(json);
+};
+export default {
+    getRequisitionList,
+    getRequisitionDetail,
+    createStockRequisition,
+    searchProductsForRequisition
+};

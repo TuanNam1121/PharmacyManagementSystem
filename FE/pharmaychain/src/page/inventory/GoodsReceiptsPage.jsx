@@ -59,8 +59,10 @@ function DeliveryTimeline({ item }) {
 }
 
 // ── Detail Modal ──────────────────────────────────────────────────────────────
-function DetailModal({ show, item, loading, onHide, onOpenConfirm }) {
+function DetailModal({ show, item, loading, onHide, onOpenConfirm, onOpenReject }) {
     if (!show) return null;
+    const canAct = item && item.status === 1;
+
     return (
         <div className="pms-modal-overlay" onClick={onHide}>
             <div className="pms-modal" style={{ maxWidth: 860 }} onClick={e => e.stopPropagation()}>
@@ -75,6 +77,18 @@ function DetailModal({ show, item, loading, onHide, onOpenConfirm }) {
                         <>
                             {/* Timeline */}
                             <DeliveryTimeline item={item} />
+
+                            {/* Rejected notice */}
+                            {item.status === 4 && (
+                                <div className="pms-alert pms-alert-danger" style={{ marginBottom: 16 }}>
+                                    🚫 <strong>This goods receipt has been rejected / cancelled.</strong>
+                                    {item.note && item.note.includes('REJECTED:') && (
+                                        <div style={{ marginTop: 4, fontSize: 13 }}>
+                                            Reason: {item.note.split('REJECTED:').pop().trim()}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Header Info */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
@@ -158,16 +172,28 @@ function DetailModal({ show, item, loading, onHide, onOpenConfirm }) {
                         </>
                     ) : null}
                 </div>
-                <div className="pms-modal-footer" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <div>
-                        {item && item.status === 1 && (
-                            <button
-                                type="button"
-                                className="btn-pms btn-pms-primary"
-                                onClick={() => { onHide(); onOpenConfirm(item); }}
-                            >
-                                Inspect & Receive Stock
-                            </button>
+                <div className="pms-modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {/* Approve / Reject actions */}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        {canAct && (
+                            <>
+                                <button
+                                    type="button"
+                                    className="btn-pms btn-pms-primary"
+                                    style={{ background: 'linear-gradient(135deg,#16a34a,#22c55e)', borderColor: '#16a34a' }}
+                                    onClick={() => { onHide(); onOpenConfirm(item); }}
+                                >
+                                    ✅ Approve & Receive Stock
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-pms"
+                                    style={{ background: 'linear-gradient(135deg,#dc2626,#ef4444)', color: '#fff', border: '1px solid #dc2626', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontWeight: 600 }}
+                                    onClick={() => { onHide(); onOpenReject(item); }}
+                                >
+                                    🚫 Reject
+                                </button>
+                            </>
                         )}
                     </div>
                     <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide}>Close</button>
@@ -177,7 +203,84 @@ function DetailModal({ show, item, loading, onHide, onOpenConfirm }) {
     );
 }
 
-// ── Confirm Modal (Step 3, 4, 5) ─────────────────────────────────────────────
+// ── Reject Modal ──────────────────────────────────────────────────────────────
+function RejectModal({ show, item, submitting, onHide, onSubmit }) {
+    const [reason, setReason] = useState('');
+    const [error, setError] = useState(null);
+
+    React.useEffect(() => {
+        if (show) { setReason(''); setError(null); }
+    }, [show]);
+
+    if (!show || !item) return null;
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!reason.trim()) {
+            setError('Please provide a rejection reason.');
+            return;
+        }
+        onSubmit(item.id, reason.trim());
+    };
+
+    return (
+        <div className="pms-modal-overlay" onClick={onHide}>
+            <div className="pms-modal" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+                <form onSubmit={handleSubmit}>
+                    <div className="pms-modal-header" style={{ borderBottom: '2px solid #ef4444' }}>
+                        <h3 className="pms-modal-title" style={{ color: '#dc2626' }}>🚫 Reject Goods Receipt</h3>
+                        <button type="button" className="pms-modal-close" onClick={onHide}>✕</button>
+                    </div>
+                    <div className="pms-modal-body">
+                        <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '12px 16px', marginBottom: 16 }}>
+                            <div style={{ fontWeight: 700, marginBottom: 4 }}>Receipt: <span style={{ color: '#dc2626' }}>{item.code}</span></div>
+                            <div style={{ fontSize: 13, color: '#64748b' }}>From: {item.fromStoreName || 'Central Warehouse'}</div>
+                            <div style={{ fontSize: 13, color: '#64748b' }}>
+                                Items: {item.totalItems ?? 0} SKUs — {item.totalQuantity ?? 0} units dispatched
+                            </div>
+                        </div>
+
+                        {error && (
+                            <div className="pms-alert pms-alert-danger" style={{ marginBottom: 12 }}>
+                                ⚠️ {error}
+                            </div>
+                        )}
+
+                        <div className="pms-form-group">
+                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                                Rejection Reason <span style={{ color: '#ef4444' }}>*</span>
+                            </label>
+                            <textarea
+                                className="pms-input"
+                                rows="4"
+                                placeholder="e.g. Damaged packaging, wrong product, expired batch, quantity mismatch..."
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
+                                autoFocus
+                                required
+                            />
+                        </div>
+                    </div>
+                    <div className="pms-modal-footer">
+                        <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="btn-pms"
+                            style={{ background: 'linear-gradient(135deg,#dc2626,#ef4444)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', cursor: 'pointer', fontWeight: 700, opacity: submitting ? 0.7 : 1 }}
+                            disabled={submitting}
+                        >
+                            {submitting ? 'Rejecting...' : '🚫 Confirm Reject'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+// ── Confirm/Approve Modal (Step 3, 4, 5) ─────────────────────────────────────
 function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
     const [receivedQuantities, setReceivedQuantities] = useState({});
     const [note, setNote] = useState('');
@@ -213,7 +316,6 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
         e.preventDefault();
         setValidationError(null);
 
-        // Validation against business constraints (Step 4 & AT01)
         const itemsPayload = [];
         for (const d of item.details) {
             const q = receivedQuantities[d.id];
@@ -237,8 +339,8 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
         <div className="pms-modal-overlay" onClick={onHide}>
             <div className="pms-modal" style={{ maxWidth: 860 }} onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleConfirm}>
-                    <div className="pms-modal-header">
-                        <h3 className="pms-modal-title">Confirm Goods Receipt into Branch Inventory</h3>
+                    <div className="pms-modal-header" style={{ borderBottom: '2px solid #16a34a' }}>
+                        <h3 className="pms-modal-title" style={{ color: '#16a34a' }}>✅ Approve & Receive Stock into Branch Inventory</h3>
                         <button type="button" className="pms-modal-close" onClick={onHide}>✕</button>
                     </div>
 
@@ -249,10 +351,13 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
                             </div>
                         )}
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                            <div>
-                                <strong>Receipt Code: {item.code}</strong> | Origin: {item.fromStoreName || 'Central Warehouse'}
-                            </div>
+                        <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 14, fontSize: 13 }}>
+                            📦 <strong>Receipt Code: {item.code}</strong> &nbsp;|&nbsp; From: {item.fromStoreName || 'Central Warehouse'}
+                            &nbsp;|&nbsp; {item.totalItems ?? 0} SKUs — {item.totalQuantity ?? 0} units dispatched
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700 }}>Enter actual received quantity per product:</span>
                             <button
                                 type="button"
                                 className="btn-pms btn-pms-secondary"
@@ -271,7 +376,7 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
                                         <th>Product</th>
                                         <th>Batch / Expiry</th>
                                         <th style={{ textAlign: 'right' }}>Dispatched Qty</th>
-                                        <th style={{ width: 140, textAlign: 'right' }}>Actual Received Qty</th>
+                                        <th style={{ width: 140, textAlign: 'right' }}>✅ Actual Received Qty</th>
                                         <th>Variance</th>
                                     </tr>
                                 </thead>
@@ -298,7 +403,7 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
                                                         type="number"
                                                         min="0"
                                                         className="pms-input"
-                                                        style={{ textAlign: 'right', fontWeight: 700 }}
+                                                        style={{ textAlign: 'right', fontWeight: 700, borderColor: diff < 0 ? '#ef4444' : diff > 0 ? '#eab308' : '#16a34a' }}
                                                         value={currentVal}
                                                         onChange={(e) => handleQtyChange(d.id, e.target.value)}
                                                         required
@@ -310,7 +415,7 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
                                                             {diff < 0 ? `Short ${Math.abs(diff)}` : `Over +${diff}`}
                                                         </span>
                                                     )}
-                                                    {diff === 0 && <span style={{ color: 'var(--success, #22c55e)', fontSize: 12 }}>Match</span>}
+                                                    {diff === 0 && <span style={{ color: 'var(--success, #22c55e)', fontSize: 12 }}>✓ Match</span>}
                                                 </td>
                                             </tr>
                                         );
@@ -337,8 +442,13 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
                         <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting}>
-                            {submitting ? 'Saving to Inventory...' : 'Confirm Receipt'}
+                        <button
+                            type="submit"
+                            className="btn-pms"
+                            style={{ background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', cursor: 'pointer', fontWeight: 700, opacity: submitting ? 0.7 : 1 }}
+                            disabled={submitting}
+                        >
+                            {submitting ? '⏳ Updating Inventory...' : '✅ Approve & Update Inventory'}
                         </button>
                     </div>
                 </form>
@@ -365,11 +475,15 @@ export default function GoodsReceiptsPage() {
         setDetailModalOpen,
         confirmModalOpen,
         setConfirmModalOpen,
+        rejectModalOpen,
+        setRejectModalOpen,
         detailLoading,
         submitting,
         openDetail,
         openConfirmModal,
+        openRejectModal,
         handleConfirmReceipt,
+        handleRejectReceipt,
         error,
         setError,
         successMsg,
@@ -398,7 +512,7 @@ export default function GoodsReceiptsPage() {
                         <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Store Manager</span>
                     </div>
                     <p className="pms-page-subtitle" style={{ margin: 0 }}>
-                        Track inter-store transfers from central warehouse, inspect batches & expiry dates, and accept into branch inventory
+                        Track inter-store transfers from central warehouse. <strong>Approve</strong> to accept into branch inventory, or <strong>Reject</strong> if there are issues.
                     </p>
                 </div>
                 <div>
@@ -429,21 +543,21 @@ export default function GoodsReceiptsPage() {
                     <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{total}</div>
                 </div>
                 <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--info, #0284c7)' }}>
-                    <div style={{ color: 'var(--info, #0284c7)', fontSize: 12, fontWeight: 600 }}>IN TRANSIT</div>
+                    <div style={{ color: 'var(--info, #0284c7)', fontSize: 12, fontWeight: 600 }}>⏳ AWAITING APPROVAL</div>
                     <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>
                         {list.filter(x => x.status === 1).length}
                     </div>
                 </div>
                 <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--success, #22c55e)' }}>
-                    <div style={{ color: 'var(--success, #22c55e)', fontSize: 12, fontWeight: 600 }}>SUCCESSFULLY RECEIVED</div>
+                    <div style={{ color: 'var(--success, #22c55e)', fontSize: 12, fontWeight: 600 }}>✅ APPROVED & RECEIVED</div>
                     <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>
-                        {list.filter(x => x.status === 2).length}
+                        {list.filter(x => x.status === 2 || x.status === 3).length}
                     </div>
                 </div>
-                <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--warning, #eab308)' }}>
-                    <div style={{ color: 'var(--warning, #eab308)', fontSize: 12, fontWeight: 600 }}>WITH DISCREPANCY</div>
+                <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--danger, #ef4444)' }}>
+                    <div style={{ color: 'var(--danger, #ef4444)', fontSize: 12, fontWeight: 600 }}>🚫 REJECTED</div>
                     <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>
-                        {list.filter(x => x.status === 3).length}
+                        {list.filter(x => x.status === 4).length}
                     </div>
                 </div>
             </div>
@@ -451,7 +565,6 @@ export default function GoodsReceiptsPage() {
             {/* Filters Bar */}
             <div className="pms-card" style={{ padding: '12px 16px', marginBottom: 16 }}>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-                    {/* Status Tabs */}
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                         {STATUS_TABS.map(tab => (
                             <button
@@ -465,8 +578,6 @@ export default function GoodsReceiptsPage() {
                             </button>
                         ))}
                     </div>
-
-                    {/* Search Input */}
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <input
                             type="text"
@@ -540,14 +651,24 @@ export default function GoodsReceiptsPage() {
                                                     Details
                                                 </button>
                                                 {item.status === 1 && (
-                                                    <button
-                                                        type="button"
-                                                        className="btn-pms btn-pms-primary"
-                                                        style={{ fontSize: 12, padding: '4px 8px' }}
-                                                        onClick={() => openConfirmModal(item)}
-                                                    >
-                                                        Inspect & Receive
-                                                    </button>
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            className="btn-pms"
+                                                            style={{ fontSize: 12, padding: '4px 10px', background: '#16a34a', color: '#fff', border: '1px solid #16a34a', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+                                                            onClick={() => openConfirmModal(item)}
+                                                        >
+                                                            ✅ Approve
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="btn-pms"
+                                                            style={{ fontSize: 12, padding: '4px 10px', background: '#ef4444', color: '#fff', border: '1px solid #ef4444', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+                                                            onClick={() => openRejectModal(item)}
+                                                        >
+                                                            🚫 Reject
+                                                        </button>
+                                                    </>
                                                 )}
                                             </div>
                                         </td>
@@ -593,6 +714,7 @@ export default function GoodsReceiptsPage() {
                 loading={detailLoading}
                 onHide={() => setDetailModalOpen(false)}
                 onOpenConfirm={openConfirmModal}
+                onOpenReject={openRejectModal}
             />
 
             <ConfirmModal
@@ -602,6 +724,14 @@ export default function GoodsReceiptsPage() {
                 submitting={submitting}
                 onHide={() => setConfirmModalOpen(false)}
                 onSubmit={handleConfirmReceipt}
+            />
+
+            <RejectModal
+                show={rejectModalOpen}
+                item={selectedItem}
+                submitting={submitting}
+                onHide={() => setRejectModalOpen(false)}
+                onSubmit={handleRejectReceipt}
             />
         </div>
     );
