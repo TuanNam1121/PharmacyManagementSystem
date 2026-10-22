@@ -3,10 +3,16 @@ import MainLayout from './layout/MainLayout';
 import HomePage from './page/home/HomePage';
 import SupplierPage from './page/supplier/SupplierPage';
 import WarehouseInventoryPage from './page/warehouse/WarehouseInventoryPage';
+import WarehouseReplenishmentPage from './page/warehouse/WarehouseReplenishmentPage';
+import WarehousePurchaseRequestsPage from './page/warehouse/WarehousePurchaseRequestsPage';
 import UsersPage from './page/users/UsersPage';
 import DailySalesPage from './page/sales/DailySalesPage';
 import CategoryPage from './page/category/CategoryPage';
 import ProductPage from './page/product/ProductPage';
+import BranchInventoryPage from './page/inventory/BranchInventoryPage';
+import InventoryAuditPage from './page/inventory/InventoryAuditPage';
+import StockRequisitionsPage from './page/inventory/StockRequisitionsPage';
+import GoodsReceiptsPage from './page/inventory/GoodsReceiptsPage';
 
 /* ── Placeholder for unbuilt pages ── */
 function ComingSoon({ title, module }) {
@@ -55,30 +61,32 @@ function App() {
 
         {/* POS & Sales */}
         <Route path="/pos" element={<ComingSoon title="POS Counter" module="POS & Sales" />} />
-        <Route path="/shifts" element={<ComingSoon title="Shift Management" module="POS & Sales" />} />
-        <Route path="/sales" element={<ComingSoon title="Sales Invoices" module="POS & Sales" />} />
+        <Route path="/shifts" element={<DailySalesPage defaultTab="shifts" />} />
+        <Route path="/sales" element={<DailySalesPage defaultTab="invoices" />} />
 
         {/* Customers */}
         <Route path="/customers" element={<ComingSoon title="Customer Directory" module="Customer Management" />} />
 
         {/* Branch Stock & Requisitions (Store Inventory) */}
-        <Route path="/store/inventory" element={<ComingSoon title="Branch Stock" module="Branch Stock & Requisitions" />} />
-        <Route path="/store/requisitions" element={<ComingSoon title="Stock Requisitions" module="Branch Stock & Requisitions" />} />
-        <Route path="/store/receipts" element={<ComingSoon title="Store Goods Receipts" module="Branch Stock & Requisitions" />} />
+        <Route path="/store/inventory" element={<BranchInventoryPage />} />
+        <Route path="/store/requisitions" element={<StockRequisitionsPage />} />
+        <Route path="/store/receipts" element={<GoodsReceiptsPage />} />
+        <Route path="/store/audit" element={<InventoryAuditPage />} />
 
-        {/* Central Warehouse (LIVE - All BE endpoints wired) */}
-        <Route path="/warehouse/inventory" element={<WarehouseInventoryPage defaultTab="inventory" />} />
-        <Route path="/warehouse/adjustments" element={<WarehouseInventoryPage defaultTab="adjustments" />} />
-        <Route path="/warehouse/alerts" element={<WarehouseInventoryPage defaultTab="inventory" defaultExpiryFilter="EXPIRING_SOON" />} />
-        <Route path="/warehouse/receipts" element={<WarehouseInventoryPage defaultTab="history" />} />
-        <Route path="/warehouse/replenishment" element={<ComingSoon title="Store Replenishment" module="Central Warehouse" />} />
+        {/* Central Warehouse (LIVE - All 14 functions completed) */}
+        <Route path="/warehouse/inventory"     element={<WarehouseInventoryPage defaultTab="inventory" />} />
+        <Route path="/warehouse/adjustments"   element={<WarehouseInventoryPage defaultTab="adjustments" />} />
+        <Route path="/warehouse/alerts"        element={<WarehouseInventoryPage defaultTab="inventory" defaultExpiryFilter="EXPIRING_SOON" />} />
+        <Route path="/warehouse/receipts"      element={<WarehouseInventoryPage defaultTab="history" />} />
+        <Route path="/warehouse/replenishment" element={<WarehouseReplenishmentPage />} />
+        <Route path="/warehouse/requests"      element={<WarehousePurchaseRequestsPage />} />
 
-        {/* Procurement (LIVE: suppliers) */}
-        <Route path="/supplier" element={<SupplierPage />} />
-        <Route path="/procurement/requests" element={<ComingSoon title="Purchase Requests" module="Procurement" />} />
-        <Route path="/procurement/rfq" element={<ComingSoon title="RFQ & Quotations" module="Procurement" />} />
-        <Route path="/procurement/proposals" element={<ComingSoon title="Purchase Proposals" module="Procurement" />} />
-        <Route path="/procurement/orders" element={<ComingSoon title="Purchase Orders" module="Procurement" />} />
+        {/* Procurement (LIVE: suppliers, purchase requests) */}
+        <Route path="/supplier"               element={<SupplierPage />} />
+        <Route path="/procurement/requests"   element={<WarehousePurchaseRequestsPage />} />
+        <Route path="/procurement/rfq"        element={<ComingSoon title="RFQ & Quotations" module="Procurement" />} />
+        <Route path="/procurement/proposals"  element={<ComingSoon title="Purchase Proposals" module="Procurement" />} />
+        <Route path="/procurement/orders"     element={<ComingSoon title="Purchase Orders" module="Procurement" />} />
 
         {/* Reports */}
         <Route path="/reports/profit" element={<ComingSoon title="Profit Report" module="Reports & BI" />} />

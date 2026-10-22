@@ -28,6 +28,7 @@ public class ProductDetailResponse {
     private String description;
     private String imageUrl;
     private Short status;
+    private String statusLabel;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

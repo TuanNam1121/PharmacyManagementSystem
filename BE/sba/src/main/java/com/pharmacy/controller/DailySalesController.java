@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,15 +21,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/daily-sales")
-@CrossOrigin(origins = "*") // Hoặc cấu hình CORS theo môi trường FE
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class DailySalesController {
 
     private final DailySalesService dailySalesService;
 
     /**
-     * UC27 - Main Flow Step 2: Hiển thị giao diện dữ liệu doanh thu ngày & chỉ số
-     * đối soát
+     * Display daily sales overview and reconciliation metrics
      */
     @GetMapping("/overview")
     public ResponseEntity<ApiResponse<DailySalesOverviewDto>> getDailySalesOverview(
@@ -37,11 +37,11 @@ public class DailySalesController {
 
         LocalDate targetDate = (date != null) ? date : LocalDate.now();
         DailySalesOverviewDto overview = dailySalesService.getDailySalesOverview(storeId, targetDate);
-        return ResponseEntity.ok(ApiResponse.success("Tải dữ liệu doanh thu ngày thành công", overview));
+        return ResponseEntity.ok(ApiResponse.success("Daily sales overview retrieved successfully", overview));
     }
 
     /**
-     * UC27 - Step 2 (Chi tiết): Danh sách hóa đơn bán hàng trong ngày
+     * Get list of daily sales invoices
      */
     @GetMapping("/invoices")
     public ResponseEntity<ApiResponse<Page<SalesInvoiceSummaryDto>>> getDailyInvoices(
@@ -52,12 +52,12 @@ public class DailySalesController {
 
         LocalDate targetDate = (date != null) ? date : LocalDate.now();
         Page<SalesInvoiceSummaryDto> invoices = dailySalesService.getDailyInvoices(storeId, targetDate,
-                PageRequest.of(page, size));
-        return ResponseEntity.ok(ApiResponse.success("Tải danh sách hóa đơn thành công", invoices));
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        return ResponseEntity.ok(ApiResponse.success("Daily sales invoices retrieved successfully", invoices));
     }
 
     /**
-     * UC27 - Step 2 (Chi tiết): Danh sách ca làm việc trong ngày
+     * Get list of daily cashier shifts
      */
     @GetMapping("/shifts")
     public ResponseEntity<ApiResponse<List<ShiftSummaryDto>>> getDailyShifts(
@@ -66,24 +66,22 @@ public class DailySalesController {
 
         LocalDate targetDate = (date != null) ? date : LocalDate.now();
         List<ShiftSummaryDto> shifts = dailySalesService.getDailyShifts(storeId, targetDate);
-        return ResponseEntity.ok(ApiResponse.success("Tải danh sách ca làm việc thành công", shifts));
+        return ResponseEntity.ok(ApiResponse.success("Daily cashier shifts retrieved successfully", shifts));
     }
 
     /**
-     * UC27 - Main Flow Step 3, 4, 5: Store Manager xác nhận đối soát & chốt sổ
-     * doanh thu ngày
-     * Validate ràng buộc nghiệp vụ (BR-01, BR-02, BR-03)
+     * Store Manager confirms reconciliation and daily sales settlement
      */
     @PostMapping("/reconcile")
     public ResponseEntity<ApiResponse<DailySalesOverviewDto>> reconcileDailySales(
             @Valid @RequestBody DailySalesReconcileRequest request,
             HttpServletRequest servletRequest) {
 
-        // Lấy username từ security context (hoặc header auth)
+        // Retrieve current username from security context
         String currentUsername = "store_manager_demo";
         String clientIp = servletRequest.getRemoteAddr();
 
         DailySalesOverviewDto result = dailySalesService.reconcileDailySales(request, currentUsername, clientIp);
-        return ResponseEntity.ok(ApiResponse.success("Xác nhận đối soát doanh thu ngày thành công", result));
+        return ResponseEntity.ok(ApiResponse.success("Daily sales reconciled successfully", result));
     }
 }

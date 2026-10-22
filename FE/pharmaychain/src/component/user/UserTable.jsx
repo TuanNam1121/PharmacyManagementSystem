@@ -1,13 +1,5 @@
 import { formatDate, getInitials } from '../../utils/format';
 
-const ROLE_COLORS = {
-  ADMIN: 'badge-purple',
-  MANAGER: 'badge-blue',
-  PHARMACIST: 'badge-emerald',
-  WAREHOUSE: 'badge-amber',
-  CASHIER: 'badge-teal',
-};
-
 function getRoleBadgeStyle(roleCode) {
   const code = (roleCode || '').toUpperCase();
   if (code.includes('ADMIN')) return { bg: 'rgba(139, 92, 246, 0.15)', text: '#a78bfa', border: 'rgba(139, 92, 246, 0.3)' };
@@ -24,7 +16,7 @@ export default function UserTable({
   size = 10,
   onView,
   onEdit,
-  onToggleStatus,
+  onLockUnlock,
 }) {
   if (loading) {
     return (
@@ -55,6 +47,38 @@ export default function UserTable({
       </div>
     );
   }
+
+  const renderStatusBadge = (status) => {
+    const s = Number(status);
+    if (s === 1) {
+      return (
+        <span className="pms-badge pms-badge-success">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+          Active
+        </span>
+      );
+    }
+    if (s === 2) {
+      return (
+        <span className="pms-badge pms-badge-danger">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+          Locked
+        </span>
+      );
+    }
+    return (
+      <span className="pms-badge pms-badge-neutral">
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="12" r="10" />
+        </svg>
+        Disabled
+      </span>
+    );
+  };
 
   return (
     <div className="pms-card">
@@ -152,21 +176,7 @@ export default function UserTable({
                     )}
                   </td>
                   <td>
-                    {isActive ? (
-                      <span className="pms-badge pms-badge-success">
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
-                          <circle cx="12" cy="12" r="10" />
-                        </svg>
-                        Active
-                      </span>
-                    ) : (
-                      <span className="pms-badge pms-badge-danger">
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
-                          <circle cx="12" cy="12" r="10" />
-                        </svg>
-                        Inactive / Locked
-                      </span>
-                    )}
+                    {renderStatusBadge(u.status)}
                   </td>
                   <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                     {formatDate(u.createdAt)}
@@ -185,7 +195,7 @@ export default function UserTable({
                         </svg>
                       </button>
 
-                      {/* Edit */}
+                      {/* Edit (UC09) */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
                         title="Edit User Profile & Role"
@@ -197,14 +207,14 @@ export default function UserTable({
                         </svg>
                       </button>
 
-                      {/* Lock / Unlock Toggle */}
+                      {/* Lock / Unlock (UC10) */}
                       <button
                         className={`btn-pms btn-pms-sm ${isActive ? 'btn-pms-ghost' : 'btn-pms-outline'}`}
                         style={{
                           color: isActive ? 'var(--status-danger)' : 'var(--brand-primary)',
                         }}
-                        title={isActive ? 'Lock Account' : 'Unlock Account'}
-                        onClick={() => onToggleStatus(u.id, u.status)}
+                        title={isActive ? 'Khóa hoặc Vô hiệu hóa tài khoản' : 'Mở khóa tài khoản'}
+                        onClick={() => onLockUnlock(u)}
                       >
                         {isActive ? (
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

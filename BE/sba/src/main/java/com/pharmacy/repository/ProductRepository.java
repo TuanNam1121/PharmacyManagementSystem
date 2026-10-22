@@ -1,6 +1,7 @@
 package com.pharmacy.repository;
 
 import com.pharmacy.entity.Product;
+import com.pharmacy.entity.enums.ProductStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,6 +16,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     boolean existsByBarcode(String barcode);
 
     boolean existsByBarcodeAndIdNot(String barcode, Long id);
+
+    boolean existsByCategoryIdAndStatus(Long categoryId, ProductStatus status);
 
     @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.id = :id")
     Optional<Product> findByIdWithCategory(@Param("id") Long id);
@@ -38,7 +41,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                     "AND (:status IS NULL OR p.status = :status) " +
                     "AND (:categoryId IS NULL OR c.id = :categoryId)")
     Page<Product> findProductsWithFilters(@Param("keyword") String keyword,
-                                          @Param("status") Short status,
+                                          @Param("status") ProductStatus status,
                                           @Param("categoryId") Long categoryId,
                                           Pageable pageable);
 }

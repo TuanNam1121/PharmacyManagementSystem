@@ -1,5 +1,12 @@
 import { useState, useCallback } from 'react';
-import { viewCategoryList, viewCategoryDetail, createCategory, updateCategory } from '../../api/CategoryAPI';
+import {
+  viewCategoryList,
+  viewCategoryDetail,
+  createCategory,
+  updateCategory,
+  updateCategoryStatus,
+  deleteCategory,
+} from '../../api/CategoryAPI';
 
 export const useCategories = () => {
   const [data, setData] = useState([]);
@@ -36,7 +43,6 @@ export const useCategories = () => {
         items = items.filter((x) => String(x.status) === String(statusFilter));
       }
       setData(items);
-      // Set total based on response shape. Use server-provided totalElements when available to keep pagination correct.
       const totalCount = isArray ? items.length : (res.totalElements != null ? res.totalElements : items.length);
       setTotal(totalCount);
     } catch (err) {
@@ -89,6 +95,34 @@ export const useCategories = () => {
     }
   }, [fetchList, detail, fetchDetail]);
 
+  const handleToggleStatus = useCallback(async (id, currentStatus) => {
+    try {
+      setError(null);
+      const newStatus = Number(currentStatus) === 1 ? 0 : 1;
+      await updateCategoryStatus(id, newStatus);
+      const actionText = newStatus === 1 ? 'activated' : 'disabled';
+      setSuccessMsg(`Category has been ${actionText} successfully.`);
+      await fetchList();
+      return true;
+    } catch (err) {
+      setError(err.message || 'Failed to change category status.');
+      throw err;
+    }
+  }, [fetchList]);
+
+  const handleDeleteCategory = useCallback(async (id) => {
+    try {
+      setError(null);
+      await deleteCategory(id);
+      setSuccessMsg('Category deleted successfully.');
+      await fetchList();
+      return true;
+    } catch (err) {
+      setError(err.message || 'Failed to delete category.');
+      throw err;
+    }
+  }, [fetchList]);
+
   return {
     data,
     total,
@@ -111,6 +145,8 @@ export const useCategories = () => {
     fetchDetail,
     handleCreate,
     handleUpdate,
+    handleToggleStatus,
+    handleDeleteCategory,
     detail,
     detailLoading,
     setDetail,

@@ -34,29 +34,36 @@ public class CategoryController {
 
     @PostMapping
     @Operation(summary = "Tạo danh mục mới")
-    public ResponseEntity<ApiResponse<CategoryResponse>> createAccount(
+    public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(
             @Valid @RequestBody CategoryCreateRequest request) {
         CategoryResponse response = categoryService.createCategory(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Tạo danh mục thành công", response));
     }
 
-    @PutMapping("/{id}")
+    @RequestMapping(value = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     @Operation(summary = "Cập nhật thông tin danh mục")
-    public ResponseEntity<ApiResponse<CategoryResponse>> updateAccount(
+    public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(
             @PathVariable Long id,
             @Valid @RequestBody CategoryUpdateRequest request) {
         CategoryResponse response = categoryService.updateCategory(id, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật danh mục thành công", response));
     }
 
-
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Xóa mềm danh mục (Active/Inactive)")
+    @Operation(summary = "Cập nhật trạng thái danh mục (Active/Inactive)")
     public ResponseEntity<ApiResponse<Void>> updateCategoryStatus(
             @PathVariable Long id,
             @RequestParam Short status) {
         categoryService.updateCategoryStatus(id, status);
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật danh mục tài khoản thành công", null));
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái danh mục thành công", null));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Xóa danh mục sản phẩm (UC20)")
+    public ResponseEntity<ApiResponse<Void>> deleteCategory(
+            @PathVariable Long id) {
+        categoryService.deleteCategory(id);
+        return ResponseEntity.ok(ApiResponse.success("Xóa danh mục thành công", null));
     }
 }

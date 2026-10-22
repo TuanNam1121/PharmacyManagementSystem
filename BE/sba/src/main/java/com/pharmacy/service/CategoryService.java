@@ -15,4 +15,6 @@ public interface CategoryService {
     CategoryResponse updateCategory(Long id, @Valid CategoryUpdateRequest request);
 
     void updateCategoryStatus(Long id, Short status);
+
+    void deleteCategory(Long id);
 }

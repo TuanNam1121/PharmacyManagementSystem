@@ -2,19 +2,17 @@ import { useState, useEffect } from 'react';
 import { createProduct, updateProduct } from '../../api/ProductAPI';
 
 const initialForm = {
-  name: '',
-  categoryId: '',
   barcode: '',
+  name: '',
   unit: '',
   activeIngredient: '',
   manufacturer: '',
   isPrescription: false,
-  costPrice: '',
-  sellingPrice: '',
   minQuantity: 20,
   description: '',
   imageUrl: '',
   status: '1',
+  categoryId: '',
 };
 
 export default function ProductFormModal({
@@ -37,19 +35,17 @@ export default function ProductFormModal({
       setServerError(null);
       if (isEdit && product) {
         setForm({
-          name: product.name || '',
-          categoryId: product.categoryId != null ? String(product.categoryId) : '',
           barcode: product.barcode || '',
+          name: product.name || '',
           unit: product.unit || '',
           activeIngredient: product.activeIngredient || '',
           manufacturer: product.manufacturer || '',
           isPrescription: product.isPrescription === true,
-          costPrice: product.costPrice != null ? String(product.costPrice) : '',
-          sellingPrice: product.sellingPrice != null ? String(product.sellingPrice) : '',
-          minQuantity: product.minQuantity ?? 20,
+          minQuantity: product.minQuantity != null ? product.minQuantity : 20,
           description: product.description || '',
           imageUrl: product.imageUrl || '',
-          status: product.status != null ? String(product.status) : '1',
+          status: String(product.status ?? '1'),
+          categoryId: product.categoryId ? String(product.categoryId) : '',
         });
       } else {
         setForm(initialForm);
@@ -66,18 +62,9 @@ export default function ProductFormModal({
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = 'Product name is required';
-    if (!form.categoryId) e.categoryId = 'Category is required';
     if (!form.unit.trim()) e.unit = 'Unit is required';
-    if (form.costPrice === '' || form.costPrice === null) {
-      e.costPrice = 'Cost price is required';
-    } else if (isNaN(Number(form.costPrice)) || Number(form.costPrice) < 0) {
-      e.costPrice = 'Cost price must be a non-negative number';
-    }
-    if (form.sellingPrice === '' || form.sellingPrice === null) {
-      e.sellingPrice = 'Selling price is required';
-    } else if (isNaN(Number(form.sellingPrice)) || Number(form.sellingPrice) < 0) {
-      e.sellingPrice = 'Selling price must be a non-negative number';
-    }
+    if (!form.categoryId) e.categoryId = 'Please select a category';
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -98,18 +85,16 @@ export default function ProductFormModal({
     try {
       const payload = {
         name: form.name.trim(),
-        categoryId: Number(form.categoryId),
-        barcode: form.barcode.trim() || null,
         unit: form.unit.trim(),
+        categoryId: Number(form.categoryId),
+        minQuantity: Number(form.minQuantity) || 20,
+        isPrescription: form.isPrescription,
+        barcode: form.barcode.trim() || null,
         activeIngredient: form.activeIngredient.trim() || null,
         manufacturer: form.manufacturer.trim() || null,
-        isPrescription: form.isPrescription,
-        costPrice: Number(form.costPrice),
-        sellingPrice: Number(form.sellingPrice),
-        minQuantity: Number(form.minQuantity) || 20,
         description: form.description.trim() || null,
         imageUrl: form.imageUrl.trim() || null,
-        ...(isEdit ? { status: Number(form.status) } : {}),
+        status: Number(form.status),
       };
 
       if (isEdit && product?.id) {
@@ -160,13 +145,13 @@ export default function ProductFormModal({
             </div>
             <div className="pms-modal-sub">
               {isEdit
-                ? `Update catalog information for "${product?.name || 'product'}"`
-                : 'Register a new pharmaceutical product to the catalog'}
+                ? `Update catalog details for "${product?.name || ''}"`
+                : 'Add a new product or medication to the central catalog'}
             </div>
           </div>
           <button className="pms-modal-close" onClick={handleClose} aria-label="Close">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
@@ -177,12 +162,12 @@ export default function ProductFormModal({
             {serverError && (
               <div className="pms-alert pms-alert-danger" style={{ marginBottom: 16 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
                 {serverError}
                 <button type="button" className="pms-alert-close" onClick={() => setServerError(null)}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </button>
               </div>
@@ -191,32 +176,21 @@ export default function ProductFormModal({
             {/* ── Section 1: Basic Info ── */}
             <div style={{ marginBottom: 20 }}>
               {sectionTitle(1, 'Basic Information')}
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14, marginBottom: 12 }}>
-                <div className="pms-form-group">
-                  <label className="pms-label">Product Name *</label>
-                  <input
-                    type="text"
-                    className="pms-input pms-input-bare"
-                    value={form.name}
-                    onChange={(e) => setField('name', e.target.value)}
-                    placeholder="e.g. Paracetamol 500mg"
-                    required
-                  />
-                  {fieldErr('name')}
-                </div>
-                <div className="pms-form-group">
-                  <label className="pms-label">Barcode</label>
-                  <input
-                    type="text"
-                    className="pms-input pms-input-bare"
-                    value={form.barcode}
-                    onChange={(e) => setField('barcode', e.target.value)}
-                    placeholder="e.g. 8934673123456"
-                  />
-                </div>
+              <div className="pms-form-group" style={{ marginBottom: 14 }}>
+                <label className="pms-label">Product Name *</label>
+                <input
+                  type="text"
+                  className="pms-input pms-input-bare"
+                  value={form.name}
+                  onChange={(e) => setField('name', e.target.value)}
+                  placeholder="e.g. Paracetamol 500mg, Amoxicillin 250mg"
+                  maxLength={250}
+                  required
+                />
+                {fieldErr('name')}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
                 <div className="pms-form-group">
                   <label className="pms-label">Category *</label>
                   <select
@@ -226,34 +200,47 @@ export default function ProductFormModal({
                     onChange={(e) => setField('categoryId', e.target.value)}
                     required
                   >
-                    <option value="">-- Select category --</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={String(cat.id)}>
-                        {cat.name}
+                    <option value="">— Select Category —</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
                       </option>
                     ))}
                   </select>
                   {fieldErr('categoryId')}
                 </div>
                 <div className="pms-form-group">
-                  <label className="pms-label">Unit *</label>
+                  <label className="pms-label">Unit of Measure *</label>
                   <input
                     type="text"
                     className="pms-input pms-input-bare"
                     value={form.unit}
                     onChange={(e) => setField('unit', e.target.value)}
-                    placeholder="e.g. hộp, vỉ, viên, chai"
+                    placeholder="e.g. Box, Blister, Bottle, Tube"
+                    maxLength={30}
                     required
                   />
                   {fieldErr('unit')}
                 </div>
               </div>
+
+              <div className="pms-form-group">
+                <label className="pms-label">Barcode / GTIN</label>
+                <input
+                  type="text"
+                  className="pms-input pms-input-bare mono"
+                  value={form.barcode}
+                  onChange={(e) => setField('barcode', e.target.value)}
+                  placeholder="e.g. 8935001234567"
+                  maxLength={50}
+                />
+              </div>
             </div>
 
-            {/* ── Section 2: Medical ── */}
+            {/* ── Section 2: Clinical Details ── */}
             <div style={{ marginBottom: 20 }}>
-              {sectionTitle(2, 'Medical Information')}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 12 }}>
+              {sectionTitle(2, 'Clinical Details')}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
                 <div className="pms-form-group">
                   <label className="pms-label">Active Ingredient</label>
                   <input
@@ -261,7 +248,8 @@ export default function ProductFormModal({
                     className="pms-input pms-input-bare"
                     value={form.activeIngredient}
                     onChange={(e) => setField('activeIngredient', e.target.value)}
-                    placeholder="e.g. Paracetamol"
+                    placeholder="e.g. Paracetamol, Ibuprofen"
+                    maxLength={250}
                   />
                 </div>
                 <div className="pms-form-group">
@@ -271,7 +259,8 @@ export default function ProductFormModal({
                     className="pms-input pms-input-bare"
                     value={form.manufacturer}
                     onChange={(e) => setField('manufacturer', e.target.value)}
-                    placeholder="e.g. DHG Pharma"
+                    placeholder="e.g. DHG Pharma, Sanofi"
+                    maxLength={200}
                   />
                 </div>
               </div>
@@ -289,56 +278,69 @@ export default function ProductFormModal({
               </div>
             </div>
 
-            {/* ── Section 3: Pricing & Stock ── */}
+            {/* ── Section 3: Stock Settings ── */}
             <div style={{ marginBottom: 20 }}>
-              {sectionTitle(3, 'Pricing & Stock')}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
-                <div className="pms-form-group">
-                  <label className="pms-label">Cost Price * (₫)</label>
-                  <input
-                    type="number"
-                    className="pms-input pms-input-bare"
-                    value={form.costPrice}
-                    onChange={(e) => setField('costPrice', e.target.value)}
-                    placeholder="0"
-                    min="0"
-                    step="1"
-                    required
-                  />
-                  {fieldErr('costPrice')}
-                </div>
-                <div className="pms-form-group">
-                  <label className="pms-label">Selling Price * (₫)</label>
-                  <input
-                    type="number"
-                    className="pms-input pms-input-bare"
-                    value={form.sellingPrice}
-                    onChange={(e) => setField('sellingPrice', e.target.value)}
-                    placeholder="0"
-                    min="0"
-                    step="1"
-                    required
-                  />
-                  {fieldErr('sellingPrice')}
-                </div>
-                <div className="pms-form-group">
-                  <label className="pms-label">Min. Stock Quantity</label>
-                  <input
-                    type="number"
-                    className="pms-input pms-input-bare"
-                    value={form.minQuantity}
-                    onChange={(e) => setField('minQuantity', e.target.value)}
-                    placeholder="20"
-                    min="0"
-                    step="1"
-                  />
-                </div>
+              {sectionTitle(3, 'Inventory & Stock')}
+              <div className="pms-form-group" style={{ maxWidth: 320 }}>
+                <label className="pms-label">Min. Stock Alert Quantity</label>
+                <input
+                  type="number"
+                  className="pms-input pms-input-bare"
+                  value={form.minQuantity}
+                  onChange={(e) => setField('minQuantity', e.target.value)}
+                  placeholder="20"
+                  min="0"
+                  step="1"
+                />
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                  Ngưỡng cảnh báo sắp hết hàng tại kho. Giá sản phẩm được quản lý riêng biệt tại mục <em>"Set/Update Price"</em>.
+                </span>
               </div>
             </div>
 
-            {/* ── Section 4: Additional ── */}
+            {/* ── Section 4: Media & Additional ── */}
             <div style={{ marginBottom: 8 }}>
-              {sectionTitle(4, 'Additional')}
+              {sectionTitle(4, 'Media & Details')}
+              <div className="pms-form-group" style={{ marginBottom: 14 }}>
+                <label className="pms-label">Product Image URL</label>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <input
+                    type="text"
+                    className="pms-input pms-input-bare"
+                    value={form.imageUrl}
+                    onChange={(e) => setField('imageUrl', e.target.value)}
+                    placeholder="https://example.com/product-image.jpg"
+                    style={{ flex: 1 }}
+                  />
+                  {form.imageUrl && form.imageUrl.trim() && (
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 8,
+                        border: '1px solid var(--border-color)',
+                        overflow: 'hidden',
+                        flexShrink: 0,
+                        background: '#f8fafc',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <img
+                        src={form.imageUrl}
+                        alt="Preview"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    </div>
+                  )}
+                </div>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                  Nhập link ảnh trực tuyến (JPEG, PNG, WebP) để hiển thị trên danh mục và chi tiết sản phẩm.
+                </span>
+              </div>
+
               <div className="pms-form-group" style={{ marginBottom: 12 }}>
                 <label className="pms-label">Description</label>
                 <textarea
@@ -348,16 +350,6 @@ export default function ProductFormModal({
                   onChange={(e) => setField('description', e.target.value)}
                   placeholder="Optional product description, usage notes, warnings…"
                   style={{ resize: 'vertical' }}
-                />
-              </div>
-              <div className="pms-form-group" style={{ marginBottom: isEdit ? 12 : 0 }}>
-                <label className="pms-label">Image URL</label>
-                <input
-                  type="text"
-                  className="pms-input pms-input-bare"
-                  value={form.imageUrl}
-                  onChange={(e) => setField('imageUrl', e.target.value)}
-                  placeholder="https://example.com/image.png"
                 />
               </div>
               {isEdit && (
@@ -371,6 +363,7 @@ export default function ProductFormModal({
                   >
                     <option value="1">Active</option>
                     <option value="0">Inactive</option>
+                    <option value="2">Discontinued</option>
                   </select>
                 </div>
               )}

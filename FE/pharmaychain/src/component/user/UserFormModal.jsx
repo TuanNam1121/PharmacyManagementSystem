@@ -108,7 +108,6 @@ export default function UserFormModal({
         email: formData.email.trim(),
         phone: formData.phone.trim() || null,
         roleId: Number(formData.roleId),
-        status: Number(formData.status),
         dateOfBirth: formData.dateOfBirth || null,
         gender: Number(formData.gender),
         address: formData.address.trim() || null,
@@ -118,6 +117,7 @@ export default function UserFormModal({
       if (!isEdit) {
         payload.username = formData.username.trim();
         payload.password = formData.password;
+        payload.status = Number(formData.status);
       }
 
       await onSubmit(payload);
@@ -128,6 +128,14 @@ export default function UserFormModal({
       setSubmitting(false);
     }
   };
+
+  const getStatusText = (status) => {
+    if (Number(status) === 1) return { text: 'Active', badge: 'pms-badge-success' };
+    if (Number(status) === 2) return { text: 'Locked', badge: 'pms-badge-danger' };
+    return { text: 'Disabled / Inactive', badge: 'pms-badge-neutral' };
+  };
+
+  const currentStatusInfo = getStatusText(formData.status);
 
   return (
     <div className="pms-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onHide(); }}>
@@ -207,17 +215,15 @@ export default function UserFormModal({
                   </div>
                 ) : (
                   <div className="pms-form-group">
-                    <label className="pms-label">Account Status</label>
-                    <select
-                      className="pms-select"
-                      style={{ width: '100%' }}
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                    >
-                      <option value="1">Active</option>
-                      <option value="0">Inactive / Locked</option>
-                    </select>
+                    <label className="pms-label">Account Status (Read-only)</label>
+                    <div style={{ display: 'flex', alignItems: 'center', height: 38, gap: 8 }}>
+                      <span className={`pms-badge ${currentStatusInfo.badge}`}>
+                        {currentStatusInfo.text}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                        (Use Lock/Unlock action on user list to change status)
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -253,7 +259,7 @@ export default function UserFormModal({
                       onChange={handleChange}
                     >
                       <option value="1">Active</option>
-                      <option value="0">Inactive / Locked</option>
+                      <option value="0">Disabled</option>
                     </select>
                   </div>
                 )}

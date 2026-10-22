@@ -24,9 +24,9 @@ public class RoleController {
     private final RoleService roleService;
 
     @GetMapping
-    @Operation(summary = "Lấy danh sách các vai trò (Roles)")
+    @Operation(summary = "Get list of user roles")
     public ResponseEntity<ApiResponse<List<RoleDto>>> getAllRoles() {
         List<RoleDto> roles = roleService.getAllRoles();
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách vai trò thành công", roles));
+        return ResponseEntity.ok(ApiResponse.success("Roles retrieved successfully", roles));
     }
 }

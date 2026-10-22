@@ -4,6 +4,7 @@ import {
   viewProductDetail,
   createProduct,
   updateProduct,
+  updateProductStatus,
   viewCategoryOptions,
 } from '../../api/ProductAPI';
 
@@ -106,6 +107,30 @@ export const useProducts = () => {
     [fetchList, detail, fetchDetail]
   );
 
+  const handleToggleStatus = useCallback(
+    async (id, currentStatus) => {
+      try {
+        setError(null);
+        const targetStatus = Number(currentStatus) === 1 ? 0 : 1;
+        await updateProductStatus(id, targetStatus);
+        setSuccessMsg(
+          targetStatus === 0
+            ? 'Đã vô hiệu hóa sản phẩm thành công!'
+            : 'Đã kích hoạt lại sản phẩm thành công!'
+        );
+        await fetchList();
+        if (detail && detail.id === id) {
+          await fetchDetail(id);
+        }
+        return true;
+      } catch (err) {
+        setError(err.message || 'Không thể thay đổi trạng thái sản phẩm');
+        throw err;
+      }
+    },
+    [fetchList, detail, fetchDetail]
+  );
+
   const fetchCategories = useCallback(async () => {
     try {
       const res = await viewCategoryOptions();
@@ -140,6 +165,7 @@ export const useProducts = () => {
     fetchDetail,
     handleCreate,
     handleUpdate,
+    handleToggleStatus,
     detail,
     detailLoading,
     setDetail,

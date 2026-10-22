@@ -49,9 +49,12 @@ export const updateAccount = async (id, payload) => {
   return unwrap(res);
 };
 
-export const updateAccountStatus = async (id, status) => {
+export const updateAccountStatus = async (id, status, reason = '') => {
   if (!id) throw new Error('Account ID is required');
-  const res = await patch(`${BASE_URL}/${encodeURIComponent(id)}/status?status=${encodeURIComponent(status)}`);
+  const params = new URLSearchParams();
+  params.append('status', String(status));
+  if (reason) params.append('reason', reason);
+  const res = await patch(`${BASE_URL}/${encodeURIComponent(id)}/status?${params.toString()}`);
   return unwrap(res);
 };
 

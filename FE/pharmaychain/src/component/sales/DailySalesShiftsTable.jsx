@@ -5,7 +5,7 @@ export default function DailySalesShiftsTable({ shifts, loading }) {
         if (!iso) return '-';
         try {
             const d = new Date(iso);
-            return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + formatDate(iso);
+            return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ' ' + formatDate(iso);
         } catch {
             return iso;
         }
@@ -16,42 +16,42 @@ export default function DailySalesShiftsTable({ shifts, loading }) {
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
-                        Danh sách ca làm việc của thu ngân trong ngày
+                        Cashier Shifts Breakdown
                     </div>
                     <div style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
-                        Theo dõi chi tiết số tiền bàn giao đầu ca, kết ca và đối soát của từng thu ngân
+                        Track shift opening float, closing drawer totals, and individual cashier reconciliation
                     </div>
                 </div>
-                <span className="pms-badge pms-badge-neutral">{shifts?.length || 0} ca</span>
+                <span className="pms-badge pms-badge-neutral">{shifts?.length || 0} shifts</span>
             </div>
 
             <div style={{ overflowX: 'auto' }}>
                 <table className="pms-table">
                     <thead>
                         <tr>
-                            <th>Mã Ca</th>
-                            <th>Thu ngân</th>
-                            <th>Giờ mở ca</th>
-                            <th>Giờ đóng ca</th>
-                            <th style={{ textAlign: 'right' }}>Tiền đầu ca</th>
-                            <th style={{ textAlign: 'right' }}>Tiền lý thuyết</th>
-                            <th style={{ textAlign: 'right' }}>Tiền kết ca</th>
-                            <th style={{ textAlign: 'right' }}>Chênh lệch</th>
-                            <th style={{ textAlign: 'center' }}>Trạng thái</th>
-                            <th>Ghi chú ca</th>
+                            <th>Shift #</th>
+                            <th>Cashier</th>
+                            <th>Opened At</th>
+                            <th>Closed At</th>
+                            <th style={{ textAlign: 'right' }}>Opening Float</th>
+                            <th style={{ textAlign: 'right' }}>Expected Cash</th>
+                            <th style={{ textAlign: 'right' }}>Closing Cash</th>
+                            <th style={{ textAlign: 'right' }}>Variance</th>
+                            <th style={{ textAlign: 'center' }}>Status</th>
+                            <th>Shift Notes</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
                                 <td colSpan={10} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)' }}>
-                                    Đang tải danh sách ca làm việc...
+                                    Loading shifts...
                                 </td>
                             </tr>
                         ) : !shifts || shifts.length === 0 ? (
                             <tr>
                                 <td colSpan={10} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)' }}>
-                                    Không có ca làm việc nào được ghi nhận trong ngày này
+                                    No cashier shifts recorded for this date
                                 </td>
                             </tr>
                         ) : (
@@ -73,11 +73,11 @@ export default function DailySalesShiftsTable({ shifts, loading }) {
                                             fontWeight: 700,
                                             color: diff === 0 ? 'var(--color-success)' : diff > 0 ? 'var(--color-info)' : 'var(--color-danger)'
                                         }}>
-                                            {diff === 0 ? '0 đ' : (diff > 0 ? `+${money(diff)}` : money(diff))}
+                                            {diff === 0 ? '0 ₫' : (diff > 0 ? `+${money(diff)}` : money(diff))}
                                         </td>
                                         <td style={{ textAlign: 'center' }}>
                                             <span className={`pms-badge ${s.status === 2 ? 'pms-badge-neutral' : 'pms-badge-success'}`}>
-                                                {s.status === 2 ? 'Đã đóng' : 'Đang mở'}
+                                                {s.status === 2 ? 'Closed' : 'Open'}
                                             </span>
                                         </td>
                                         <td style={{ fontSize: 12, color: 'var(--text-secondary)', maxWidth: 180 }}>

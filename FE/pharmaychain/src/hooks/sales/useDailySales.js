@@ -6,11 +6,11 @@ import {
     reconcileDailySales,
 } from '../../api/DailySalesAPI';
 
-export const useDailySales = () => {
+export const useDailySales = ({ initialTab = 'overview' } = {}) => {
     const todayStr = new Date().toISOString().split('T')[0];
-    const [storeId, setStoreId] = useState(1);
+    const [storeId, setStoreId] = useState(7);
     const [date, setDate] = useState(todayStr);
-    const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'invoices' | 'shifts'
+    const [activeTab, setActiveTab] = useState(initialTab); // 'overview' | 'invoices' | 'shifts'
 
     // Overview state
     const [overview, setOverview] = useState(null);
@@ -41,7 +41,7 @@ export const useDailySales = () => {
             const data = await getDailySalesOverview({ storeId, date });
             setOverview(data);
         } catch (err) {
-            setError(err?.message || 'Không thể tải tổng quan doanh thu ngày');
+            setError(err?.message || 'Failed to load daily sales overview');
         } finally {
             setOverviewLoading(false);
         }
@@ -56,7 +56,7 @@ export const useDailySales = () => {
             setInvoices(data?.content || []);
             setInvTotal(data?.totalElements || 0);
         } catch (err) {
-            setError(err?.message || 'Không thể tải danh sách hóa đơn');
+            setError(err?.message || 'Failed to load invoices list');
         } finally {
             setInvLoading(false);
         }
@@ -70,7 +70,7 @@ export const useDailySales = () => {
             const data = await getDailyShifts({ storeId, date });
             setShifts(Array.isArray(data) ? data : []);
         } catch (err) {
-            setError(err?.message || 'Không thể tải danh sách ca làm việc');
+            setError(err?.message || 'Failed to load shifts list');
         } finally {
             setShiftsLoading(false);
         }
@@ -100,7 +100,7 @@ export const useDailySales = () => {
             };
             const result = await reconcileDailySales(payload);
             setOverview(result);
-            setSuccessMsg('Xác nhận đối soát và chốt sổ doanh thu ngày thành công!');
+            setSuccessMsg('Daily sales reconciled and closed successfully!');
             setReconcileModalOpen(false);
             reloadAll();
             return result;

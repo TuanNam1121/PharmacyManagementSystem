@@ -13,30 +13,30 @@ import java.time.LocalDate;
 @Setter
 public class AccountUpdateRequest {
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không đúng định dạng")
-    @Size(max = 150, message = "Email tối đa 150 ký tự")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
+    @Size(max = 150, message = "Email maximum 150 characters")
     private String email;
 
-    @Size(max = 20, message = "Số điện thoại tối đa 20 ký tự")
+    @Size(max = 20, message = "Phone number maximum 20 characters")
     private String phone;
 
     private Short status;
 
-    @NotNull(message = "Vai trò (roleId) không được để trống")
+    @NotNull(message = "Role ID is required")
     private Integer roleId;
 
-    @NotBlank(message = "Họ và tên không được để trống")
-    @Size(max = 150, message = "Họ và tên tối đa 150 ký tự")
+    @NotBlank(message = "Full name is required")
+    @Size(max = 150, message = "Full name maximum 150 characters")
     private String fullName;
 
     private LocalDate dateOfBirth;
 
     private Short gender;
 
-    @Size(max = 500, message = "Địa chỉ tối đa 500 ký tự")
+    @Size(max = 500, message = "Address maximum 500 characters")
     private String address;
 
-    @Size(max = 500, message = "Đường dẫn ảnh đại diện tối đa 500 ký tự")
+    @Size(max = 500, message = "Avatar URL maximum 500 characters")
     private String avatarUrl;
 }

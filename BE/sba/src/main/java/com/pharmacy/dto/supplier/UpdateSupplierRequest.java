@@ -10,24 +10,21 @@ import lombok.Builder;
 
 @Builder 
 public record UpdateSupplierRequest(
-    @NotBlank(message = "Mã nhà cung cấp không được để trống")
-    String code,
-    @NotBlank(message = "Tên nhà cung cấp không được để trống")
+    @NotBlank(message = "Supplier name is required")
     String name,
     String contactPerson,
-    @NotBlank(message = "Số điện thoại không được để trống")
+    @NotBlank(message = "Phone number is required")
     String phone,
-    @Email(message = "Email không đúng định dạng")
+    @Email(message = "Invalid email format")
     String email,
     String address,
-    @Pattern(regexp = "^$|^[0-9]{10}(-[0-9]{3})?$", message = "Mã số thuế phải gồm 10 số hoặc 13 số")
+    @Pattern(regexp = "^$|^[0-9]{10}(-[0-9]{3})?$", message = "Tax code must be 10 or 13 digits")
     String taxCode,
-    @Size(max = 1000, message = "Ghi chú không được vượt quá 1000 ký tự")
+    @Size(max = 1000, message = "Note cannot exceed 1000 characters")
     String note
 ) {
     public Supplier toEntity(){
         return Supplier.builder()
-        .code(this.code)
         .name(this.name)
         .contactPerson(this.contactPerson)
         .phone(this.phone)

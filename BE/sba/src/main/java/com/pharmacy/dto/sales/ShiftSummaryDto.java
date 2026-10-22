@@ -21,6 +21,6 @@ public class ShiftSummaryDto {
     private BigDecimal closingCash;
     private BigDecimal expectedCash;
     private BigDecimal difference;
-    private Short status; // 1: Đang mở, 2: Đã đóng
+    private Short status; // 1: Open, 2: Closed
     private String note;
 }

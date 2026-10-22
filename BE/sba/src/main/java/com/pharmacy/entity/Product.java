@@ -1,5 +1,6 @@
 package com.pharmacy.entity;
 
+import com.pharmacy.entity.enums.ProductStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -78,7 +79,7 @@ public class Product {
 
     @ColumnDefault("1")
     @Column(name = "status", columnDefinition = "tinyint not null")
-    private Short status;
+    private ProductStatus status;
 
     @NotNull
     @ColumnDefault("sysdatetime()")

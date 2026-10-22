@@ -1,4 +1,4 @@
-import { get, post, patch } from './FetchData';
+import { get, post, put, patch, del } from './FetchData';
 
 const CATEGORY_BASE_URL = 'http://localhost:8080/api/v1/category';
 
@@ -36,7 +36,23 @@ export const updateCategory = async (id, payload) => {
   if (id === null || id === undefined || id === '') {
     throw new Error('Category ID is required');
   }
-  const json = await patch(`${CATEGORY_BASE_URL}/${encodeURIComponent(id)}`, payload);
+  const json = await put(`${CATEGORY_BASE_URL}/${encodeURIComponent(id)}`, payload);
+  return unwrapApiResponse(json);
+};
+
+export const updateCategoryStatus = async (id, status) => {
+  if (id === null || id === undefined || id === '') {
+    throw new Error('Category ID is required');
+  }
+  const json = await patch(`${CATEGORY_BASE_URL}/${encodeURIComponent(id)}/status?status=${encodeURIComponent(status)}`);
+  return unwrapApiResponse(json);
+};
+
+export const deleteCategory = async (id) => {
+  if (id === null || id === undefined || id === '') {
+    throw new Error('Category ID is required');
+  }
+  const json = await del(`${CATEGORY_BASE_URL}/${encodeURIComponent(id)}`);
   return unwrapApiResponse(json);
 };
 
@@ -45,4 +61,6 @@ export default {
   viewCategoryDetail,
   createCategory,
   updateCategory,
+  updateCategoryStatus,
+  deleteCategory,
 };

@@ -4,6 +4,7 @@ import CategoryStats from '../../component/category/CategoryStats';
 import CategoryFilters from '../../component/category/CategoryFilters';
 import CategoryTable from '../../component/category/CategoryTable';
 import CategoryFormModal from '../../component/category/CategoryFormModal';
+import CategoryStatusModal from '../../component/category/CategoryStatusModal';
 
 function Pagination({ total, page, size, onPage }) {
   if (total <= size) return null;
@@ -51,11 +52,15 @@ export default function CategoryPage() {
     setSearch,
     setStatusFilter,
     fetchList,
+    handleToggleStatus,
   } = useCategories();
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState('create'); // 'create' | 'edit'
   const [selectedCategory, setSelectedCategory] = useState(null);
+
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [statusCategory, setStatusCategory] = useState(null);
 
   useEffect(() => {
     fetchList();
@@ -78,6 +83,22 @@ export default function CategoryPage() {
       formMode === 'create'
         ? 'Category created successfully!'
         : 'Category updated successfully!'
+    );
+    await fetchList();
+  };
+
+  const handleToggleCategoryStatus = (cat) => {
+    setStatusCategory(cat);
+    setStatusModalOpen(true);
+  };
+
+  const handleConfirmStatusChange = async (categoryId, targetStatus) => {
+    // If targetStatus is 0, old status was 1 (Active)
+    await handleToggleStatus(categoryId, targetStatus === 0 ? 1 : 0);
+    setSuccessMsg(
+      targetStatus === 0
+        ? 'Đã vô hiệu hóa danh mục thành công!'
+        : 'Đã kích hoạt danh mục thành công!'
     );
     await fetchList();
   };
@@ -136,13 +157,14 @@ export default function CategoryPage() {
         total={data.length}
       />
 
-      {/* ── Table ── */}
+      {/* ── Table (UC20) ── */}
       <CategoryTable
         data={data}
         loading={loading}
         page={page}
         size={size}
         onEdit={handleEdit}
+        onToggleStatus={handleToggleCategoryStatus}
       />
 
       {/* ── Pagination ── */}
@@ -160,6 +182,14 @@ export default function CategoryPage() {
         onSuccess={handleFormSuccess}
         mode={formMode}
         category={selectedCategory}
+      />
+
+      {/* ── Status Change Confirmation Modal (UC20) ── */}
+      <CategoryStatusModal
+        show={statusModalOpen}
+        onHide={() => { setStatusModalOpen(false); setStatusCategory(null); }}
+        category={statusCategory}
+        onConfirm={handleConfirmStatusChange}
       />
     </div>
   );

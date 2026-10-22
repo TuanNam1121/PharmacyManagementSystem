@@ -13,6 +13,7 @@ public class CategoryResponse {
     private String name;
     private String description;
     private Short status;
+    private String statusLabel;
     private LocalDateTime createdAt;
 
     // Thông tin người tạo (mapping từ entity Account)

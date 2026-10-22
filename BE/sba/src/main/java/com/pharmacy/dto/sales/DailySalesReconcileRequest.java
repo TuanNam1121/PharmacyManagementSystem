@@ -10,16 +10,16 @@ import java.time.LocalDate;
 
 @Data
 public class DailySalesReconcileRequest {
-    @NotNull(message = "storeId không được để trống")
+    @NotNull(message = "Store ID is required")
     private Long storeId;
 
-    @NotNull(message = "businessDate không được để trống")
+    @NotNull(message = "Business date is required")
     private LocalDate businessDate;
 
-    @NotNull(message = "Số tiền mặt thực tế không được để trống")
-    @DecimalMin(value = "0.0", inclusive = true, message = "Số tiền thực tế không được âm")
+    @NotNull(message = "Actual cash amount is required")
+    @DecimalMin(value = "0.0", inclusive = true, message = "Actual cash amount cannot be negative")
     private BigDecimal actualCash;
 
-    @Size(max = 1000, message = "Ghi chú không được vượt quá 1000 ký tự")
+    @Size(max = 1000, message = "Note cannot exceed 1000 characters")
     private String note;
 }

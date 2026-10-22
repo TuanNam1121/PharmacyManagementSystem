@@ -53,6 +53,7 @@ export default function SupplierPage() {
     setStatusFilter,
     fetchList,
     fetchDetail,
+    handleDelete,
     detail,
     detailLoading,
     setDetail,
@@ -159,6 +160,7 @@ export default function SupplierPage() {
         size={size}
         onView={handleView}
         onEdit={handleEdit}
+        onDelete={handleDelete}
       />
 
       {/* ── Pagination ── */}

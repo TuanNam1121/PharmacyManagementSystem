@@ -30,11 +30,9 @@ public class ProductCreateRequest {
 
     private Boolean isPrescription = false;
 
-    @NotNull(message = "Giá gốc không được để trống")
     @DecimalMin(value = "0.0", inclusive = true, message = "Giá gốc phải lớn hơn hoặc bằng 0")
     private BigDecimal costPrice;
 
-    @NotNull(message = "Giá bán không được để trống")
     @DecimalMin(value = "0.0", inclusive = true, message = "Giá bán phải lớn hơn hoặc bằng 0")
     private BigDecimal sellingPrice;
 
@@ -49,4 +47,6 @@ public class ProductCreateRequest {
 
     @NotNull(message = "Danh mục sản phẩm không được để trống")
     private Long categoryId;
+
+    private String priceReason;
 }

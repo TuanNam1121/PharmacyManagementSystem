@@ -5,6 +5,7 @@ import UserFilters from '../../component/user/UserFilters';
 import UserTable from '../../component/user/UserTable';
 import UserDetailModal from '../../component/user/UserDetailModal';
 import UserFormModal from '../../component/user/UserFormModal';
+import UserLockModal from '../../component/user/UserLockModal';
 
 function Pagination({ total, page, size, onPage }) {
   if (total <= size) return null;
@@ -68,6 +69,10 @@ export default function UsersPage() {
   const [formMode, setFormMode] = useState('create'); // 'create' | 'edit'
   const [editingUser, setEditingUser] = useState(null);
 
+  // Lock / Unlock modal state
+  const [lockModalOpen, setLockModalOpen] = useState(false);
+  const [selectedUserForLock, setSelectedUserForLock] = useState(null);
+
   // View Details
   const handleView = async (id) => {
     setDetailModalOpen(true);
@@ -92,13 +97,24 @@ export default function UsersPage() {
     setFormModalOpen(true);
   };
 
-  // Handle Form Submit
+  // Open Lock/Unlock Modal (UC10)
+  const handleOpenLockModal = (user) => {
+    setSelectedUserForLock(user);
+    setLockModalOpen(true);
+  };
+
+  // Handle Form Submit (UC09)
   const handleFormSubmit = async (payload) => {
     if (formMode === 'create') {
       await handleCreateUser(payload);
     } else {
       await handleUpdateUser(editingUser.id, payload);
     }
+  };
+
+  // Handle Lock / Unlock Confirm (UC10)
+  const handleLockUnlockConfirm = async (id, targetStatus, reason) => {
+    await handleToggleStatus(id, targetStatus, reason);
   };
 
   return (
@@ -170,7 +186,7 @@ export default function UsersPage() {
         size={size}
         onView={handleView}
         onEdit={handleEdit}
-        onToggleStatus={handleToggleStatus}
+        onLockUnlock={handleOpenLockModal}
       />
 
       {/* ── Pagination ── */}
@@ -197,6 +213,13 @@ export default function UsersPage() {
         user={editingUser}
         roles={roles}
         onSubmit={handleFormSubmit}
+      />
+
+      <UserLockModal
+        show={lockModalOpen}
+        onHide={() => { setLockModalOpen(false); setSelectedUserForLock(null); }}
+        user={selectedUserForLock}
+        onConfirm={handleLockUnlockConfirm}
       />
     </div>
   );

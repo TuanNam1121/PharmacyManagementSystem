@@ -1,4 +1,4 @@
-import { get, post, patch } from './FetchData';
+import { get, post, put, patch } from './FetchData';
 
 const PRODUCT_BASE_URL = 'http://localhost:8080/api/v1/product';
 const CATEGORY_BASE_URL = 'http://localhost:8080/api/v1/category';
@@ -37,7 +37,23 @@ export const updateProduct = async (id, payload) => {
   if (id === null || id === undefined || id === '') {
     throw new Error('Product ID is required');
   }
-  const json = await patch(`${PRODUCT_BASE_URL}/${encodeURIComponent(id)}`, payload);
+  const json = await put(`${PRODUCT_BASE_URL}/${encodeURIComponent(id)}`, payload);
+  return unwrapApiResponse(json);
+};
+
+export const updateProductPrice = async (id, payload) => {
+  if (id === null || id === undefined || id === '') {
+    throw new Error('Product ID is required');
+  }
+  const json = await put(`${PRODUCT_BASE_URL}/${encodeURIComponent(id)}/price`, payload);
+  return unwrapApiResponse(json);
+};
+
+export const updateProductStatus = async (id, status) => {
+  if (id === null || id === undefined || id === '') {
+    throw new Error('Product ID is required');
+  }
+  const json = await patch(`${PRODUCT_BASE_URL}/${encodeURIComponent(id)}/status?status=${encodeURIComponent(status)}`);
   return unwrapApiResponse(json);
 };
 
@@ -46,10 +62,21 @@ export const viewCategoryOptions = async () => {
   return unwrapApiResponse(json);
 };
 
+export const viewPriceHistory = async (id) => {
+  if (id === null || id === undefined || id === '') {
+    throw new Error('Product ID is required');
+  }
+  const json = await get(`${PRODUCT_BASE_URL}/${encodeURIComponent(id)}/price-history`);
+  return unwrapApiResponse(json);
+};
+
 export default {
   viewProductList,
   viewProductDetail,
   createProduct,
   updateProduct,
+  updateProductPrice,
+  updateProductStatus,
   viewCategoryOptions,
+  viewPriceHistory,
 };

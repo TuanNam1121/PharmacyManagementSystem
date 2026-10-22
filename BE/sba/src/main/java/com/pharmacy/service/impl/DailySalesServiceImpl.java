@@ -2,6 +2,8 @@ package com.pharmacy.service.impl;
 
 import com.pharmacy.dto.sales.*;
 import com.pharmacy.entity.*;
+import com.pharmacy.entity.enums.DailySalesReconciliationStatus;
+import com.pharmacy.entity.enums.SalesInvoiceStatus;
 import com.pharmacy.repository.*;
 import com.pharmacy.service.DailySalesService;
 import lombok.RequiredArgsConstructor;
@@ -33,35 +35,34 @@ public class DailySalesServiceImpl implements DailySalesService {
         public DailySalesOverviewDto getDailySalesOverview(Long storeId, LocalDate businessDate) {
                 Store store = storeRepository.findById(storeId)
                                 .orElseThrow(() -> new IllegalArgumentException(
-                                                "Không tìm thấy cửa hàng với ID: " + storeId));
+                                                "Store not found with ID: " + storeId));
 
                 LocalDateTime startOfDay = businessDate.atStartOfDay();
                 LocalDateTime endOfDay = businessDate.atTime(LocalTime.MAX);
 
-                // Lấy danh sách hóa đơn trong ngày
+                // Retrieve daily invoices
                 List<SalesInvoice> invoices = invoiceRepository.findInvoicesByDateRange(startOfDay, endOfDay);
                 List<Shift> shifts = shiftRepository.findShiftsByStoreAndDateRange(storeId, startOfDay, endOfDay);
 
-                // Tính doanh thu theo từng phương thức (hệ thống)
+                // Calculate revenue by payment method (system)
                 BigDecimal systemTotal = invoices.stream()
-                                .filter(i -> i.getStatus() != null && i.getStatus() == 1) // status 1: hoàn tất
+                                .filter(i -> i.getStatus() != null && i.getStatus().equals(SalesInvoiceStatus.PAID.getCode())) // PAID
                                 .map(SalesInvoice::getFinalAmount)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                // Mô phỏng phân bổ theo phương thức thanh toán (Cash ~40%, Bank ~40%, VNPay
-                // ~20%)
+                // System breakdown by payment method (Cash ~40%, Bank ~40%, VNPay ~20%)
                 BigDecimal systemCash = systemTotal.multiply(new BigDecimal("0.40"));
                 BigDecimal systemBank = systemTotal.multiply(new BigDecimal("0.40"));
                 BigDecimal systemVnpay = systemTotal.subtract(systemCash).subtract(systemBank);
 
-                // Kiểm tra xem đã có bản ghi đối soát trong database chưa
+                // Check if reconciliation record already exists in database
                 Optional<DailySalesReconciliation> existing = reconciliationRepository
                                 .findByStoreIdAndBusinessDate(storeId, businessDate);
 
                 BigDecimal actualCash = existing.map(DailySalesReconciliation::getActualCash).orElse(systemCash);
                 BigDecimal difference = existing.map(DailySalesReconciliation::getDifference)
                                 .orElse(actualCash.subtract(systemCash));
-                Short status = existing.map(DailySalesReconciliation::getStatus).orElse((short) 0);
+                Short status = existing.map(DailySalesReconciliation::getStatus).orElse(DailySalesReconciliationStatus.OPEN.getCode());
                 String note = existing.map(DailySalesReconciliation::getNote).orElse("");
                 String reconciledByName = existing.flatMap(r -> Optional.ofNullable(r.getReconciledBy()))
                                 .map(Account::getUsername).orElse(null);
@@ -105,7 +106,7 @@ public class DailySalesServiceImpl implements DailySalesService {
                                                 .status(inv.getStatus())
                                                 .createdAt(inv.getCreatedAt())
                                                 .paidAt(inv.getPaidAt())
-                                                .paymentMethod("Tiền mặt") // Có thể join Payment entity
+                                                .paymentMethod("Cash") // Default cash or join Payment entity
                                                 .build());
         }
 
@@ -139,12 +140,12 @@ public class DailySalesServiceImpl implements DailySalesService {
                         String clientIp) {
                 Store store = storeRepository.findById(request.getStoreId())
                                 .orElseThrow(() -> new IllegalArgumentException(
-                                                "Không tìm thấy cửa hàng: " + request.getStoreId()));
+                                                "Store not found with ID: " + request.getStoreId()));
 
                 // Account actor = accountRepository.findByUsername(currentUsername)
                 // .orElse(null);
 
-                // Lấy hoặc tạo mới bản ghi DailySalesReconciliation
+                // Fetch or create new DailySalesReconciliation record
                 DailySalesReconciliation reconciliation = reconciliationRepository
                                 .findByStoreIdAndBusinessDate(request.getStoreId(), request.getBusinessDate())
                                 .orElseGet(() -> {
@@ -154,12 +155,12 @@ public class DailySalesServiceImpl implements DailySalesService {
                                         return newRecord;
                                 });
 
-                // Tính toán doanh thu hệ thống
+                // Calculate system revenues
                 LocalDateTime startOfDay = request.getBusinessDate().atStartOfDay();
                 LocalDateTime endOfDay = request.getBusinessDate().atTime(LocalTime.MAX);
                 List<SalesInvoice> invoices = invoiceRepository.findInvoicesByDateRange(startOfDay, endOfDay);
                 BigDecimal systemTotal = invoices.stream()
-                                .filter(i -> i.getStatus() != null && i.getStatus() == 1)
+                                .filter(i -> i.getStatus() != null && i.getStatus().equals(SalesInvoiceStatus.PAID.getCode()))
                                 .map(SalesInvoice::getFinalAmount)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -176,17 +177,17 @@ public class DailySalesServiceImpl implements DailySalesService {
                                 reconciliation.getActualCash(), reconciliation.getDifference(),
                                 reconciliation.getStatus());
 
-                // Cập nhật giá trị thực tế
+                // Update actual values
                 reconciliation.setActualCash(request.getActualCash());
-                reconciliation.setDifference(request.getActualCash().subtract(systemCash));
+                // reconciliation.setDifference(request.getActualCash().subtract(systemCash));
                 reconciliation.setNote(request.getNote());
-                reconciliation.setStatus((short) 1); // 1: Đã đối soát
+                reconciliation.setStatus(DailySalesReconciliationStatus.RECONCILED.getCode()); // Reconciled
                 // reconciliation.setReconciledBy(actor);
                 reconciliation.setReconciledAt(LocalDateTime.now());
 
                 reconciliation = reconciliationRepository.save(reconciliation);
 
-                // Ghi AuditLog (Tuân thủ BR-02: Bất biến vết kiểm toán)
+                // Record AuditLog
                 AuditLog auditLog = new AuditLog();
                 // auditLog.setAccount(actor);
                 auditLog.setAction((short) 2); // 2: UPDATE / RECONCILE

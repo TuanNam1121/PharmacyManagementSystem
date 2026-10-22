@@ -134,13 +134,16 @@ export function useUsers() {
     }
   }, [loadAccounts, detailUser, loadDetail]);
 
-  // Toggle account status (Active <-> Inactive)
-  const handleToggleStatus = useCallback(async (id, currentStatus) => {
+  // Update account status (Lock / Disable / Unlock)
+  const handleToggleStatus = useCallback(async (id, targetStatus, reason) => {
     try {
       setError(null);
-      const newStatus = Number(currentStatus) === 1 ? 0 : 1;
-      await updateAccountStatus(id, newStatus);
-      const actionText = newStatus === 1 ? 'activated' : 'locked/deactivated';
+      await updateAccountStatus(id, targetStatus, reason);
+      const actionText = Number(targetStatus) === 1
+        ? 'unlocked / activated'
+        : Number(targetStatus) === 2
+        ? 'locked'
+        : 'disabled';
       setSuccessMsg(`User account has been ${actionText} successfully.`);
       await loadAccounts();
       return true;

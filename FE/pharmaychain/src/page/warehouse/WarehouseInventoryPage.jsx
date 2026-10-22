@@ -6,6 +6,7 @@ import WarehouseLocationModal from '../../component/warehouse/WarehouseLocationM
 import WarehouseAdjustmentModal from '../../component/warehouse/WarehouseAdjustmentModal';
 import WarehousePurchaseHistoryTable from '../../component/warehouse/WarehousePurchaseHistoryTable';
 import WarehousePurchaseReceiptDetailModal from '../../component/warehouse/WarehousePurchaseReceiptDetailModal';
+import WarehouseCreateReceiptModal from '../../component/warehouse/WarehouseCreateReceiptModal';
 import WarehouseAdjustmentListTable from '../../component/warehouse/WarehouseAdjustmentListTable';
 
 const TABS = [
@@ -76,7 +77,9 @@ export default function WarehouseInventoryPage({
     inventoryList, invTotal, invPage, setInvPage, invSize, search, setSearch, expiryFilter, setExpiryFilter, invLoading,
     locations, locationModalOpen, setLocationModalOpen, selectedInventory, setSelectedInventory, locationLoading, handleAssignLocation, handleCreateLocation,
     historyList, histTotal, histPage, setHistPage, histSize, histSearch, setHistSearch, histLoading, receiptDetail, receiptModalOpen, setReceiptModalOpen, receiptLoading, handleViewReceiptDetail,
+    createReceiptModalOpen, setCreateReceiptModalOpen, createReceiptLoading, handleCreateReceipt, confirmReceiptLoading, handleConfirmReceipt,
     adjustmentList, adjTotal, adjPage, setAdjPage, adjSize, adjModalOpen, setAdjModalOpen, selectedForAdj, setSelectedForAdj, adjLoading, handleCreateAdjustment,
+    handleApproveAdjustment, handleRejectAdjustment,
     error, setError, successMsg, setSuccessMsg,
   } = useWarehouseInventory({ initialTab: defaultTab, initialExpiryFilter: defaultExpiryFilter });
 
@@ -186,7 +189,7 @@ export default function WarehouseInventoryPage({
       {/* ── Tab 2: Purchase History ── */}
       {activeTab === 'history' && (
         <div>
-          {/* History search bar */}
+          {/* History search bar and action */}
           <div className="pms-filters-bar">
             <div className="pms-input-wrap" style={{ flex: 1, maxWidth: 360 }}>
               <span className="pms-input-icon">
@@ -202,11 +205,29 @@ export default function WarehouseInventoryPage({
                 onChange={(e) => setHistSearch(e.target.value)}
               />
             </div>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
+
+            <button
+              className="btn-pms btn-pms-primary"
+              onClick={() => setCreateReceiptModalOpen(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              New Purchase Receipt
+            </button>
+
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
               <strong style={{ color: 'var(--text-primary)' }}>{histTotal}</strong> receipts
             </span>
           </div>
-          <WarehousePurchaseHistoryTable data={historyList} loading={histLoading} onViewDetail={handleViewReceiptDetail} />
+          <WarehousePurchaseHistoryTable
+            data={historyList}
+            loading={histLoading}
+            onViewDetail={handleViewReceiptDetail}
+            onConfirm={handleConfirmReceipt}
+            confirmLoading={confirmReceiptLoading}
+          />
           <Pagination total={histTotal} page={histPage} size={histSize} onPage={setHistPage} />
         </div>
       )}
@@ -220,7 +241,13 @@ export default function WarehouseInventoryPage({
               <strong style={{ color: 'var(--text-primary)' }}>{adjTotal}</strong> records
             </span>
           </div>
-          <WarehouseAdjustmentListTable data={adjustmentList} loading={adjLoading} />
+          <WarehouseAdjustmentListTable
+            data={adjustmentList}
+            loading={adjLoading}
+            onApprove={handleApproveAdjustment}
+            onReject={handleRejectAdjustment}
+            actionLoading={adjLoading}
+          />
           <Pagination total={adjTotal} page={adjPage} size={adjSize} onPage={setAdjPage} />
         </div>
       )}
@@ -247,6 +274,14 @@ export default function WarehouseInventoryPage({
         onHide={() => setReceiptModalOpen(false)}
         detail={receiptDetail}
         loading={receiptLoading}
+        onConfirm={handleConfirmReceipt}
+        confirmLoading={confirmReceiptLoading}
+      />
+      <WarehouseCreateReceiptModal
+        show={createReceiptModalOpen}
+        onHide={() => setCreateReceiptModalOpen(false)}
+        onSubmit={handleCreateReceipt}
+        loading={createReceiptLoading}
       />
     </div>
   );

@@ -21,6 +21,7 @@ public class ProductResponse {
     private BigDecimal sellingPrice;
     private BigDecimal costPrice;
     private Short status;
+    private String statusLabel;
     private String imageUrl;
 
     // Thông tin danh mục liên kết

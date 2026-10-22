@@ -1,6 +1,7 @@
 package com.pharmacy.repository;
 
 import com.pharmacy.entity.Account;
+import com.pharmacy.entity.enums.AccountStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -54,7 +55,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
                         "AND (:status IS NULL OR a.status = :status) " +
                         "AND (:roleId IS NULL OR r.id = :roleId)")
     Page<Account> findAccountsWithFilters(@Param("keyword") String keyword,
-                                         @Param("status") Short status,
+                                         @Param("status") AccountStatus status,
                                          @Param("roleId") Integer roleId,
                                          Pageable pageable);
 }

@@ -22,6 +22,7 @@ public class AccountDetailResponse {
     private String email;
     private String phone;
     private Short status;
+    private String statusLabel;
     private LocalDateTime lastLoginAt;
     private Integer failedLoginCount;
     private LocalDateTime createdAt;

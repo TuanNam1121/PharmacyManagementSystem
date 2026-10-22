@@ -1,6 +1,7 @@
 package com.pharmacy.service.impl;
 
-import com.pharmacy.dto.*;
+import com.pharmacy.dto.PageResponse;
+import com.pharmacy.dto.RoleDto;
 import com.pharmacy.dto.account.AccountCreateRequest;
 import com.pharmacy.dto.account.AccountDetailResponse;
 import com.pharmacy.dto.account.AccountResponse;
@@ -9,6 +10,7 @@ import com.pharmacy.entity.Account;
 import com.pharmacy.entity.AccountInformation;
 import com.pharmacy.entity.Role;
 import com.pharmacy.entity.RolePermission;
+import com.pharmacy.entity.enums.AccountStatus;
 import com.pharmacy.exception.DuplicateResourceException;
 import com.pharmacy.exception.ResourceNotFoundException;
 import com.pharmacy.repository.AccountInformationRepository;
@@ -44,27 +46,34 @@ public class AccountServiceImpl implements AccountService {
     @Transactional
     public AccountResponse createAccount(AccountCreateRequest request) {
         if (accountRepository.existsByUsername(request.getUsername().trim())) {
-            throw new DuplicateResourceException("Tên đăng nhập '" + request.getUsername() + "' đã tồn tại");
+            throw new DuplicateResourceException("Username '" + request.getUsername() + "' already exists");
         }
 
         if (accountRepository.existsByEmail(request.getEmail().trim())) {
-            throw new DuplicateResourceException("Email '" + request.getEmail() + "' đã tồn tại");
+            throw new DuplicateResourceException("Email '" + request.getEmail() + "' already exists");
         }
 
         if (request.getPhone() != null && !request.getPhone().trim().isEmpty()
                 && accountRepository.existsByPhone(request.getPhone().trim())) {
-            throw new DuplicateResourceException("Số điện thoại '" + request.getPhone() + "' đã tồn tại");
+            throw new DuplicateResourceException("Phone number '" + request.getPhone() + "' already exists");
         }
 
         Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy vai trò với ID: " + request.getRoleId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + request.getRoleId()));
+
+        AccountStatus initialStatus = request.getStatus() != null
+                ? AccountStatus.fromCode(request.getStatus())
+                : AccountStatus.ACTIVE;
+        if (initialStatus == null) {
+            initialStatus = AccountStatus.ACTIVE;
+        }
 
         Account account = new Account();
         account.setUsername(request.getUsername().trim());
         account.setEmail(request.getEmail().trim());
         account.setPhone(request.getPhone() != null ? request.getPhone().trim() : null);
         account.setPassword(passwordEncoder.encode(request.getPassword()));
-        account.setStatus(request.getStatus() != null ? request.getStatus() : 1);
+        account.setStatus(initialStatus);
         account.setFailedLoginCount(0);
         account.setCreatedAt(LocalDateTime.now());
         account.setRole(role);
@@ -89,17 +98,17 @@ public class AccountServiceImpl implements AccountService {
     @Transactional
     public AccountResponse updateAccount(Long id, AccountUpdateRequest request) {
         Account account = accountRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + id));
 
         String email = request.getEmail().trim();
         if (accountRepository.existsByEmailAndIdNot(email, id)) {
-            throw new DuplicateResourceException("Email '" + email + "' đã tồn tại cho tài khoản khác");
+            throw new DuplicateResourceException("Email '" + email + "' already exists for another account");
         }
 
         if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
             String phone = request.getPhone().trim();
             if (accountRepository.existsByPhoneAndIdNot(phone, id)) {
-                throw new DuplicateResourceException("Số điện thoại '" + phone + "' đã tồn tại cho tài khoản khác");
+                throw new DuplicateResourceException("Phone number '" + phone + "' already exists for another account");
             }
             account.setPhone(phone);
         } else {
@@ -107,13 +116,11 @@ public class AccountServiceImpl implements AccountService {
         }
 
         Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy vai trò với ID: " + request.getRoleId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + request.getRoleId()));
 
         account.setEmail(email);
         account.setRole(role);
-        if (request.getStatus() != null) {
-            account.setStatus(request.getStatus());
-        }
+        // UC09/UC10 Separation: Status is NOT modified here; status changes must go through lock/unlock workflow.
         account.setUpdatedAt(LocalDateTime.now());
 
         AccountInformation accountInfo = account.getAccountInformation();
@@ -138,7 +145,7 @@ public class AccountServiceImpl implements AccountService {
     @Transactional(readOnly = true)
     public AccountDetailResponse getAccountDetail(Long id) {
         Account account = accountRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + id));
 
         AccountInformation info = account.getAccountInformation();
         Role role = account.getRole();
@@ -164,7 +171,8 @@ public class AccountServiceImpl implements AccountService {
                 .username(account.getUsername())
                 .email(account.getEmail())
                 .phone(account.getPhone())
-                .status(account.getStatus())
+                .status(account.getStatus() != null ? account.getStatus().getCode() : null)
+                .statusLabel(account.getStatus() != null ? account.getStatus().getLabel() : "Unknown")
                 .lastLoginAt(account.getLastLoginAt())
                 .failedLoginCount(account.getFailedLoginCount())
                 .createdAt(account.getCreatedAt())
@@ -188,9 +196,10 @@ public class AccountServiceImpl implements AccountService {
                 ? sortBy : "createdAt";
 
         Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size), Sort.by(direction, property));
+        AccountStatus statusEnum = status != null ? AccountStatus.fromCode(status) : null;
         Page<Account> accountPage = accountRepository.findAccountsWithFilters(
                 keyword != null && !keyword.trim().isEmpty() ? keyword.trim() : null,
-                status,
+                statusEnum,
                 roleId,
                 pageable
         );
@@ -211,12 +220,30 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional
-    public void updateAccountStatus(Long id, Short status) {
+    public void updateAccountStatus(Long id, Short status, String reason) {
         Account account = accountRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với ID: " + id));
-        account.setStatus(status);
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + id));
+
+        AccountStatus targetStatus = AccountStatus.fromCode(status);
+        if (targetStatus == null) {
+            throw new IllegalArgumentException("Invalid account status: " + status);
+        }
+
+        // UC10: Lock or disable requires a reason
+        if ((targetStatus == AccountStatus.LOCKED || targetStatus == AccountStatus.DISABLED)
+                && (reason == null || reason.trim().isEmpty())) {
+            throw new IllegalArgumentException("Lock reason is required when locking or disabling an account.");
+        }
+
+        account.setStatus(targetStatus);
         account.setUpdatedAt(LocalDateTime.now());
         accountRepository.save(account);
+    }
+
+    @Override
+    @Transactional
+    public void updateAccountStatus(Long id, Short status) {
+        updateAccountStatus(id, status, null);
     }
 
     private AccountResponse mapToAccountResponse(Account account) {
@@ -228,7 +255,8 @@ public class AccountServiceImpl implements AccountService {
                 .username(account.getUsername())
                 .email(account.getEmail())
                 .phone(account.getPhone())
-                .status(account.getStatus())
+                .status(account.getStatus() != null ? account.getStatus().getCode() : null)
+                .statusLabel(account.getStatus() != null ? account.getStatus().getLabel() : "Unknown")
                 .createdAt(account.getCreatedAt())
                 .fullName(info != null ? info.getFullName() : null)
                 .avatarUrl(info != null ? info.getAvatarUrl() : null)

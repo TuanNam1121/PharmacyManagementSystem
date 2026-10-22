@@ -15,12 +15,15 @@ import java.time.LocalDate;
 public class PurchaseReceiptItemResponse {
     private Long id;
     private Long productId;
+    private String productCode;
     private String productName;
+    private String unit;
     private String batchNumber;
     private LocalDate manufactureDate;
     private LocalDate expiryDate;
     private Integer orderQuantity;
     private Integer receivedQuantity;
+    private Integer quantity;
     private BigDecimal unitCost;
     private BigDecimal subtotal;
     private String locationCode;

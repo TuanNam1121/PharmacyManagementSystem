@@ -1,4 +1,4 @@
-import { get, post, patch } from './FetchData';
+import { get, post, patch, del } from './FetchData';
 
 const SUPPLIER_BASE_URL = 'http://localhost:8080/api/v1/supplier';
 
@@ -22,12 +22,22 @@ export const updateSupplier = async (id, payload) => {
   return unwrapApiResponse(json);
 };
 
-export const viewSupplierList = async ({ page = 0, size = 10, sort = 'id' } = {}) => {
+export const deleteSupplier = async (id) => {
+  if (id === null || id === undefined || id === '') {
+    throw new Error('Supplier ID is required');
+  }
+  const json = await del(`${SUPPLIER_BASE_URL}/${encodeURIComponent(id)}`);
+  return unwrapApiResponse(json);
+};
+
+export const viewSupplierList = async ({ page = 0, size = 10, sort = 'id', keyword = '', status = '' } = {}) => {
   const params = new URLSearchParams({
     page: String(page),
     size: String(size),
     sort: String(sort),
   });
+  if (keyword) params.append('keyword', keyword.trim());
+  if (status) params.append('status', status);
   const json = await get(`${SUPPLIER_BASE_URL}?${params.toString()}`);
   return unwrapApiResponse(json);
 };
@@ -43,6 +53,7 @@ export const viewSupplierDetail = async (id) => {
 export default {
   createSupplier,
   updateSupplier,
+  deleteSupplier,
   viewSupplierList,
   viewSupplierDetail,
 };
