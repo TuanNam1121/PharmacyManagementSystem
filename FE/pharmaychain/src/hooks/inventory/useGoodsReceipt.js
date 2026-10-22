@@ -8,7 +8,7 @@ export const useGoodsReceipt = () => {
     const [page, setPage] = useState(0);
     const [size] = useState(10);
     const [search, setSearch] = useState('');
-    const [storeId, setStoreId] = useState(7); // Default sample branch
+    const [storeId, setStoreId] = useState(2); // Default sample branch
     const [statusFilter, setStatusFilter] = useState('');
     const [listLoading, setListLoading] = useState(false);
 

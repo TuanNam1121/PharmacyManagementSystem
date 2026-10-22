@@ -21,6 +21,11 @@ GO
 USE PMS;
 GO
 
+SET ANSI_NULLS ON;
+GO
+SET QUOTED_IDENTIFIER ON;
+GO
+
 /* =====================================================================
    1. AUTHENTICATION & SECURITY  (UC 01-11)
    ===================================================================== */
@@ -1071,4 +1076,112 @@ JOIN dbo.product_batches b ON b.product_id = p.id AND b.batch_number = adj.batch
 WHERE NOT EXISTS (SELECT 1 FROM dbo.inventory_adjustments WHERE store_id = s.id AND batch_id = b.id);
 GO
 
+-- 6. Ca làm việc 
+-- Ca sáng (07:00 - 15:00)
+INSERT INTO [dbo].[shifts]
+           ([store_id],[account_id],[opened_at],[closed_at],[opening_cash],[closing_cash],[expected_cash],[status],[note],[reconciled_by],[reconciled_at])
+     VALUES
+           (1, 1,
+            DATETIMEFROMPARTS(YEAR(SYSDATETIME()), MONTH(SYSDATETIME()), DAY(SYSDATETIME()), 7, 0, 0, 0),
+            DATETIMEFROMPARTS(YEAR(SYSDATETIME()), MONTH(SYSDATETIME()), DAY(SYSDATETIME()), 15, 0, 0, 0),
+            2000000.00, 3500000.00, 3500000.00, 1,
+            N'Ca sáng hoạt động bình thường', 1,
+            DATETIMEFROMPARTS(YEAR(SYSDATETIME()), MONTH(SYSDATETIME()), DAY(SYSDATETIME()), 15, 5, 0, 0));
 
+-- 7. Customers
+INSERT INTO [dbo].[customers]
+           ([full_name]
+           ,[phone]
+           ,[email]
+           ,[date_of_birth]
+           ,[gender]
+           ,[address]
+           ,[status]
+           ,[created_by]
+           ,[created_at]
+           ,[updated_at])
+     VALUES
+           (N'Nguyễn Văn An', '0912345678', 'nguyenvanan@gmail.com', '1990-05-15', 1, N'123 Nguyễn Trãi, Thanh Xuân, Hà Nội', 1, 1, SYSDATETIME(), SYSDATETIME()),
+           (N'Trần Thị Mai', '0987654321', 'tranthimai@gmail.com', '1995-10-20', 0, N'45 Cầu Giấy, Hà Nội', 1, 1, SYSDATETIME(), SYSDATETIME()),
+           (N'Lê Hoàng Nam', '0901122334', 'lehoangnam@gmail.com', '1988-12-01', 1, N'78 Lê Lợi, Quận 1, TP.HCM', 1, 1, SYSDATETIME(), SYSDATETIME());
+GO
+
+-- 8. Stock requisition
+INSERT INTO stock_requisitions 
+    (code, store_id, created_by, approved_by, status, reject_reason, created_at, approved_at)
+VALUES 
+    ('REQ-20261021-001', 1, 1, 1, 2, NULL, SYSDATETIME(), SYSDATETIME());
+
+-- Lấy ID vừa insert để thêm chi tiết
+DECLARE @RequisitionId BIGINT = SCOPE_IDENTITY();
+
+INSERT INTO stock_requisition_details 
+    (stock_requisition_id, product_id, requested_qty, approved_qty, received_qty) -- Thay đổi các cột theo thực tế
+VALUES 
+    (@RequisitionId, 1, 50,50,50),
+    (@RequisitionId, 2, 100,100,100);
+
+-- 9. Good Issues
+INSERT INTO goods_issues 
+    (code, stock_requisition_id, from_store_id, to_store_id, created_by, dispatched_by, received_by, status, carrier, note, created_at, dispatched_at, received_at)
+VALUES 
+    ('GI-20261021-001', 2, 1, 2, 1, 1, 1, 2, N'Giao Hàng Nhanh', N'Xuất chuyển kho theo phiếu yêu cầu #2', DATEADD(HOUR, -5, SYSDATETIME()), DATEADD(HOUR, -3, SYSDATETIME()), SYSDATETIME());
+
+-- 10. Inventory
+
+
+INSERT INTO [dbo].[inventory_audits]
+           ([code]
+           ,[store_id]
+           ,[requested_by]
+           ,[counted_by]
+           ,[reviewed_by]
+           ,[status]
+           ,[audit_date]
+           ,[review_note]
+           ,[created_at]
+           ,[reviewed_at])
+     VALUES
+           -- Bản ghi 1: Trạng thái Hoàn thành (status = 1)
+           ('AUD-202610-001'
+           ,2
+           ,1
+           ,1
+           ,1
+           ,1
+           ,CAST('2026-10-20' AS DATE)
+           ,N'Kiểm kê định kỳ tháng 10 - Đã duyệt, khớp số lượng'
+           ,SYSDATETIME()
+           ,SYSDATETIME()),
+
+           -- Bản ghi 2: Trạng thái Đang kiểm/Chờ duyệt (status = 0)
+           ('AUD-202610-002'
+           ,2
+           ,1
+           ,1
+           ,1
+           ,0
+           ,CAST('2026-10-21' AS DATE)
+           ,N'Kiểm kê đột xuất khu vực thuốc kê đơn - Đang xử lý'
+           ,SYSDATETIME()
+           ,NULL)
+
+		 
+GO
+INSERT INTO [dbo].[inventory_audit_details]
+           ([inventory_audit_id]
+           ,[product_id]
+           ,[batch_id]
+           ,[system_quantity]
+           ,[counted_quantity]
+           ,[note])
+     VALUES
+           -- Chi tiết cho Audit ID 1 (AUD-202610-001)
+           (1, 1, 1, 100, 100, N'Khớp số lượng hệ thống'),
+           (1, 2, 2, 50, 48, N'Lệch -2: Hư hỏng do vỡ vỏ hộp trong quá trình vận chuyển'),
+           (1, 3, 3, 30, 32, N'Lệch +2: Hàng khuyến mãi chưa cập nhật nhập kho'),
+
+           -- Chi tiết cho Audit ID 2 (AUD-202610-002)
+           (2, 4, 4, 200, 200, N'Đã kiểm đếm - Đúng thực tế'),
+           (2, 5, 5, 80, 75, N'Thiếu 5 đơn vị - Đang rà soát lại hóa đơn xuất')
+GO

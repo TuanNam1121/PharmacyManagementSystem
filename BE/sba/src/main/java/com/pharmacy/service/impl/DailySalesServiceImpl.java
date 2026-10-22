@@ -41,12 +41,13 @@ public class DailySalesServiceImpl implements DailySalesService {
                 LocalDateTime endOfDay = businessDate.atTime(LocalTime.MAX);
 
                 // Retrieve daily invoices
-                List<SalesInvoice> invoices = invoiceRepository.findInvoicesByDateRange(startOfDay, endOfDay);
+                List<SalesInvoice> invoices = invoiceRepository.findInvoicesByDateRange(storeId, startOfDay, endOfDay);
                 List<Shift> shifts = shiftRepository.findShiftsByStoreAndDateRange(storeId, startOfDay, endOfDay);
 
                 // Calculate revenue by payment method (system)
                 BigDecimal systemTotal = invoices.stream()
-                                .filter(i -> i.getStatus() != null && i.getStatus().equals(SalesInvoiceStatus.PAID.getCode())) // PAID
+                                .filter(i -> i.getStatus() != null
+                                                && i.getStatus().equals(SalesInvoiceStatus.PAID.getCode())) // PAID
                                 .map(SalesInvoice::getFinalAmount)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -62,7 +63,8 @@ public class DailySalesServiceImpl implements DailySalesService {
                 BigDecimal actualCash = existing.map(DailySalesReconciliation::getActualCash).orElse(systemCash);
                 BigDecimal difference = existing.map(DailySalesReconciliation::getDifference)
                                 .orElse(actualCash.subtract(systemCash));
-                Short status = existing.map(DailySalesReconciliation::getStatus).orElse(DailySalesReconciliationStatus.OPEN.getCode());
+                Short status = existing.map(DailySalesReconciliation::getStatus)
+                                .orElse(DailySalesReconciliationStatus.OPEN.getCode());
                 String note = existing.map(DailySalesReconciliation::getNote).orElse("");
                 String reconciledByName = existing.flatMap(r -> Optional.ofNullable(r.getReconciledBy()))
                                 .map(Account::getUsername).orElse(null);
@@ -158,9 +160,11 @@ public class DailySalesServiceImpl implements DailySalesService {
                 // Calculate system revenues
                 LocalDateTime startOfDay = request.getBusinessDate().atStartOfDay();
                 LocalDateTime endOfDay = request.getBusinessDate().atTime(LocalTime.MAX);
-                List<SalesInvoice> invoices = invoiceRepository.findInvoicesByDateRange(startOfDay, endOfDay);
+                List<SalesInvoice> invoices = invoiceRepository.findInvoicesByDateRange(store.getId(), startOfDay,
+                                endOfDay);
                 BigDecimal systemTotal = invoices.stream()
-                                .filter(i -> i.getStatus() != null && i.getStatus().equals(SalesInvoiceStatus.PAID.getCode()))
+                                .filter(i -> i.getStatus() != null
+                                                && i.getStatus().equals(SalesInvoiceStatus.PAID.getCode()))
                                 .map(SalesInvoice::getFinalAmount)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

@@ -8,7 +8,7 @@ export const useStockRequisition = () => {
     const [page, setPage] = useState(0);
     const [size] = useState(10);
     const [search, setSearch] = useState('');
-    const [storeId, setStoreId] = useState('');
+    const [storeId, setStoreId] = useState(1);
     const [statusFilter, setStatusFilter] = useState('');
     const [listLoading, setListLoading] = useState(false);
 

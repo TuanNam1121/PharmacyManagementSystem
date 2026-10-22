@@ -8,7 +8,7 @@ import {
 } from '../../api/BranchInventoryAPI';
 
 export const useBranchInventory = () => {
-    const [storeId, setStoreId] = useState(7);
+    const [storeId, setStoreId] = useState(2);
     const [search, setSearch] = useState('');
     const [warningFilter, setWarningFilter] = useState('ALL'); // ALL, LOW_STOCK, EXPIRING_SOON, EXPIRED, OUT_OF_STOCK
     const [page, setPage] = useState(0);
