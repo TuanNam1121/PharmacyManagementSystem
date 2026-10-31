@@ -57,8 +57,6 @@ export default function SupplierTable({
           </thead>
           <tbody>
             {data.map((row, i) => {
-              const isActive = String(row.status) === '1';
-
               return (
                 <tr key={row.id || i}>
                   <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>

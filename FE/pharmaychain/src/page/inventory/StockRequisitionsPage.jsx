@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStockRequisition } from '../../hooks/inventory/useStockRequisition';
-
+import CreateRequisitionModal from '../../component/inventory/CreateRequisitionModal';
 // ── Status config ──────────────────────────────────────────────────────────────
 const STATUS_MAP = {
     0: { label: 'Pending Review', cls: 'pms-badge pms-badge-neutral' },
@@ -9,6 +9,8 @@ const STATUS_MAP = {
     3: { label: 'Received', cls: 'pms-badge pms-badge-success' },
     4: { label: 'Rejected', cls: 'pms-badge pms-badge-danger' },
 };
+
+
 
 function StatusBadge({ status }) {
     const s = STATUS_MAP[status] ?? STATUS_MAP[0];
@@ -173,7 +175,11 @@ export default function StockRequisitionsPage() {
         detailModalOpen, setDetailModalOpen,
         detailLoading,
         openDetail,
+        createModalOpen, setCreateModalOpen,
+        submitting,
+        handleCreateRequisition,
         error, setError,
+        successMsg, setSuccessMsg,
         fetchList,
     } = useStockRequisition();
 
@@ -191,24 +197,24 @@ export default function StockRequisitionsPage() {
     return (
         <div>
             {/* ── Header ── */}
-            <div className="pms-page-header" style={{ marginBottom: 16 }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <h1 className="pms-page-title" style={{ margin: 0 }}>Branch Stock Requisitions</h1>
-                        <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Store Manager</span>
-                    </div>
-                    <p className="pms-page-sub">
-                        View and track status, delivery progress of internal replenishment requisitions from the central warehouse.
-                    </p>
-                </div>
-                <div>
-                    <button type="button" className="btn-pms btn-pms-secondary" onClick={fetchList} title="Refresh">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-                        </svg>
-                        Refresh
-                    </button>
-                </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+                <button type="button" className="btn-pms btn-pms-secondary" onClick={fetchList} title="Refresh">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                    </svg>
+                    Refresh
+                </button>
+                <button
+                    type="button"
+                    className="btn-pms btn-pms-primary"
+                    onClick={() => setCreateModalOpen(true)}
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Create Requisition
+                </button>
             </div>
 
             {/* ── Error alert ── */}
@@ -362,6 +368,14 @@ export default function StockRequisitionsPage() {
                 item={selectedItem}
                 loading={detailLoading}
                 onHide={() => setDetailModalOpen(false)}
+            />
+
+            <CreateRequisitionModal
+                show={createModalOpen}
+                onHide={() => setCreateModalOpen(false)}
+                defaultStoreId={storeId || 1}
+                onConfirm={handleCreateRequisition}
+                submitting={submitting}
             />
         </div>
     );

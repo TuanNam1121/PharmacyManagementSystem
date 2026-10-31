@@ -50,6 +50,7 @@ public record SupplierResponse(
                 .name(supplier.getName())
                 .contactPerson(supplier.getContactPerson())
                 .phone(supplier.getPhone())
+                .taxCode(supplier.getTaxCode())
                 .status(supplier.getStatus())
                 .createdAt(convertLocalDateTime(supplier.getCreatedAt()))
                 .build();

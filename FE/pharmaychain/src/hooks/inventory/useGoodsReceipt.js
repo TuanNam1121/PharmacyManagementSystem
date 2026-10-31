@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { getGoodsReceiptList, getGoodsReceiptDetail, confirmGoodsReceipt } from '../../api/GoodsReceiptAPI';
+import { getGoodsReceiptList, getGoodsReceiptDetail, confirmGoodsReceipt, rejectGoodsReceipt } from '../../api/GoodsReceiptAPI';
 
 export const useGoodsReceipt = () => {
     // ── List & Filter States ──
@@ -8,7 +8,7 @@ export const useGoodsReceipt = () => {
     const [page, setPage] = useState(0);
     const [size] = useState(10);
     const [search, setSearch] = useState('');
-    const [storeId, setStoreId] = useState(2); // Default sample branch
+    const [storeId, setStoreId] = useState(1);
     const [statusFilter, setStatusFilter] = useState('');
     const [listLoading, setListLoading] = useState(false);
 
@@ -16,6 +16,7 @@ export const useGoodsReceipt = () => {
     const [selectedItem, setSelectedItem] = useState(null);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+    const [rejectModalOpen, setRejectModalOpen] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
@@ -63,7 +64,7 @@ export const useGoodsReceipt = () => {
         }
     }, []);
 
-    // ── Open Confirm Receipt Modal ──
+    // ── Open Confirm (Approve) Modal ──
     const openConfirmModal = useCallback(async (item) => {
         setConfirmModalOpen(true);
         setDetailLoading(true);
@@ -77,18 +78,42 @@ export const useGoodsReceipt = () => {
         }
     }, []);
 
-    // ── Handle Confirm Receipt (Step 4, 5) ──
+    // ── Open Reject Modal ──
+    const openRejectModal = useCallback((item) => {
+        setSelectedItem(item);
+        setRejectModalOpen(true);
+    }, []);
+
+    // ── Handle Approve (Confirm Receipt + Update Inventory) ──
     const handleConfirmReceipt = useCallback(async (receiptId, payload) => {
         setSubmitting(true);
         setError(null);
         try {
             await confirmGoodsReceipt(receiptId, payload);
-            setSuccessMsg('Goods receipt confirmed successfully! Branch inventory has been updated.');
+            setSuccessMsg('✅ Goods receipt approved! Branch inventory has been updated.');
             setConfirmModalOpen(false);
             setDetailModalOpen(false);
             fetchList();
         } catch (e) {
             setError(e.message || 'Error confirming goods receipt');
+            throw e;
+        } finally {
+            setSubmitting(false);
+        }
+    }, [fetchList]);
+
+    // ── Handle Reject ──
+    const handleRejectReceipt = useCallback(async (receiptId, reason) => {
+        setSubmitting(true);
+        setError(null);
+        try {
+            await rejectGoodsReceipt(receiptId, reason);
+            setSuccessMsg('🚫 Goods receipt has been rejected.');
+            setRejectModalOpen(false);
+            setDetailModalOpen(false);
+            fetchList();
+        } catch (e) {
+            setError(e.message || 'Error rejecting goods receipt');
             throw e;
         } finally {
             setSubmitting(false);
@@ -113,11 +138,15 @@ export const useGoodsReceipt = () => {
         setDetailModalOpen,
         confirmModalOpen,
         setConfirmModalOpen,
+        rejectModalOpen,
+        setRejectModalOpen,
         detailLoading,
         submitting,
         openDetail,
         openConfirmModal,
+        openRejectModal,
         handleConfirmReceipt,
+        handleRejectReceipt,
         error,
         setError,
         successMsg,

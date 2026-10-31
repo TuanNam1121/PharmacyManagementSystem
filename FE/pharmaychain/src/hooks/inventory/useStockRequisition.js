@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { getRequisitionList, getRequisitionDetail } from '../../api/StockRequisitionAPI';
+import { getRequisitionList, getRequisitionDetail, createStockRequisition } from '../../api/StockRequisitionAPI';
 
 export const useStockRequisition = () => {
     // ── list state ──────────────────────────────────────────────────────────────
@@ -16,6 +16,10 @@ export const useStockRequisition = () => {
     const [selectedItem, setSelectedItem] = useState(null);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
+
+    // ── create modal state ───────────────────────────────────────────────────────
+    const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     // ── alerts ───────────────────────────────────────────────────────────────────
     const [error, setError] = useState(null);
@@ -53,6 +57,23 @@ export const useStockRequisition = () => {
         }
     }, []);
 
+    // ── create requisition ────────────────────────────────────────────────────────
+    const handleCreateRequisition = useCallback(async (payload) => {
+        setSubmitting(true);
+        setError(null);
+        try {
+            await createStockRequisition(payload);
+            setSuccessMsg('Stock requisition created successfully!');
+            setCreateModalOpen(false);
+            fetchList();
+        } catch (e) {
+            setError(e.message || 'Failed to create stock requisition');
+            throw e;
+        } finally {
+            setSubmitting(false);
+        }
+    }, [fetchList]);
+
     return {
         list, total, page, setPage, size,
         search, setSearch,
@@ -63,6 +84,9 @@ export const useStockRequisition = () => {
         detailModalOpen, setDetailModalOpen,
         detailLoading,
         openDetail,
+        createModalOpen, setCreateModalOpen,
+        submitting,
+        handleCreateRequisition,
         error, setError,
         successMsg, setSuccessMsg,
         fetchList,

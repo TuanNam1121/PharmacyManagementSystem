@@ -1,4 +1,4 @@
-import { get, post } from './FetchData';
+import { get, post, patch } from './FetchData';
 
 const BASE_URL = 'http://localhost:8080/api/v1/goods-receipts';
 
@@ -30,11 +30,19 @@ export const getGoodsReceiptDetail = async (id) => {
 };
 
 /**
- * Confirm goods receipt inspection
+ * Approve: Confirm goods receipt & update branch inventory
  */
 export const confirmGoodsReceipt = async (id, payload) => {
     const json = await post(`${BASE_URL}/${encodeURIComponent(id)}/confirm`, payload);
     return unwrap(json);
 };
 
-export default { getGoodsReceiptList, getGoodsReceiptDetail, confirmGoodsReceipt };
+/**
+ * Reject: Cancel goods receipt
+ */
+export const rejectGoodsReceipt = async (id, reason) => {
+    const json = await patch(`${BASE_URL}/${encodeURIComponent(id)}/reject`, { reason });
+    return unwrap(json);
+};
+
+export default { getGoodsReceiptList, getGoodsReceiptDetail, confirmGoodsReceipt, rejectGoodsReceipt };
