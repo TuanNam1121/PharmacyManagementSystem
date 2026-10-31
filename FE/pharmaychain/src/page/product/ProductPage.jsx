@@ -5,6 +5,8 @@ import ProductFilters from '../../component/product/ProductFilters';
 import ProductTable from '../../component/product/ProductTable';
 import ProductDetailModal from '../../component/product/ProductDetailModal';
 import ProductFormModal from '../../component/product/ProductFormModal';
+import ProductPriceModal from '../../component/product/ProductPriceModal';
+import ProductStatusModal from '../../component/product/ProductStatusModal';
 
 function Pagination({ total, page, size, onPage }) {
   if (total <= size) return null;
@@ -60,12 +62,21 @@ export default function ProductPage() {
     setDetail,
     categories,
     fetchCategories,
+    handleToggleStatus,
   } = useProducts();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState('create'); // 'create' | 'edit'
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // Price Update modal state (Task 1 fix)
+  const [priceModalOpen, setPriceModalOpen] = useState(false);
+  const [priceProduct, setPriceProduct] = useState(null);
+
+  // Status Toggle modal state (Task 1 fix)
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [statusProduct, setStatusProduct] = useState(null);
 
   useEffect(() => {
     fetchList();
@@ -103,6 +114,23 @@ export default function ProductPage() {
         : 'Product information updated successfully!'
     );
     await fetchList();
+  };
+
+  // Price Update handler (Task 1 fix)
+  const handleUpdatePrice = (product) => {
+    setPriceProduct(product);
+    setPriceModalOpen(true);
+  };
+
+  const handlePriceSuccess = async () => {
+    setSuccessMsg('Product price updated successfully!');
+    await fetchList();
+  };
+
+  // Toggle Status handler (Task 1 fix)
+  const handleToggleProductStatus = (product) => {
+    setStatusProduct(product);
+    setStatusModalOpen(true);
   };
 
   return (
@@ -170,6 +198,8 @@ export default function ProductPage() {
         size={size}
         onView={handleView}
         onEdit={handleEdit}
+        onUpdatePrice={handleUpdatePrice}
+        onToggleStatus={handleToggleProductStatus}
       />
 
       {/* ── Pagination ── */}
@@ -197,6 +227,33 @@ export default function ProductPage() {
         mode={formMode}
         product={selectedProduct}
         categories={categories}
+      />
+
+      {/* ── Price Update Modal (Task 1 fix) ── */}
+      <ProductPriceModal
+        show={priceModalOpen}
+        onHide={() => { setPriceModalOpen(false); setPriceProduct(null); }}
+        product={priceProduct}
+        onSuccess={handlePriceSuccess}
+      />
+
+      {/* ── Status Toggle Modal (Task 1 fix) ── */}
+      <ProductStatusModal
+        show={statusModalOpen}
+        onHide={() => { setStatusModalOpen(false); setStatusProduct(null); }}
+        product={statusProduct}
+        onConfirm={async (id, targetStatus) => {
+          // useProducts.handleToggleStatus takes (id, currentStatus) and derives targetStatus internally
+          // ProductStatusModal passes the already-computed targetStatus, so we pass the current status of the product
+          await handleToggleStatus(id, Number(statusProduct?.status ?? 1));
+          setSuccessMsg(
+            targetStatus === 0
+              ? 'Đã vô hiệu hóa sản phẩm thành công!'
+              : 'Đã kích hoạt lại sản phẩm thành công!'
+          );
+          setStatusModalOpen(false);
+          setStatusProduct(null);
+        }}
       />
     </div>
   );

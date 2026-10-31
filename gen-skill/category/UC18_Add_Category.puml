@@ -1,0 +1,141 @@
+@startuml
+' --- VISUAL PARADIGM STYLE CONFIGURATION ---
+skinparam Style strictuml
+skinparam SequenceMessageAlignment left
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+' Cấu hình Participant: Màu nền xanh nhạt, chữ đen, không in đậm
+skinparam Participant {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+    Padding 5
+}
+
+skinparam Actor {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Database {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Sequence {
+    ' Tô màu xanh cho các thanh kích hoạt (activation boxes)
+    LifeLineBackgroundColor #A0D8EF
+    LifeLineBorderColor #000000
+
+    ArrowColor #000000
+    ArrowFontColor #000000
+    ArrowFontSize 11
+
+    BoxBackgroundColor #A0D8EF
+    BoxBorderColor #000000
+    BoxFontColor #000000
+}
+
+skinparam Note {
+    BackgroundColor #FFF9E6
+    BorderColor #000000
+    FontColor #000000
+}
+
+skinparam LifeLineStrategy solid
+
+' --- ACTORS & PARTICIPANTS ---
+actor "Admin" as Admin
+participant "<<boundary>>\nCategoryPage" as CategoryPage
+participant "<<boundary>>\nCategoryFormModal" as CategoryFormModal
+participant "<<control>>\nCategoryController" as CategoryController
+participant "<<control>>\nCategoryService" as CategoryService
+participant "Database" as Database
+
+' --- STEP 1 & 2: OPEN ADD CATEGORY MODAL ---
+Admin -> CategoryPage : 1: Click "Add Category" button
+activate CategoryPage
+
+CategoryPage -> CategoryFormModal : 2: Open "Add Category" modal with empty inputs
+deactivate CategoryPage
+activate CategoryFormModal
+
+CategoryFormModal --> Admin : 3: Display category creation form (Name, Description)
+
+' --- STEP 3: SUBMIT OR CANCEL ---
+alt Admin cancels creation (AT02)
+    Admin -> CategoryFormModal : 4: Click "Cancel" button
+    CategoryFormModal -> CategoryPage : 5: Close modal and discard uncommitted entries
+    deactivate CategoryFormModal
+    activate CategoryPage
+    CategoryPage --> Admin : 6: Return to category directory view
+    deactivate CategoryPage
+
+else Admin submits new category
+    Admin -> CategoryFormModal : 7: Enter Category Name, Description and click "Save"
+    activate CategoryFormModal
+
+    CategoryFormModal -> CategoryFormModal : 8: Check client-side validation (non-empty name)
+
+    alt Name is missing or empty (AT01)
+        CategoryFormModal --> Admin : 9: Highlight field and display error "Category name is required"
+    else Validation passed on UI
+        CategoryFormModal -> CategoryController : 10: createCategory(CategoryCreateRequest)
+        activate CategoryController
+
+        CategoryController -> CategoryService : 11: createCategory(request)
+        activate CategoryService
+
+        CategoryService -> Database : 12: Check if Category name already exists
+        activate Database
+
+        alt Duplicate Category Name found
+            Database --> CategoryService : 13: Return existing category found
+            deactivate Database
+
+            CategoryService --> CategoryController : 14: Throw DuplicateResourceException("Category name already exists")
+            deactivate CategoryService
+
+            CategoryController --> CategoryFormModal : 15: Return 400 Bad Request
+            deactivate CategoryController
+
+            CategoryFormModal --> Admin : 16: Display error alert "Category name already exists"
+        else Name is unique
+            Database --> CategoryService : 17: Return name is unique
+            activate Database
+
+            CategoryService -> Database : 18: Insert new Category entity (status=ACTIVE)
+            Database --> CategoryService : 19: Category record persisted successfully
+
+            CategoryService -> Database : 20: Insert System Audit Log entry (Action=CREATE_CATEGORY)
+            Database --> CategoryService : 21: Audit entry saved
+            deactivate Database
+
+            CategoryService --> CategoryController : 22: Return CategoryResponse DTO
+            activate CategoryService
+            deactivate CategoryService
+
+            CategoryController --> CategoryFormModal : 23: Return 201 Created with created category
+            activate CategoryController
+            deactivate CategoryController
+
+            CategoryFormModal -> CategoryPage : 24: Close modal and refresh categories list
+            deactivate CategoryFormModal
+            activate CategoryPage
+
+            CategoryPage --> Admin : 25: Display success alert "Category created successfully" and render updated table
+            deactivate CategoryPage
+        end
+    end
+end
+
+@enduml

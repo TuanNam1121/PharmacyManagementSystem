@@ -49,6 +49,12 @@ export const updateAccount = async (id, payload) => {
   return unwrap(res);
 };
 
+export const assignRole = async (id, roleId) => {
+  if (!id) throw new Error('Account ID is required');
+  const res = await put(`${BASE_URL}/${encodeURIComponent(id)}/role`, { roleId: Number(roleId) });
+  return unwrap(res);
+};
+
 export const updateAccountStatus = async (id, status, reason = '') => {
   if (!id) throw new Error('Account ID is required');
   const params = new URLSearchParams();
@@ -63,11 +69,19 @@ export const fetchRoles = async () => {
   return unwrap(res);
 };
 
+export const fetchRolePermissions = async (roleId) => {
+  if (!roleId) return [];
+  const res = await get(`${ROLES_URL}/${encodeURIComponent(roleId)}/permissions`);
+  return unwrap(res);
+};
+
 export default {
   fetchAccounts,
   fetchAccountDetail,
   createAccount,
   updateAccount,
+  assignRole,
   updateAccountStatus,
   fetchRoles,
+  fetchRolePermissions,
 };

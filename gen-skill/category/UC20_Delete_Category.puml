@@ -1,0 +1,161 @@
+@startuml
+' --- VISUAL PARADIGM STYLE CONFIGURATION ---
+skinparam Style strictuml
+skinparam SequenceMessageAlignment left
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+' Cấu hình Participant: Màu nền xanh nhạt, chữ đen, không in đậm
+skinparam Participant {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+    Padding 5
+}
+
+skinparam Actor {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Database {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Sequence {
+    ' Tô màu xanh cho các thanh kích hoạt (activation boxes)
+    LifeLineBackgroundColor #A0D8EF
+    LifeLineBorderColor #000000
+
+    ArrowColor #000000
+    ArrowFontColor #000000
+    ArrowFontSize 11
+
+    BoxBackgroundColor #A0D8EF
+    BoxBorderColor #000000
+    BoxFontColor #000000
+}
+
+skinparam Note {
+    BackgroundColor #FFF9E6
+    BorderColor #000000
+    FontColor #000000
+}
+
+skinparam LifeLineStrategy solid
+
+' --- ACTORS & PARTICIPANTS ---
+actor "Admin" as Admin
+participant "<<boundary>>\nCategoryPage" as CategoryPage
+participant "<<boundary>>\nCategoryStatusModal" as CategoryStatusModal
+participant "<<control>>\nCategoryController" as CategoryController
+participant "<<control>>\nCategoryService" as CategoryService
+participant "Database" as Database
+
+' --- STEP 1 & 2: INITIATE DELETE / INACTIVATE CATEGORY ---
+Admin -> CategoryPage : 1: Click "Inactivate / Delete" action button on a category row
+activate CategoryPage
+
+CategoryPage -> CategoryStatusModal : 2: Open custom confirmation modal with category details
+deactivate CategoryPage
+activate CategoryStatusModal
+
+CategoryStatusModal --> Admin : 3: Display confirmation prompt ("Deactivate category and set status to Inactive?")
+
+' --- STEP 3: CONFIRM OR CANCEL ---
+alt Admin cancels operation (AT02)
+    Admin -> CategoryStatusModal : 4: Click "Cancel" button
+    CategoryStatusModal -> CategoryPage : 5: Close modal and abort action
+    deactivate CategoryStatusModal
+    activate CategoryPage
+    CategoryPage --> Admin : 6: Retain active category status in list
+    deactivate CategoryPage
+
+else Admin confirms deactivation / status change
+    Admin -> CategoryStatusModal : 7: Click "Confirm Inactive" button
+    activate CategoryStatusModal
+
+    CategoryStatusModal -> CategoryController : 8: updateCategoryStatus(categoryId, status=INACTIVE)
+    activate CategoryController
+
+    CategoryController -> CategoryService : 9: updateCategoryStatus(categoryId, status)
+    activate CategoryService
+
+    CategoryService -> Database : 10: Query Category by ID and verify existence
+    activate Database
+
+    Database --> CategoryService : 11: Return Category entity
+    deactivate Database
+
+    ' --- STEP 4: CONSTRAINT VALIDATION ---
+    CategoryService -> Database : 12: Check if active products are assigned to category
+    activate Database
+
+    alt Category has active products assigned (AT01)
+        Database --> CategoryService : 13: Active products count > 0
+        deactivate Database
+
+        CategoryService -> CategoryService : 14: Mark category as INACTIVE while preserving associated product links
+
+        CategoryService -> Database : 15: Update category status to INACTIVE in categories table
+        activate Database
+        Database --> CategoryService : 16: Category status updated to INACTIVE
+
+        CategoryService -> Database : 17: Record event in System Audit Log (Action=DEACTIVATE_CATEGORY)
+        Database --> CategoryService : 18: Audit entry saved
+        deactivate Database
+
+        CategoryService --> CategoryController : 19: Return success response
+        activate CategoryService
+        deactivate CategoryService
+
+        CategoryController --> CategoryStatusModal : 20: Return 200 OK with success message
+        activate CategoryController
+        deactivate CategoryController
+
+        CategoryStatusModal -> CategoryPage : 21: Close modal and refresh categories list
+        deactivate CategoryStatusModal
+        activate CategoryPage
+
+        CategoryPage --> Admin : 22: Display notification "Category set to Inactive. Existing products preserved."
+        deactivate CategoryPage
+
+    else Category has no active products
+        Database --> CategoryService : 23: No active products linked
+        deactivate Database
+
+        CategoryService -> Database : 24: Update category status to INACTIVE (or execute soft delete)
+        activate Database
+        Database --> CategoryService : 25: Status updated in database
+
+        CategoryService -> Database : 26: Insert System Audit Log entry (Action=DELETE_CATEGORY)
+        Database --> CategoryService : 27: Audit entry saved
+        deactivate Database
+
+        CategoryService --> CategoryController : 28: Return success response
+        activate CategoryService
+        deactivate CategoryService
+
+        CategoryController --> CategoryStatusModal : 29: Return 200 OK
+        activate CategoryController
+        deactivate CategoryController
+
+        CategoryStatusModal -> CategoryPage : 30: Close modal and refresh table
+        deactivate CategoryStatusModal
+        activate CategoryPage
+
+        CategoryPage --> Admin : 31: Display success alert "Category deactivated successfully"
+        deactivate CategoryPage
+    end
+end
+
+@enduml

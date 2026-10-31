@@ -1,0 +1,151 @@
+@startuml
+' --- VISUAL PARADIGM STYLE CONFIGURATION ---
+skinparam Style strictuml
+skinparam SequenceMessageAlignment left
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+' Cấu hình Participant: Màu nền xanh nhạt, chữ đen, không in đậm
+skinparam Participant {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+    Padding 5
+}
+
+skinparam Actor {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Database {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Sequence {
+    ' Tô màu xanh cho các thanh kích hoạt (activation boxes)
+    LifeLineBackgroundColor #A0D8EF
+    LifeLineBorderColor #000000
+
+    ArrowColor #000000
+    ArrowFontColor #000000
+    ArrowFontSize 11
+
+    BoxBackgroundColor #A0D8EF
+    BoxBorderColor #000000
+    BoxFontColor #000000
+}
+
+skinparam Note {
+    BackgroundColor #FFF9E6
+    BorderColor #000000
+    FontColor #000000
+}
+
+skinparam LifeLineStrategy solid
+
+' --- ACTORS & PARTICIPANTS ---
+actor "Admin" as Admin
+participant "<<boundary>>\nProductPage" as ProductPage
+participant "<<boundary>>\nProductPriceModal" as ProductPriceModal
+participant "<<control>>\nProductController" as ProductController
+participant "<<control>>\nProductService" as ProductService
+participant "Database" as Database
+
+' --- STEP 1 & 2: SELECT PRODUCT & OPEN PRICE MODAL ---
+Admin -> ProductPage : 1: Click "Set/Update Price" action button on product
+activate ProductPage
+
+ProductPage -> ProductController : 2: getProductDetail(productId)
+activate ProductController
+
+ProductController -> ProductService : 3: getProductDetail(productId)
+activate ProductService
+
+ProductService -> Database : 4: Query current product pricing information
+activate Database
+
+Database --> ProductService : 5: Return Product with current Cost & Selling Price
+deactivate Database
+
+ProductService --> ProductController : 6: Return ProductDetailResponse
+deactivate ProductService
+
+ProductController --> ProductPage : 7: Return 200 OK
+deactivate ProductController
+
+ProductPage -> ProductPriceModal : 8: Open modal with current pricing details
+deactivate ProductPage
+activate ProductPriceModal
+
+ProductPriceModal --> Admin : 9: Display current Cost Price, Selling Price, Margin, and input fields for new prices
+
+' --- STEP 3: SUBMISSION OR CANCELLATION ---
+alt Admin cancels price update (AT03)
+    Admin -> ProductPriceModal : 10: Click "Cancel" button
+    ProductPriceModal -> ProductPage : 11: Close modal and discard uncommitted inputs
+    deactivate ProductPriceModal
+    activate ProductPage
+    ProductPage --> Admin : 12: Retain existing prices in product catalog
+    deactivate ProductPage
+
+else Admin inputs new prices and submits
+    Admin -> ProductPriceModal : 13: Enter New Cost Price, New Selling Price, Effective Date, Reason and click "Save Price"
+    activate ProductPriceModal
+
+    ' --- CLIENT / STEP 4 VALIDATION: REASON & MARGIN ---
+    alt Reason for change is blank (AT02)
+        ProductPriceModal --> Admin : 14: Prompt mandatory justification for price change
+    else Selling Price < Cost Price (Negative Margin) (AT01)
+        ProductPriceModal --> Admin : 15: Block submission and display error "Selling price must be greater than or equal to cost price"
+    else Validation Passed
+        ProductPriceModal -> ProductController : 16: updateProductPrice(productId, ProductPriceUpdateRequest)
+        activate ProductController
+
+        ProductController -> ProductService : 17: updateProductPrice(productId, request)
+        activate ProductService
+
+        ProductService -> ProductService : 18: Validate positive amounts & sellingPrice >= costPrice
+
+        ProductService -> Database : 19: Insert new record into price_histories table
+        activate Database
+        Database --> ProductService : 20: Price history version created
+
+        ProductService -> Database : 21: Update cost_price & selling_price in products table
+        Database --> ProductService : 22: Active product price updated
+
+        ProductService -> Database : 23: Insert entry into System Audit Log (Action=UPDATE_PRICE)
+        Database --> ProductService : 24: Audit log persisted
+        deactivate Database
+
+        ProductService -> ProductService : 25: Synchronize price update to active POS caches / branch terminals
+        activate ProductService
+        deactivate ProductService
+
+        ProductService --> ProductController : 26: Return updated ProductResponse
+        activate ProductService
+        deactivate ProductService
+
+        ProductController --> ProductPriceModal : 27: Return 200 OK with success payload
+        activate ProductController
+        deactivate ProductController
+
+        ProductPriceModal -> ProductPage : 28: Close modal and refresh product table
+        deactivate ProductPriceModal
+        activate ProductPage
+
+        ProductPage --> Admin : 29: Display success notification "Product price updated successfully" and refresh catalog
+        deactivate ProductPage
+    end
+end
+
+@enduml

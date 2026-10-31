@@ -12,6 +12,8 @@ public interface AccountService {
 
     AccountResponse updateAccount(Long id, AccountUpdateRequest request);
 
+    AccountResponse assignRole(Long id, Integer roleId);
+
     AccountDetailResponse getAccountDetail(Long id);
 
     PageResponse<AccountResponse> getAccounts(String keyword, Short status, Integer roleId, int page, int size, String sortBy, String sortDir);

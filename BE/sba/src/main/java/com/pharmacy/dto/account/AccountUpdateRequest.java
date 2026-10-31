@@ -2,7 +2,6 @@ package com.pharmacy.dto.account;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,7 +22,7 @@ public class AccountUpdateRequest {
 
     private Short status;
 
-    @NotNull(message = "Role ID is required")
+    // Role is managed via dedicated modal (UC08 decouple)
     private Integer roleId;
 
     @NotBlank(message = "Full name is required")

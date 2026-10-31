@@ -29,7 +29,7 @@ export default function ProductStatusModal({
       await onConfirm(product.id, targetStatus);
       onHide();
     } catch (err) {
-      setErrorMsg(err?.message || 'Thao tác chuyển trạng thái không thành công.');
+      setErrorMsg(err?.message || 'Status change operation failed.');
     } finally {
       setSubmitting(false);
     }
@@ -42,10 +42,10 @@ export default function ProductStatusModal({
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">
-              {isCurrentlyActive ? 'Vô hiệu hóa sản phẩm' : 'Kích hoạt lại sản phẩm'}
+              {isCurrentlyActive ? 'Disable Product' : 'Reactivate Product'}
             </div>
             <div className="pms-modal-sub">
-              Sản phẩm: <strong>{product.name}</strong> {product.unit ? `(${product.unit})` : ''}
+              Product: <strong>{product.name}</strong> {product.unit ? `(${product.unit})` : ''}
             </div>
           </div>
           <button className="pms-modal-close" onClick={onHide} aria-label="Close">
@@ -70,8 +70,8 @@ export default function ProductStatusModal({
             {isCurrentlyActive ? (
               <div>
                 <p style={{ fontSize: 13.5, color: 'var(--text-primary)', marginBottom: 14 }}>
-                  Bạn có chắc chắn muốn chuyển sản phẩm <strong>"{product.name}"</strong> sang trạng thái{' '}
-                  <span className="pms-badge pms-badge-danger">INACTIVE</span> không?
+                  Are you sure you want to change the product <strong>"{product.name}"</strong> to{' '}
+                  <span className="pms-badge pms-badge-danger">INACTIVE</span> status?
                 </p>
 
                 <div
@@ -85,18 +85,18 @@ export default function ProductStatusModal({
                     lineHeight: '1.5',
                   }}
                 >
-                  <strong style={{ color: 'var(--status-danger)' }}>Lưu ý nghiệp vụ:</strong>
+                  <strong style={{ color: 'var(--status-danger)' }}>Business Note:</strong>
                   <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
-                    <li>Hệ thống <strong>không xóa</strong> bản ghi để bảo toàn lịch sử giao dịch và kho hàng.</li>
-                    <li>Sản phẩm sẽ ngừng hiển thị trên màn hình POS bán hàng và tìm kiếm bán lẻ.</li>
+                    <li>The system <strong>does not delete</strong> records to preserve transaction and inventory history.</li>
+                    <li>The product will stop displaying on the POS sales screen and retail search.</li>
                   </ul>
                 </div>
               </div>
             ) : (
               <div>
                 <p style={{ fontSize: 13.5, color: 'var(--text-primary)', marginBottom: 14 }}>
-                  Bạn có chắc chắn muốn kích hoạt lại sản phẩm <strong>"{product.name}"</strong> sang trạng thái{' '}
-                  <span className="pms-badge pms-badge-success">ACTIVE</span> không?
+                  Are you sure you want to reactivate the product <strong>"{product.name}"</strong> to{' '}
+                  <span className="pms-badge pms-badge-success">ACTIVE</span> status?
                 </p>
                 <div
                   style={{
@@ -109,7 +109,7 @@ export default function ProductStatusModal({
                     lineHeight: '1.5',
                   }}
                 >
-                  <strong style={{ color: 'var(--brand-primary)' }}>Thông tin:</strong> Sản phẩm sẽ tiếp tục hiển thị trên màn hình POS bán hàng và cho phép xuất/nhập kho bình thường.
+                  <strong style={{ color: 'var(--brand-primary)' }}>Information:</strong> The product will continue to display on the POS sales screen and allow normal import/export warehouse operations.
                 </div>
               </div>
             )}
@@ -118,7 +118,7 @@ export default function ProductStatusModal({
           {/* Footer */}
           <div className="pms-modal-footer">
             <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
@@ -126,10 +126,10 @@ export default function ProductStatusModal({
               disabled={submitting}
             >
               {submitting
-                ? 'Đang xử lý…'
+                ? 'Processing…'
                 : isCurrentlyActive
-                ? 'Xác nhận vô hiệu hóa'
-                : 'Kích hoạt sản phẩm'}
+                ? 'Confirm Disable'
+                : 'Activate Product'}
             </button>
           </div>
         </form>

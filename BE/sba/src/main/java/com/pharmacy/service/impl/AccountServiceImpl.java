@@ -58,8 +58,12 @@ public class AccountServiceImpl implements AccountService {
             throw new DuplicateResourceException("Phone number '" + request.getPhone() + "' already exists");
         }
 
-        Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + request.getRoleId()));
+        // UC07: Newly created users initially have no role assigned (Unassigned / None)
+        Role role = null;
+        if (request.getRoleId() != null) {
+            role = roleRepository.findById(request.getRoleId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + request.getRoleId()));
+        }
 
         AccountStatus initialStatus = request.getStatus() != null
                 ? AccountStatus.fromCode(request.getStatus())
@@ -115,11 +119,14 @@ public class AccountServiceImpl implements AccountService {
             account.setPhone(null);
         }
 
-        Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + request.getRoleId()));
+        // UC08 Separation: Role is maintained separately via dedicated Assign Role modal
+        if (request.getRoleId() != null) {
+            Role role = roleRepository.findById(request.getRoleId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + request.getRoleId()));
+            account.setRole(role);
+        }
 
         account.setEmail(email);
-        account.setRole(role);
         // UC09/UC10 Separation: Status is NOT modified here; status changes must go through lock/unlock workflow.
         account.setUpdatedAt(LocalDateTime.now());
 
@@ -138,6 +145,25 @@ public class AccountServiceImpl implements AccountService {
         account.setAccountInformation(accountInfo);
         Account savedAccount = accountRepository.save(account);
 
+        return mapToAccountResponse(savedAccount);
+    }
+
+    @Override
+    @Transactional
+    public AccountResponse assignRole(Long id, Integer roleId) {
+        Account account = accountRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + id));
+
+        if (roleId != null) {
+            Role role = roleRepository.findById(roleId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + roleId));
+            account.setRole(role);
+        } else {
+            account.setRole(null);
+        }
+
+        account.setUpdatedAt(LocalDateTime.now());
+        Account savedAccount = accountRepository.save(account);
         return mapToAccountResponse(savedAccount);
     }
 

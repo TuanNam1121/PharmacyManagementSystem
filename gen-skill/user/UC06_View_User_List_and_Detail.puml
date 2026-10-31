@@ -1,0 +1,179 @@
+@startuml
+' --- VISUAL PARADIGM STYLE CONFIGURATION ---
+skinparam Style strictuml
+skinparam SequenceMessageAlignment left
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+' Cấu hình Participant: Màu nền xanh nhạt, chữ đen, không in đậm
+skinparam Participant {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+    Padding 5
+}
+
+skinparam Actor {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Database {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Sequence {
+    ' Tô màu xanh cho các thanh kích hoạt (activation boxes)
+    LifeLineBackgroundColor #A0D8EF
+    LifeLineBorderColor #000000
+
+    ArrowColor #000000
+    ArrowFontColor #000000
+    ArrowFontSize 11
+
+    BoxBackgroundColor #A0D8EF
+    BoxBorderColor #000000
+    BoxFontColor #000000
+}
+
+skinparam Note {
+    BackgroundColor #FFF9E6
+    BorderColor #000000
+    FontColor #000000
+}
+
+skinparam LifeLineStrategy solid
+
+' --- ACTORS & PARTICIPANTS ---
+actor "Admin" as Admin
+participant "<<boundary>>\nHomepage" as Homepage
+participant "<<boundary>>\nUsersPage" as UsersPage
+participant "<<boundary>>\nUserDetailModal" as UserDetailModal
+participant "<<control>>\nAccountController" as AccountController
+participant "<<control>>\nAccountService" as AccountService
+participant "Database" as Database
+
+' --- MAIN FLOW: ACCESS USER DIRECTORY ---
+Admin -> Homepage : 1: Select "User Management" option
+activate Homepage
+
+Homepage -> UsersPage : 2: Navigate to UsersPage
+deactivate Homepage
+activate UsersPage
+
+UsersPage -> AccountController : 3: getAccounts(keyword, status, roleId, page, size, sortBy, sortDir)
+activate AccountController
+
+AccountController -> AccountService : 4: getAccounts(keyword, status, roleId, page, size, sortBy, sortDir)
+activate AccountService
+
+AccountService -> Database : 5: Query user accounts sorted by creation timestamp DESC
+activate Database
+
+' --- ALT 1: NO MATCHING RECORDS FOUND VS USERS FOUND ---
+alt No user records matching criteria (AT01)
+    Database --> AccountService : 6: Return empty result set
+    deactivate Database
+
+    AccountService --> AccountController : 7: Return empty PageResponse
+    deactivate AccountService
+
+    AccountController --> UsersPage : 8: Return 200 OK with empty PageResponse
+    deactivate AccountController
+
+    UsersPage --> Admin : 9: Display informational message "No matching user records found"
+
+else Matching user records found
+    Database --> AccountService : 10: Return user accounts page
+    activate Database
+    deactivate Database
+
+    AccountService --> AccountController : 11: Return PageResponse<AccountResponse>
+    activate AccountService
+    deactivate AccountService
+
+    AccountController --> UsersPage : 12: Return 200 OK with user list data
+    deactivate AccountController
+
+    UsersPage --> Admin : 13: Render user directory table with search and filter controls
+
+    ' --- USER FILTER / SEARCH ---
+    Admin -> UsersPage : 14: Input search keyword or select filter criteria (name, email, role, status)
+
+    UsersPage -> AccountController : 15: getAccounts(keyword, status, roleId, page, size, sortBy, sortDir)
+    activate AccountController
+
+    AccountController -> AccountService : 16: getAccounts(keyword, status, roleId, page, size, sortBy, sortDir)
+    activate AccountService
+
+    AccountService -> Database : 17: Query database with applied filters
+    activate Database
+
+    Database --> AccountService : 18: Return filtered accounts data
+    deactivate Database
+
+    AccountService --> AccountController : 19: Return filtered PageResponse<AccountResponse>
+    deactivate AccountService
+
+    AccountController --> UsersPage : 20: Return 200 OK with filtered user list
+    deactivate AccountController
+
+    UsersPage --> Admin : 21: Update and present filtered user directory table
+
+    ' --- VIEW USER DETAIL ---
+    Admin -> UsersPage : 22: Select specific user to view detailed profile
+
+    UsersPage -> AccountController : 23: getAccountDetail(userId)
+    activate AccountController
+
+    AccountController -> AccountService : 24: getAccountDetail(userId)
+    activate AccountService
+
+    AccountService -> Database : 25: Query user record by ID (with role, permissions, store)
+    activate Database
+
+    ' --- ALT 2: USER PROFILE LOOKUP ---
+    alt User record not found or query error (AT02)
+        Database --> AccountService : 26: Return empty / null
+        deactivate Database
+
+        AccountService --> AccountController : 27: Throw ResourceNotFoundException("User not found")
+        deactivate AccountService
+
+        AccountController --> UsersPage : 28: Return 404 Not Found error
+        deactivate AccountController
+
+        UsersPage --> Admin : 29: Display error alert "Profile unavailable" and return to list
+
+    else User record retrieved successfully
+        Database --> AccountService : 30: Return Account entity details
+        activate Database
+        deactivate Database
+
+        AccountService --> AccountController : 31: Return AccountDetailResponse
+        activate AccountService
+        deactivate AccountService
+
+        AccountController --> UsersPage : 32: Return 200 OK with user profile details
+        deactivate AccountController
+
+        UsersPage -> UserDetailModal : 33: Open modal with user profile data
+        activate UserDetailModal
+
+        UserDetailModal --> Admin : 34: Display comprehensive profile (Full Name, Contact, Role, Store, Status)
+        deactivate UserDetailModal
+    end
+end
+
+deactivate UsersPage
+
+@enduml

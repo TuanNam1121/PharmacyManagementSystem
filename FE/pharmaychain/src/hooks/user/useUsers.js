@@ -4,6 +4,7 @@ import {
   fetchAccountDetail,
   createAccount,
   updateAccount,
+  assignRole,
   updateAccountStatus,
   fetchRoles,
 } from '../../api/UserAPI';
@@ -103,12 +104,12 @@ export function useUsers() {
     }
   }, []);
 
-  // Create account
+  // Create account (UC07: role unassigned initially)
   const handleCreateUser = useCallback(async (payload) => {
     try {
       setError(null);
       await createAccount(payload);
-      setSuccessMsg('User account created successfully!');
+      setSuccessMsg('User account created successfully! Use "Assign Role" to grant permissions.');
       await loadAccounts();
       return true;
     } catch (err) {
@@ -117,12 +118,12 @@ export function useUsers() {
     }
   }, [loadAccounts]);
 
-  // Update account
+  // Update account (UC08: profile details only, role managed separately)
   const handleUpdateUser = useCallback(async (id, payload) => {
     try {
       setError(null);
       await updateAccount(id, payload);
-      setSuccessMsg('User account updated successfully!');
+      setSuccessMsg('User profile updated successfully!');
       await loadAccounts();
       if (detailUser && detailUser.id === id) {
         await loadDetail(id);
@@ -130,6 +131,23 @@ export function useUsers() {
       return true;
     } catch (err) {
       setError(err.message || 'Failed to update account.');
+      throw err;
+    }
+  }, [loadAccounts, detailUser, loadDetail]);
+
+  // Assign role to account
+  const handleAssignRole = useCallback(async (id, roleId, userName) => {
+    try {
+      setError(null);
+      await assignRole(id, roleId);
+      setSuccessMsg(`Role successfully assigned to ${userName || 'user'}`);
+      await loadAccounts();
+      if (detailUser && detailUser.id === id) {
+        await loadDetail(id);
+      }
+      return true;
+    } catch (err) {
+      setError(err.message || 'Failed to assign role.');
       throw err;
     }
   }, [loadAccounts, detailUser, loadDetail]);
@@ -185,6 +203,7 @@ export function useUsers() {
     loadDetail,
     handleCreateUser,
     handleUpdateUser,
+    handleAssignRole,
     handleToggleStatus,
   };
 }

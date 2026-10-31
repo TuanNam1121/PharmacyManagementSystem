@@ -32,7 +32,7 @@ export default function UserLockModal({
     setErrorMsg(null);
 
     if (isCurrentlyActive && (!reason || !reason.trim())) {
-      setErrorMsg('Vui lòng nhập lý do khóa hoặc vô hiệu hóa tài khoản (Bắt buộc theo UC10).');
+      setErrorMsg('Please enter a reason for locking or disabling the account.');
       return;
     }
 
@@ -41,7 +41,7 @@ export default function UserLockModal({
       await onConfirm(user.id, targetStatus, reason.trim());
       onHide();
     } catch (err) {
-      setErrorMsg(err?.message || 'Thao tác không thành công.');
+      setErrorMsg(err?.message || 'Operation failed.');
     } finally {
       setSubmitting(false);
     }
@@ -54,10 +54,10 @@ export default function UserLockModal({
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">
-              {isCurrentlyActive ? 'Khóa / Vô hiệu hóa tài khoản' : 'Mở khóa tài khoản'}
+              {isCurrentlyActive ? 'Lock / Disable Account' : 'Unlock Account'}
             </div>
             <div className="pms-modal-sub">
-              Người dùng: <strong>{user.fullName || user.username}</strong> (@{user.username})
+              User: <strong>{user.fullName || user.username}</strong> (@{user.username})
             </div>
           </div>
           <button className="pms-modal-close" onClick={onHide} aria-label="Close">
@@ -73,7 +73,7 @@ export default function UserLockModal({
             {errorMsg && (
               <div className="pms-alert pms-alert-danger" style={{ marginBottom: 16 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
                 {errorMsg}
               </div>
@@ -82,7 +82,7 @@ export default function UserLockModal({
             {isCurrentlyActive ? (
               <div>
                 <div className="pms-form-group" style={{ marginBottom: 14 }}>
-                  <label className="pms-label">Chọn hành động khóa *</label>
+                  <label className="pms-label">Select Action *</label>
                   <div style={{ display: 'flex', gap: 16, marginTop: 6 }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
                       <input
@@ -92,7 +92,7 @@ export default function UserLockModal({
                         checked={Number(targetStatus) === 2}
                         onChange={() => setTargetStatus(2)}
                       />
-                      <span><strong>Khóa tài khoản</strong> (LOCKED - Tạm ngưng do vi phạm)</span>
+                      <span><strong>Lock Account</strong> (LOCKED - Temporary suspension due to violation)</span>
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
                       <input
@@ -102,39 +102,39 @@ export default function UserLockModal({
                         checked={Number(targetStatus) === 0}
                         onChange={() => setTargetStatus(0)}
                       />
-                      <span><strong>Vô hiệu hóa</strong> (DISABLED - Nghỉ việc / Hết hạn)</span>
+                      <span><strong>Disable</strong> (DISABLED - Resigned / Expired)</span>
                     </label>
                   </div>
                 </div>
 
                 <div className="pms-form-group">
-                  <label className="pms-label">Lý do khóa tài khoản (Lock Reason) *</label>
+                  <label className="pms-label">Lock Reason *</label>
                   <textarea
                     className="pms-input pms-input-bare"
                     rows={4}
-                    placeholder="Nhập lý do khóa tài khoản (bắt buộc để lưu vết bảo mật theo UC10)..."
+                    placeholder="Enter the reason for locking the account ..."
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     required
                   />
                   <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                    Hệ thống sẽ ghi log lý do và ngắt các phiên đăng nhập hiện tại của người dùng này.
+                    The system will log this reason and terminate current active sessions for this user.
                   </span>
                 </div>
               </div>
             ) : (
               <div>
                 <p style={{ fontSize: 13.5, color: 'var(--text-primary)', marginBottom: 16 }}>
-                  Bạn có chắc chắn muốn mở khóa cho tài khoản <strong>@{user.username}</strong> không?
-                  Sau khi mở khóa, người dùng có thể đăng nhập bình thường vào hệ thống.
+                  Are you sure you want to unlock the account for <strong>@{user.username}</strong>?
+                  Once unlocked, the user will be able to log in normally.
                 </p>
 
                 <div className="pms-form-group">
-                  <label className="pms-label">Ghi chú mở khóa (Tùy chọn)</label>
+                  <label className="pms-label">Unlock Note (Optional)</label>
                   <textarea
                     className="pms-input pms-input-bare"
                     rows={3}
-                    placeholder="Nhập ghi chú hoặc lý do mở khóa (nếu có)..."
+                    placeholder="Enter notes or reason for unlocking (optional)..."
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                   />
@@ -146,7 +146,7 @@ export default function UserLockModal({
           {/* Footer */}
           <div className="pms-modal-footer">
             <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
@@ -154,10 +154,10 @@ export default function UserLockModal({
               disabled={submitting}
             >
               {submitting
-                ? 'Đang xử lý…'
+                ? 'Processing…'
                 : isCurrentlyActive
-                ? 'Xác nhận khóa tài khoản'
-                : 'Mở khóa tài khoản'}
+                ? 'Confirm Lock Account'
+                : 'Unlock Account'}
             </button>
           </div>
         </form>

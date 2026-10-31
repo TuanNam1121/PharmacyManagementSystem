@@ -1,0 +1,160 @@
+@startuml
+' --- VISUAL PARADIGM STYLE CONFIGURATION ---
+skinparam Style strictuml
+skinparam SequenceMessageAlignment left
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+' Cấu hình Participant: Màu nền xanh nhạt, chữ đen, không in đậm
+skinparam Participant {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+    Padding 5
+}
+
+skinparam Actor {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Database {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Sequence {
+    ' Tô màu xanh cho các thanh kích hoạt (activation boxes)
+    LifeLineBackgroundColor #A0D8EF
+    LifeLineBorderColor #000000
+
+    ArrowColor #000000
+    ArrowFontColor #000000
+    ArrowFontSize 11
+
+    BoxBackgroundColor #A0D8EF
+    BoxBorderColor #000000
+    BoxFontColor #000000
+}
+
+skinparam Note {
+    BackgroundColor #FFF9E6
+    BorderColor #000000
+    FontColor #000000
+}
+
+skinparam LifeLineStrategy solid
+
+' --- ACTORS & PARTICIPANTS ---
+actor "Admin" as Admin
+participant "<<boundary>>\nUsersPage" as UsersPage
+participant "<<boundary>>\nUserFormModal" as UserFormModal
+participant "<<control>>\nAccountController" as AccountController
+participant "<<control>>\nAccountService" as AccountService
+participant "Database" as Database
+
+' --- STEP 1 & 2: SELECT USER & OPEN EDIT FORM ---
+Admin -> UsersPage : 1: Click "Edit" action on a user row
+activate UsersPage
+
+UsersPage -> AccountController : 2: getAccountDetail(userId)
+activate AccountController
+
+AccountController -> AccountService : 3: getAccountDetail(userId)
+activate AccountService
+
+AccountService -> Database : 4: Query account details by ID
+activate Database
+
+Database --> AccountService : 5: Return Account entity
+deactivate Database
+
+AccountService --> AccountController : 6: Return AccountDetailResponse
+deactivate AccountService
+
+AccountController --> UsersPage : 7: Return 200 OK
+deactivate AccountController
+
+UsersPage -> UserFormModal : 8: Open Edit modal with pre-populated user data
+deactivate UsersPage
+activate UserFormModal
+
+UserFormModal --> Admin : 9: Display Edit form (Username locked; Full Name, Phone, Email, DoB, Address editable)
+
+' --- STEP 3: SUBMIT OR CANCEL ---
+alt Admin cancels edit (AT02)
+    Admin -> UserFormModal : 10: Click "Cancel" button
+    UserFormModal -> UsersPage : 11: Close modal and discard changes
+    deactivate UserFormModal
+    activate UsersPage
+    UsersPage --> Admin : 12: Retain existing user directory view
+    deactivate UsersPage
+
+else Admin modifies data and submits
+    Admin -> UserFormModal : 13: Update fields and click "Save Changes"
+    activate UserFormModal
+
+    UserFormModal -> UserFormModal : 14: Validate required fields and formats
+
+    alt Client validation failure
+        UserFormModal --> Admin : 15: Highlight invalid entries and prompt correction
+    else Validation successful
+        UserFormModal -> AccountController : 16: updateAccount(userId, AccountUpdateRequest)
+        activate AccountController
+
+        AccountController -> AccountService : 17: updateAccount(userId, request)
+        activate AccountService
+
+        ' --- STEP 5: UNIQUENESS CHECK ---
+        AccountService -> Database : 18: Check uniqueness for modified Email or Phone against other accounts
+        activate Database
+
+        alt Duplicate Email or Phone found on other account (AT01)
+            Database --> AccountService : 19: Return conflict found
+            deactivate Database
+
+            AccountService --> AccountController : 20: Throw DuplicateResourceException("Email or phone already in use")
+            deactivate AccountService
+
+            AccountController --> UserFormModal : 21: Return 400 Bad Request with conflict details
+            deactivate AccountController
+
+            UserFormModal --> Admin : 22: Display error alert "Email or Phone already belongs to another user"
+        else No conflict / Uniqueness verified
+            Database --> AccountService : 23: Return uniqueness confirmed
+            activate Database
+
+            AccountService -> Database : 24: Update Account entity in accounts table
+            Database --> AccountService : 25: Account updated successfully
+
+            AccountService -> Database : 26: Record activity in System Audit Log (Action=UPDATE_USER)
+            Database --> AccountService : 27: Audit record saved
+            deactivate Database
+
+            AccountService --> AccountController : 28: Return updated AccountResponse
+            activate AccountService
+            deactivate AccountService
+
+            AccountController --> UserFormModal : 29: Return 200 OK with updated profile
+            activate AccountController
+            deactivate AccountController
+
+            UserFormModal -> UsersPage : 30: Close modal and refresh user list
+            deactivate UserFormModal
+            activate UsersPage
+
+            UsersPage --> Admin : 31: Present success toast and updated user directory
+            deactivate UsersPage
+        end
+    end
+end
+
+@enduml

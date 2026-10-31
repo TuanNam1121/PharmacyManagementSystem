@@ -1,0 +1,125 @@
+@startuml
+skinparam style strictuml
+skinparam SequenceMessageAlignment left
+
+actor "Admin" as Admin
+participant "<<boundary>>\nHomepage" as Homepage
+participant "<<boundary>>\nProductPage" as ProductPage
+participant "<<boundary>>\nProductFormModal" as ProductFormModal
+participant "<<boundary>>\nProductPriceModal" as ProductPriceModal
+participant "<<boundary>>\nProductStatusModal" as ProductStatusModal
+participant "<<control>>\nProductController" as ProductController
+participant "<<control>>\nProductService" as ProductService
+participant "Database" as Database
+
+' --- 1. ACCESS PRODUCT CATALOG ---
+Admin -> Homepage : 1: Select "Product Catalog"
+activate Homepage
+
+Homepage -> ProductPage : 2: Navigate to ProductPage
+deactivate Homepage
+activate ProductPage
+
+ProductPage -> ProductController : 3: getProducts(keyword, status, categoryId, page, size)
+activate ProductController
+
+ProductController -> ProductService : 4: getProducts(keyword, status, categoryId, page, size)
+activate ProductService
+
+ProductService -> Database : 5: Query products list
+activate Database
+
+Database --> ProductService : 6: Return products page
+deactivate Database
+
+ProductService --> ProductController : 7: Return PageResponse<ProductResponse>
+deactivate ProductService
+
+ProductController --> ProductPage : 8: Return 200 OK
+deactivate ProductController
+
+ProductPage --> Admin : 9: Render product catalog table
+
+' --- 2. ADD PRODUCT ---
+Admin -> ProductPage : 10: Click "Add Product" button
+ProductPage -> ProductFormModal : 11: Open creation modal
+activate ProductFormModal
+
+Admin -> ProductFormModal : 12: Fill in product master data and submit
+ProductFormModal -> ProductController : 13: createProduct(ProductCreateRequest)
+activate ProductController
+
+ProductController -> ProductService : 14: createProduct(request)
+activate ProductService
+
+ProductService -> Database : 15: Validate uniqueness & insert into products table
+activate Database
+Database --> ProductService : 16: Product inserted
+deactivate Database
+
+ProductService --> ProductController : 17: Return ProductResponse
+deactivate ProductService
+
+ProductController --> ProductFormModal : 18: Return 201 Created
+deactivate ProductController
+
+ProductFormModal -> ProductPage : 19: Close modal and refresh catalog
+deactivate ProductFormModal
+
+' --- 3. MANAGE PRODUCT PRICE ---
+Admin -> ProductPage : 20: Click "Set/Update Price" action
+ProductPage -> ProductPriceModal : 21: Open price modal
+activate ProductPriceModal
+
+Admin -> ProductPriceModal : 22: Input new Cost & Selling Price and submit
+ProductPriceModal -> ProductController : 23: updateProductPrice(productId, ProductPriceUpdateRequest)
+activate ProductController
+
+ProductController -> ProductService : 24: updateProductPrice(productId, request)
+activate ProductService
+
+ProductService -> Database : 25: Insert price history & update current price in products table
+activate Database
+Database --> ProductService : 26: Price saved & history logged
+deactivate Database
+
+ProductService --> ProductController : 27: Return updated ProductResponse
+deactivate ProductService
+
+ProductController --> ProductPriceModal : 28: Return 200 OK
+deactivate ProductController
+
+ProductPriceModal -> ProductPage : 29: Close modal and refresh table
+deactivate ProductPriceModal
+
+' --- 4. INACTIVATE PRODUCT ---
+Admin -> ProductPage : 30: Click "Inactive" action button
+ProductPage -> ProductStatusModal : 31: Open Inactive confirmation modal
+activate ProductStatusModal
+
+Admin -> ProductStatusModal : 32: Confirm Inactive status
+ProductStatusModal -> ProductController : 33: updateProductStatus(productId, status=INACTIVE)
+activate ProductController
+
+ProductController -> ProductService : 34: updateProductStatus(productId, status)
+activate ProductService
+
+ProductService -> Database : 35: Update status to INACTIVE in products table
+activate Database
+Database --> ProductService : 36: Status updated
+deactivate Database
+
+ProductService --> ProductController : 37: Return success
+deactivate ProductService
+
+ProductController --> ProductStatusModal : 38: Return 200 OK
+deactivate ProductController
+
+ProductStatusModal -> ProductPage : 39: Close modal and refresh table
+deactivate ProductStatusModal
+
+ProductPage --> Admin : 40: Display updated catalog with Inactive badge
+
+deactivate ProductPage
+
+@enduml

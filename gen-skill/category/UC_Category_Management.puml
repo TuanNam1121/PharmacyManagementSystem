@@ -1,0 +1,124 @@
+@startuml
+skinparam style strictuml
+skinparam SequenceMessageAlignment left
+
+actor "Admin" as Admin
+participant "<<boundary>>\nHomepage" as Homepage
+participant "<<boundary>>\nCategoryPage" as CategoryPage
+participant "<<boundary>>\nCategoryFormModal" as CategoryFormModal
+participant "<<boundary>>\nCategoryStatusModal" as CategoryStatusModal
+participant "<<control>>\nCategoryController" as CategoryController
+participant "<<control>>\nCategoryService" as CategoryService
+participant "Database" as Database
+
+' --- 1. ACCESS & VIEW CATEGORIES ---
+Admin -> Homepage : 1: Select "Category Management"
+activate Homepage
+
+Homepage -> CategoryPage : 2: Navigate to CategoryPage
+deactivate Homepage
+activate CategoryPage
+
+CategoryPage -> CategoryController : 3: getAllCategories()
+activate CategoryController
+
+CategoryController -> CategoryService : 4: getCategories()
+activate CategoryService
+
+CategoryService -> Database : 5: Query categories from database
+activate Database
+
+Database --> CategoryService : 6: Return categories list
+deactivate Database
+
+CategoryService --> CategoryController : 7: Return List<CategoryResponse>
+deactivate CategoryService
+
+CategoryController --> CategoryPage : 8: Return 200 OK
+deactivate CategoryController
+
+CategoryPage --> Admin : 9: Render category directory table
+
+' --- 2. ADD CATEGORY ---
+Admin -> CategoryPage : 10: Click "Add Category" button
+CategoryPage -> CategoryFormModal : 11: Open creation modal
+activate CategoryFormModal
+
+Admin -> CategoryFormModal : 12: Enter name & description, click Save
+CategoryFormModal -> CategoryController : 13: createCategory(CategoryCreateRequest)
+activate CategoryController
+
+CategoryController -> CategoryService : 14: createCategory(request)
+activate CategoryService
+
+CategoryService -> Database : 15: Validate uniqueness & insert into categories table
+activate Database
+Database --> CategoryService : 16: Category inserted
+deactivate Database
+
+CategoryService --> CategoryController : 17: Return CategoryResponse
+deactivate CategoryService
+
+CategoryController --> CategoryFormModal : 18: Return 201 Created
+deactivate CategoryController
+
+CategoryFormModal -> CategoryPage : 19: Close modal and refresh table
+deactivate CategoryFormModal
+
+' --- 3. EDIT CATEGORY ---
+Admin -> CategoryPage : 20: Click "Edit" action on category row
+CategoryPage -> CategoryFormModal : 21: Open Edit modal pre-filled
+activate CategoryFormModal
+
+Admin -> CategoryFormModal : 22: Modify description and click Save
+CategoryFormModal -> CategoryController : 23: updateCategory(categoryId, CategoryUpdateRequest)
+activate CategoryController
+
+CategoryController -> CategoryService : 24: updateCategory(categoryId, request)
+activate CategoryService
+
+CategoryService -> Database : 25: Update category in database
+activate Database
+Database --> CategoryService : 26: Category updated
+deactivate Database
+
+CategoryService --> CategoryController : 27: Return updated CategoryResponse
+deactivate CategoryService
+
+CategoryController --> CategoryFormModal : 28: Return 200 OK
+deactivate CategoryController
+
+CategoryFormModal -> CategoryPage : 29: Close modal and refresh table
+deactivate CategoryFormModal
+
+' --- 4. INACTIVATE CATEGORY ---
+Admin -> CategoryPage : 30: Click "Inactivate" action button
+CategoryPage -> CategoryStatusModal : 31: Open custom confirmation modal
+activate CategoryStatusModal
+
+Admin -> CategoryStatusModal : 32: Click "Confirm Inactive"
+CategoryStatusModal -> CategoryController : 33: updateCategoryStatus(categoryId, status=INACTIVE)
+activate CategoryController
+
+CategoryController -> CategoryService : 34: updateCategoryStatus(categoryId, status)
+activate CategoryService
+
+CategoryService -> Database : 35: Update status to INACTIVE in categories table
+activate Database
+Database --> CategoryService : 36: Status updated
+deactivate Database
+
+CategoryService --> CategoryController : 37: Return success
+deactivate CategoryService
+
+CategoryController --> CategoryStatusModal : 38: Return 200 OK
+deactivate CategoryController
+
+CategoryStatusModal -> CategoryPage : 39: Close modal and refresh table
+deactivate CategoryStatusModal
+
+CategoryPage --> Admin : 40: Display updated categories table with Inactive badge
+
+deactivate CategoryPage
+
+@enduml

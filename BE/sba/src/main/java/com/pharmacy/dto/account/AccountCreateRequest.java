@@ -2,7 +2,6 @@ package com.pharmacy.dto.account;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,7 +30,7 @@ public class AccountCreateRequest {
 
     private Short status = 1;
 
-    @NotNull(message = "Role ID is required")
+    // Optional / unassigned by default on creation (UC07)
     private Integer roleId;
 
     @NotBlank(message = "Full name is required")

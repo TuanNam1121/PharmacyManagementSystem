@@ -1,0 +1,218 @@
+@startuml
+' --- VISUAL PARADIGM STYLE CONFIGURATION ---
+skinparam Style strictuml
+skinparam SequenceMessageAlignment left
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+' Cấu hình Participant: Màu nền xanh nhạt, chữ đen, không in đậm
+skinparam Participant {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+    Padding 5
+}
+
+skinparam Actor {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Database {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Sequence {
+    ' Tô màu xanh cho các thanh kích hoạt (activation boxes)
+    LifeLineBackgroundColor #A0D8EF
+    LifeLineBorderColor #000000
+
+    ArrowColor #000000
+    ArrowFontColor #000000
+    ArrowFontSize 11
+
+    BoxBackgroundColor #A0D8EF
+    BoxBorderColor #000000
+    BoxFontColor #000000
+}
+
+skinparam Note {
+    BackgroundColor #FFF9E6
+    BorderColor #000000
+    FontColor #000000
+}
+
+skinparam LifeLineStrategy solid
+
+' --- ACTORS & PARTICIPANTS ---
+actor "Admin" as Admin
+participant "<<boundary>>\nProductPage" as ProductPage
+participant "<<boundary>>\nProductFormModal" as ProductFormModal
+participant "<<boundary>>\nProductStatusModal" as ProductStatusModal
+participant "<<control>>\nProductController" as ProductController
+participant "<<control>>\nProductService" as ProductService
+participant "Database" as Database
+
+' --- STEP 1 & 2: SELECT PRODUCT & OPEN EDIT MODAL ---
+Admin -> ProductPage : 1: Click "Edit" action on product row
+activate ProductPage
+
+ProductPage -> ProductController : 2: getProductDetail(productId)
+activate ProductController
+
+ProductController -> ProductService : 3: getProductDetail(productId)
+activate ProductService
+
+ProductService -> Database : 4: Query product entity by ID
+activate Database
+
+Database --> ProductService : 5: Return Product details
+deactivate Database
+
+ProductService --> ProductController : 6: Return ProductDetailResponse
+deactivate ProductService
+
+ProductController --> ProductPage : 7: Return 200 OK
+deactivate ProductController
+
+ProductPage -> ProductFormModal : 8: Open Edit modal with pre-filled product attributes
+deactivate ProductPage
+activate ProductFormModal
+
+ProductFormModal --> Admin : 9: Display form (Product Code locked; Name, Ingredients, Dosage, Category, Barcode, RegNum editable)
+
+' --- STEP 3: SUBMISSION OR CANCELLATION ---
+alt Admin cancels edit (AT03)
+    Admin -> ProductFormModal : 10: Click "Cancel" button
+    ProductFormModal -> ProductPage : 11: Close modal and discard changes
+    deactivate ProductFormModal
+    activate ProductPage
+    ProductPage --> Admin : 12: Retain existing product catalog view
+    deactivate ProductPage
+
+else Admin modifies attributes and submits
+    Admin -> ProductFormModal : 13: Update attributes and click "Save Changes"
+    activate ProductFormModal
+
+    ProductFormModal -> ProductFormModal : 14: Validate required fields and formats
+
+    ProductFormModal -> ProductController : 15: updateProduct(productId, ProductUpdateRequest)
+    activate ProductController
+
+    ProductController -> ProductService : 16: updateProduct(productId, request)
+    activate ProductService
+
+    ' --- STEP 5: UNIQUENESS CONSTRAINTS ---
+    ProductService -> Database : 17: Check uniqueness of Barcode and Registration Number against other products
+    activate Database
+
+    alt Duplicate Barcode or Registration Number found (AT01)
+        Database --> ProductService : 18: Conflict detected
+        deactivate Database
+
+        ProductService --> ProductController : 19: Throw DuplicateResourceException("Barcode or Registration Number in use")
+        deactivate ProductService
+
+        ProductController --> ProductFormModal : 20: Return 400 Bad Request
+        deactivate ProductController
+
+        ProductFormModal --> Admin : 21: Display error alert "Barcode/Registration Number already assigned to another product"
+    else Validation & uniqueness confirmed
+        Database --> ProductService : 22: Uniqueness verified
+        activate Database
+
+        ProductService -> Database : 23: Update Product entity in database
+        Database --> ProductService : 24: Product updated successfully
+
+        ProductService -> Database : 25: Record activity in System Audit Log (Action=UPDATE_PRODUCT)
+        Database --> ProductService : 26: Audit entry persisted
+        deactivate Database
+
+        ProductService --> ProductController : 27: Return updated ProductResponse
+        activate ProductService
+        deactivate ProductService
+
+        ProductController --> ProductFormModal : 28: Return 200 OK
+        activate ProductController
+        deactivate ProductController
+
+        ProductFormModal -> ProductPage : 29: Close modal and refresh catalog
+        deactivate ProductFormModal
+        activate ProductPage
+
+        ProductPage --> Admin : 30: Display success notification and updated product list
+        deactivate ProductPage
+    end
+
+else Deactivating product via Inactive Action (AT02)
+    Admin -> ProductPage : 31: Click "Inactive" action on product
+    activate ProductPage
+
+    ProductPage -> ProductController : 32: checkProductInventory(productId)
+    activate ProductController
+
+    ProductController -> ProductService : 33: checkProductInventory(productId)
+    activate ProductService
+
+    ProductService -> Database : 34: Check active shelf/branch inventory for product
+    activate Database
+
+    Database --> ProductService : 35: Return active stock count > 0
+    deactivate Database
+
+    ProductService --> ProductController : 36: Return inventory status (hasActiveStock = true)
+    deactivate ProductService
+
+    ProductController --> ProductPage : 37: Return 200 OK with inventory warning info
+    deactivate ProductController
+
+    ProductPage -> ProductStatusModal : 38: Open Inactive confirmation modal with stock warning
+    activate ProductStatusModal
+
+    ProductStatusModal --> Admin : 39: Warn that active inventory exists and deactivation restricts POS sales
+
+    alt Admin cancels deactivation
+        Admin -> ProductStatusModal : 40: Click "Cancel"
+        ProductStatusModal -> ProductPage : 41: Close modal and abort
+        deactivate ProductStatusModal
+        ProductPage --> Admin : 42: Retain Active status
+    else Admin confirms Inactive
+        Admin -> ProductStatusModal : 43: Click "Confirm Inactive"
+        activate ProductStatusModal
+
+        ProductStatusModal -> ProductController : 44: updateProductStatus(productId, status=INACTIVE)
+        activate ProductController
+
+        ProductController -> ProductService : 45: updateProductStatus(productId, status)
+        activate ProductService
+
+        ProductService -> Database : 46: Update product status to INACTIVE in database
+        activate Database
+        Database --> ProductService : 47: Status updated
+        deactivate Database
+
+        ProductService --> ProductController : 48: Return success
+        deactivate ProductService
+
+        ProductController --> ProductStatusModal : 49: Return 200 OK
+        activate ProductController
+        deactivate ProductController
+
+        ProductStatusModal -> ProductPage : 50: Close modal and refresh table
+        deactivate ProductStatusModal
+
+        ProductPage --> Admin : 51: Display success toast and update status badge to Inactive
+    end
+    deactivate ProductPage
+end
+
+@enduml

@@ -224,7 +224,7 @@ export default function ProductTable({
                       {/* View */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
-                        title="Xem chi tiết sản phẩm"
+                        title="View Product detail"
                         onClick={() => onView(row.id)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -237,7 +237,7 @@ export default function ProductTable({
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
                         style={{ color: 'var(--brand-primary)' }}
-                        title="Cập nhật giá sản phẩm (Set/Update Price)"
+                        title="Manage Product Price"
                         onClick={() => onUpdatePrice && onUpdatePrice(row)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -249,7 +249,7 @@ export default function ProductTable({
                       {/* Edit */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
-                        title="Chỉnh sửa thông tin chung"
+                        title="Edit Product"
                         onClick={() => onEdit(row)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -262,7 +262,7 @@ export default function ProductTable({
                       <button
                         className={`btn-pms btn-pms-sm ${isActive ? 'btn-pms-ghost' : 'btn-pms-outline'}`}
                         style={{ color: isActive ? 'var(--status-danger)' : 'var(--brand-primary)' }}
-                        title={isActive ? 'Vô hiệu hóa sản phẩm (Inactive)' : 'Kích hoạt lại sản phẩm (Active)'}
+                        title={isActive ? 'Inactive Product' : 'Active Product'}
                         onClick={() => onToggleStatus && onToggleStatus(row)}
                       >
                         {isActive ? (

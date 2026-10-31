@@ -30,7 +30,7 @@ export default function ProductDetailModal({
       const res = await viewPriceHistory(productId);
       setPriceHistories(Array.isArray(res) ? res : []);
     } catch (err) {
-      setHistoryError(err?.message || 'Không thể tải lịch sử giá.');
+      setHistoryError(err?.message || 'Failed to load price history.');
     } finally {
       setHistoryLoading(false);
     }
@@ -100,7 +100,7 @@ export default function ProductDetailModal({
               transition: 'all 0.2s',
             }}
           >
-            Tổng quan (Overview)
+            Overview
           </button>
           <button
             type="button"
@@ -120,7 +120,7 @@ export default function ProductDetailModal({
               transition: 'all 0.2s',
             }}
           >
-            Lịch sử giá (Price History)
+            Price History
             {priceHistories.length > 0 && (
               <span
                 style={{
@@ -319,26 +319,26 @@ export default function ProductDetailModal({
               {historyLoading ? (
                 <div className="pms-spinner-wrap" style={{ padding: '30px 0' }}>
                   <div className="pms-spinner" />
-                  <span className="pms-spinner-text">Đang tải lịch sử giá…</span>
+                  <span className="pms-spinner-text">Loading price history…</span>
                 </div>
               ) : historyError ? (
                 <div className="pms-alert pms-alert-danger">{historyError}</div>
               ) : priceHistories.length === 0 ? (
                 <div className="pms-empty" style={{ padding: '30px 0' }}>
-                  <div className="pms-empty-title">Chưa có lịch sử thay đổi giá</div>
-                  <div className="pms-empty-sub">Các thay đổi về giá vốn hoặc giá bán sẽ được tự động lưu vết tại đây.</div>
+                  <div className="pms-empty-title">No price history available</div>
+                  <div className="pms-empty-sub">Cost and selling price changes will be automatically logged here.</div>
                 </div>
               ) : (
                 <div className="pms-table-wrap">
                   <table className="pms-table">
                     <thead>
                       <tr>
-                        <th>Ngày áp dụng</th>
-                        <th>Giá vốn</th>
-                        <th>Giá bán</th>
-                        <th>Chênh lệch</th>
-                        <th>Người thực hiện</th>
-                        <th>Lý do thay đổi</th>
+                        <th>Effective Date</th>
+                        <th>Cost Price</th>
+                        <th>Selling Price</th>
+                        <th>Difference</th>
+                        <th>Performed By</th>
+                        <th>Reason</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -363,10 +363,10 @@ export default function ProductDetailModal({
                               {money(diff)} ({marginPercent}%)
                             </td>
                             <td style={{ fontSize: 12.5, color: 'var(--text-primary)' }}>
-                              {h.accountFullName || h.accountUsername || 'Hệ thống'}
+                              {h.accountFullName || h.accountUsername || 'System'}
                             </td>
                             <td style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
-                              {h.reason || 'Cập nhật từ form quản lý sản phẩm'}
+                              {h.reason || 'Updated from product management form'}
                             </td>
                           </tr>
                         );

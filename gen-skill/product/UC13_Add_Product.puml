@@ -1,0 +1,144 @@
+@startuml
+' --- VISUAL PARADIGM STYLE CONFIGURATION ---
+skinparam Style strictuml
+skinparam SequenceMessageAlignment left
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+' Cấu hình Participant: Màu nền xanh nhạt, chữ đen, không in đậm
+skinparam Participant {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+    Padding 5
+}
+
+skinparam Actor {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Database {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Sequence {
+    ' Tô màu xanh cho các thanh kích hoạt (activation boxes)
+    LifeLineBackgroundColor #A0D8EF
+    LifeLineBorderColor #000000
+
+    ArrowColor #000000
+    ArrowFontColor #000000
+    ArrowFontSize 11
+
+    BoxBackgroundColor #A0D8EF
+    BoxBorderColor #000000
+    BoxFontColor #000000
+}
+
+skinparam Note {
+    BackgroundColor #FFF9E6
+    BorderColor #000000
+    FontColor #000000
+}
+
+skinparam LifeLineStrategy solid
+
+' --- ACTORS & PARTICIPANTS ---
+actor "Admin" as Admin
+participant "<<boundary>>\nProductPage" as ProductPage
+participant "<<boundary>>\nProductFormModal" as ProductFormModal
+participant "<<control>>\nProductController" as ProductController
+participant "<<control>>\nProductService" as ProductService
+participant "Database" as Database
+
+' --- STEP 1 & 2: INITIATE NEW PRODUCT REGISTRATION ---
+Admin -> ProductPage : 1: Click "Add Product" button
+activate ProductPage
+
+ProductPage -> ProductFormModal : 2: Open "Add Product" modal
+deactivate ProductPage
+activate ProductFormModal
+
+ProductFormModal --> Admin : 3: Display creation form (Code, Name, Ingredient, Dosage, Category, Unit, Barcode, RegNum, Manufacturer, Image URL)
+
+' --- STEP 3: SUBMIT OR CANCEL ---
+alt Admin cancels registration (AT03)
+    Admin -> ProductFormModal : 4: Click "Cancel" button
+    ProductFormModal --> Admin : 5: Prompt confirmation to discard unsaved entries
+    Admin -> ProductFormModal : 6: Confirm cancellation
+    ProductFormModal -> ProductPage : 7: Close modal and discard form inputs
+    deactivate ProductFormModal
+    activate ProductPage
+    ProductPage --> Admin : 8: Return to product catalog without changes
+    deactivate ProductPage
+
+else Admin submits registration
+    Admin -> ProductFormModal : 9: Enter product master details and click "Submit"
+    activate ProductFormModal
+
+    ProductFormModal -> ProductFormModal : 10: Validate required fields and data types
+
+    alt Client validation failure / missing fields (AT01)
+        ProductFormModal --> Admin : 11: Highlight incomplete fields and prompt required data
+    else Client validation passed
+        ProductFormModal -> ProductController : 12: createProduct(ProductCreateRequest)
+        activate ProductController
+
+        ProductController -> ProductService : 13: createProduct(request)
+        activate ProductService
+
+        ' --- STEP 5: UNIQUENESS CHECK ---
+        ProductService -> Database : 14: Check uniqueness of code, barcode, and registrationNumber
+        activate Database
+
+        alt Duplicate Code, Barcode, or Registration Number exists (AT02)
+            Database --> ProductService : 15: Return duplicate record conflict
+            deactivate Database
+
+            ProductService --> ProductController : 16: Throw DuplicateResourceException("Product identifier already exists")
+            deactivate ProductService
+
+            ProductController --> ProductFormModal : 17: Return 400 Bad Request with conflict details
+            deactivate ProductController
+
+            ProductFormModal --> Admin : 18: Display error message "Product Code, Barcode, or Registration Number already in use"
+        else Identifiers are unique
+            Database --> ProductService : 19: Return uniqueness verified
+            activate Database
+
+            ProductService -> Database : 20: Insert new Product record (status=ACTIVE)
+            Database --> ProductService : 21: Product master persisted successfully
+
+            ProductService -> Database : 22: Record registration event in System Audit Log (Action=CREATE_PRODUCT)
+            Database --> ProductService : 23: Audit log saved
+            deactivate Database
+
+            ProductService --> ProductController : 24: Return ProductResponse DTO
+            activate ProductService
+            deactivate ProductService
+
+            ProductController --> ProductFormModal : 25: Return 201 Created with created product
+            activate ProductController
+            deactivate ProductController
+
+            ProductFormModal -> ProductPage : 26: Close modal and refresh product list
+            deactivate ProductFormModal
+            activate ProductPage
+
+            ProductPage --> Admin : 27: Present success notification and updated product catalog
+            deactivate ProductPage
+        end
+    end
+end
+
+@enduml

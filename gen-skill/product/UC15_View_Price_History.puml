@@ -1,0 +1,123 @@
+@startuml
+' --- VISUAL PARADIGM STYLE CONFIGURATION ---
+skinparam Style strictuml
+skinparam SequenceMessageAlignment left
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+' Cấu hình Participant: Màu nền xanh nhạt, chữ đen, không in đậm
+skinparam Participant {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+    Padding 5
+}
+
+skinparam Actor {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Database {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Sequence {
+    ' Tô màu xanh cho các thanh kích hoạt (activation boxes)
+    LifeLineBackgroundColor #A0D8EF
+    LifeLineBorderColor #000000
+
+    ArrowColor #000000
+    ArrowFontColor #000000
+    ArrowFontSize 11
+
+    BoxBackgroundColor #A0D8EF
+    BoxBorderColor #000000
+    BoxFontColor #000000
+}
+
+skinparam Note {
+    BackgroundColor #FFF9E6
+    BorderColor #000000
+    FontColor #000000
+}
+
+skinparam LifeLineStrategy solid
+
+' --- ACTORS & PARTICIPANTS ---
+actor "Admin" as Admin
+participant "<<boundary>>\nProductPage" as ProductPage
+participant "<<boundary>>\nPriceHistoryModal" as PriceHistoryModal
+participant "<<control>>\nProductController" as ProductController
+participant "<<control>>\nProductService" as ProductService
+participant "Database" as Database
+
+' --- STEP 1: REQUEST PRICE HISTORY ---
+Admin -> ProductPage : 1: Click "View Price History" action on product
+activate ProductPage
+
+ProductPage -> ProductController : 2: getPriceHistories(productId)
+activate ProductController
+
+ProductController -> ProductService : 3: getPriceHistories(productId)
+activate ProductService
+
+ProductService -> Database : 4: Query price_histories table by productId ORDER BY effective_date DESC
+activate Database
+
+' --- STEP 2 & 3: RETRIEVE RECORDS OR SHOW EMPTY ---
+alt No previous price changes recorded (AT01)
+    Database --> ProductService : 5: Return empty history list
+    deactivate Database
+
+    ProductService --> ProductController : 6: Return empty List<PriceHistoryResponse>
+    deactivate ProductService
+
+    ProductController --> ProductPage : 7: Return 200 OK with empty list
+    deactivate ProductController
+
+    ProductPage -> PriceHistoryModal : 8: Open modal with base product price info
+    activate PriceHistoryModal
+
+    PriceHistoryModal --> Admin : 9: Display informational notice "Only initial registration price data exists"
+else Price history records found
+    Database --> ProductService : 10: Return list of price history entities
+    activate Database
+    deactivate Database
+
+    ProductService --> ProductController : 11: Return List<PriceHistoryResponse>
+    activate ProductService
+    deactivate ProductService
+
+    ProductController --> ProductPage : 12: Return 200 OK with history records
+    deactivate ProductController
+
+    ProductPage -> PriceHistoryModal : 13: Open modal with price ledger records
+    activate PriceHistoryModal
+
+    PriceHistoryModal --> Admin : 14: Render historical price ledger (Version ID, Cost, Selling Price, Margin, Effective Date, Actor, Reason)
+
+    ' --- STEP 4 & 5: OPTIONAL DATE RANGE FILTER ---
+    Admin -> PriceHistoryModal : 15: Select date range filter (from date, to date)
+    PriceHistoryModal -> PriceHistoryModal : 16: Filter price history records by effective date range
+    PriceHistoryModal --> Admin : 17: Present filtered price version records
+end
+
+' --- CLOSE MODAL ---
+Admin -> PriceHistoryModal : 18: Click "Close"
+PriceHistoryModal -> ProductPage : 19: Close modal
+deactivate PriceHistoryModal
+
+ProductPage --> Admin : 20: Return focus to product catalog
+deactivate ProductPage
+
+@enduml

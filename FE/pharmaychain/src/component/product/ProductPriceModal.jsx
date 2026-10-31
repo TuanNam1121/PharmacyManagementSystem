@@ -36,16 +36,16 @@ export default function ProductPriceModal({
     const errs = {};
     const cost = parseFloat(costPrice);
     if (costPrice === '' || isNaN(cost) || cost < 0) {
-      errs.costPrice = 'Giá vốn hợp lệ (≥ 0) là bắt buộc';
+      errs.costPrice = 'Valid cost price (≥ 0) is required';
     }
 
     const selling = parseFloat(sellingPrice);
     if (sellingPrice === '' || isNaN(selling) || selling < 0) {
-      errs.sellingPrice = 'Giá bán hợp lệ (≥ 0) là bắt buộc';
+      errs.sellingPrice = 'Valid selling price (≥ 0) is required';
     }
 
     if (!reason || !reason.trim()) {
-      errs.reason = 'Vui lòng nhập lý do thay đổi giá (Bắt buộc lưu vết lịch sử)';
+      errs.reason = 'Please enter a reason for the price change (Required for audit history)';
     }
 
     setErrors(errs);
@@ -71,7 +71,7 @@ export default function ProductPriceModal({
       if (onSuccess) await onSuccess();
       onHide();
     } catch (err) {
-      setServerError(err?.message || 'Không thể cập nhật giá sản phẩm.');
+      setServerError(err?.message || 'Failed to update product price.');
     } finally {
       setSubmitting(false);
     }
@@ -83,9 +83,9 @@ export default function ProductPriceModal({
         {/* Header */}
         <div className="pms-modal-header">
           <div>
-            <div className="pms-modal-title">Cập nhật giá sản phẩm</div>
+            <div className="pms-modal-title">Update Product Price</div>
             <div className="pms-modal-sub">
-              Sản phẩm: <strong>{product.name}</strong> {product.unit ? `(${product.unit})` : ''}
+              Product: <strong>{product.name}</strong> {product.unit ? `(${product.unit})` : ''}
             </div>
           </div>
           <button className="pms-modal-close" onClick={onHide} aria-label="Close">
@@ -121,13 +121,13 @@ export default function ProductPriceModal({
               }}
             >
               <div>
-                <span style={{ fontSize: 11.5, color: 'var(--text-muted)', display: 'block' }}>Giá vốn hiện tại</span>
+                <span style={{ fontSize: 11.5, color: 'var(--text-muted)', display: 'block' }}>Current Cost Price</span>
                 <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
                   {money(product.costPrice)}
                 </span>
               </div>
               <div>
-                <span style={{ fontSize: 11.5, color: 'var(--text-muted)', display: 'block' }}>Giá bán hiện tại</span>
+                <span style={{ fontSize: 11.5, color: 'var(--text-muted)', display: 'block' }}>Current Selling Price</span>
                 <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--brand-primary)' }}>
                   {money(product.sellingPrice)}
                 </span>
@@ -137,7 +137,7 @@ export default function ProductPriceModal({
             {/* Price Inputs */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div className="pms-form-group">
-                <label className="pms-label">Giá vốn mới (₫) *</label>
+                <label className="pms-label">New Cost Price (₫) *</label>
                 <input
                   type="number"
                   className="pms-input pms-input-bare"
@@ -156,7 +156,7 @@ export default function ProductPriceModal({
               </div>
 
               <div className="pms-form-group">
-                <label className="pms-label">Giá bán mới (₫) *</label>
+                <label className="pms-label">New Selling Price (₫) *</label>
                 <input
                   type="number"
                   className="pms-input pms-input-bare"
@@ -177,7 +177,7 @@ export default function ProductPriceModal({
 
             {/* Effective From */}
             <div className="pms-form-group" style={{ marginBottom: 14 }}>
-              <label className="pms-label">Ngày / Giờ áp dụng</label>
+              <label className="pms-label">Effective Date / Time</label>
               <input
                 type="datetime-local"
                 className="pms-input pms-input-bare"
@@ -185,17 +185,17 @@ export default function ProductPriceModal({
                 onChange={(e) => setEffectiveFrom(e.target.value)}
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                Thời điểm bắt đầu áp dụng mức giá mới cho bán hàng POS.
+                The time when the new price takes effect for POS sales.
               </span>
             </div>
 
             {/* Reason */}
             <div className="pms-form-group">
-              <label className="pms-label">Lý do thay đổi giá (Reason) *</label>
+              <label className="pms-label">Reason for Price Change *</label>
               <textarea
                 className="pms-input pms-input-bare"
                 rows={3}
-                placeholder="Nhập lý do điều chỉnh giá (ví dụ: Nhà cung cấp tăng giá nhập, Khuyến mãi định kỳ...)"
+                placeholder="Enter the reason for price adjustment (e.g., Supplier price increase, Periodic promotion...)"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 required
@@ -206,7 +206,7 @@ export default function ProductPriceModal({
                 </div>
               )}
               <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                Hệ thống sẽ tự động lưu 1 bản ghi vào lịch sử giá sản phẩm (Price History).
+                The system will automatically log a record in the product's Price History.
               </span>
             </div>
           </div>
@@ -214,10 +214,10 @@ export default function ProductPriceModal({
           {/* Footer */}
           <div className="pms-modal-footer">
             <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-              Hủy
+              Cancel
             </button>
             <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting}>
-              {submitting ? 'Đang cập nhật…' : 'Lưu mức giá mới'}
+              {submitting ? 'Updating…' : 'Save New Price'}
             </button>
           </div>
         </form>

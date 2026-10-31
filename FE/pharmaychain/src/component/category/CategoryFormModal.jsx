@@ -68,7 +68,7 @@ export default function CategoryFormModal({
       const payload = {
         name: form.name.trim(),
         description: form.description.trim() || null,
-        ...(isEdit && { status: Number(form.status) }),
+        // Status is managed via the dedicated Toggle Status action (CategoryStatusModal), not the edit form
       };
 
       if (isEdit && category?.id) {
@@ -171,20 +171,7 @@ export default function CategoryFormModal({
               </div>
 
               {/* Status — only shown in edit mode */}
-              {isEdit && (
-                <div className="pms-form-group">
-                  <label className="pms-label">Status</label>
-                  <select
-                    className="pms-select"
-                    style={{ width: '100%' }}
-                    value={form.status}
-                    onChange={(e) => setField('status', e.target.value)}
-                  >
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
-                  </select>
-                </div>
-              )}
+              {/* Status is managed via the dedicated Toggle Status action; removed from edit form to avoid confusion */}
             </div>
           </div>
 

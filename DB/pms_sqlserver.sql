@@ -73,7 +73,7 @@ GO
 CREATE TABLE dbo.accounts (
     id          BIGINT IDENTITY(1,1) CONSTRAINT PK_accounts PRIMARY KEY,
     store_id    BIGINT        NULL CONSTRAINT FK_accounts_store REFERENCES dbo.stores(id), -- NULL = head-office user
-    role_id     INT           NOT NULL CONSTRAINT FK_accounts_role REFERENCES dbo.roles(id),
+    role_id     INT           NULL CONSTRAINT FK_accounts_role REFERENCES dbo.roles(id),
     username    VARCHAR(50)   NOT NULL,
     email       VARCHAR(150)  NOT NULL,
     phone       VARCHAR(20)   NULL,

@@ -5,7 +5,6 @@ export default function UserFormModal({
   onHide,
   mode = 'create', // 'create' | 'edit'
   user = null,
-  roles = [],
   onSubmit,
 }) {
   const isEdit = mode === 'edit';
@@ -16,7 +15,6 @@ export default function UserFormModal({
     phone: '',
     password: '',
     fullName: '',
-    roleId: '',
     status: 1,
     dateOfBirth: '',
     gender: 1,
@@ -37,7 +35,6 @@ export default function UserFormModal({
           phone: user.phone || '',
           password: '',
           fullName: user.fullName || '',
-          roleId: user.roleId || user.role?.id || (roles[0]?.id || ''),
           status: user.status ?? 1,
           dateOfBirth: user.dateOfBirth ? String(user.dateOfBirth).split('T')[0] : '',
           gender: user.gender ?? 1,
@@ -51,7 +48,6 @@ export default function UserFormModal({
           phone: '',
           password: '',
           fullName: '',
-          roleId: roles.length > 0 ? roles[0].id : '',
           status: 1,
           dateOfBirth: '',
           gender: 1,
@@ -60,7 +56,7 @@ export default function UserFormModal({
         });
       }
     }
-  }, [show, isEdit, user, roles]);
+  }, [show, isEdit, user]);
 
   if (!show) return null;
 
@@ -85,10 +81,6 @@ export default function UserFormModal({
       setErrorMsg('Email address is required.');
       return;
     }
-    if (!formData.roleId) {
-      setErrorMsg('Please select a Role for the account.');
-      return;
-    }
 
     if (!isEdit) {
       if (!formData.username.trim() || formData.username.trim().length < 3) {
@@ -107,7 +99,6 @@ export default function UserFormModal({
         fullName: formData.fullName.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim() || null,
-        roleId: Number(formData.roleId),
         dateOfBirth: formData.dateOfBirth || null,
         gender: Number(formData.gender),
         address: formData.address.trim() || null,
@@ -148,8 +139,8 @@ export default function UserFormModal({
             </div>
             <div className="pms-modal-sub">
               {isEdit
-                ? `Update account information and role assignment for @${user?.username}`
-                : 'Register a new staff member with credentials and system role'}
+                ? `Update account details and personal profile for @${user?.username}`
+                : 'Register a new staff member with credentials and profile details'}
             </div>
           </div>
           <button className="pms-modal-close" onClick={onHide} aria-label="Close">
@@ -165,7 +156,7 @@ export default function UserFormModal({
             {errorMsg && (
               <div className="pms-alert pms-alert-danger" style={{ marginBottom: 16 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" strokeWidth="2"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
                 {errorMsg}
                 <button type="button" className="pms-alert-close" onClick={() => setErrorMsg(null)}>
@@ -176,7 +167,7 @@ export default function UserFormModal({
               </div>
             )}
 
-            {/* Section 1: Credentials & Role */}
+            {/* Section 1: Credentials */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
                 1. Account Credentials & Security
@@ -228,29 +219,10 @@ export default function UserFormModal({
                 )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 12 }}>
-                <div className="pms-form-group">
-                  <label className="pms-label">Assigned Role (RBAC) *</label>
-                  <select
-                    className="pms-select"
-                    style={{ width: '100%' }}
-                    name="roleId"
-                    value={formData.roleId}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">— Select a Role —</option>
-                    {roles.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name || r.code} ({r.code})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {!isEdit && (
+              {!isEdit && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 12 }}>
                   <div className="pms-form-group">
-                    <label className="pms-label">Account Status</label>
+                    <label className="pms-label">Initial Status</label>
                     <select
                       className="pms-select"
                       style={{ width: '100%' }}
@@ -262,8 +234,13 @@ export default function UserFormModal({
                       <option value="0">Disabled</option>
                     </select>
                   </div>
-                )}
-              </div>
+                  <div style={{ display: 'flex', alignItems: 'center', paddingTop: 20 }}>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      Note: New accounts are created with no role assigned. Use <strong>Assign Role</strong> action after creation.
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Section 2: Personal Profile */}

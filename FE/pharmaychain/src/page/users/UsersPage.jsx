@@ -5,6 +5,7 @@ import UserFilters from '../../component/user/UserFilters';
 import UserTable from '../../component/user/UserTable';
 import UserDetailModal from '../../component/user/UserDetailModal';
 import UserFormModal from '../../component/user/UserFormModal';
+import UserRoleModal from '../../component/user/UserRoleModal';
 import UserLockModal from '../../component/user/UserLockModal';
 
 function Pagination({ total, page, size, onPage }) {
@@ -61,6 +62,7 @@ export default function UsersPage() {
     loadDetail,
     handleCreateUser,
     handleUpdateUser,
+    handleAssignRole,
     handleToggleStatus,
   } = useUsers();
 
@@ -68,6 +70,10 @@ export default function UsersPage() {
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [formMode, setFormMode] = useState('create'); // 'create' | 'edit'
   const [editingUser, setEditingUser] = useState(null);
+
+  // Role Assignment modal state
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
+  const [selectedUserForRole, setSelectedUserForRole] = useState(null);
 
   // Lock / Unlock modal state
   const [lockModalOpen, setLockModalOpen] = useState(false);
@@ -90,11 +96,33 @@ export default function UsersPage() {
     setFormModalOpen(true);
   };
 
-  // Open Edit Modal
-  const handleEdit = (user) => {
+  // Open Edit Modal — fetch full detail first to ensure dateOfBirth, address etc. are populated
+  const handleEdit = async (user) => {
     setFormMode('edit');
-    setEditingUser(user);
+    let fullUser = user;
+    if (!user.dateOfBirth && !user.address) {
+      try {
+        fullUser = await loadDetail(user.id);
+      } catch {
+        fullUser = user;
+      }
+    }
+    setEditingUser(fullUser);
     setFormModalOpen(true);
+  };
+
+  // Open Assign Role Modal
+  const handleOpenRoleModal = async (user) => {
+    let fullUser = user;
+    if (!user.role && user.roleId) {
+      try {
+        fullUser = await loadDetail(user.id);
+      } catch {
+        fullUser = user;
+      }
+    }
+    setSelectedUserForRole(fullUser);
+    setRoleModalOpen(true);
   };
 
   // Open Lock/Unlock Modal (UC10)
@@ -103,13 +131,18 @@ export default function UsersPage() {
     setLockModalOpen(true);
   };
 
-  // Handle Form Submit (UC09)
+  // Handle Form Submit (UC07 / UC08)
   const handleFormSubmit = async (payload) => {
     if (formMode === 'create') {
       await handleCreateUser(payload);
     } else {
       await handleUpdateUser(editingUser.id, payload);
     }
+  };
+
+  // Handle Assign Role Confirm
+  const handleRoleConfirm = async (id, roleId, userName) => {
+    await handleAssignRole(id, roleId, userName);
   };
 
   // Handle Lock / Unlock Confirm (UC10)
@@ -147,7 +180,7 @@ export default function UsersPage() {
       {error && (
         <div className="pms-alert pms-alert-danger">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" strokeWidth="2"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
           {error}
           <button className="pms-alert-close" onClick={() => setError(null)}>
@@ -186,6 +219,7 @@ export default function UsersPage() {
         size={size}
         onView={handleView}
         onEdit={handleEdit}
+        onAssignRole={handleOpenRoleModal}
         onLockUnlock={handleOpenLockModal}
       />
 
@@ -211,8 +245,15 @@ export default function UsersPage() {
         onHide={() => setFormModalOpen(false)}
         mode={formMode}
         user={editingUser}
-        roles={roles}
         onSubmit={handleFormSubmit}
+      />
+
+      <UserRoleModal
+        show={roleModalOpen}
+        onHide={() => { setRoleModalOpen(false); setSelectedUserForRole(null); }}
+        user={selectedUserForRole}
+        roles={roles}
+        onConfirm={handleRoleConfirm}
       />
 
       <UserLockModal

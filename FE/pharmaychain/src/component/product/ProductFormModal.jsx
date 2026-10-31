@@ -94,7 +94,8 @@ export default function ProductFormModal({
         manufacturer: form.manufacturer.trim() || null,
         description: form.description.trim() || null,
         imageUrl: form.imageUrl.trim() || null,
-        status: Number(form.status),
+        // Status is managed separately via the Inactive/Active action button; do not include in edit payload
+        ...(!isEdit && { status: Number(form.status) }),
       };
 
       if (isEdit && product?.id) {
@@ -352,21 +353,6 @@ export default function ProductFormModal({
                   style={{ resize: 'vertical' }}
                 />
               </div>
-              {isEdit && (
-                <div className="pms-form-group">
-                  <label className="pms-label">Status</label>
-                  <select
-                    className="pms-select"
-                    style={{ width: '100%' }}
-                    value={form.status}
-                    onChange={(e) => setField('status', e.target.value)}
-                  >
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
-                    <option value="2">Discontinued</option>
-                  </select>
-                </div>
-              )}
             </div>
           </div>
 

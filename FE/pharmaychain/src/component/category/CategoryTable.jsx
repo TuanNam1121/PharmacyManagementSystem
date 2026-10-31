@@ -148,7 +148,7 @@ export default function CategoryTable({
                         style={{
                           color: isActive ? 'var(--status-danger)' : 'var(--brand-primary)',
                         }}
-                        title={isActive ? 'Vô hiệu hóa Danh mục (Inactive)' : 'Kích hoạt Danh mục (Active)'}
+                        title={isActive ? 'Inactive category' : 'Active category'}
                         onClick={() => onToggleStatus && onToggleStatus(row)}
                       >
                         {isActive ? (

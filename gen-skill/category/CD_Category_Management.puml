@@ -1,0 +1,176 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam style strictuml
+hide empty members
+
+' ====================================================================
+' MODULE CATEGORY MANAGEMENT CLASS DIAGRAM (COMET METHOD)
+' ====================================================================
+
+' --------------------------------------------------------------------
+' 1. TẦNG CONTROLLER (<<control>>)
+' --------------------------------------------------------------------
+class CategoryController <<control>> {
+  - categoryService: CategoryService
+  + getAllCategories(): ResponseEntity<ApiResponse<List<CategoryResponse>>>
+  + createCategory(request: CategoryCreateRequest): ResponseEntity<ApiResponse<CategoryResponse>>
+  + updateCategory(id: Long, request: CategoryUpdateRequest): ResponseEntity<ApiResponse<CategoryResponse>>
+  + updateCategoryStatus(id: Long, status: Short): ResponseEntity<ApiResponse<Void>>
+  + deleteCategory(id: Long): ResponseEntity<ApiResponse<Void>>
+}
+
+' --------------------------------------------------------------------
+' 2. TẦNG SERVICE (<<interface>> & <<control>> Impl)
+' --------------------------------------------------------------------
+interface CategoryService <<interface>> {
+  + getCategories(): List<CategoryResponse>
+  + createCategory(request: CategoryCreateRequest): CategoryResponse
+  + updateCategory(id: Long, request: CategoryUpdateRequest): CategoryResponse
+  + updateCategoryStatus(id: Long, status: Short): void
+  + deleteCategory(id: Long): void
+}
+
+class CategoryServiceImpl <<control>> {
+  - categoryRepository: CategoryRepository
+  - accountRepository: AccountRepository
+  - productRepository: ProductRepository
+  + getCategories(): List<CategoryResponse>
+  + createCategory(request: CategoryCreateRequest): CategoryResponse
+  + updateCategory(id: Long, request: CategoryUpdateRequest): CategoryResponse
+  + updateCategoryStatus(id: Long, status: Short): void
+  + deleteCategory(id: Long): void
+  - mapToCategoryResponse(category: Category): CategoryResponse
+  - getCurrentAccount(): Account
+}
+
+' --------------------------------------------------------------------
+' 3. TẦNG REPOSITORY (<<interface>>)
+' --------------------------------------------------------------------
+interface CategoryRepository <<interface>> {
+  + findAll(): List<Category>
+  + findById(id: Long): Optional<Category>
+  + existsByName(name: String): boolean
+  + findByParentId(parentId: Long): List<Category>
+  + save(category: Category): Category
+  + delete(category: Category): void
+}
+
+interface AccountRepository <<interface>> {
+  + findByUsername(username: String): Optional<Account>
+  + findAll(): List<Account>
+  + findById(id: Long): Optional<Account>
+}
+
+interface ProductRepository <<interface>> {
+  + existsByCategoryIdAndStatus(categoryId: Long, status: ProductStatus): boolean
+}
+
+' --------------------------------------------------------------------
+' 4. TẦNG ENTITY & ENUM (<<entity>>, <<enum>>)
+' --------------------------------------------------------------------
+class Category <<entity>> {
+  - id: Long
+  - name: String
+  - description: String
+  - status: CategoryStatus
+  - createdBy: Account
+  - createdAt: LocalDateTime
+  - parent: Category
+  - subCategories: List<Category>
+}
+
+enum CategoryStatus <<enum>> {
+  + ACTIVE : 1
+  + INACTIVE : 0
+  - code: Short
+  - label: String
+  + getCode(): Short
+  + getLabel(): String
+  + fromCode(code: Short): CategoryStatus
+}
+
+class Account <<entity>> {
+  - id: Long
+  - username: String
+  - email: String
+}
+
+class Product <<entity>> {
+  - id: Long
+  - name: String
+  - status: ProductStatus
+  - category: Category
+}
+
+enum ProductStatus <<enum>> {
+  + ACTIVE : 1
+  + INACTIVE : 0
+  + DISCONTINUED : 2
+}
+
+' --------------------------------------------------------------------
+' 5. TẦNG DTO (Data Transfer Objects)
+' --------------------------------------------------------------------
+class CategoryCreateRequest <<dto>> {
+  - name: String
+  - description: String
+  - status: Short
+  - parentId: Long
+}
+
+class CategoryUpdateRequest <<dto>> {
+  - name: String
+  - description: String
+  - status: Short
+  - parentId: Long
+}
+
+class CategoryResponse <<dto>> {
+  - id: Long
+  - name: String
+  - description: String
+  - status: Short
+  - statusLabel: String
+  - parentId: Long
+  - parentName: String
+  - createdAt: LocalDateTime
+  - createdById: Long
+  - createdByUsername: String
+  - createdByFullName: String
+}
+
+' --------------------------------------------------------------------
+' 6. QUAN HỆ GIỮA CÁC TẦNG (Dependencies & Realizations)
+' --------------------------------------------------------------------
+CategoryController ..> CategoryService : <<access>>
+CategoryServiceImpl ..|> CategoryService
+
+CategoryServiceImpl ..> CategoryRepository
+CategoryServiceImpl ..> AccountRepository
+CategoryServiceImpl ..> ProductRepository
+
+CategoryRepository ..> Category
+AccountRepository ..> Account
+ProductRepository ..> Product
+
+Category ..> CategoryStatus : <<uses>>
+Product ..> ProductStatus : <<uses>>
+
+' DTO Dependencies
+CategoryController ..> CategoryCreateRequest : <<uses>>
+CategoryController ..> CategoryUpdateRequest : <<uses>>
+CategoryController ..> CategoryResponse : <<uses>>
+
+' --------------------------------------------------------------------
+' 7. QUAN HỆ GIỮA CÁC ENTITY (COMET Associations & Multiplicities)
+' --------------------------------------------------------------------
+' Quan hệ phân cấp danh mục cha - con (Self-Aggregation Whole/Part)
+Category "0..1" o-- "0..*" Category : parent / subCategories >
+
+' Quan hệ phân loại sản phẩm
+Category "1" <-- "0..*" Product : classified under < {cannot inactivate if active products exist}
+
+' Quan hệ người tạo danh mục
+Account "1" <-- "0..*" Category : created by <
+
+@enduml

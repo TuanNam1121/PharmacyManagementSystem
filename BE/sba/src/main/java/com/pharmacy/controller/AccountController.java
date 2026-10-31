@@ -6,6 +6,7 @@ import com.pharmacy.dto.account.AccountCreateRequest;
 import com.pharmacy.dto.account.AccountDetailResponse;
 import com.pharmacy.dto.account.AccountResponse;
 import com.pharmacy.dto.account.AccountUpdateRequest;
+import com.pharmacy.dto.account.RoleAssignRequest;
 import com.pharmacy.service.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,6 +41,15 @@ public class AccountController {
             @Valid @RequestBody AccountUpdateRequest request) {
         AccountResponse response = accountService.updateAccount(id, request);
         return ResponseEntity.ok(ApiResponse.success("Account updated successfully", response));
+    }
+
+    @PutMapping("/{id}/role")
+    @Operation(summary = "Assign role to account")
+    public ResponseEntity<ApiResponse<AccountResponse>> assignRole(
+            @PathVariable Long id,
+            @Valid @RequestBody RoleAssignRequest request) {
+        AccountResponse response = accountService.assignRole(id, request.getRoleId());
+        return ResponseEntity.ok(ApiResponse.success("Role assigned successfully", response));
     }
 
     @GetMapping("/{id}")

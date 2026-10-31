@@ -1,0 +1,181 @@
+@startuml
+' --- VISUAL PARADIGM STYLE CONFIGURATION ---
+skinparam Style strictuml
+skinparam SequenceMessageAlignment left
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+' Cấu hình Participant: Màu nền xanh nhạt, chữ đen, không in đậm
+skinparam Participant {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+    Padding 5
+}
+
+skinparam Actor {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Database {
+    BackgroundColor #A0D8EF
+    BorderColor #000000
+    FontColor #000000
+    FontSize 12
+    FontStyle plain
+}
+
+skinparam Sequence {
+    ' Tô màu xanh cho các thanh kích hoạt (activation boxes)
+    LifeLineBackgroundColor #A0D8EF
+    LifeLineBorderColor #000000
+
+    ArrowColor #000000
+    ArrowFontColor #000000
+    ArrowFontSize 11
+
+    BoxBackgroundColor #A0D8EF
+    BoxBorderColor #000000
+    BoxFontColor #000000
+}
+
+skinparam Note {
+    BackgroundColor #FFF9E6
+    BorderColor #000000
+    FontColor #000000
+}
+
+skinparam LifeLineStrategy solid
+
+' --- ACTORS & PARTICIPANTS ---
+actor "User" as User
+participant "<<boundary>>\nHomepage" as Homepage
+participant "<<boundary>>\nProductPage" as ProductPage
+participant "<<boundary>>\nProductDetailModal" as ProductDetailModal
+participant "<<control>>\nProductController" as ProductController
+participant "<<control>>\nProductService" as ProductService
+participant "Database" as Database
+
+' --- STEP 1 & 2: ACCESS PRODUCT CATALOG ---
+User -> Homepage : 1: Select "Product Catalog" option
+activate Homepage
+
+Homepage -> ProductPage : 2: Navigate to ProductPage
+deactivate Homepage
+activate ProductPage
+
+ProductPage -> ProductController : 3: getProducts(keyword, status, categoryId, page, size, sortBy, sortDir)
+activate ProductController
+
+ProductController -> ProductService : 4: getProducts(keyword, status, categoryId, page, size, sortBy, sortDir)
+activate ProductService
+
+ProductService -> Database : 5: Query products sorted by product code ASC
+activate Database
+
+' --- ALT 1: PRODUCT SEARCH / INITIAL RETRIEVAL ---
+alt No product records found (AT01)
+    Database --> ProductService : 6: Return empty result set
+    deactivate Database
+
+    ProductService --> ProductController : 7: Return empty PageResponse
+    deactivate ProductService
+
+    ProductController --> ProductPage : 8: Return 200 OK with empty PageResponse
+    deactivate ProductController
+
+    ProductPage --> User : 9: Present informational message "No matching products found"
+
+else Products retrieved successfully
+    Database --> ProductService : 10: Return products page
+    activate Database
+    deactivate Database
+
+    ProductService --> ProductController : 11: Return PageResponse<ProductResponse>
+    activate ProductService
+    deactivate ProductService
+
+    ProductController --> ProductPage : 12: Return 200 OK with product list data
+    activate ProductController
+    deactivate ProductController
+
+    ProductPage --> User : 13: Render product catalog table (with avatar, SKU, name, unit, category, price)
+
+    ' --- STEP 4 & 5: SEARCH & FILTER ---
+    User -> ProductPage : 14: Input search query or select filters (Name, Ingredient, SKU, Category)
+
+    ProductPage -> ProductController : 15: getProducts(keyword, status, categoryId, page, size, sortBy, sortDir)
+    activate ProductController
+
+    ProductController -> ProductService : 16: getProducts(keyword, status, categoryId, page, size, sortBy, sortDir)
+    activate ProductService
+
+    ProductService -> Database : 17: Query database with filter criteria
+    activate Database
+
+    Database --> ProductService : 18: Return filtered products data
+    deactivate Database
+
+    ProductService --> ProductController : 19: Return filtered PageResponse<ProductResponse>
+    deactivate ProductService
+
+    ProductController --> ProductPage : 20: Return 200 OK with filtered products
+    deactivate ProductController
+
+    ProductPage --> User : 21: Present updated product catalog list
+
+    ' --- STEP 6 & 7: VIEW PRODUCT DETAILS ---
+    User -> ProductPage : 22: Select specific product to view detailed master info
+
+    ProductPage -> ProductController : 23: getProductDetail(productId)
+    activate ProductController
+
+    ProductController -> ProductService : 24: getProductDetail(productId)
+    activate ProductService
+
+    ProductService -> Database : 25: Query product master details by ID
+    activate Database
+
+    ' --- ALT 2: DETAIL LOOKUP ---
+    alt Product record unavailable or not found (AT02)
+        Database --> ProductService : 26: Return empty / null
+        deactivate Database
+
+        ProductService --> ProductController : 27: Throw ResourceNotFoundException("Product not found")
+        deactivate ProductService
+
+        ProductController --> ProductPage : 28: Return 404 Not Found
+        deactivate ProductController
+
+        ProductPage --> User : 29: Present error alert "Product unavailable" and return to list
+
+    else Product record retrieved successfully
+        Database --> ProductService : 30: Return Product entity with category, units, dosage
+        activate Database
+        deactivate Database
+
+        ProductService --> ProductController : 31: Return ProductDetailResponse
+        activate ProductService
+        deactivate ProductService
+
+        ProductController --> ProductPage : 32: Return 200 OK with complete product profile
+        activate ProductController
+        deactivate ProductController
+
+        ProductPage -> ProductDetailModal : 33: Open modal with product master details & image
+        activate ProductDetailModal
+
+        ProductDetailModal --> User : 34: Display comprehensive product profile
+        deactivate ProductDetailModal
+    end
+end
+
+deactivate ProductPage
+
+@enduml
