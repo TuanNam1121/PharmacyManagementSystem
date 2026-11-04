@@ -17,6 +17,7 @@ import BranchInventoryPage from './page/inventory/BranchInventoryPage';
 import InventoryAuditPage from './page/inventory/InventoryAuditPage';
 import StockRequisitionsPage from './page/inventory/StockRequisitionsPage';
 import GoodsReceiptsPage from './page/inventory/GoodsReceiptsPage';
+import CustomerDirectoryPage from './page/customers/CustomerDirectoryPage';
 
 /* ── Placeholder for unbuilt pages ── */
 function ComingSoon({ title, module }) {
@@ -81,7 +82,7 @@ function App() {
         <Route path="/sales" element={<DailySalesPage defaultTab="invoices" />} />
 
         {/* Customers */}
-        <Route path="/customers" element={<ComingSoon title="Customer Directory" module="Customer Management" />} />
+        <Route path="/customers" element={<CustomerDirectoryPage />} />
 
         {/* Branch Stock & Requisitions (Store Inventory) */}
         <Route path="/store/inventory" element={<BranchInventoryPage />} />
