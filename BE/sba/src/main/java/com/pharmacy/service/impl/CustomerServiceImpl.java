@@ -1,10 +1,17 @@
 package com.pharmacy.service.impl;
 
 import com.pharmacy.dto.PageResponse;
+import com.pharmacy.dto.customer.CustomerDetailResponse;
+import com.pharmacy.dto.customer.CustomerHealthProfileDto;
+import com.pharmacy.dto.customer.CustomerRecentInvoiceDto;
 import com.pharmacy.dto.customer.CustomerResponse;
 import com.pharmacy.entity.Customer;
 import com.pharmacy.entity.CustomerHealthProfile;
+import com.pharmacy.entity.SalesInvoice;
+import com.pharmacy.exception.ResourceNotFoundException;
+import com.pharmacy.repository.CustomerHealthProfileRepository;
 import com.pharmacy.repository.CustomerRepository;
+import com.pharmacy.repository.SalesInvoiceRepository;
 import com.pharmacy.service.CustomerService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,12 +38,13 @@ import java.util.stream.Collectors;
 public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
+    private final CustomerHealthProfileRepository healthProfileRepository;
+    private final SalesInvoiceRepository salesInvoiceRepository;
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<CustomerResponse> getCustomers(String keyword, String membershipTier, Short status,
                                                         int page, int size, String sortBy, String sortDir) {
-        // Validate sort field
         String sortProperty = resolveSortProperty(sortBy);
         Sort sort = "asc".equalsIgnoreCase(sortDir)
                 ? Sort.by(sortProperty).ascending()
@@ -44,7 +55,6 @@ public class CustomerServiceImpl implements CustomerService {
         Specification<Customer> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // Search by keyword (phone, fullName, email, or id)
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = "%" + keyword.trim().toLowerCase() + "%";
                 Predicate phonePred = cb.like(root.get("phone"), "%" + keyword.trim() + "%");
@@ -53,7 +63,6 @@ public class CustomerServiceImpl implements CustomerService {
 
                 Predicate kwPred = cb.or(phonePred, namePred, emailPred);
 
-                // If keyword is formatted like KH-000001 or is a direct numeric ID
                 String trimmed = keyword.trim();
                 if (trimmed.toLowerCase().startsWith("kh-")) {
                     try {
@@ -70,7 +79,6 @@ public class CustomerServiceImpl implements CustomerService {
                 predicates.add(kwPred);
             }
 
-            // Filter by status
             if (status != null) {
                 predicates.add(cb.equal(root.get("status"), status));
             }
@@ -84,7 +92,6 @@ public class CustomerServiceImpl implements CustomerService {
                 .map(this::mapToCustomerResponse)
                 .collect(Collectors.toList());
 
-        // In-memory filter for membershipTier if requested
         if (membershipTier != null && !membershipTier.trim().isEmpty() && !"ALL".equalsIgnoreCase(membershipTier)) {
             content = content.stream()
                     .filter(c -> membershipTier.equalsIgnoreCase(c.getMembershipTier()))
@@ -101,6 +108,115 @@ public class CustomerServiceImpl implements CustomerService {
         );
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public CustomerDetailResponse getCustomerDetail(Long customerId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khách hàng với ID: " + customerId));
+
+        CustomerHealthProfile healthProfile = customer.getHealthProfile();
+        if (healthProfile == null) {
+            healthProfile = healthProfileRepository.findByCustomer_Id(customerId).orElse(null);
+        }
+
+        List<SalesInvoice> recentInvoices = salesInvoiceRepository.findTop5ByCustomer_IdOrderByCreatedAtDesc(customerId);
+        long totalOrders = salesInvoiceRepository.countByCustomerId(customerId);
+        BigDecimal totalSpent = salesInvoiceRepository.sumFinalAmountByCustomerId(customerId);
+        if (totalSpent == null) totalSpent = BigDecimal.ZERO;
+
+        return buildCustomerDetailResponse(customer, healthProfile, recentInvoices, totalOrders, totalSpent);
+    }
+
+    private CustomerDetailResponse buildCustomerDetailResponse(Customer customer,
+                                                               CustomerHealthProfile health,
+                                                               List<SalesInvoice> recentInvoices,
+                                                               long totalOrders,
+                                                               BigDecimal totalSpent) {
+        String genderLabel = "OTHER";
+        if (customer.getGender() != null) {
+            if (customer.getGender() == 1) genderLabel = "MALE";
+            else if (customer.getGender() == 0) genderLabel = "FEMALE";
+        }
+
+        String customerCode = String.format("KH-%06d", customer.getId());
+
+        Integer age = null;
+        if (customer.getDateOfBirth() != null) {
+            age = Period.between(customer.getDateOfBirth(), LocalDate.now()).getYears();
+        }
+
+        String membershipTier = calculateTier(totalSpent);
+        int loyaltyPoints = totalSpent.divide(BigDecimal.valueOf(10000), 0, RoundingMode.DOWN).intValue();
+
+        CustomerHealthProfileDto healthDto = null;
+        if (health != null) {
+            healthDto = CustomerHealthProfileDto.builder()
+                    .id(health.getId())
+                    .heightCm(health.getHeightCm())
+                    .weightKg(health.getWeightKg())
+                    .allergies(health.getAllergies())
+                    .chronicDiseases(health.getMedicalConditions())
+                    .currentMedications(health.getCurrentMedications())
+                    .isPregnant(Boolean.FALSE)
+                    .isBreastfeeding(Boolean.FALSE)
+                    .notes(health.getNote())
+                    .updatedAt(health.getUpdatedAt())
+                    .build();
+        }
+
+        List<CustomerRecentInvoiceDto> invoiceDtos = (recentInvoices != null ? recentInvoices : List.<SalesInvoice>of())
+                .stream()
+                .map(inv -> CustomerRecentInvoiceDto.builder()
+                        .invoiceId(inv.getId())
+                        .invoiceCode(inv.getCode())
+                        .createdAt(inv.getCreatedAt())
+                        .netAmount(inv.getFinalAmount())
+                        .status(mapInvoiceStatus(inv.getStatus()))
+                        .build())
+                .collect(Collectors.toList());
+
+        return CustomerDetailResponse.builder()
+                .customerId(customer.getId())
+                .customerCode(customerCode)
+                .fullName(customer.getFullName())
+                .phone(customer.getPhone())
+                .gender(genderLabel)
+                .genderCode(customer.getGender())
+                .dateOfBirth(customer.getDateOfBirth())
+                .age(age)
+                .email(customer.getEmail())
+                .address(customer.getAddress())
+                .membershipTier(membershipTier)
+                .loyaltyPoints(loyaltyPoints)
+                .totalSpent(totalSpent)
+                .totalOrders((int) totalOrders)
+                .status(customer.getStatus())
+                .createdAt(customer.getCreatedAt())
+                .updatedAt(customer.getUpdatedAt())
+                .healthProfile(healthDto)
+                .recentInvoices(invoiceDtos)
+                .build();
+    }
+
+    private String calculateTier(BigDecimal totalSpent) {
+        if (totalSpent == null) return "STANDARD";
+        if (totalSpent.compareTo(BigDecimal.valueOf(10_000_000)) >= 0) return "DIAMOND";
+        if (totalSpent.compareTo(BigDecimal.valueOf(5_000_000)) >= 0) return "GOLD";
+        if (totalSpent.compareTo(BigDecimal.valueOf(1_000_000)) >= 0) return "SILVER";
+        return "STANDARD";
+    }
+
+    private String mapInvoiceStatus(Short status) {
+        if (status == null) return "PENDING";
+        return switch (status) {
+            case 1 -> "COMPLETED";
+            case 2 -> "CANCELLED";
+            case 3 -> "PARTIALLY_RETURNED";
+            case 4 -> "RETURNED";
+            default -> "PENDING";
+        };
+    }
+
     private CustomerResponse mapToCustomerResponse(Customer customer) {
         CustomerHealthProfile health = customer.getHealthProfile();
         boolean hasAllergies = health != null && health.getAllergies() != null && !health.getAllergies().isBlank();
@@ -114,7 +230,6 @@ public class CustomerServiceImpl implements CustomerService {
 
         String customerCode = String.format("KH-%06d", customer.getId());
 
-        // Default tier & points (can be upgraded when linked with sales invoices)
         Integer loyaltyPoints = 0;
         BigDecimal totalSpent = BigDecimal.ZERO;
         String membershipTier = "STANDARD";

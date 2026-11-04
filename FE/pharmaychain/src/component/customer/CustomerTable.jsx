@@ -129,6 +129,7 @@ export default function CustomerTable({
                   </td>
                   <td>
                     <span
+                      onClick={() => onView && onView(c)}
                       style={{
                         fontFamily: 'monospace',
                         fontWeight: 600,
@@ -138,13 +139,19 @@ export default function CustomerTable({
                         color: 'var(--brand-primary)',
                         borderRadius: 4,
                         border: '1px solid rgba(16, 185, 129, 0.2)',
+                        cursor: onView ? 'pointer' : 'default',
                       }}
+                      title="Bấm để xem chi tiết"
                     >
                       {c.customerCode || `KH-${String(c.customerId).padStart(6, '0')}`}
                     </span>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: onView ? 'pointer' : 'default' }}
+                      onClick={() => onView && onView(c)}
+                      title="Bấm để xem chi tiết"
+                    >
                       <div
                         style={{
                           width: 34,
@@ -313,4 +320,3 @@ export default function CustomerTable({
     </div>
   );
 }
-

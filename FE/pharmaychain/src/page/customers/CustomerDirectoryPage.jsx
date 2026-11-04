@@ -1,11 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCustomers } from '../../hooks/customer/useCustomers';
+import { fetchCustomerDetail } from '../../api/customerApi';
 import CustomerStats from '../../component/customer/CustomerStats';
 import CustomerFilters from '../../component/customer/CustomerFilters';
 import CustomerTable from '../../component/customer/CustomerTable';
 import CustomerPagination from '../../component/customer/CustomerPagination';
+import CustomerDetailModal from '../../component/customer/CustomerDetailModal';
 
 export default function CustomerDirectoryPage() {
+  const navigate = useNavigate();
   const {
     customers,
     totalElements,
@@ -25,6 +29,11 @@ export default function CustomerDirectoryPage() {
     resetFilters,
   } = useCustomers();
 
+  // State for Customer Detail Modal/Drawer
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
   const [toast, setToast] = useState(null);
 
   const showNotification = (msg, type = 'info') => {
@@ -32,12 +41,29 @@ export default function CustomerDirectoryPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const handleAddNew = () => {
-    showNotification('Tính năng [Thêm mới khách hàng (UC32)] sẽ được phát triển ở nhánh tiếp theo (customer-add).', 'info');
+  // Open Customer Detail Modal & fetch full profile
+  const handleView = async (customer) => {
+    const custId = customer.customerId || customer.id;
+    if (!custId) return;
+
+    // Set initial quick preview while fetching full data
+    setSelectedCustomer(customer);
+    setDetailModalOpen(true);
+    setDetailLoading(true);
+
+    try {
+      const fullDetail = await fetchCustomerDetail(custId);
+      setSelectedCustomer(fullDetail);
+    } catch (err) {
+      console.error('Error fetching customer detail:', err);
+      showNotification(err.message || 'Không thể tải chi tiết khách hàng', 'warning');
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
-  const handleView = (customer) => {
-    showNotification(`Tính năng [Xem chi tiết khách hàng ${customer.customerCode || customer.fullName} (UC31)] sẽ được phát triển ở nhánh tiếp theo (customer-view-detail).`, 'info');
+  const handleAddNew = () => {
+    showNotification('Tính năng [Thêm mới khách hàng (UC32)] sẽ được phát triển ở nhánh tiếp theo (customer-add).', 'info');
   };
 
   const handleEdit = (customer) => {
@@ -50,6 +76,13 @@ export default function CustomerDirectoryPage() {
 
   const handleExport = () => {
     showNotification('Đang tạo báo cáo danh sách khách hàng...', 'info');
+  };
+
+  const handleNewSale = (customer) => {
+    showNotification(`Đang chuyển hướng sang quầy bán hàng cho khách hàng ${customer.fullName || customer.customerCode}...`, 'info');
+    setTimeout(() => {
+      navigate('/sales');
+    }, 800);
   };
 
   return (
@@ -155,7 +188,16 @@ export default function CustomerDirectoryPage() {
         onPageChange={setPage}
         onSizeChange={setSize}
       />
+
+      {/* Customer Detail Drawer / Modal (UC29) */}
+      <CustomerDetailModal
+        show={detailModalOpen}
+        onHide={() => setDetailModalOpen(false)}
+        customer={selectedCustomer}
+        loading={detailLoading}
+        onEdit={handleEdit}
+        onNewSale={handleNewSale}
+      />
     </div>
   );
 }
-
