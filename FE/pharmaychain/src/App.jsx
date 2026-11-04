@@ -1,6 +1,11 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import MainLayout from './layout/MainLayout';
 import HomePage from './page/home/HomePage';
+import LoginPage from './page/auth/LoginPage';
+import ForgotPasswordPage from './page/auth/ForgotPasswordPage';
+import ResetPasswordPage from './page/auth/ResetPasswordPage';
+import ProfilePage from './page/profile/ProfilePage';
+import ProtectedRoute from './component/auth/ProtectedRoute';
 import SupplierPage from './page/supplier/SupplierPage';
 import WarehouseInventoryPage from './page/warehouse/WarehouseInventoryPage';
 import WarehouseReplenishmentPage from './page/warehouse/WarehouseReplenishmentPage';
@@ -41,14 +46,26 @@ function ComingSoon({ title, module }) {
 function App() {
   return (
     <Routes>
-      <Route index element={<Navigate to="/home" replace />} />
-      <Route element={<MainLayout />}>
+      {/* Public Authentication Routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      {/* Protected Application Routes */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <MainLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/home" replace />} />
+        
         {/* Home */}
         <Route path="/home" element={<HomePage />} />
 
-        {/* Authentication */}
-        <Route path="/login" element={<ComingSoon title="Login" module="Authentication" />} />
-        <Route path="/profile" element={<ComingSoon title="My Profile" module="Authentication" />} />
+        {/* Profile */}
+        <Route path="/profile" element={<ProfilePage />} />
 
         {/* User & Security */}
         <Route path="/users" element={<UsersPage />} />

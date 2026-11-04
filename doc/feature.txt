@@ -1,0 +1,22 @@
+Authentication :
+Login
+Logout
+Change Password
+Manage Personal Information
+Forgot Password
+
+Sales Management :
+Open Shift
+Close Shift
+Create Sales Invoice
+Process Payment
+Cancel/Return Sales Invoice
+View Customer Purchase History
+
+Customer Management :
+
+Register New Customer
+Edit Customer
+View Customer
+View Customer List
+Delete Customer
