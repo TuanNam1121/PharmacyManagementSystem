@@ -2,6 +2,7 @@ package com.pharmacy.controller;
 
 import com.pharmacy.dto.ApiResponse;
 import com.pharmacy.dto.PageResponse;
+import com.pharmacy.dto.customer.CustomerDetailResponse;
 import com.pharmacy.dto.customer.CustomerResponse;
 import com.pharmacy.service.CustomerService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,5 +37,11 @@ public class CustomerController {
 
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách khách hàng thành công", response));
     }
-}
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Lấy thông tin chi tiết hồ sơ khách hàng (UC29)")
+    public ResponseEntity<ApiResponse<CustomerDetailResponse>> getCustomerDetail(@PathVariable Long id) {
+        CustomerDetailResponse response = customerService.getCustomerDetail(id);
+        return ResponseEntity.ok(ApiResponse.success("Lấy chi tiết khách hàng thành công", response));
+    }
+}

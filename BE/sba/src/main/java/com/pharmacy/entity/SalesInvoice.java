@@ -35,6 +35,10 @@ public class SalesInvoice {
     @JoinColumn(name = "store_id")
     private Store store;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
+
     @Size(max = 50)
     @Nationalized
     @Column(name = "prescription_code", length = 50)

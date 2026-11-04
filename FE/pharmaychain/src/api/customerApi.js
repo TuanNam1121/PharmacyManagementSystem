@@ -36,3 +36,11 @@ export const fetchCustomers = async ({
   return unwrap(res);
 };
 
+/**
+ * Fetch detailed customer profile including health profile and recent orders (UC29)
+ */
+export const fetchCustomerDetail = async (id) => {
+  if (!id) throw new Error('Customer ID is required');
+  const res = await get(`${BASE_URL}/${encodeURIComponent(id)}`);
+  return unwrap(res);
+};
