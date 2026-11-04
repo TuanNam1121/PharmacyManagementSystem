@@ -45,3 +45,4 @@ public interface CustomerRepository extends JpaRepository<Customer, Long>, JpaSp
                                            @Param("status") Short status,
                                            Pageable pageable);
 }
+

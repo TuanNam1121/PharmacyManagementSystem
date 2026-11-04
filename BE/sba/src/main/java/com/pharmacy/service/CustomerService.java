@@ -7,3 +7,4 @@ public interface CustomerService {
     PageResponse<CustomerResponse> getCustomers(String keyword, String membershipTier, Short status,
                                                 int page, int size, String sortBy, String sortDir);
 }
+

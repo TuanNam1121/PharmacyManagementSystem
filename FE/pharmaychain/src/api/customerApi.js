@@ -35,3 +35,4 @@ export const fetchCustomers = async ({
   const res = await get(`${BASE_URL}?${params.toString()}`);
   return unwrap(res);
 };
+

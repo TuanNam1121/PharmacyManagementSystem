@@ -10,3 +10,4 @@ import java.util.Optional;
 public interface CustomerHealthProfileRepository extends JpaRepository<CustomerHealthProfile, Long> {
     Optional<CustomerHealthProfile> findByCustomer_Id(Long customerId);
 }
+

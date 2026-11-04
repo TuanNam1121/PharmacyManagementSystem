@@ -73,3 +73,4 @@ export default function CustomerStats({ total = 0, customers = [] }) {
     </div>
   );
 }
+
