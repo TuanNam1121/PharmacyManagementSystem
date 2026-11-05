@@ -51,7 +51,7 @@ public class SalesInvoiceDetail {
     private BigDecimal unitCost;
 
     @ColumnDefault("CONVERT([decimal](18,2),[quantity]*[unit_price])")
-    @Column(name = "sub_total", precision = 18, scale = 2)
+    @Column(name = "sub_total", precision = 18, scale = 2, insertable = false, updatable = false)
     private BigDecimal subTotal;
 
     @Size(max = 300)

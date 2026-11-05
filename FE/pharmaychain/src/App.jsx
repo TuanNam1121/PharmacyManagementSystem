@@ -12,6 +12,7 @@ import WarehouseReplenishmentPage from './page/warehouse/WarehouseReplenishmentP
 import WarehousePurchaseRequestsPage from './page/warehouse/WarehousePurchaseRequestsPage';
 import UsersPage from './page/users/UsersPage';
 import DailySalesPage from './page/sales/DailySalesPage';
+import PosCounterPage from './page/sales/PosCounterPage';
 import ProductCatalogPage from './page/products/ProductCatalogPage';
 import BranchInventoryPage from './page/inventory/BranchInventoryPage';
 import InventoryAuditPage from './page/inventory/InventoryAuditPage';
@@ -77,7 +78,7 @@ function App() {
         <Route path="/categories" element={<ComingSoon title="Categories" module="Products & Catalog" />} />
 
         {/* POS & Sales */}
-        <Route path="/pos" element={<ComingSoon title="POS Counter" module="POS & Sales" />} />
+        <Route path="/pos" element={<PosCounterPage />} />
         <Route path="/shifts" element={<DailySalesPage defaultTab="shifts" />} />
         <Route path="/sales" element={<DailySalesPage defaultTab="invoices" />} />
 

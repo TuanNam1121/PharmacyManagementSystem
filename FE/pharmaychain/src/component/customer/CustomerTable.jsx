@@ -55,6 +55,7 @@ export default function CustomerTable({
   onView,
   onEdit,
   onDelete,
+  onReactivate,
   onClearFilters,
 }) {
   if (loading) {
@@ -296,19 +297,33 @@ export default function CustomerTable({
                         </svg>
                       </button>
 
-                      {/* Delete Action */}
-                      <button
-                        className="pms-icon-btn danger"
-                        title="Xóa khách hàng"
-                        onClick={() => onDelete && onDelete(c)}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                          <line x1="10" y1="11" x2="10" y2="17" />
-                          <line x1="14" y1="11" x2="14" y2="17" />
-                        </svg>
-                      </button>
+                      {/* Delete or Reactivate Action */}
+                      {isActive ? (
+                        <button
+                          className="pms-icon-btn danger"
+                          title="Vô hiệu hóa khách hàng"
+                          onClick={() => onDelete && onDelete(c)}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            <line x1="10" y1="11" x2="10" y2="17" />
+                            <line x1="14" y1="11" x2="14" y2="17" />
+                          </svg>
+                        </button>
+                      ) : (
+                        <button
+                          className="pms-icon-btn"
+                          title="Kích hoạt lại khách hàng"
+                          onClick={() => onReactivate && onReactivate(c)}
+                          style={{ color: 'var(--brand-primary)' }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M23 4v6h-6" />
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

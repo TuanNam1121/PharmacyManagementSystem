@@ -1,13 +1,11 @@
 package com.pharmacy.service.impl;
 
 import com.pharmacy.dto.PageResponse;
-import com.pharmacy.dto.customer.CustomerDetailResponse;
-import com.pharmacy.dto.customer.CustomerHealthProfileDto;
-import com.pharmacy.dto.customer.CustomerRecentInvoiceDto;
-import com.pharmacy.dto.customer.CustomerResponse;
+import com.pharmacy.dto.customer.*;
 import com.pharmacy.entity.Customer;
 import com.pharmacy.entity.CustomerHealthProfile;
 import com.pharmacy.entity.SalesInvoice;
+import com.pharmacy.exception.CustomerPhoneAlreadyExistsException;
 import com.pharmacy.exception.ResourceNotFoundException;
 import com.pharmacy.repository.CustomerHealthProfileRepository;
 import com.pharmacy.repository.CustomerRepository;
@@ -27,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
@@ -125,6 +124,121 @@ public class CustomerServiceImpl implements CustomerService {
         if (totalSpent == null) totalSpent = BigDecimal.ZERO;
 
         return buildCustomerDetailResponse(customer, healthProfile, recentInvoices, totalOrders, totalSpent);
+    }
+
+    @Override
+    @Transactional
+    public CustomerDetailResponse registerCustomer(CustomerCreateRequest request) {
+        String phone = request.getPhone() != null ? request.getPhone().trim() : "";
+        if (customerRepository.existsByPhone(phone)) {
+            throw new CustomerPhoneAlreadyExistsException("Số điện thoại " + phone + " đã tồn tại trong hệ thống");
+        }
+
+        Customer customer = new Customer();
+        customer.setFullName(request.getFullName().trim());
+        customer.setPhone(phone);
+        customer.setGender(parseGenderCode(request.getGender()));
+        customer.setDateOfBirth(request.getDateOfBirth());
+        customer.setEmail(request.getEmail() != null && !request.getEmail().isBlank() ? request.getEmail().trim() : null);
+        customer.setAddress(request.getAddress() != null && !request.getAddress().isBlank() ? request.getAddress().trim() : null);
+        customer.setStatus((short) 1);
+        customer.setCreatedAt(LocalDateTime.now());
+        customer.setUpdatedAt(LocalDateTime.now());
+
+        Customer savedCustomer = customerRepository.save(customer);
+
+        if (request.getHealthProfile() != null) {
+            CustomerHealthProfileDto hpDto = request.getHealthProfile();
+            CustomerHealthProfile health = new CustomerHealthProfile();
+            health.setCustomer(savedCustomer);
+            health.setHeightCm(hpDto.getHeightCm());
+            health.setWeightKg(hpDto.getWeightKg());
+            health.setAllergies(hpDto.getAllergies());
+            health.setMedicalConditions(hpDto.getChronicDiseases());
+            health.setCurrentMedications(hpDto.getCurrentMedications());
+            health.setNote(hpDto.getNotes());
+            health.setUpdatedAt(LocalDateTime.now());
+            healthProfileRepository.save(health);
+            savedCustomer.setHealthProfile(health);
+        }
+
+        return getCustomerDetail(savedCustomer.getId());
+    }
+
+    @Override
+    @Transactional
+    public CustomerDetailResponse updateCustomer(Long customerId, CustomerUpdateRequest request) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khách hàng với ID: " + customerId));
+
+        String newPhone = request.getPhone() != null ? request.getPhone().trim() : "";
+        if (!newPhone.equalsIgnoreCase(customer.getPhone()) && customerRepository.existsByPhoneAndIdNot(newPhone, customerId)) {
+            throw new CustomerPhoneAlreadyExistsException("Số điện thoại " + newPhone + " đã thuộc về một khách hàng khác trong hệ thống");
+        }
+
+        customer.setFullName(request.getFullName().trim());
+        customer.setPhone(newPhone);
+        customer.setGender(parseGenderCode(request.getGender()));
+        customer.setDateOfBirth(request.getDateOfBirth());
+        customer.setEmail(request.getEmail() != null && !request.getEmail().isBlank() ? request.getEmail().trim() : null);
+        customer.setAddress(request.getAddress() != null && !request.getAddress().isBlank() ? request.getAddress().trim() : null);
+        customer.setUpdatedAt(LocalDateTime.now());
+
+        Customer savedCustomer = customerRepository.save(customer);
+
+        if (request.getHealthProfile() != null) {
+            CustomerHealthProfileDto hpDto = request.getHealthProfile();
+            CustomerHealthProfile health = healthProfileRepository.findByCustomer_Id(customerId).orElse(null);
+            if (health == null) {
+                health = new CustomerHealthProfile();
+                health.setCustomer(savedCustomer);
+            }
+            health.setHeightCm(hpDto.getHeightCm());
+            health.setWeightKg(hpDto.getWeightKg());
+            health.setAllergies(hpDto.getAllergies());
+            health.setMedicalConditions(hpDto.getChronicDiseases());
+            health.setCurrentMedications(hpDto.getCurrentMedications());
+            health.setNote(hpDto.getNotes());
+            health.setUpdatedAt(LocalDateTime.now());
+            healthProfileRepository.save(health);
+            savedCustomer.setHealthProfile(health);
+        }
+
+        return getCustomerDetail(savedCustomer.getId());
+    }
+
+    @Override
+    @Transactional
+    public void deleteCustomer(Long customerId, String reason) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khách hàng với ID: " + customerId));
+
+        if (customer.getStatus() != null && customer.getStatus() == 0) {
+            throw new IllegalStateException("Khách hàng này đã ở trạng thái ngừng hoạt động");
+        }
+
+        customer.setStatus((short) 0);
+        customer.setUpdatedAt(LocalDateTime.now());
+        customerRepository.save(customer);
+    }
+
+    @Override
+    @Transactional
+    public void reactivateCustomer(Long customerId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khách hàng với ID: " + customerId));
+
+        customer.setStatus((short) 1);
+        customer.setUpdatedAt(LocalDateTime.now());
+        customerRepository.save(customer);
+    }
+
+    private Short parseGenderCode(String gender) {
+        if (gender == null) return 2;
+        String g = gender.trim().toUpperCase();
+        if (g.equals("MALE") || g.equals("1") || g.equals("NAM")) return 1;
+        if (g.equals("FEMALE") || g.equals("0") || g.equals("NỮ") || g.equals("NU")) return 0;
+        return 2;
     }
 
     private CustomerDetailResponse buildCustomerDetailResponse(Customer customer,
