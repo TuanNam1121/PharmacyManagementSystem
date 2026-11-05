@@ -135,3 +135,4 @@ class ShiftServiceTest {
         verify(shiftRepository, times(1)).save(sampleShift);
     }
 }
+

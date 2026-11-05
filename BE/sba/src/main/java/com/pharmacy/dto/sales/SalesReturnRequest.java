@@ -37,3 +37,4 @@ public class SalesReturnRequest {
         private Integer quantity;
     }
 }
+

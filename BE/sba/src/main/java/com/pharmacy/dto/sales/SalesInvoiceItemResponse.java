@@ -26,3 +26,4 @@ public class SalesInvoiceItemResponse {
     private BigDecimal lineTotal;
     private String dosageInstruction;
 }
+

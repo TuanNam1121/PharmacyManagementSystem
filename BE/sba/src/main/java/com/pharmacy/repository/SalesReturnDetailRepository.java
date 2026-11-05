@@ -11,3 +11,4 @@ public interface SalesReturnDetailRepository extends JpaRepository<SalesReturnDe
 
     List<SalesReturnDetail> findBySalesReturn_Id(Long returnId);
 }
+

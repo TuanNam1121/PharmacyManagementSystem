@@ -41,29 +41,45 @@ export default function CloseShiftModal({
     };
 
     return (
-        <div className="pms-modal-backdrop" style={{ zIndex: 1050 }}>
-            <div className="pms-modal" style={{ maxWidth: 560, width: '100%' }}>
+        <div
+            className="pms-modal-overlay"
+            style={{ zIndex: 1200 }}
+            onClick={(e) => {
+                if (e.target === e.currentTarget && !submitting) onClose();
+            }}
+        >
+            <div className="pms-modal" style={{ maxWidth: 580, width: '100%' }}>
                 <div className="pms-modal-header" style={{ background: '#fef2f2' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{
-                            width: 36, height: 36, borderRadius: '50%',
+                            width: 40, height: 40, borderRadius: 10,
                             background: '#ef4444',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff'
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+                            boxShadow: '0 2px 6px rgba(239,68,68,0.2)'
                         }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                             </svg>
                         </div>
                         <div>
-                            <h3 className="pms-modal-title" style={{ margin: 0, color: '#b91c1c' }}>
+                            <div className="pms-modal-title" style={{ color: '#b91c1c', fontSize: 17 }}>
                                 Chốt & Bàn Giao Ca Làm Việc (Close Shift)
-                            </h3>
-                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                                Kết thúc ca làm việc và kiểm đếm doanh thu quầy POS
-                            </span>
+                            </div>
+                            <div className="pms-modal-sub">
+                                Kết thúc ca làm việc và đối soát doanh thu quầy POS
+                            </div>
                         </div>
                     </div>
+
+                    <button
+                        type="button"
+                        className="pms-modal-close"
+                        onClick={onClose}
+                        disabled={submitting}
+                    >
+                        ✕
+                    </button>
                 </div>
 
                 <form onSubmit={handleSubmit}>
@@ -77,71 +93,72 @@ export default function CloseShiftModal({
                         {/* Shift Info */}
                         <div style={{
                             display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
-                            background: '#f9fafb', padding: '12px 14px', borderRadius: 8, fontSize: 13
+                            background: '#f8fafc', padding: '12px 16px', borderRadius: 10, fontSize: 13,
+                            border: '1px solid #e2e8f0'
                         }}>
                             <div>
-                                <span style={{ color: 'var(--text-secondary)' }}>Thu ngân: </span>
-                                <strong>{shiftSummary.cashierName}</strong>
+                                <span style={{ color: '#64748b' }}>Thu ngân: </span>
+                                <strong style={{ color: '#0f172a' }}>{shiftSummary.cashierName}</strong>
                             </div>
                             <div>
-                                <span style={{ color: 'var(--text-secondary)' }}>Chi nhánh: </span>
-                                <strong>{shiftSummary.storeName}</strong>
+                                <span style={{ color: '#64748b' }}>Chi nhánh: </span>
+                                <strong style={{ color: '#0f172a' }}>{shiftSummary.storeName}</strong>
                             </div>
                             <div>
-                                <span style={{ color: 'var(--text-secondary)' }}>Giờ mở ca: </span>
+                                <span style={{ color: '#64748b' }}>Giờ mở ca: </span>
                                 <strong>{formatDateTime(shiftSummary.openingTime)}</strong>
                             </div>
                             <div>
-                                <span style={{ color: 'var(--text-secondary)' }}>Tổng hóa đơn: </span>
-                                <strong>{shiftSummary.totalInvoices} đơn</strong>
+                                <span style={{ color: '#64748b' }}>Tổng hóa đơn: </span>
+                                <strong style={{ color: 'var(--brand-primary)' }}>{shiftSummary.totalInvoices} đơn hàng</strong>
                             </div>
                         </div>
 
                         {/* Financial Ledger Table */}
                         <div style={{
-                            border: '1px solid var(--border-color)', borderRadius: 8, overflow: 'hidden', fontSize: 13
+                            border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', fontSize: 13
                         }}>
                             <div style={{
-                                display: 'flex', justifyContent: 'space-between', padding: '8px 12px',
-                                borderBottom: '1px solid var(--border-color)', background: '#fff'
+                                display: 'flex', justifyContent: 'space-between', padding: '10px 14px',
+                                borderBottom: '1px solid #f1f5f9', background: '#fff'
                             }}>
-                                <span>Tiền mặt đầu ca:</span>
+                                <span style={{ color: '#475569' }}>Tiền mặt đầu ca:</span>
                                 <strong>{money(shiftSummary.openingCash)}</strong>
                             </div>
                             <div style={{
-                                display: 'flex', justifyContent: 'space-between', padding: '8px 12px',
-                                borderBottom: '1px solid var(--border-color)', background: '#fff'
+                                display: 'flex', justifyContent: 'space-between', padding: '10px 14px',
+                                borderBottom: '1px solid #f1f5f9', background: '#fff'
                             }}>
-                                <span>+ Doanh thu tiền mặt trong ca:</span>
-                                <strong style={{ color: 'var(--brand-primary)' }}>+{money(shiftSummary.cashSales)}</strong>
+                                <span style={{ color: '#475569' }}>+ Doanh thu tiền mặt bán được:</span>
+                                <strong style={{ color: 'var(--brand-primary, #059669)' }}>+{money(shiftSummary.cashSales)}</strong>
                             </div>
                             <div style={{
-                                display: 'flex', justifyContent: 'space-between', padding: '8px 12px',
-                                borderBottom: '1px solid var(--border-color)', background: '#fff'
+                                display: 'flex', justifyContent: 'space-between', padding: '10px 14px',
+                                borderBottom: '1px solid #f1f5f9', background: '#fff'
                             }}>
-                                <span>- Hoàn trả khách hàng (Tiền mặt):</span>
+                                <span style={{ color: '#475569' }}>- Hoàn trả khách (Tiền mặt):</span>
                                 <strong style={{ color: '#ef4444' }}>-{money(shiftSummary.refundCash)}</strong>
                             </div>
                             <div style={{
-                                display: 'flex', justifyContent: 'space-between', padding: '10px 12px',
+                                display: 'flex', justifyContent: 'space-between', padding: '12px 14px',
                                 background: 'var(--brand-primary-light, #ecfdf5)', fontWeight: 700
                             }}>
                                 <span style={{ color: 'var(--brand-primary, #059669)' }}>Tiền mặt dự kiến phải có trong két:</span>
-                                <span style={{ color: 'var(--brand-primary, #059669)', fontSize: 15 }}>{money(expectedCash)}</span>
+                                <span style={{ color: 'var(--brand-primary, #059669)', fontSize: 16 }}>{money(expectedCash)}</span>
                             </div>
                             <div style={{
-                                display: 'flex', justifyContent: 'space-between', padding: '6px 12px',
-                                background: '#f8fafc', fontSize: 12, color: 'var(--text-secondary)'
+                                display: 'flex', justifyContent: 'space-between', padding: '8px 14px',
+                                background: '#f8fafc', fontSize: 12, color: '#64748b'
                             }}>
-                                <span>Doanh thu VietQR: {money(shiftSummary.qrSales)} | Quẹt thẻ: {money(shiftSummary.cardSales)}</span>
-                                <span>(Không tính vào két tiền mặt)</span>
+                                <span>Doanh thu VietQR: {money(shiftSummary.qrSales)} | Thẻ: {money(shiftSummary.cardSales)}</span>
+                                <span>(Không cộng két tiền mặt)</span>
                             </div>
                         </div>
 
                         {/* Physical Cash Input */}
                         <div className="pms-form-group">
-                            <label className="pms-label" style={{ fontWeight: 700 }}>
-                                Tiền mặt thực tế kiểm đếm trong két (VNĐ) <span style={{ color: '#ef4444' }}>*</span>
+                            <label className="pms-label" style={{ fontWeight: 700, fontSize: 13 }}>
+                                Tiền mặt thực tế đếm được trong két (VNĐ) <span style={{ color: '#ef4444' }}>*</span>
                             </label>
                             <div style={{ position: 'relative' }}>
                                 <input
@@ -149,7 +166,7 @@ export default function CloseShiftModal({
                                     min="0"
                                     step="1000"
                                     className="pms-input"
-                                    style={{ fontSize: 16, fontWeight: 700, paddingRight: 40 }}
+                                    style={{ fontSize: 18, fontWeight: 800, height: 46, paddingRight: 40 }}
                                     value={closingCash}
                                     onChange={(e) => setClosingCash(e.target.value)}
                                     placeholder="0"
@@ -157,34 +174,34 @@ export default function CloseShiftModal({
                                     autoFocus
                                 />
                                 <span style={{
-                                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                                    color: 'var(--text-secondary)', fontWeight: 600
+                                    position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                                    color: '#64748b', fontWeight: 700
                                 }}>
                                     ₫
                                 </span>
                             </div>
-                            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
+                            <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
                                 Bằng chữ: {money(actualCash)}
                             </div>
                         </div>
 
-                        {/* Discrepancy Status */}
+                        {/* Discrepancy Indicator */}
                         <div style={{
-                            padding: '10px 14px', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '12px 16px', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                             background: discrepancy === 0 ? '#ecfdf5' : discrepancy > 0 ? '#fffbeb' : '#fef2f2',
-                            border: `1px solid ${discrepancy === 0 ? '#10b981' : discrepancy > 0 ? '#f59e0b' : '#ef4444'}`
+                            border: `1.5px solid ${discrepancy === 0 ? '#10b981' : discrepancy > 0 ? '#f59e0b' : '#ef4444'}`
                         }}>
-                            <div style={{ fontWeight: 600, fontSize: 13, color: discrepancy === 0 ? '#059669' : discrepancy > 0 ? '#b45309' : '#b91c1c' }}>
-                                {discrepancy === 0 && '✓ Két tiền cân bằng chuẩn xác (0 ₫)'}
+                            <div style={{ fontWeight: 700, fontSize: 13.5, color: discrepancy === 0 ? '#059669' : discrepancy > 0 ? '#b45309' : '#b91c1c' }}>
+                                {discrepancy === 0 && '✓ Két tiền cân bằng chuẩn xác (Khớp 0 ₫)'}
                                 {discrepancy > 0 && `▲ Thừa tiền két: +${money(discrepancy)}`}
                                 {discrepancy < 0 && `▼ Thiếu tiền két: ${money(discrepancy)}`}
                             </div>
                             <span className={`pms-badge ${discrepancy === 0 ? 'pms-badge-success' : discrepancy > 0 ? 'pms-badge-warning' : 'pms-badge-danger'}`}>
-                                {discrepancy === 0 ? 'Khớp két' : discrepancy > 0 ? 'Thừa két' : 'Lệch âm'}
+                                {discrepancy === 0 ? 'Khớp két' : discrepancy > 0 ? 'Thừa tiền' : 'Thiếu hụt'}
                             </span>
                         </div>
 
-                        {/* Mandatory Note when discrepancy !== 0 */}
+                        {/* Note when discrepancy !== 0 */}
                         <div className="pms-form-group">
                             <label className="pms-label">
                                 Giải trình chênh lệch & Ghi chú {discrepancy !== 0 && <span style={{ color: '#ef4444' }}>* (Bắt buộc)</span>}
@@ -200,7 +217,7 @@ export default function CloseShiftModal({
                         </div>
                     </div>
 
-                    <div className="pms-modal-footer" style={{ padding: '14px 24px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                    <div className="pms-modal-footer" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                         <button
                             type="button"
                             className="btn-pms btn-pms-secondary"
@@ -212,7 +229,7 @@ export default function CloseShiftModal({
                         <button
                             type="submit"
                             className="btn-pms"
-                            style={{ background: '#ef4444', color: '#fff' }}
+                            style={{ background: '#ef4444', color: '#fff', fontWeight: 700, height: 40 }}
                             disabled={submitting}
                         >
                             {submitting ? 'Đang chốt ca...' : 'Xác nhận Chốt Ca (Close Shift)'}

@@ -9,3 +9,4 @@ public class NoOpenShiftException extends RuntimeException {
         super(message);
     }
 }
+

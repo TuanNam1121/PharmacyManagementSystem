@@ -11,3 +11,4 @@ public interface SalesInvoiceDetailRepository extends JpaRepository<SalesInvoice
 
     List<SalesInvoiceDetail> findBySalesInvoice_Id(Long invoiceId);
 }
+

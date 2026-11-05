@@ -30,3 +30,4 @@ public class InvoiceItemRequest {
 
     private String dosageInstruction;
 }
+

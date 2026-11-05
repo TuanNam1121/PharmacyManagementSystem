@@ -22,3 +22,4 @@ public interface SalesReturnRepository extends JpaRepository<SalesReturn, Long> 
     @Query("SELECT COALESCE(SUM(r.refundAmount), 0) FROM SalesReturn r WHERE r.shift.id = :shiftId AND r.refundMethod = 1")
     BigDecimal sumCashRefundsByShift(@Param("shiftId") Long shiftId);
 }
+

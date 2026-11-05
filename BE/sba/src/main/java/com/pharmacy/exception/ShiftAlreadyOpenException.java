@@ -9,3 +9,4 @@ public class ShiftAlreadyOpenException extends RuntimeException {
         super(message);
     }
 }
+

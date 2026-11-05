@@ -28,3 +28,4 @@ public class ShiftDetailResponse {
     private Short statusCode;
     private String note;
 }
+
