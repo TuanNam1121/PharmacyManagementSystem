@@ -4,6 +4,9 @@
    - INVENTORY & MEDICINES (Danh mục, Thuốc, Lô FEFO, Tồn kho chi nhánh)
    - SALES & POS (Ca làm việc, Hóa đơn bán lẻ, Thanh toán, Đổi trả thuốc)
    Database: PMS (Microsoft SQL Server)
+
+   LỆNH THỰC THI (Đảm bảo tiếng Việt UTF-8 có dấu với flag -f 65001):
+   sqlcmd -I -S localhost -U na -P 123 -d PMS -C -f 65001 -i DB\seed_sales_and_customers.sql
    ===================================================================== */
 
 USE [PMS];
