@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ShiftRepository extends JpaRepository<Shift, Long> {
@@ -16,4 +17,10 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
     List<Shift> findShiftsByStoreAndDateRange(@Param("storeId") Long storeId,
                                               @Param("startDate") LocalDateTime startDate,
                                               @Param("endDate") LocalDateTime endDate);
+
+    Optional<Shift> findFirstByAccount_IdAndStatus(Long accountId, Short status);
+
+    boolean existsByAccount_IdAndStatus(Long accountId, Short status);
+
+    List<Shift> findByStore_IdAndStatus(Long storeId, Short status);
 }

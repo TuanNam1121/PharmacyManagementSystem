@@ -49,7 +49,7 @@ public class SalesReturnDetail {
     private BigDecimal unitPrice;
 
     @ColumnDefault("CONVERT([decimal](18,2),[quantity]*[unit_price])")
-    @Column(name = "sub_total", precision = 18, scale = 2)
+    @Column(name = "sub_total", precision = 18, scale = 2, insertable = false, updatable = false)
     private BigDecimal subTotal;
 
 }

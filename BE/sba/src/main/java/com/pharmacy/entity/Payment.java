@@ -21,8 +21,12 @@ public class Payment {
     @Column(name = "id", nullable = false)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "sales_invoice_id", nullable = false)
+    private SalesInvoice salesInvoice;
+
     @Column(name = "method", columnDefinition = "tinyint not null")
-    private Short method;
+    private Short method; // 1 cash, 2 bank transfer, 3 VNPay QR
 
     @NotNull
     @Column(name = "amount", nullable = false, precision = 18, scale = 2)
@@ -30,7 +34,7 @@ public class Payment {
 
     @ColumnDefault("0")
     @Column(name = "status", columnDefinition = "tinyint not null")
-    private Short status;
+    private Short status; // 0 pending, 1 success, 2 failed, 3 refunded, 4 expired
 
     @Size(max = 100)
     @Column(name = "transaction_ref", length = 100)
