@@ -1,4 +1,4 @@
-import { get } from './FetchData';
+import { get, post, put, patch, del } from './FetchData';
 
 const BASE_URL = 'http://localhost:8080/api/v1/customers';
 
@@ -42,5 +42,40 @@ export const fetchCustomers = async ({
 export const fetchCustomerDetail = async (id) => {
   if (!id) throw new Error('Customer ID is required');
   const res = await get(`${BASE_URL}/${encodeURIComponent(id)}`);
+  return unwrap(res);
+};
+
+/**
+ * Register a new customer with personal and medical details (UC27)
+ */
+export const createCustomer = async (data) => {
+  const res = await post(BASE_URL, data);
+  return unwrap(res);
+};
+
+/**
+ * Update an existing customer profile (UC28)
+ */
+export const updateCustomer = async (id, data) => {
+  if (!id) throw new Error('Customer ID is required');
+  const res = await put(`${BASE_URL}/${encodeURIComponent(id)}`, data);
+  return unwrap(res);
+};
+
+/**
+ * Soft delete / deactivate customer (UC31)
+ */
+export const deleteCustomer = async (id, reason = 'Khách hàng yêu cầu ngừng sử dụng dịch vụ') => {
+  if (!id) throw new Error('Customer ID is required');
+  const res = await del(`${BASE_URL}/${encodeURIComponent(id)}?reason=${encodeURIComponent(reason)}`);
+  return unwrap(res);
+};
+
+/**
+ * Reactivate customer (UC31)
+ */
+export const reactivateCustomer = async (id) => {
+  if (!id) throw new Error('Customer ID is required');
+  const res = await patch(`${BASE_URL}/${encodeURIComponent(id)}/reactivate`);
   return unwrap(res);
 };

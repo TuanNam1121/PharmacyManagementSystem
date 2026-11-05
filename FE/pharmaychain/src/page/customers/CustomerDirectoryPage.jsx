@@ -1,12 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomers } from '../../hooks/customer/useCustomers';
-import { fetchCustomerDetail } from '../../api/customerApi';
+import {
+  fetchCustomerDetail,
+  createCustomer,
+  updateCustomer,
+  deleteCustomer,
+  reactivateCustomer,
+} from '../../api/customerApi';
 import CustomerStats from '../../component/customer/CustomerStats';
 import CustomerFilters from '../../component/customer/CustomerFilters';
 import CustomerTable from '../../component/customer/CustomerTable';
 import CustomerPagination from '../../component/customer/CustomerPagination';
 import CustomerDetailModal from '../../component/customer/CustomerDetailModal';
+import CustomerFormModal from '../../component/customer/CustomerFormModal';
+import CustomerDeleteModal from '../../component/customer/CustomerDeleteModal';
 
 export default function CustomerDirectoryPage() {
   const navigate = useNavigate();
@@ -26,13 +34,25 @@ export default function CustomerDirectoryPage() {
     setStatusFilter,
     loading,
     error,
+    reload,
     resetFilters,
   } = useCustomers();
 
-  // State for Customer Detail Modal/Drawer
+  // State for Customer Detail Drawer
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+  // State for Create / Edit Form Modal
+  const [formModalOpen, setFormModalOpen] = useState(false);
+  const [formMode, setFormMode] = useState('create'); // 'create' | 'edit'
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+
+  // State for Delete / Deactivate Modal
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingCustomer, setDeletingCustomer] = useState(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   const [toast, setToast] = useState(null);
 
@@ -41,12 +61,11 @@ export default function CustomerDirectoryPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  // Open Customer Detail Modal & fetch full profile
+  // View Customer Details
   const handleView = async (customer) => {
     const custId = customer.customerId || customer.id;
     if (!custId) return;
 
-    // Set initial quick preview while fetching full data
     setSelectedCustomer(customer);
     setDetailModalOpen(true);
     setDetailLoading(true);
@@ -62,16 +81,84 @@ export default function CustomerDirectoryPage() {
     }
   };
 
+  // Open Create Customer Form
   const handleAddNew = () => {
-    showNotification('Tính năng [Thêm mới khách hàng (UC32)] sẽ được phát triển ở nhánh tiếp theo (customer-add).', 'info');
+    setFormMode('create');
+    setEditingCustomer(null);
+    setFormModalOpen(true);
   };
 
-  const handleEdit = (customer) => {
-    showNotification(`Tính năng [Chỉnh sửa thông tin khách hàng ${customer.customerCode || customer.fullName} (UC33)] sẽ được phát triển ở nhánh tiếp theo (customer-edit).`, 'info');
+  // Open Edit Customer Form
+  const handleEdit = async (customer) => {
+    const custId = customer.customerId || customer.id;
+    setFormMode('edit');
+    setEditingCustomer(customer);
+    setFormModalOpen(true);
+
+    try {
+      // Fetch fresh detail to populate form completely
+      const full = await fetchCustomerDetail(custId);
+      setEditingCustomer(full);
+    } catch {
+      // fallback to initial customer object
+    }
   };
 
+  // Submit Create or Edit Form
+  const handleFormSubmit = async (payload) => {
+    try {
+      setFormSubmitting(true);
+      if (formMode === 'create') {
+        const created = await createCustomer(payload);
+        showNotification(`Đăng ký khách hàng ${created.fullName} thành công!`, 'success');
+      } else {
+        const custId = editingCustomer.customerId || editingCustomer.id;
+        const updated = await updateCustomer(custId, payload);
+        showNotification(`Cập nhật thông tin khách hàng ${updated.fullName} thành công!`, 'success');
+      }
+      setFormModalOpen(false);
+      reload();
+    } catch (err) {
+      console.error('Error saving customer:', err);
+      showNotification(err.message || 'Lỗi khi lưu thông tin khách hàng', 'warning');
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
+  // Open Delete Modal
   const handleDelete = (customer) => {
-    showNotification(`Tính năng [Xóa khách hàng ${customer.customerCode || customer.fullName} (UC34)] sẽ được phát triển ở nhánh tiếp theo (customer-delete).`, 'warning');
+    setDeletingCustomer(customer);
+    setDeleteModalOpen(true);
+  };
+
+  // Confirm Deactivate
+  const handleConfirmDelete = async (customerId, reason) => {
+    try {
+      setDeleteSubmitting(true);
+      await deleteCustomer(customerId, reason);
+      showNotification('Đã vô hiệu hóa khách hàng thành công!', 'success');
+      setDeleteModalOpen(false);
+      reload();
+    } catch (err) {
+      console.error('Error deactivating customer:', err);
+      showNotification(err.message || 'Lỗi khi vô hiệu hóa khách hàng', 'warning');
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  };
+
+  // Reactivate Inactive Customer
+  const handleReactivate = async (customer) => {
+    const custId = customer.customerId || customer.id;
+    try {
+      await reactivateCustomer(custId);
+      showNotification(`Đã kích hoạt lại tài khoản khách hàng ${customer.fullName}!`, 'success');
+      reload();
+    } catch (err) {
+      console.error('Error reactivating customer:', err);
+      showNotification(err.message || 'Lỗi khi kích hoạt lại khách hàng', 'warning');
+    }
   };
 
   const handleExport = () => {
@@ -97,7 +184,7 @@ export default function CustomerDirectoryPage() {
             zIndex: 9999,
             padding: '12px 20px',
             borderRadius: 8,
-            backgroundColor: toast.type === 'warning' ? '#b45309' : '#047857',
+            backgroundColor: toast.type === 'warning' ? '#b45309' : toast.type === 'success' ? '#059669' : '#047857',
             color: '#fff',
             boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
             display: 'flex',
@@ -177,6 +264,7 @@ export default function CustomerDirectoryPage() {
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onReactivate={handleReactivate}
         onClearFilters={resetFilters}
       />
 
@@ -195,8 +283,30 @@ export default function CustomerDirectoryPage() {
         onHide={() => setDetailModalOpen(false)}
         customer={selectedCustomer}
         loading={detailLoading}
-        onEdit={handleEdit}
+        onEdit={(cust) => {
+          setDetailModalOpen(false);
+          handleEdit(cust);
+        }}
         onNewSale={handleNewSale}
+      />
+
+      {/* Customer Form Modal: Create & Edit (UC27 & UC28) */}
+      <CustomerFormModal
+        show={formModalOpen}
+        onHide={() => setFormModalOpen(false)}
+        mode={formMode}
+        customer={editingCustomer}
+        onSubmit={handleFormSubmit}
+        loading={formSubmitting}
+      />
+
+      {/* Customer Delete Modal: Soft Delete (UC31) */}
+      <CustomerDeleteModal
+        show={deleteModalOpen}
+        onHide={() => setDeleteModalOpen(false)}
+        customer={deletingCustomer}
+        onConfirm={handleConfirmDelete}
+        loading={deleteSubmitting}
       />
     </div>
   );

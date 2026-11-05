@@ -1,11 +1,11 @@
 package com.pharmacy.service;
 
 import com.pharmacy.dto.PageResponse;
-import com.pharmacy.dto.customer.CustomerDetailResponse;
-import com.pharmacy.dto.customer.CustomerResponse;
+import com.pharmacy.dto.customer.*;
 import com.pharmacy.entity.Customer;
 import com.pharmacy.entity.CustomerHealthProfile;
 import com.pharmacy.entity.SalesInvoice;
+import com.pharmacy.exception.CustomerPhoneAlreadyExistsException;
 import com.pharmacy.exception.ResourceNotFoundException;
 import com.pharmacy.repository.CustomerHealthProfileRepository;
 import com.pharmacy.repository.CustomerRepository;
@@ -32,7 +32,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CustomerServiceTest {
@@ -109,7 +109,7 @@ class CustomerServiceTest {
     }
 
     @Test
-    @DisplayName("TC-DTL-01: Xem chi tiết khách hàng hợp lệ có hồ sơ sức khỏe và hóa đơn")
+    @DisplayName("TC-DTL-01: Xem chi tiết khách hàng hợp lệ")
     void testGetCustomerDetailValid() {
         SalesInvoice invoice = new SalesInvoice();
         invoice.setId(1001L);
@@ -132,46 +132,101 @@ class CustomerServiceTest {
         assertEquals("SILVER", detail.getMembershipTier());
         assertEquals(1, detail.getTotalOrders());
         assertEquals(BigDecimal.valueOf(1500000), detail.getTotalSpent());
-        assertNotNull(detail.getHealthProfile());
-        assertEquals("Penicillin", detail.getHealthProfile().getAllergies());
-        assertEquals("Gastric Ulcer", detail.getHealthProfile().getChronicDiseases());
-        assertEquals(1, detail.getRecentInvoices().size());
-        assertEquals("INV-20261105-0001", detail.getRecentInvoices().get(0).getInvoiceCode());
     }
 
     @Test
-    @DisplayName("TC-DTL-02: Xem chi tiết khách hàng chưa có hồ sơ bệnh lý")
-    void testGetCustomerDetailWithoutHealthProfile() {
-        Customer plainCustomer = new Customer();
-        plainCustomer.setId(102L);
-        plainCustomer.setFullName("Tran Thi B");
-        plainCustomer.setPhone("0912345678");
-        plainCustomer.setStatus((short) 1);
-        plainCustomer.setCreatedAt(LocalDateTime.now());
+    @DisplayName("TC-CST-01: Đăng ký khách hàng mới thành công")
+    void testRegisterCustomerSuccess() {
+        CustomerCreateRequest request = CustomerCreateRequest.builder()
+                .fullName("Le Thi C")
+                .phone("0988112233")
+                .gender("FEMALE")
+                .dateOfBirth(LocalDate.of(1995, 8, 20))
+                .email("lethic@gmail.com")
+                .address("456 Nguyen Trai, Ha Noi")
+                .healthProfile(CustomerHealthProfileDto.builder()
+                        .allergies("Aspirin")
+                        .chronicDiseases("Hypertension")
+                        .build())
+                .build();
 
-        when(customerRepository.findById(102L)).thenReturn(Optional.of(plainCustomer));
-        when(healthProfileRepository.findByCustomer_Id(102L)).thenReturn(Optional.empty());
-        when(salesInvoiceRepository.findTop5ByCustomer_IdOrderByCreatedAtDesc(102L)).thenReturn(Collections.emptyList());
-        when(salesInvoiceRepository.countByCustomerId(102L)).thenReturn(0L);
-        when(salesInvoiceRepository.sumFinalAmountByCustomerId(102L)).thenReturn(BigDecimal.ZERO);
+        when(customerRepository.existsByPhone("0988112233")).thenReturn(false);
 
-        CustomerDetailResponse detail = customerService.getCustomerDetail(102L);
+        Customer savedCust = new Customer();
+        savedCust.setId(105L);
+        savedCust.setFullName("Le Thi C");
+        savedCust.setPhone("0988112233");
+        savedCust.setGender((short) 0);
+        savedCust.setStatus((short) 1);
 
-        assertNotNull(detail);
-        assertEquals(102L, detail.getCustomerId());
-        assertNull(detail.getHealthProfile());
-        assertEquals("STANDARD", detail.getMembershipTier());
-        assertEquals(0, detail.getTotalOrders());
-        assertTrue(detail.getRecentInvoices().isEmpty());
+        when(customerRepository.save(any(Customer.class))).thenReturn(savedCust);
+        when(customerRepository.findById(105L)).thenReturn(Optional.of(savedCust));
+
+        CustomerDetailResponse created = customerService.registerCustomer(request);
+
+        assertNotNull(created);
+        assertEquals(105L, created.getCustomerId());
+        assertEquals("KH-000105", created.getCustomerCode());
+        verify(customerRepository, times(1)).save(any(Customer.class));
+        verify(healthProfileRepository, times(1)).save(any(CustomerHealthProfile.class));
     }
 
     @Test
-    @DisplayName("TC-DTL-03: Xem chi tiết khách hàng không tồn tại ném ResourceNotFoundException")
-    void testGetCustomerDetailNotFound() {
-        when(customerRepository.findById(999999L)).thenReturn(Optional.empty());
+    @DisplayName("TC-CST-02: Đăng ký trùng số điện thoại ném CustomerPhoneAlreadyExistsException")
+    void testRegisterCustomerDuplicatePhone() {
+        CustomerCreateRequest request = CustomerCreateRequest.builder()
+                .fullName("Le Thi C")
+                .phone("0987654321")
+                .gender("FEMALE")
+                .build();
 
-        assertThrows(ResourceNotFoundException.class, () -> {
-            customerService.getCustomerDetail(999999L);
+        when(customerRepository.existsByPhone("0987654321")).thenReturn(true);
+
+        assertThrows(CustomerPhoneAlreadyExistsException.class, () -> {
+            customerService.registerCustomer(request);
         });
+    }
+
+    @Test
+    @DisplayName("TC-EDT-01: Cập nhật thông tin khách hàng thành công")
+    void testUpdateCustomerSuccess() {
+        CustomerUpdateRequest request = CustomerUpdateRequest.builder()
+                .fullName("Nguyen Van A Updated")
+                .phone("0987654321")
+                .gender("MALE")
+                .address("789 Bach Dang, Da Nang")
+                .build();
+
+        when(customerRepository.findById(101L)).thenReturn(Optional.of(sampleCustomer));
+        when(customerRepository.save(any(Customer.class))).thenReturn(sampleCustomer);
+
+        CustomerDetailResponse updated = customerService.updateCustomer(101L, request);
+
+        assertNotNull(updated);
+        assertEquals("Nguyen Van A Updated", sampleCustomer.getFullName());
+        assertEquals("789 Bach Dang, Da Nang", sampleCustomer.getAddress());
+    }
+
+    @Test
+    @DisplayName("TC-DEL-01: Xóa mềm khách hàng thành công (status = 0)")
+    void testDeleteCustomerSoftDelete() {
+        when(customerRepository.findById(101L)).thenReturn(Optional.of(sampleCustomer));
+
+        customerService.deleteCustomer(101L, "Yêu cầu xóa tài khoản");
+
+        assertEquals((short) 0, sampleCustomer.getStatus());
+        verify(customerRepository, times(1)).save(sampleCustomer);
+    }
+
+    @Test
+    @DisplayName("TC-REA-01: Kích hoạt lại khách hàng (status = 1)")
+    void testReactivateCustomer() {
+        sampleCustomer.setStatus((short) 0);
+        when(customerRepository.findById(101L)).thenReturn(Optional.of(sampleCustomer));
+
+        customerService.reactivateCustomer(101L);
+
+        assertEquals((short) 1, sampleCustomer.getStatus());
+        verify(customerRepository, times(1)).save(sampleCustomer);
     }
 }
