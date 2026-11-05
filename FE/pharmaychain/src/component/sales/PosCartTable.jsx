@@ -43,8 +43,8 @@ export default function PosCartTable({
                 <h4 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
                     Đơn hàng chưa có sản phẩm nào
                 </h4>
-                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', maxWidth: 400, lineHeight: 1.5 }}>
-                    Quét mã vạch Barcode trên hộp thuốc hoặc bấm phím <kbd style={{ padding: '2px 7px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, fontWeight: 700, color: '#334155' }}>F2</kbd> để tìm kiếm thuốc và thêm vào đơn.
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', maxWidth: 420, lineHeight: 1.5 }}>
+                    Tìm kiếm tên thuốc ở thanh tìm kiếm phía trên hoặc quét mã vạch sản phẩm để thêm vào đơn hàng.
                 </p>
             </div>
         );
@@ -85,13 +85,13 @@ export default function PosCartTable({
                     className="btn-pms btn-pms-secondary"
                     style={{ fontSize: 12, padding: '4px 10px', color: '#ef4444', height: 30 }}
                     onClick={onClearCart}
-                    title="Xóa toàn bộ giỏ hàng (ESC)"
+                    title="Xóa toàn bộ giỏ hàng"
                 >
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ marginRight: 4 }}>
                         <polyline points="3 6 5 6 21 6" />
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                     </svg>
-                    Xóa tất cả (ESC)
+                    Xóa tất cả
                 </button>
             </div>
 

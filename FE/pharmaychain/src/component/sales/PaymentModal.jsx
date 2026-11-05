@@ -82,7 +82,7 @@ export default function PaymentModal({
                         </div>
                         <div>
                             <div className="pms-modal-title" style={{ color: 'var(--brand-primary, #059669)', fontSize: 17 }}>
-                                Thanh Toán Hóa Đơn (F9)
+                                Thanh Toán Hóa Đơn
                             </div>
                             <div className="pms-modal-sub">
                                 Xác nhận phương thức và thu tiền đơn bán lẻ

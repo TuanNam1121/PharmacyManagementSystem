@@ -12,19 +12,6 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
     const inputRef = useRef(null);
     const dropdownRef = useRef(null);
 
-    // Global shortcut F2 to focus
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === 'F2') {
-                e.preventDefault();
-                inputRef.current?.focus();
-                inputRef.current?.select();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
-
     // Debounced search
     useEffect(() => {
         if (!searchTerm.trim()) {
@@ -155,7 +142,7 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
                         fontWeight: 500,
                         color: 'var(--text-primary)',
                     }}
-                    placeholder="Quét mã vạch Barcode hoặc tìm tên thuốc, hoạt chất, số lô... (Phím tắt F2)"
+                    placeholder="Tìm kiếm thuốc theo tên, hoạt chất, số lô hoặc quét mã vạch Barcode..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={handleKeyDown}
@@ -179,6 +166,7 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
                             display: 'flex',
                             alignItems: 'center',
                         }}
+                        title="Xóa tìm kiếm"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="18" y1="6" x2="6" y2="18" />
@@ -188,23 +176,15 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
                 )}
 
                 <div style={{
-                    paddingRight: 12,
+                    paddingRight: 14,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 6
+                    gap: 6,
+                    color: '#94a3b8'
                 }}>
-                    <span style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        background: '#f1f5f9',
-                        color: '#64748b',
-                        padding: '3px 8px',
-                        borderRadius: 5,
-                        border: '1px solid #e2e8f0',
-                        pointerEvents: 'none',
-                    }}>
-                        F2
-                    </span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" title="Hỗ trợ máy quét mã vạch">
+                        <path d="M3 5v4M3 15v4M21 5v4M21 15v4M7 8v8M11 8v8M14 8v8M17 8v8" />
+                    </svg>
                 </div>
             </div>
 

@@ -89,49 +89,6 @@ export default function PosCounterPage() {
         else setTenderedCash(String(val));
     };
 
-    // Global keyboard hotkeys: F2, F4, F8, F9, ESC
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === 'F4') {
-                e.preventDefault();
-                setCustomerModalOpen(true);
-            } else if (e.key === 'F8') {
-                e.preventDefault();
-                holdCurrentOrder();
-            } else if (e.key === 'F9') {
-                e.preventDefault();
-                if (cartItems.length > 0 && currentShift) {
-                    executeCheckout();
-                }
-            } else if (e.key === 'Escape') {
-                if (paymentModalOpen) setPaymentModalOpen(false);
-                else if (customerModalOpen) setCustomerModalOpen(false);
-                else if (historyDrawerOpen) setHistoryDrawerOpen(false);
-                else if (returnModalOpen) setReturnModalOpen(false);
-                else if (cartItems.length > 0) {
-                    if (window.confirm('Bạn có chắc muốn xóa toàn bộ sản phẩm trong giỏ hàng?')) {
-                        clearCart();
-                    }
-                }
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [
-        cartItems.length,
-        currentShift,
-        paymentModalOpen,
-        customerModalOpen,
-        historyDrawerOpen,
-        returnModalOpen,
-        holdCurrentOrder,
-        clearCart,
-        setCustomerModalOpen,
-        setPaymentModalOpen,
-        setHistoryDrawerOpen,
-        setReturnModalOpen,
-    ]);
-
     // Handle shift close trigger
     const onTriggerCloseShift = async () => {
         await fetchSummary();
@@ -415,7 +372,7 @@ export default function PosCounterPage() {
                         onClearCart={clearCart}
                     />
 
-                    {/* Hotkeys Reference Footer */}
+                    {/* Operational Status Footer */}
                     <div style={{
                         display: 'flex',
                         flexWrap: 'wrap',
@@ -428,12 +385,15 @@ export default function PosCounterPage() {
                         fontSize: 12,
                         color: 'var(--text-secondary)'
                     }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
-                            <span><kbd style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 6px', borderRadius: 4, fontWeight: 700, color: '#0f172a' }}>F2</kbd> Tìm kiếm thuốc</span>
-                            <span><kbd style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 6px', borderRadius: 4, fontWeight: 700, color: '#0f172a' }}>F4</kbd> Chọn hội viên</span>
-                            <span><kbd style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 6px', borderRadius: 4, fontWeight: 700, color: '#0f172a' }}>F8</kbd> Lưu tạm đơn</span>
-                            <span><kbd style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 6px', borderRadius: 4, fontWeight: 700, color: '#0f172a' }}>F9</kbd> Thanh toán nhanh</span>
-                            <span><kbd style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '2px 6px', borderRadius: 4, fontWeight: 700, color: '#0f172a' }}>ESC</kbd> Hủy giỏ hàng</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14 }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#059669', fontWeight: 600 }}>
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} />
+                                Hệ thống POS sẵn sàng bán lẻ
+                            </span>
+                            <span>•</span>
+                            <span>Kho xuất: <strong>Kho Chi Nhánh (Xuất theo FEFO)</strong></span>
+                            <span>•</span>
+                            <span>Mặt hàng trong giỏ: <strong style={{ color: '#0f172a' }}>{cartItems.length}</strong></span>
                         </div>
                         <span style={{ fontWeight: 600, color: 'var(--brand-primary)' }}>
                             PharmaChain POS v2.0
@@ -477,7 +437,7 @@ export default function PosCounterPage() {
                                             <circle cx="12" cy="7" r="4" />
                                         </svg>
                                         <span style={{ fontSize: 12, fontWeight: 700, color: customer ? 'var(--brand-primary)' : '#475569' }}>
-                                            {customer ? 'Hội viên nhà thuốc' : 'Khách hàng (F4)'}
+                                            {customer ? 'Hội viên nhà thuốc' : 'Khách hàng'}
                                         </span>
                                     </div>
 
@@ -487,7 +447,7 @@ export default function PosCounterPage() {
                                         style={{ fontSize: 11, padding: '2px 8px', height: 24, fontWeight: 600 }}
                                         onClick={() => setCustomerModalOpen(true)}
                                     >
-                                        {customer ? 'Đổi khách' : '+ Chọn khách (F4)'}
+                                        {customer ? 'Đổi khách' : '+ Chọn khách hàng'}
                                     </button>
                                 </div>
 
@@ -775,7 +735,7 @@ export default function PosCounterPage() {
                                             <line x1="1" y1="10" x2="23" y2="10" />
                                         </svg>
                                     )}
-                                    {checkoutSubmitting ? 'Đang thanh toán...' : 'THANH TOÁN & IN HÓA ĐƠN (F9)'}
+                                    {checkoutSubmitting ? 'Đang thanh toán...' : 'THANH TOÁN & IN HÓA ĐƠN'}
                                 </button>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -786,16 +746,20 @@ export default function PosCounterPage() {
                                         onClick={holdCurrentOrder}
                                         disabled={cartItems.length === 0}
                                     >
-                                        Lưu tạm đơn (F8)
+                                        Lưu tạm đơn
                                     </button>
                                     <button
                                         type="button"
                                         className="btn-pms btn-pms-secondary"
                                         style={{ fontSize: 12, padding: '7px 4px', color: '#ef4444', height: 34 }}
-                                        onClick={clearCart}
+                                        onClick={() => {
+                                            if (window.confirm('Bạn có chắc muốn hủy và làm trống giỏ hàng hiện tại?')) {
+                                                clearCart();
+                                            }
+                                        }}
                                         disabled={cartItems.length === 0}
                                     >
-                                        Hủy đơn (ESC)
+                                        Hủy đơn
                                     </button>
                                 </div>
                             </div>

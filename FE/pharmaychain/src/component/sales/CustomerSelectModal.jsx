@@ -61,7 +61,7 @@ export default function CustomerSelectModal({
                         </div>
                         <div>
                             <div className="pms-modal-title" style={{ fontSize: 17 }}>
-                                Chọn Khách Hàng / Hội Viên (F4)
+                                Chọn Khách Hàng / Hội Viên
                             </div>
                             <div className="pms-modal-sub">
                                 Tích điểm thành viên và kiểm tra cảnh báo tiền sử dị ứng thuốc
