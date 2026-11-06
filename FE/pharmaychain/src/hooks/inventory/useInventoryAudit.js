@@ -1,30 +1,39 @@
 import { useState, useCallback, useEffect } from 'react';
-import { getAuditList, getAuditDetail, reviewAudit } from '../../api/InventoryAuditAPI';
+import {
+    getAuditList,
+    getAuditDetail,
+    requestAuditSession,
+    approveAuditRequest,
+    submitAuditCount,
+    reviewAudit,
+} from '../../api/InventoryAuditAPI';
 
 export const useInventoryAudit = () => {
-    // ── list state ──────────────────────────────────────────────────────────────
+    // ── List state ──────────────────────────────────────────────────────────────
     const [auditList, setAuditList] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(0);
     const [size] = useState(10);
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState(''); // '' | 0 | 1 | 2
+    const [statusFilter, setStatusFilter] = useState(''); // '' | 0 | 1 | 2 | 3 | 4
     const [listLoading, setListLoading] = useState(false);
 
-    // ── detail / modal state ────────────────────────────────────────────────────
+    // ── Modal states ────────────────────────────────────────────────────────────
     const [selectedAudit, setSelectedAudit] = useState(null);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
 
-    // ── review modal state ──────────────────────────────────────────────────────
+    const [requestModalOpen, setRequestModalOpen] = useState(false);
+    const [approveModalOpen, setApproveModalOpen] = useState(false);
+    const [countModalOpen, setCountModalOpen] = useState(false);
     const [reviewModalOpen, setReviewModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
-    // ── alerts ──────────────────────────────────────────────────────────────────
+    // ── Notifications ───────────────────────────────────────────────────────────
     const [error, setError] = useState(null);
     const [successMsg, setSuccessMsg] = useState(null);
 
-    // ── fetch list ───────────────────────────────────────────────────────────────
+    // ── Fetch list ──────────────────────────────────────────────────────────────
     const fetchList = useCallback(async () => {
         setListLoading(true);
         setError(null);
@@ -41,7 +50,7 @@ export const useInventoryAudit = () => {
 
     useEffect(() => { fetchList(); }, [fetchList]);
 
-    // ── open detail ──────────────────────────────────────────────────────────────
+    // ── View Detail ─────────────────────────────────────────────────────────────
     const openDetail = useCallback(async (audit) => {
         setSelectedAudit(audit);
         setDetailModalOpen(true);
@@ -56,50 +65,132 @@ export const useInventoryAudit = () => {
         }
     }, []);
 
-    // ── open review modal ────────────────────────────────────────────────────────
-    const openReview = useCallback((audit) => {
+    // ── 1. Pharmacist: Request Audit ────────────────────────────────────────────
+    const handleRequestAudit = useCallback(async (payload) => {
+        setSubmitting(true);
+        setError(null);
+        try {
+            const res = await requestAuditSession(payload);
+            setSuccessMsg(`Audit request ${res.code} submitted successfully. Waiting for Store Manager approval.`);
+            fetchList();
+        } catch (e) {
+            setError(e.message || 'Failed to request audit session');
+            throw e;
+        } finally {
+            setSubmitting(false);
+        }
+    }, [fetchList]);
+
+    // ── 2. Store Manager: Approve Request ───────────────────────────────────────
+    const openApproveModal = useCallback((audit) => {
         setSelectedAudit(audit);
-        setReviewModalOpen(true);
+        setApproveModalOpen(true);
     }, []);
 
-    // ── submit review ────────────────────────────────────────────────────────────
-    const handleReview = useCallback(async ({ decision, reviewNote }) => {
+    const handleApproveRequest = useCallback(async (payload) => {
+        setSubmitting(true);
+        setError(null);
+        try {
+            await approveAuditRequest(payload);
+            setSuccessMsg(payload.decision === 1 ? 'Audit request approved! Pharmacist may now start counting.' : 'Audit request rejected.');
+            fetchList();
+        } catch (e) {
+            setError(e.message || 'Failed to review audit request');
+            throw e;
+        } finally {
+            setSubmitting(false);
+        }
+    }, [fetchList]);
+
+    // ── 3. Pharmacist: Start Counting ───────────────────────────────────────────
+    const openCountModal = useCallback(async (audit) => {
+        setSelectedAudit(audit);
+        setCountModalOpen(true);
+        setDetailLoading(true);
+        try {
+            const detail = await getAuditDetail(audit.id);
+            setSelectedAudit(detail);
+        } catch (e) {
+            setError(e.message || 'Failed to load items for counting');
+        } finally {
+            setDetailLoading(false);
+        }
+    }, []);
+
+    const handleSubmitCount = useCallback(async (payload) => {
+        setSubmitting(true);
+        setError(null);
+        try {
+            await submitAuditCount(payload);
+            setSuccessMsg('Count results submitted successfully! Waiting for Manager final confirmation.');
+            fetchList();
+        } catch (e) {
+            setError(e.message || 'Failed to submit count results');
+            throw e;
+        } finally {
+            setSubmitting(false);
+        }
+    }, [fetchList]);
+
+    // ── 4. Store Manager: Final Review ──────────────────────────────────────────
+    const openReviewModal = useCallback(async (audit) => {
+        setSelectedAudit(audit);
+        setReviewModalOpen(true);
+        setDetailLoading(true);
+        try {
+            const detail = await getAuditDetail(audit.id);
+            setSelectedAudit(detail);
+        } catch (e) {
+            setError(e.message || 'Failed to load details for review');
+        } finally {
+            setDetailLoading(false);
+        }
+    }, []);
+
+    const handleFinalReview = useCallback(async ({ decision, reviewNote }) => {
         if (!selectedAudit) return;
         setSubmitting(true);
         setError(null);
         try {
             await reviewAudit({ auditId: selectedAudit.id, decision, reviewNote });
-            setSuccessMsg(
-                decision === 1
-                    ? `Successfully confirmed audit ${selectedAudit.code}`
-                    : `Successfully rejected audit ${selectedAudit.code} (recount requested)`
-            );
+            setSuccessMsg(decision === 3 ? `Audit ${selectedAudit.code} confirmed and approved!` : `Recount requested for audit ${selectedAudit.code}`);
             setReviewModalOpen(false);
             fetchList();
         } catch (e) {
-            setError(e.message || 'Audit review failed');
+            setError(e.message || 'Final review failed');
         } finally {
             setSubmitting(false);
         }
     }, [selectedAudit, fetchList]);
 
     return {
-        // list
+        // List
         auditList, total, page, setPage, size,
         search, setSearch,
         statusFilter, setStatusFilter,
         listLoading,
-        // detail
+        // Selected & Detail
         selectedAudit,
         detailModalOpen, setDetailModalOpen,
         detailLoading,
         openDetail,
-        // review
+        // Step 1: Request
+        requestModalOpen, setRequestModalOpen,
+        handleRequestAudit,
+        // Step 2: Approve Request
+        approveModalOpen, setApproveModalOpen,
+        openApproveModal,
+        handleApproveRequest,
+        // Step 3: Count
+        countModalOpen, setCountModalOpen,
+        openCountModal,
+        handleSubmitCount,
+        // Step 4: Final Review
         reviewModalOpen, setReviewModalOpen,
-        openReview,
-        handleReview,
+        openReviewModal,
+        handleFinalReview,
+        // Common
         submitting,
-        // alerts
         error, setError,
         successMsg, setSuccessMsg,
         fetchList,

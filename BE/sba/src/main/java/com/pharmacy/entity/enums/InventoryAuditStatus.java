@@ -4,9 +4,11 @@ import lombok.Getter;
 
 @Getter
 public enum InventoryAuditStatus {
-    PENDING((short) 0, "Pending Review"),
-    APPROVED((short) 1, "Confirmed / Approved"),
-    REJECTED((short) 2, "Rejected / Recount");
+    REQUESTED((short) 0, "Requested / Pending Approval"),
+    APPROVED_TO_COUNT((short) 1, "Approved / Counting in Progress"),
+    SUBMITTED_FOR_REVIEW((short) 2, "Submitted for Review"),
+    CONFIRMED((short) 3, "Confirmed & Approved"),
+    REJECTED((short) 4, "Rejected / Recount");
 
     private final Short code;
     private final String label;
@@ -17,22 +19,24 @@ public enum InventoryAuditStatus {
     }
 
     public static InventoryAuditStatus fromCode(Short code) {
-        if (code == null) {
+        if (code == null)
             return null;
-        }
         for (InventoryAuditStatus status : values()) {
-            if (status.code.equals(code)) {
+            if (status.code.equals(code))
                 return status;
-            }
         }
         return null;
     }
 
     public static String resolveLabel(Short status) {
-        return switch (status == null ? 0 : status.intValue()) {
-            case 0 -> PENDING.label;
-            case 1 -> APPROVED.label;
-            case 2 -> REJECTED.label;
+        if (status == null)
+            return "Unknown";
+        return switch (status.intValue()) {
+            case 0 -> REQUESTED.label;
+            case 1 -> APPROVED_TO_COUNT.label;
+            case 2 -> SUBMITTED_FOR_REVIEW.label;
+            case 3 -> CONFIRMED.label;
+            case 4 -> REJECTED.label;
             default -> "Unknown";
         };
     }

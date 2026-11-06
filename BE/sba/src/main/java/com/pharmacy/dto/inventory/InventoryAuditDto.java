@@ -16,7 +16,12 @@ import java.util.List;
 public class InventoryAuditDto {
     private Long id;
     private String code;
-    private Short status; // 0=Pending, 1=Approved, 2=Rejected
+    private Long storeId;
+    private String storeName;
+    private String requestedByUsername;
+    private String countedByUsername;
+    private String reviewedByUsername;
+    private Short status; // 0=Requested, 1=ApprovedToCount, 2=Submitted, 3=Confirmed, 4=Rejected
     private String statusLabel;
     private LocalDate auditDate;
     private String reviewNote;
