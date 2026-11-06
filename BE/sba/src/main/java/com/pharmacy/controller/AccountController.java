@@ -1,6 +1,12 @@
 package com.pharmacy.controller;
 
-import com.pharmacy.dto.*;
+import com.pharmacy.dto.ApiResponse;
+import com.pharmacy.dto.PageResponse;
+import com.pharmacy.dto.account.AccountCreateRequest;
+import com.pharmacy.dto.account.AccountDetailResponse;
+import com.pharmacy.dto.account.AccountResponse;
+import com.pharmacy.dto.account.AccountUpdateRequest;
+import com.pharmacy.dto.account.RoleAssignRequest;
 import com.pharmacy.service.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,6 +43,15 @@ public class AccountController {
         return ResponseEntity.ok(ApiResponse.success("Account updated successfully", response));
     }
 
+    @PutMapping("/{id}/role")
+    @Operation(summary = "Assign role to account")
+    public ResponseEntity<ApiResponse<AccountResponse>> assignRole(
+            @PathVariable Long id,
+            @Valid @RequestBody RoleAssignRequest request) {
+        AccountResponse response = accountService.assignRole(id, request.getRoleId());
+        return ResponseEntity.ok(ApiResponse.success("Role assigned successfully", response));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get account details")
     public ResponseEntity<ApiResponse<AccountDetailResponse>> getAccountDetail(
@@ -61,11 +76,12 @@ public class AccountController {
     }
 
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Change account status (Active/Inactive)")
+    @Operation(summary = "Change account status (Active/Disabled/Locked)")
     public ResponseEntity<ApiResponse<Void>> updateAccountStatus(
             @PathVariable Long id,
-            @RequestParam Short status) {
-        accountService.updateAccountStatus(id, status);
+            @RequestParam Short status,
+            @RequestParam(required = false) String reason) {
+        accountService.updateAccountStatus(id, status, reason);
         return ResponseEntity.ok(ApiResponse.success("Account status updated successfully", null));
     }
 }

@@ -1,5 +1,6 @@
 package com.pharmacy.entity;
 
+import com.pharmacy.entity.enums.ProductStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 public class Product {
     @Id
     @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Size(max = 50)
@@ -77,7 +79,7 @@ public class Product {
 
     @ColumnDefault("1")
     @Column(name = "status", columnDefinition = "tinyint not null")
-    private Short status;
+    private ProductStatus status;
 
     @NotNull
     @ColumnDefault("sysdatetime()")
@@ -86,4 +88,10 @@ public class Product {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
+
 }

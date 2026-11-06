@@ -1,12 +1,13 @@
 package com.pharmacy.entity.enums;
 
+import com.pharmacy.entity.converter.PersistenceEnum;
 import lombok.Getter;
 
 @Getter
-public enum AccountStatus {
-    LOCKED((short) 0, "Locked"),
+public enum AccountStatus implements PersistenceEnum<Short> {
+    DISABLED((short) 0, "Disabled"),
     ACTIVE((short) 1, "Active"),
-    INACTIVE((short) 2, "Inactive");
+    LOCKED((short) 2, "Locked");
 
     private final Short code;
     private final String label;
@@ -14,6 +15,11 @@ public enum AccountStatus {
     AccountStatus(Short code, String label) {
         this.code = code;
         this.label = label;
+    }
+
+    @Override
+    public Short getValue() {
+        return code;
     }
 
     public static AccountStatus fromCode(Short code) {
@@ -26,6 +32,10 @@ public enum AccountStatus {
             }
         }
         return null;
+    }
+
+    public static AccountStatus fromValue(Short value) {
+        return fromCode(value);
     }
 
     public static String resolveLabel(Short code) {

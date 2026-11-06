@@ -1,5 +1,6 @@
-package com.pharmacy.dto;
+package com.pharmacy.dto.account;
 
+import com.pharmacy.dto.RoleDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,6 +22,7 @@ public class AccountDetailResponse {
     private String email;
     private String phone;
     private Short status;
+    private String statusLabel;
     private LocalDateTime lastLoginAt;
     private Integer failedLoginCount;
     private LocalDateTime createdAt;

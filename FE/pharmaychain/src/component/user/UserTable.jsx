@@ -1,13 +1,5 @@
 import { formatDate, getInitials } from '../../utils/format';
 
-const ROLE_COLORS = {
-  ADMIN: 'badge-purple',
-  MANAGER: 'badge-blue',
-  PHARMACIST: 'badge-emerald',
-  WAREHOUSE: 'badge-amber',
-  CASHIER: 'badge-teal',
-};
-
 function getRoleBadgeStyle(roleCode) {
   const code = (roleCode || '').toUpperCase();
   if (code.includes('ADMIN')) return { bg: 'rgba(139, 92, 246, 0.15)', text: '#a78bfa', border: 'rgba(139, 92, 246, 0.3)' };
@@ -24,7 +16,8 @@ export default function UserTable({
   size = 10,
   onView,
   onEdit,
-  onToggleStatus,
+  onAssignRole,
+  onLockUnlock,
 }) {
   if (loading) {
     return (
@@ -56,6 +49,38 @@ export default function UserTable({
     );
   }
 
+  const renderStatusBadge = (status) => {
+    const s = Number(status);
+    if (s === 1) {
+      return (
+        <span className="pms-badge pms-badge-success">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+          Active
+        </span>
+      );
+    }
+    if (s === 2) {
+      return (
+        <span className="pms-badge pms-badge-danger">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+          Locked
+        </span>
+      );
+    }
+    return (
+      <span className="pms-badge pms-badge-neutral">
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="12" r="10" />
+        </svg>
+        Disabled
+      </span>
+    );
+  };
+
   return (
     <div className="pms-card">
       <div className="pms-table-wrap">
@@ -68,12 +93,13 @@ export default function UserTable({
               <th>Contact Info</th>
               <th>Status</th>
               <th>Registered At</th>
-              <th className="text-right" style={{ width: 140 }}>Actions</th>
+              <th className="text-right" style={{ width: 175 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {users.map((u, idx) => {
               const isActive = Number(u.status) === 1;
+              const hasRole = Boolean(u.roleName || u.roleCode);
               const roleBadge = getRoleBadgeStyle(u.roleCode);
 
               return (
@@ -130,15 +156,15 @@ export default function UserTable({
                         borderRadius: 6,
                         fontSize: 11.5,
                         fontWeight: 600,
-                        backgroundColor: roleBadge.bg,
-                        color: roleBadge.text,
-                        border: `1px solid ${roleBadge.border}`,
+                        backgroundColor: hasRole ? roleBadge.bg : 'rgba(148, 163, 184, 0.12)',
+                        color: hasRole ? roleBadge.text : 'var(--text-muted)',
+                        border: `1px solid ${hasRole ? roleBadge.border : 'rgba(148, 163, 184, 0.25)'}`,
                       }}
                     >
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
                         <circle cx="12" cy="12" r="6" />
                       </svg>
-                      {u.roleName || u.roleCode || 'No Role'}
+                      {u.roleName || u.roleCode || 'Unassigned'}
                     </span>
                   </td>
                   <td>
@@ -152,21 +178,7 @@ export default function UserTable({
                     )}
                   </td>
                   <td>
-                    {isActive ? (
-                      <span className="pms-badge pms-badge-success">
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
-                          <circle cx="12" cy="12" r="10" />
-                        </svg>
-                        Active
-                      </span>
-                    ) : (
-                      <span className="pms-badge pms-badge-danger">
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
-                          <circle cx="12" cy="12" r="10" />
-                        </svg>
-                        Inactive / Locked
-                      </span>
-                    )}
+                    {renderStatusBadge(u.status)}
                   </td>
                   <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                     {formatDate(u.createdAt)}
@@ -185,10 +197,10 @@ export default function UserTable({
                         </svg>
                       </button>
 
-                      {/* Edit */}
+                      {/* Edit (UC08) */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
-                        title="Edit User Profile & Role"
+                        title="Edit User Profile"
                         onClick={() => onEdit(u)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -197,14 +209,26 @@ export default function UserTable({
                         </svg>
                       </button>
 
-                      {/* Lock / Unlock Toggle */}
+                      {/* Assign Role (Dedicated Action) */}
+                      <button
+                        className="btn-pms btn-pms-ghost btn-pms-sm"
+                        style={{ color: 'var(--brand-primary)' }}
+                        title="Assign Role"
+                        onClick={() => onAssignRole && onAssignRole(u)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                      </button>
+
+                      {/* Lock / Unlock (UC10) */}
                       <button
                         className={`btn-pms btn-pms-sm ${isActive ? 'btn-pms-ghost' : 'btn-pms-outline'}`}
                         style={{
                           color: isActive ? 'var(--status-danger)' : 'var(--brand-primary)',
                         }}
-                        title={isActive ? 'Lock Account' : 'Unlock Account'}
-                        onClick={() => onToggleStatus(u.id, u.status)}
+                        title={isActive ? 'Lock or Inactive Account' : 'Active Account'}
+                        onClick={() => onLockUnlock(u)}
                       >
                         {isActive ? (
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

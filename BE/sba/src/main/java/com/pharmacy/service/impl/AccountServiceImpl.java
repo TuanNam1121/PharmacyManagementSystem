@@ -1,10 +1,16 @@
 package com.pharmacy.service.impl;
 
-import com.pharmacy.dto.*;
+import com.pharmacy.dto.PageResponse;
+import com.pharmacy.dto.RoleDto;
+import com.pharmacy.dto.account.AccountCreateRequest;
+import com.pharmacy.dto.account.AccountDetailResponse;
+import com.pharmacy.dto.account.AccountResponse;
+import com.pharmacy.dto.account.AccountUpdateRequest;
 import com.pharmacy.entity.Account;
 import com.pharmacy.entity.AccountInformation;
 import com.pharmacy.entity.Role;
 import com.pharmacy.entity.RolePermission;
+import com.pharmacy.entity.enums.AccountStatus;
 import com.pharmacy.exception.DuplicateResourceException;
 import com.pharmacy.exception.ResourceNotFoundException;
 import com.pharmacy.repository.AccountInformationRepository;
@@ -52,15 +58,26 @@ public class AccountServiceImpl implements AccountService {
             throw new DuplicateResourceException("Phone number '" + request.getPhone() + "' already exists");
         }
 
-        Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + request.getRoleId()));
+        // UC07: Newly created users initially have no role assigned (Unassigned / None)
+        Role role = null;
+        if (request.getRoleId() != null) {
+            role = roleRepository.findById(request.getRoleId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + request.getRoleId()));
+        }
+
+        AccountStatus initialStatus = request.getStatus() != null
+                ? AccountStatus.fromCode(request.getStatus())
+                : AccountStatus.ACTIVE;
+        if (initialStatus == null) {
+            initialStatus = AccountStatus.ACTIVE;
+        }
 
         Account account = new Account();
         account.setUsername(request.getUsername().trim());
         account.setEmail(request.getEmail().trim());
         account.setPhone(request.getPhone() != null ? request.getPhone().trim() : null);
         account.setPassword(passwordEncoder.encode(request.getPassword()));
-        account.setStatus(request.getStatus() != null ? request.getStatus() : com.pharmacy.entity.enums.AccountStatus.ACTIVE.getCode());
+        account.setStatus(initialStatus);
         account.setFailedLoginCount(0);
         account.setCreatedAt(LocalDateTime.now());
         account.setRole(role);
@@ -102,14 +119,15 @@ public class AccountServiceImpl implements AccountService {
             account.setPhone(null);
         }
 
-        Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + request.getRoleId()));
+        // UC08 Separation: Role is maintained separately via dedicated Assign Role modal
+        if (request.getRoleId() != null) {
+            Role role = roleRepository.findById(request.getRoleId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + request.getRoleId()));
+            account.setRole(role);
+        }
 
         account.setEmail(email);
-        account.setRole(role);
-        if (request.getStatus() != null) {
-            account.setStatus(request.getStatus());
-        }
+        // UC09/UC10 Separation: Status is NOT modified here; status changes must go through lock/unlock workflow.
         account.setUpdatedAt(LocalDateTime.now());
 
         AccountInformation accountInfo = account.getAccountInformation();
@@ -127,6 +145,25 @@ public class AccountServiceImpl implements AccountService {
         account.setAccountInformation(accountInfo);
         Account savedAccount = accountRepository.save(account);
 
+        return mapToAccountResponse(savedAccount);
+    }
+
+    @Override
+    @Transactional
+    public AccountResponse assignRole(Long id, Integer roleId) {
+        Account account = accountRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + id));
+
+        if (roleId != null) {
+            Role role = roleRepository.findById(roleId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + roleId));
+            account.setRole(role);
+        } else {
+            account.setRole(null);
+        }
+
+        account.setUpdatedAt(LocalDateTime.now());
+        Account savedAccount = accountRepository.save(account);
         return mapToAccountResponse(savedAccount);
     }
 
@@ -160,7 +197,8 @@ public class AccountServiceImpl implements AccountService {
                 .username(account.getUsername())
                 .email(account.getEmail())
                 .phone(account.getPhone())
-                .status(account.getStatus())
+                .status(account.getStatus() != null ? account.getStatus().getCode() : null)
+                .statusLabel(account.getStatus() != null ? account.getStatus().getLabel() : "Unknown")
                 .lastLoginAt(account.getLastLoginAt())
                 .failedLoginCount(account.getFailedLoginCount())
                 .createdAt(account.getCreatedAt())
@@ -184,9 +222,10 @@ public class AccountServiceImpl implements AccountService {
                 ? sortBy : "createdAt";
 
         Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size), Sort.by(direction, property));
+        AccountStatus statusEnum = status != null ? AccountStatus.fromCode(status) : null;
         Page<Account> accountPage = accountRepository.findAccountsWithFilters(
                 keyword != null && !keyword.trim().isEmpty() ? keyword.trim() : null,
-                status,
+                statusEnum,
                 roleId,
                 pageable
         );
@@ -207,12 +246,30 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional
-    public void updateAccountStatus(Long id, Short status) {
+    public void updateAccountStatus(Long id, Short status, String reason) {
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + id));
-        account.setStatus(status);
+
+        AccountStatus targetStatus = AccountStatus.fromCode(status);
+        if (targetStatus == null) {
+            throw new IllegalArgumentException("Invalid account status: " + status);
+        }
+
+        // UC10: Lock or disable requires a reason
+        if ((targetStatus == AccountStatus.LOCKED || targetStatus == AccountStatus.DISABLED)
+                && (reason == null || reason.trim().isEmpty())) {
+            throw new IllegalArgumentException("Lock reason is required when locking or disabling an account.");
+        }
+
+        account.setStatus(targetStatus);
         account.setUpdatedAt(LocalDateTime.now());
         accountRepository.save(account);
+    }
+
+    @Override
+    @Transactional
+    public void updateAccountStatus(Long id, Short status) {
+        updateAccountStatus(id, status, null);
     }
 
     private AccountResponse mapToAccountResponse(Account account) {
@@ -224,7 +281,8 @@ public class AccountServiceImpl implements AccountService {
                 .username(account.getUsername())
                 .email(account.getEmail())
                 .phone(account.getPhone())
-                .status(account.getStatus())
+                .status(account.getStatus() != null ? account.getStatus().getCode() : null)
+                .statusLabel(account.getStatus() != null ? account.getStatus().getLabel() : "Unknown")
                 .createdAt(account.getCreatedAt())
                 .fullName(info != null ? info.getFullName() : null)
                 .avatarUrl(info != null ? info.getAvatarUrl() : null)

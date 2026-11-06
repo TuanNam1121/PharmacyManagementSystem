@@ -1,4 +1,4 @@
-package com.pharmacy.dto;
+package com.pharmacy.dto.account;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,6 +19,7 @@ public class AccountResponse {
     private String email;
     private String phone;
     private Short status;
+    private String statusLabel;
     private LocalDateTime createdAt;
     private String fullName;
     private String avatarUrl;

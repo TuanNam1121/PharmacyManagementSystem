@@ -1,5 +1,6 @@
 package com.pharmacy.entity;
 
+import com.pharmacy.entity.enums.AccountStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -40,7 +41,7 @@ public class Account {
 
     @ColumnDefault("1")
     @Column(name = "status", columnDefinition = "tinyint not null")
-    private Short status;
+    private AccountStatus status;
 
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;

@@ -1,11 +1,13 @@
 package com.pharmacy.entity.enums;
 
+import com.pharmacy.entity.converter.PersistenceEnum;
 import lombok.Getter;
 
 @Getter
-public enum ProductStatus {
+public enum ProductStatus implements PersistenceEnum<Short> {
     INACTIVE((short) 0, "Inactive"),
-    ACTIVE((short) 1, "Active");
+    ACTIVE((short) 1, "Active"),
+    DISCONTINUED((short) 2, "Discontinued");
 
     private final Short code;
     private final String label;
@@ -13,6 +15,11 @@ public enum ProductStatus {
     ProductStatus(Short code, String label) {
         this.code = code;
         this.label = label;
+    }
+
+    @Override
+    public Short getValue() {
+        return code;
     }
 
     public static ProductStatus fromCode(Short code) {
@@ -25,6 +32,10 @@ public enum ProductStatus {
             }
         }
         return null;
+    }
+
+    public static ProductStatus fromValue(Short value) {
+        return fromCode(value);
     }
 
     public static String resolveLabel(Short code) {

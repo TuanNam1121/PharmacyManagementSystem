@@ -4,6 +4,7 @@ import {
   fetchAccountDetail,
   createAccount,
   updateAccount,
+  assignRole,
   updateAccountStatus,
   fetchRoles,
 } from '../../api/UserAPI';
@@ -103,12 +104,12 @@ export function useUsers() {
     }
   }, []);
 
-  // Create account
+  // Create account (UC07: role unassigned initially)
   const handleCreateUser = useCallback(async (payload) => {
     try {
       setError(null);
       await createAccount(payload);
-      setSuccessMsg('User account created successfully!');
+      setSuccessMsg('User account created successfully! Use "Assign Role" to grant permissions.');
       await loadAccounts();
       return true;
     } catch (err) {
@@ -117,12 +118,12 @@ export function useUsers() {
     }
   }, [loadAccounts]);
 
-  // Update account
+  // Update account (UC08: profile details only, role managed separately)
   const handleUpdateUser = useCallback(async (id, payload) => {
     try {
       setError(null);
       await updateAccount(id, payload);
-      setSuccessMsg('User account updated successfully!');
+      setSuccessMsg('User profile updated successfully!');
       await loadAccounts();
       if (detailUser && detailUser.id === id) {
         await loadDetail(id);
@@ -134,13 +135,33 @@ export function useUsers() {
     }
   }, [loadAccounts, detailUser, loadDetail]);
 
-  // Toggle account status (Active <-> Inactive)
-  const handleToggleStatus = useCallback(async (id, currentStatus) => {
+  // Assign role to account
+  const handleAssignRole = useCallback(async (id, roleId, userName) => {
     try {
       setError(null);
-      const newStatus = Number(currentStatus) === 1 ? 0 : 1;
-      await updateAccountStatus(id, newStatus);
-      const actionText = newStatus === 1 ? 'activated' : 'locked/deactivated';
+      await assignRole(id, roleId);
+      setSuccessMsg(`Role successfully assigned to ${userName || 'user'}`);
+      await loadAccounts();
+      if (detailUser && detailUser.id === id) {
+        await loadDetail(id);
+      }
+      return true;
+    } catch (err) {
+      setError(err.message || 'Failed to assign role.');
+      throw err;
+    }
+  }, [loadAccounts, detailUser, loadDetail]);
+
+  // Update account status (Lock / Disable / Unlock)
+  const handleToggleStatus = useCallback(async (id, targetStatus, reason) => {
+    try {
+      setError(null);
+      await updateAccountStatus(id, targetStatus, reason);
+      const actionText = Number(targetStatus) === 1
+        ? 'unlocked / activated'
+        : Number(targetStatus) === 2
+        ? 'locked'
+        : 'disabled';
       setSuccessMsg(`User account has been ${actionText} successfully.`);
       await loadAccounts();
       return true;
@@ -182,6 +203,7 @@ export function useUsers() {
     loadDetail,
     handleCreateUser,
     handleUpdateUser,
+    handleAssignRole,
     handleToggleStatus,
   };
 }

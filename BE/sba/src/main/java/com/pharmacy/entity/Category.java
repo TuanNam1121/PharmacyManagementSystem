@@ -1,5 +1,6 @@
 package com.pharmacy.entity;
 
+import com.pharmacy.entity.enums.CategoryStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -33,7 +34,7 @@ public class Category {
 
     @ColumnDefault("1")
     @Column(name = "status", columnDefinition = "tinyint not null")
-    private Short status;
+    private CategoryStatus status;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
