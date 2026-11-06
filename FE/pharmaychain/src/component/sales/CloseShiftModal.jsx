@@ -37,7 +37,12 @@ export default function CloseShiftModal({
             return;
         }
         setValError('');
-        onConfirm({ closingCash: cash, note: note.trim() });
+        onConfirm({
+            shiftId: shiftSummary.shiftId || shiftSummary.id,
+            closingCash: cash,
+            closingCashActual: cash,
+            note: note.trim()
+        });
     };
 
     return (

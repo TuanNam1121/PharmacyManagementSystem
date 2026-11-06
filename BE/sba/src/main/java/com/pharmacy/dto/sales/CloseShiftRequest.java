@@ -1,7 +1,7 @@
 package com.pharmacy.dto.sales;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,11 +15,11 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CloseShiftRequest {
-    @NotNull(message = "Mã ca làm việc không được để trống")
+    @JsonAlias({"shift_id"})
     private Long shiftId;
 
-    @NotNull(message = "Số tiền mặt thực kiểm không được để trống")
     @DecimalMin(value = "0.0", inclusive = true, message = "Số tiền thực tế phải lớn hơn hoặc bằng 0")
+    @JsonAlias({"closingCash", "closing_cash", "closing_cash_actual"})
     private BigDecimal closingCashActual;
 
     @Size(max = 255, message = "Ghi chú tối đa 255 ký tự")
