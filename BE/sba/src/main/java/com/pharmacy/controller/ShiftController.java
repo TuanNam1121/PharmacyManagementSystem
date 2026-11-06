@@ -83,3 +83,4 @@ public class ShiftController {
         return 1L; // Fallback to primary admin/cashier for unblocked local operation
     }
 }
+

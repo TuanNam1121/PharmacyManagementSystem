@@ -58,12 +58,16 @@ export function useShift() {
         }
     };
 
-    const handleCloseShift = async ({ closingCash, note }) => {
+    const handleCloseShift = async ({ shiftId, closingCash, closingCashActual, note }) => {
         setSubmitting(true);
         setError(null);
         try {
+            const resolvedShiftId = shiftId || currentShift?.shiftId || currentShift?.id || shiftSummary?.shiftId || shiftSummary?.id;
+            const cashVal = Number(closingCashActual ?? closingCash) || 0;
             const closedShift = await closeShift({
-                closingCash: Number(closingCash) || 0,
+                shiftId: resolvedShiftId,
+                closingCashActual: cashVal,
+                closingCash: cashVal,
                 note: note || '',
             });
             setCurrentShift(null);
@@ -100,3 +104,4 @@ export function useShift() {
 }
 
 export default useShift;
+

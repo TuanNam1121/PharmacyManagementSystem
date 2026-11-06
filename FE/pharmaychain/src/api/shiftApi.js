@@ -49,3 +49,4 @@ export default {
     getCurrentShift,
     getCurrentShiftSummary,
 };
+

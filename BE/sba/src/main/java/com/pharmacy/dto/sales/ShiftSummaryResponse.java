@@ -26,3 +26,4 @@ public class ShiftSummaryResponse {
     private BigDecimal refundCash;
     private BigDecimal expectedCash;
 }
+

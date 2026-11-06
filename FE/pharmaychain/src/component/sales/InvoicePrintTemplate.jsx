@@ -15,30 +15,55 @@ export default function InvoicePrintTemplate({
     };
 
     return (
-        <div className="pms-modal-backdrop" style={{ zIndex: 1100 }}>
-            <div className="pms-modal" style={{ maxWidth: 460, width: '100%', padding: 0, overflow: 'hidden' }}>
+        <div
+            className="pms-modal-overlay"
+            style={{ zIndex: 1300 }}
+            onClick={(e) => {
+                if (e.target === e.currentTarget) onClose();
+            }}
+        >
+            <div className="pms-modal" style={{ maxWidth: 480, width: '100%', padding: 0, overflow: 'hidden' }}>
                 <div className="pms-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 className="pms-modal-title" style={{ margin: 0, fontSize: 16 }}>
-                        Hóa Đơn Bán Lẻ ({invoice.invoiceCode})
-                    </h3>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                        <button
-                            type="button"
-                            className="btn-pms btn-pms-primary"
-                            style={{ fontSize: 12, padding: '4px 10px' }}
-                            onClick={handlePrint}
-                        >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{
+                            width: 36, height: 36, borderRadius: 8,
+                            background: 'var(--brand-primary-light)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: 'var(--brand-primary)'
+                        }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <polyline points="6 9 6 2 18 2 18 9" />
                                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
                                 <rect x="6" y="14" width="12" height="8" />
                             </svg>
-                            In Hóa Đơn (Print)
+                        </div>
+                        <div>
+                            <div className="pms-modal-title" style={{ fontSize: 16 }}>
+                                Hóa Đơn Bán Lẻ ({invoice.invoiceCode})
+                            </div>
+                            <div className="pms-modal-sub">
+                                Mẫu in phiếu thanh toán nhiệt K80
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                            type="button"
+                            className="btn-pms btn-pms-primary"
+                            style={{ fontSize: 13, padding: '6px 14px', height: 34, fontWeight: 700 }}
+                            onClick={handlePrint}
+                        >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 6 }}>
+                                <polyline points="6 9 6 2 18 2 18 9" />
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                                <rect x="6" y="14" width="12" height="8" />
+                            </svg>
+                            In Hóa Đơn
                         </button>
                         <button
                             type="button"
-                            className="btn-pms btn-pms-secondary"
-                            style={{ fontSize: 12, padding: '4px 8px' }}
+                            className="pms-modal-close"
                             onClick={onClose}
                         >
                             ✕
@@ -50,27 +75,27 @@ export default function InvoicePrintTemplate({
                     ref={printAreaRef}
                     className="pms-receipt-print-area"
                     style={{
-                        padding: '24px 28px',
+                        padding: '24px 30px',
                         background: '#fff',
                         fontFamily: "'Courier New', Courier, monospace, sans-serif",
                         fontSize: 12,
                         lineHeight: 1.5,
                         color: '#000',
-                        maxHeight: '75vh',
+                        maxHeight: '70vh',
                         overflowY: 'auto',
                     }}
                 >
                     {/* Header */}
                     <div style={{ textAlign: 'center', marginBottom: 14 }}>
-                        <div style={{ fontSize: 16, fontWeight: 800, textTransform: 'uppercase' }}>
-                            HỆ THỐNG NHÀ THUỐC PHARMACHAIN
+                        <div style={{ fontSize: 15, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                            NHÀ THUỐC PHARMACHAIN
                         </div>
-                        <div style={{ fontSize: 12 }}>{invoice.storeName || 'Chi nhánh Hà Nội'}</div>
-                        <div style={{ fontSize: 11, color: '#444' }}>Hotline: 1900 6868 - CSKH: 024.7300.8888</div>
+                        <div style={{ fontSize: 11, marginTop: 2 }}>{invoice.storeName || 'Chi nhánh Hà Nội'}</div>
+                        <div style={{ fontSize: 10, color: '#444' }}>Hotline: 1900 6868 - Dược sĩ tư vấn</div>
                         <div style={{ margin: '8px 0', borderBottom: '1px dashed #000' }}></div>
-                        <div style={{ fontSize: 14, fontWeight: 700 }}>PHIẾU THANH TOÁN BÁN LẺ</div>
-                        <div style={{ fontSize: 11 }}>Số HĐ: {invoice.invoiceCode}</div>
-                        <div style={{ fontSize: 11 }}>Ngày: {formatDateTime(invoice.createdAt || invoice.paidAt)}</div>
+                        <div style={{ fontSize: 14, fontWeight: 800 }}>HÓA ĐƠN THANH TOÁN</div>
+                        <div style={{ fontSize: 11 }}>Số HĐ: <strong>{invoice.invoiceCode}</strong></div>
+                        <div style={{ fontSize: 11 }}>Thời gian: {formatDateTime(invoice.createdAt || invoice.paidAt)}</div>
                     </div>
 
                     {/* Metadata */}
@@ -89,7 +114,7 @@ export default function InvoicePrintTemplate({
                             <tr style={{ borderBottom: '1px solid #000' }}>
                                 <th style={{ textAlign: 'left', paddingBottom: 4 }}>Tên thuốc</th>
                                 <th style={{ textAlign: 'center', width: 35, paddingBottom: 4 }}>SL</th>
-                                <th style={{ textAlign: 'right', width: 65, paddingBottom: 4 }}>Đơn giá</th>
+                                <th style={{ textAlign: 'right', width: 70, paddingBottom: 4 }}>Đơn giá</th>
                                 <th style={{ textAlign: 'right', width: 75, paddingBottom: 4 }}>T.Tiền</th>
                             </tr>
                         </thead>
@@ -97,14 +122,14 @@ export default function InvoicePrintTemplate({
                             {invoice.items?.map((item, idx) => (
                                 <React.Fragment key={idx}>
                                     <tr>
-                                        <td style={{ paddingTop: 4, fontWeight: 600 }}>{item.productName}</td>
-                                        <td style={{ textAlign: 'center', paddingTop: 4 }}>{item.quantity}</td>
-                                        <td style={{ textAlign: 'right', paddingTop: 4 }}>{money(item.unitPrice)}</td>
-                                        <td style={{ textAlign: 'right', paddingTop: 4, fontWeight: 600 }}>{money(item.lineTotal)}</td>
+                                        <td style={{ paddingTop: 5, fontWeight: 700 }}>{item.productName}</td>
+                                        <td style={{ textAlign: 'center', paddingTop: 5 }}>{item.quantity}</td>
+                                        <td style={{ textAlign: 'right', paddingTop: 5 }}>{money(item.unitPrice)}</td>
+                                        <td style={{ textAlign: 'right', paddingTop: 5, fontWeight: 700 }}>{money(item.lineTotal)}</td>
                                     </tr>
                                     {(item.dosageInstruction || item.batchNumber) && (
                                         <tr>
-                                            <td colSpan={4} style={{ fontSize: 10, color: '#555', paddingBottom: 4 }}>
+                                            <td colSpan={4} style={{ fontSize: 10, color: '#444', paddingBottom: 4 }}>
                                                 {item.batchNumber && `[Lô: ${item.batchNumber}] `}
                                                 {item.dosageInstruction && `HDSD: ${item.dosageInstruction}`}
                                             </td>
@@ -117,7 +142,7 @@ export default function InvoicePrintTemplate({
 
                     <div style={{ borderBottom: '1px dashed #000', margin: '10px 0' }}></div>
 
-                    {/* Totals */}
+                    {/* Financial Totals */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                             <span>Tổng tiền hàng:</span>
@@ -129,12 +154,12 @@ export default function InvoicePrintTemplate({
                                 <span>-{money(invoice.discountAmount)}</span>
                             </div>
                         )}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 800 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 800, borderTop: '1px solid #000', paddingTop: 4 }}>
                             <span>TỔNG CỘNG:</span>
                             <span>{money(invoice.finalAmount)}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Phương thức:</span>
+                            <span>Hình thức:</span>
                             <span>{invoice.paymentMethod || 'Tiền mặt'}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -142,24 +167,24 @@ export default function InvoicePrintTemplate({
                             <span>{money(invoice.paidAmount || invoice.finalAmount)}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Tiền thối lại:</span>
+                            <span>Tiền trả lại:</span>
                             <span>{money(invoice.changeAmount || 0)}</span>
                         </div>
                         {invoice.earnedPoints > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#059669', fontWeight: 600 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
                                 <span>Điểm tích lũy đợt này:</span>
                                 <span>+{invoice.earnedPoints} điểm</span>
                             </div>
                         )}
                     </div>
 
-                    <div style={{ borderBottom: '1px dashed #000', margin: '14px 0' }}></div>
+                    <div style={{ borderBottom: '1px dashed #000', margin: '12px 0' }}></div>
 
                     {/* Footer */}
                     <div style={{ textAlign: 'center', fontSize: 10, color: '#333' }}>
-                        <div>Thuốc đã mua vui lòng đổi trả trong vòng 48h kèm hóa đơn.</div>
-                        <div>Bảo quản nơi khô ráo, tránh ánh sáng trực tiếp.</div>
-                        <div style={{ marginTop: 6, fontWeight: 700 }}>CẢM ƠN QUÝ KHÁCH & HẸN GẶP LẠI!</div>
+                        <div>Thuốc đã mua vui lòng kiểm tra kỹ trước khi rời quầy.</div>
+                        <div>Hỗ trợ đổi trả trong 48h (với thuốc còn nguyên vẹn và có hóa đơn).</div>
+                        <div style={{ marginTop: 8, fontWeight: 800, fontSize: 11 }}>CẢM ƠN QUÝ KHÁCH & HẸN GẶP LẠI!</div>
                     </div>
                 </div>
 

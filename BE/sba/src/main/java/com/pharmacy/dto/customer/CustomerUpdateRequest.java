@@ -37,3 +37,4 @@ public class CustomerUpdateRequest {
     @Valid
     private CustomerHealthProfileDto healthProfile;
 }
+

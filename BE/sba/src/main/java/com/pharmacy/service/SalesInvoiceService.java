@@ -22,3 +22,4 @@ public interface SalesInvoiceService {
 
     List<SalesInvoiceResponse> getCustomerPurchaseHistory(Long customerId);
 }
+

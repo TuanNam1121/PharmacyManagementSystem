@@ -14,3 +14,4 @@ public interface ShiftService {
 
     ShiftSummaryResponse getCurrentShiftSummary(Long accountId);
 }
+

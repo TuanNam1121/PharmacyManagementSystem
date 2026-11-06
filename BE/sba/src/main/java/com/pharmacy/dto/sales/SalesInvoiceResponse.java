@@ -39,3 +39,4 @@ public class SalesInvoiceResponse {
     private String prescriptionCode;
     private List<SalesInvoiceItemResponse> items;
 }
+

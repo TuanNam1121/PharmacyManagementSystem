@@ -12,19 +12,6 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
     const inputRef = useRef(null);
     const dropdownRef = useRef(null);
 
-    // Global shortcut F2 to focus
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === 'F2') {
-                e.preventDefault();
-                inputRef.current?.focus();
-                inputRef.current?.select();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
-
     // Debounced search
     useEffect(() => {
         if (!searchTerm.trim()) {
@@ -54,7 +41,7 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
             } finally {
                 setLoading(false);
             }
-        }, 250);
+        }, 200);
 
         return () => clearTimeout(timer);
     }, [searchTerm, storeId]);
@@ -88,6 +75,7 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
             quantity: 1,
             availableQuantity: item.quantity,
             activeIngredient: item.activeIngredient,
+            isPrescription: item.isPrescription,
         });
         setSearchTerm('');
         setResults([]);
@@ -115,44 +103,89 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
     };
 
     return (
-        <div style={{ position: 'relative', width: '100%' }}>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <span style={{
-                    position: 'absolute', left: 14, color: 'var(--brand-primary, #059669)',
-                    display: 'flex', alignItems: 'center', pointerEvents: 'none'
+        <div style={{ position: 'relative', width: '100%', zIndex: 40 }}>
+            <div style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                background: '#fff',
+                borderRadius: '10px',
+                border: '1.5px solid var(--border-color)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                transition: 'border-color 0.15s, box-shadow 0.15s',
+            }}>
+                {/* Search Icon */}
+                <div style={{
+                    paddingLeft: 14,
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: 'var(--brand-primary)',
+                    pointerEvents: 'none'
                 }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                         <circle cx="11" cy="11" r="8" />
                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                     </svg>
-                </span>
+                </div>
 
                 <input
                     ref={inputRef}
                     type="text"
-                    className="pms-input"
                     style={{
-                        paddingLeft: 42,
-                        paddingRight: 80,
-                        height: 44,
+                        flex: 1,
+                        height: 46,
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        padding: '0 12px',
                         fontSize: 14,
                         fontWeight: 500,
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                        color: 'var(--text-primary)',
                     }}
-                    placeholder="Quét mã vạch Barcode hoặc tìm tên thuốc, hoạt chất... (F2)"
+                    placeholder="Tìm kiếm thuốc theo tên, hoạt chất, số lô hoặc quét mã vạch Barcode..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={handleKeyDown}
                     autoFocus
                 />
 
-                <span style={{
-                    position: 'absolute', right: 12, fontSize: 11, fontWeight: 700,
-                    background: '#e5e7eb', color: '#4b5563', padding: '2px 8px', borderRadius: 4,
-                    pointerEvents: 'none'
+                {searchTerm && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setSearchTerm('');
+                            setResults([]);
+                            inputRef.current?.focus();
+                        }}
+                        style={{
+                            border: 'none',
+                            background: 'transparent',
+                            cursor: 'pointer',
+                            color: '#9ca3af',
+                            padding: '4px 8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                        }}
+                        title="Xóa tìm kiếm"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                )}
+
+                <div style={{
+                    paddingRight: 14,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    color: '#94a3b8'
                 }}>
-                    F2
-                </span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" title="Hỗ trợ máy quét mã vạch">
+                        <path d="M3 5v4M3 15v4M21 5v4M21 15v4M7 8v8M11 8v8M14 8v8M17 8v8" />
+                    </svg>
+                </div>
             </div>
 
             {/* Dropdown search results */}
@@ -161,28 +194,28 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
                     ref={dropdownRef}
                     style={{
                         position: 'absolute',
-                        top: '100%',
+                        top: 'calc(100% + 6px)',
                         left: 0,
                         right: 0,
-                        zIndex: 1000,
+                        zIndex: 100,
                         background: '#fff',
-                        borderRadius: 8,
-                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                        borderRadius: 12,
+                        boxShadow: '0 16px 36px -4px rgba(0,0,0,0.18), 0 6px 12px -2px rgba(0,0,0,0.08)',
                         border: '1px solid var(--border-color)',
-                        marginTop: 4,
-                        maxHeight: 380,
+                        maxHeight: 400,
                         overflowY: 'auto',
                     }}
                 >
                     {loading && (
-                        <div style={{ padding: 14, textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
-                            Đang tìm kiếm kho thuốc...
+                        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
+                            <div className="spinner-border spinner-border-sm" style={{ marginRight: 8, color: 'var(--brand-primary)' }} />
+                            Đang tra cứu kho thuốc chi nhánh...
                         </div>
                     )}
 
                     {!loading && results.length === 0 && (
-                        <div style={{ padding: 14, textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
-                            Không tìm thấy thuốc khả dụng trong kho chi nhánh
+                        <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
+                            Không tìm thấy thuốc khả dụng trong kho hoặc thuốc đã hết hàng
                         </div>
                     )}
 
@@ -194,46 +227,79 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
                                 onClick={() => handleSelect(item)}
                                 onMouseEnter={() => setSelectedIndex(idx)}
                                 style={{
-                                    padding: '10px 14px',
+                                    padding: '12px 16px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
                                     cursor: 'pointer',
                                     background: isSelected ? 'var(--brand-primary-light, #ecfdf5)' : '#fff',
-                                    borderBottom: '1px solid #f3f4f6',
-                                    transition: 'background 0.15s ease',
+                                    borderBottom: '1px solid #f1f5f9',
+                                    transition: 'background 0.12s ease',
                                 }}
                             >
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <strong style={{ fontSize: 14, color: isSelected ? 'var(--brand-primary, #059669)' : '#111827' }}>
+                                        <span style={{
+                                            fontSize: 14,
+                                            fontWeight: 700,
+                                            color: isSelected ? 'var(--brand-primary, #059669)' : 'var(--text-primary)'
+                                        }}>
                                             {item.productName}
-                                        </strong>
-                                        <span className="pms-badge pms-badge-secondary" style={{ fontSize: 11 }}>
+                                        </span>
+                                        <span className="pms-badge pms-badge-secondary" style={{ fontSize: 11, padding: '2px 7px' }}>
                                             {item.unit || 'Hộp'}
                                         </span>
+                                        {item.isPrescription && (
+                                            <span style={{
+                                                fontSize: 10,
+                                                fontWeight: 700,
+                                                background: '#f3e8ff',
+                                                color: '#7e22ce',
+                                                padding: '2px 6px',
+                                                borderRadius: 4,
+                                                border: '1px solid #d8b4fe'
+                                            }}>
+                                                Rx Kê đơn
+                                            </span>
+                                        )}
                                         {idx === 0 && (
-                                            <span className="pms-badge pms-badge-success" style={{ fontSize: 10 }}>
-                                                FEFO Ưu tiên
+                                            <span style={{
+                                                fontSize: 10,
+                                                fontWeight: 700,
+                                                background: '#dcfce7',
+                                                color: '#15803d',
+                                                padding: '2px 6px',
+                                                borderRadius: 4,
+                                                border: '1px solid #86efac'
+                                            }}>
+                                                ⚡ FEFO Xuất trước
                                             </span>
                                         )}
                                     </div>
 
-                                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', gap: 12 }}>
+                                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: 14 }}>
                                         {item.activeIngredient && (
-                                            <span>Hoạt chất: <strong>{item.activeIngredient}</strong></span>
+                                            <span>Hoạt chất: <strong style={{ color: '#0f766e' }}>{item.activeIngredient}</strong></span>
                                         )}
-                                        <span>Lô: <strong>{item.batchNumber || 'N/A'}</strong></span>
-                                        <span>HSD: <strong>{formatDate(item.expiryDate)}</strong></span>
+                                        <span>Số lô: <strong style={{ color: '#334155' }}>{item.batchNumber || 'N/A'}</strong></span>
+                                        <span>HSD: <strong style={{ color: '#334155' }}>{formatDate(item.expiryDate)}</strong></span>
                                     </div>
                                 </div>
 
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--brand-primary, #059669)' }}>
+                                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                                    <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary, #059669)' }}>
                                         {money(item.sellingPrice)}
                                     </div>
-                                    <div style={{ fontSize: 11, color: item.quantity <= 10 ? '#ef4444' : '#6b7280' }}>
-                                        Còn: <strong>{item.quantity}</strong> {item.unit || 'đơn vị'}
+                                    <div style={{
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        color: item.quantity <= 10 ? '#dc2626' : '#16a34a',
+                                        background: item.quantity <= 10 ? '#fef2f2' : '#f0fdf4',
+                                        padding: '1px 6px',
+                                        borderRadius: 4,
+                                        border: `1px solid ${item.quantity <= 10 ? '#fecaca' : '#bbf7d0'}`
+                                    }}>
+                                        Tồn: {item.quantity} {item.unit || 'đơn vị'}
                                     </div>
                                 </div>
                             </div>

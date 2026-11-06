@@ -29,3 +29,4 @@ public class CreateSalesInvoiceRequest {
     @Valid
     private ProcessPaymentRequest payment;
 }
+

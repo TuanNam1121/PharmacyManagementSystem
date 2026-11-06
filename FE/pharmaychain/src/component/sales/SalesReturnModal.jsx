@@ -46,7 +46,6 @@ export default function SalesReturnModal({
                 return;
             }
             setInvoice(data);
-            // Default select all with original quantity
             const initSelected = {};
             const initQtys = {};
             data.items?.forEach((item) => {
@@ -128,32 +127,48 @@ export default function SalesReturnModal({
     };
 
     return (
-        <div className="pms-modal-backdrop" style={{ zIndex: 1050 }}>
-            <div className="pms-modal" style={{ maxWidth: 640, width: '100%' }}>
+        <div
+            className="pms-modal-overlay"
+            style={{ zIndex: 1200 }}
+            onClick={(e) => {
+                if (e.target === e.currentTarget && !submitting) onClose();
+            }}
+        >
+            <div className="pms-modal" style={{ maxWidth: 660, width: '100%' }}>
                 <div className="pms-modal-header" style={{ background: '#fffbeb' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{
-                            width: 36, height: 36, borderRadius: '50%',
+                            width: 40, height: 40, borderRadius: 10,
                             background: '#f59e0b',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff'
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+                            boxShadow: '0 2px 6px rgba(245,158,11,0.2)'
                         }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                                 <polyline points="1 4 1 10 7 10" />
                                 <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
                             </svg>
                         </div>
                         <div>
-                            <h3 className="pms-modal-title" style={{ margin: 0, color: '#b45309' }}>
+                            <div className="pms-modal-title" style={{ color: '#b45309', fontSize: 17 }}>
                                 Trả Hàng & Hoàn Tiền Hóa Đơn (UC25)
-                            </h3>
-                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                                Nhận lại thuốc, hoàn tiền cho khách và cập nhật hoàn kho
-                            </span>
+                            </div>
+                            <div className="pms-modal-sub">
+                                Tiếp nhận thuốc trả lại, cập nhật tồn kho và hoàn tiền
+                            </div>
                         </div>
                     </div>
+
+                    <button
+                        type="button"
+                        className="pms-modal-close"
+                        onClick={onClose}
+                        disabled={submitting}
+                    >
+                        ✕
+                    </button>
                 </div>
 
-                <div className="pms-modal-body" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div className="pms-modal-body" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {error && (
                         <div className="pms-alert pms-alert-danger" style={{ padding: '10px 14px', fontSize: 13 }}>
                             {error}
@@ -162,31 +177,33 @@ export default function SalesReturnModal({
 
                     {successData ? (
                         <div style={{
-                            textAlign: 'center', padding: '24px 16px', background: 'var(--brand-primary-light, #ecfdf5)',
-                            borderRadius: 8, border: '1px solid #10b981', display: 'flex', flexDirection: 'column', gap: 10
+                            textAlign: 'center', padding: '28px 20px', background: 'var(--brand-primary-light, #ecfdf5)',
+                            borderRadius: 12, border: '1px solid #10b981', display: 'flex', flexDirection: 'column', gap: 12
                         }}>
                             <div style={{
-                                width: 48, height: 48, borderRadius: '50%', background: '#10b981',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', margin: '0 auto'
+                                width: 52, height: 52, borderRadius: '50%', background: '#10b981',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', margin: '0 auto',
+                                boxShadow: '0 4px 12px rgba(16,185,129,0.3)'
                             }}>
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
                             </div>
-                            <h4 style={{ margin: 0, color: '#065f46', fontSize: 18 }}>Hoàn Trả Thuốc Thành Công!</h4>
+                            <h4 style={{ margin: 0, color: '#065f46', fontSize: 18, fontWeight: 800 }}>Hoàn Trả Thuốc Thành Công!</h4>
                             <div style={{ fontSize: 13, color: '#047857' }}>
                                 Mã phiếu trả: <strong>{successData.returnCode}</strong>
                             </div>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: '#065f46' }}>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: '#065f46' }}>
                                 Số tiền đã hoàn: {money(successData.refundAmount)} ({successData.refundMethod})
                             </div>
                             <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                                Thuốc đã được tự động hoàn lại vào tồn kho chi nhánh.
+                                Thuốc đã được tự động hoàn lại vào số lượng tồn kho của chi nhánh.
                             </div>
                             <div style={{ marginTop: 12 }}>
                                 <button
                                     type="button"
                                     className="btn-pms btn-pms-primary"
+                                    style={{ height: 38, padding: '0 20px' }}
                                     onClick={onClose}
                                 >
                                     Đóng cửa sổ
@@ -200,7 +217,8 @@ export default function SalesReturnModal({
                                 <input
                                     type="text"
                                     className="pms-input"
-                                    placeholder="Nhập mã hóa đơn gốc (VD: INV-202611...)"
+                                    style={{ height: 42 }}
+                                    placeholder="Nhập mã hóa đơn gốc (VD: INV-20261104-0001)..."
                                     value={searchCode}
                                     onChange={(e) => setSearchCode(e.target.value)}
                                     autoFocus
@@ -209,7 +227,7 @@ export default function SalesReturnModal({
                                     type="submit"
                                     className="btn-pms btn-pms-primary"
                                     disabled={searching}
-                                    style={{ whiteSpace: 'nowrap' }}
+                                    style={{ whiteSpace: 'nowrap', height: 42, padding: '0 16px', fontWeight: 600 }}
                                 >
                                     {searching ? 'Đang tìm...' : 'Tra cứu'}
                                 </button>
@@ -219,29 +237,29 @@ export default function SalesReturnModal({
                                 <form onSubmit={handleSubmitReturn} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                                     {/* Invoice Overview */}
                                     <div style={{
-                                        background: '#f9fafb', padding: '10px 14px', borderRadius: 8, fontSize: 12,
-                                        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8
+                                        background: '#f8fafc', padding: '12px 16px', borderRadius: 8, fontSize: 13,
+                                        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, border: '1px solid #e2e8f0'
                                     }}>
-                                        <div>Mã HĐ: <strong>{invoice.invoiceCode}</strong></div>
+                                        <div>Mã HĐ: <strong style={{ color: '#0f172a' }}>{invoice.invoiceCode}</strong></div>
                                         <div>Ngày mua: <strong>{formatDateTime(invoice.createdAt)}</strong></div>
                                         <div>Khách hàng: <strong>{invoice.customerName}</strong></div>
-                                        <div>Tổng tiền gốc: <strong>{money(invoice.finalAmount)}</strong></div>
+                                        <div>Tổng tiền hóa đơn: <strong style={{ color: 'var(--brand-primary)' }}>{money(invoice.finalAmount)}</strong></div>
                                     </div>
 
                                     {/* Items Table */}
                                     <div>
-                                        <label className="pms-label" style={{ fontWeight: 700 }}>
-                                            Chọn các mặt hàng khách muốn hoàn trả:
+                                        <label className="pms-label" style={{ fontWeight: 700, marginBottom: 6 }}>
+                                            Chọn các loại thuốc khách muốn hoàn trả:
                                         </label>
-                                        <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: 8 }}>
-                                            <table className="pms-table" style={{ width: '100%', fontSize: 12 }}>
+                                        <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+                                            <table className="pms-table" style={{ width: '100%', fontSize: 12, margin: 0 }}>
                                                 <thead>
                                                     <tr>
-                                                        <th style={{ width: 35, textAlign: 'center' }}></th>
+                                                        <th style={{ width: 40, textAlign: 'center' }}></th>
                                                         <th>Tên thuốc</th>
-                                                        <th style={{ width: 80, textAlign: 'center' }}>SL Trả</th>
-                                                        <th style={{ width: 90, textAlign: 'right' }}>Đơn giá</th>
-                                                        <th style={{ width: 90, textAlign: 'right' }}>Hoàn tiền</th>
+                                                        <th style={{ width: 85, textAlign: 'center' }}>SL Trả</th>
+                                                        <th style={{ width: 95, textAlign: 'right' }}>Đơn giá</th>
+                                                        <th style={{ width: 100, textAlign: 'right' }}>Hoàn tiền</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -255,11 +273,12 @@ export default function SalesReturnModal({
                                                                         type="checkbox"
                                                                         checked={isChecked}
                                                                         onChange={() => toggleItem(item.id)}
+                                                                        style={{ width: 16, height: 16, cursor: 'pointer' }}
                                                                     />
                                                                 </td>
                                                                 <td>
-                                                                    <strong style={{ color: '#111827' }}>{item.productName}</strong>
-                                                                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                                                                    <strong style={{ color: '#0f172a' }}>{item.productName}</strong>
+                                                                    <div style={{ fontSize: 11, color: '#64748b' }}>
                                                                         Đã mua: {item.quantity} {item.unit} • Lô: {item.batchNumber}
                                                                     </div>
                                                                 </td>
@@ -272,8 +291,9 @@ export default function SalesReturnModal({
                                                                         value={qty}
                                                                         onChange={(e) => updateQty(item.id, item.quantity, e.target.value)}
                                                                         style={{
-                                                                            width: 50, textAlign: 'center', height: 26,
-                                                                            border: '1px solid var(--border-color)', borderRadius: 4
+                                                                            width: 50, textAlign: 'center', height: 28,
+                                                                            border: '1px solid var(--border-color)', borderRadius: 4,
+                                                                            fontWeight: 700
                                                                         }}
                                                                     />
                                                                 </td>
@@ -294,10 +314,14 @@ export default function SalesReturnModal({
                                     {/* Total Refund Banner */}
                                     <div style={{
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                        padding: '10px 14px', background: '#fffbeb', borderRadius: 8, border: '1px solid #fcd34d'
+                                        padding: '12px 16px', background: '#fffbeb', borderRadius: 8, border: '1.5px solid #fcd34d'
                                     }}>
-                                        <span style={{ fontWeight: 700, color: '#92400e' }}>Tổng tiền hoàn trả khách:</span>
-                                        <span style={{ fontSize: 18, fontWeight: 800, color: '#b45309' }}>{money(totalRefund)}</span>
+                                        <span style={{ fontWeight: 700, color: '#92400e', fontSize: 14 }}>
+                                            Tổng tiền hoàn trả khách:
+                                        </span>
+                                        <span style={{ fontSize: 20, fontWeight: 800, color: '#b45309' }}>
+                                            {money(totalRefund)}
+                                        </span>
                                     </div>
 
                                     {/* Refund Method & Reason */}
@@ -321,7 +345,7 @@ export default function SalesReturnModal({
                                             <input
                                                 type="text"
                                                 className="pms-input"
-                                                placeholder="VD: Khách mua nhầm loại, dị ứng nhẹ, đổi đơn thuốc..."
+                                                placeholder="VD: Khách mua nhầm loại thuốc, đổi đơn bác sĩ..."
                                                 value={reason}
                                                 onChange={(e) => setReason(e.target.value)}
                                                 required
@@ -329,7 +353,7 @@ export default function SalesReturnModal({
                                         </div>
                                     </div>
 
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
                                         <button
                                             type="button"
                                             className="btn-pms btn-pms-secondary"
@@ -340,7 +364,7 @@ export default function SalesReturnModal({
                                         <button
                                             type="submit"
                                             className="btn-pms"
-                                            style={{ background: '#f59e0b', color: '#fff' }}
+                                            style={{ background: '#f59e0b', color: '#fff', fontWeight: 700, height: 40 }}
                                             disabled={submitting || totalRefund <= 0}
                                         >
                                             {submitting ? 'Đang hoàn trả...' : `Xác nhận Trả Hàng (${money(totalRefund)})`}

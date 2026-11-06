@@ -37,33 +37,48 @@ export default function OpenShiftModal({
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit',
     });
 
     return (
-        <div className="pms-modal-backdrop" style={{ zIndex: 1050 }}>
-            <div className="pms-modal" style={{ maxWidth: 500, width: '100%' }}>
+        <div
+            className="pms-modal-overlay"
+            style={{ zIndex: 1200 }}
+            onClick={(e) => {
+                if (e.target === e.currentTarget && !submitting) onClose();
+            }}
+        >
+            <div className="pms-modal" style={{ maxWidth: 520, width: '100%' }}>
                 <div className="pms-modal-header" style={{ background: 'var(--brand-primary-light, #ecfdf5)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{
-                            width: 36, height: 36, borderRadius: '50%',
+                            width: 40, height: 40, borderRadius: 10,
                             background: 'var(--brand-primary, #059669)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff'
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+                            boxShadow: '0 2px 6px rgba(5,150,105,0.2)'
                         }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                                 <circle cx="12" cy="12" r="10" />
                                 <polyline points="12 6 12 12 16 14" />
                             </svg>
                         </div>
                         <div>
-                            <h3 className="pms-modal-title" style={{ margin: 0, color: 'var(--brand-primary, #059669)' }}>
+                            <div className="pms-modal-title" style={{ color: 'var(--brand-primary, #059669)', fontSize: 17 }}>
                                 Mở Ca Làm Việc (Open Shift)
-                            </h3>
-                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                            </div>
+                            <div className="pms-modal-sub">
                                 Bắt đầu phiên bán hàng tại quầy POS
-                            </span>
+                            </div>
                         </div>
                     </div>
+
+                    <button
+                        type="button"
+                        className="pms-modal-close"
+                        onClick={onClose}
+                        disabled={submitting}
+                    >
+                        ✕
+                    </button>
                 </div>
 
                 <form onSubmit={handleSubmit}>
@@ -81,7 +96,7 @@ export default function OpenShiftModal({
                                 className="pms-input"
                                 value={currentUser?.fullName || currentUser?.username || 'Dược sĩ trực quầy'}
                                 disabled
-                                style={{ background: '#f3f4f6' }}
+                                style={{ background: '#f8fafc', color: '#334155', fontWeight: 600 }}
                             />
                         </div>
 
@@ -105,7 +120,7 @@ export default function OpenShiftModal({
                                 className="pms-input"
                                 value={now}
                                 disabled
-                                style={{ background: '#f3f4f6' }}
+                                style={{ background: '#f8fafc', color: '#64748b' }}
                             />
                         </div>
 
@@ -119,7 +134,7 @@ export default function OpenShiftModal({
                                     min="0"
                                     step="1000"
                                     className="pms-input"
-                                    style={{ fontSize: 16, fontWeight: 700, paddingRight: 40 }}
+                                    style={{ fontSize: 18, fontWeight: 800, height: 46, paddingRight: 40 }}
                                     value={openingCash}
                                     onChange={(e) => setOpeningCash(e.target.value)}
                                     placeholder="0"
@@ -127,13 +142,13 @@ export default function OpenShiftModal({
                                     autoFocus
                                 />
                                 <span style={{
-                                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                                    color: 'var(--text-secondary)', fontWeight: 600
+                                    position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                                    color: '#64748b', fontWeight: 700
                                 }}>
                                     ₫
                                 </span>
                             </div>
-                            <div style={{ fontSize: 12, color: 'var(--brand-primary)', marginTop: 4 }}>
+                            <div style={{ fontSize: 12, color: 'var(--brand-primary)', marginTop: 4, fontWeight: 600 }}>
                                 Bằng chữ: {money(Number(openingCash) || 0)}
                             </div>
                         </div>
@@ -150,7 +165,7 @@ export default function OpenShiftModal({
                         </div>
                     </div>
 
-                    <div className="pms-modal-footer" style={{ padding: '14px 24px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                    <div className="pms-modal-footer" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                         <button
                             type="button"
                             className="btn-pms btn-pms-secondary"
@@ -162,9 +177,10 @@ export default function OpenShiftModal({
                         <button
                             type="submit"
                             className="btn-pms btn-pms-primary"
+                            style={{ minWidth: 160, height: 40, fontWeight: 700 }}
                             disabled={submitting}
                         >
-                            {submitting ? 'Đang mở ca...' : 'Xác nhận Mở Ca (Open Shift)'}
+                            {submitting ? 'Đang mở ca...' : 'Xác nhận Mở Ca'}
                         </button>
                     </div>
                 </form>

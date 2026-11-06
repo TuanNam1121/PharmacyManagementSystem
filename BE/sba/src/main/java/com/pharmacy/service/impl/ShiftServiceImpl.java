@@ -62,8 +62,20 @@ public class ShiftServiceImpl implements ShiftService {
     @Override
     @Transactional
     public ShiftDetailResponse closeShift(CloseShiftRequest request, Long accountId) {
-        Shift shift = shiftRepository.findById(request.getShiftId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ca làm việc với ID: " + request.getShiftId()));
+        Long targetShiftId = request.getShiftId();
+        if (targetShiftId == null && accountId != null) {
+            Shift activeShift = shiftRepository.findFirstByAccount_IdAndStatus(accountId, (short) 1).orElse(null);
+            if (activeShift != null) {
+                targetShiftId = activeShift.getId();
+            }
+        }
+        if (targetShiftId == null) {
+            throw new IllegalArgumentException("Không xác định được mã ca làm việc cần chốt!");
+        }
+
+        final Long shiftIdToClose = targetShiftId;
+        Shift shift = shiftRepository.findById(shiftIdToClose)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ca làm việc với ID: " + shiftIdToClose));
 
         if (shift.getStatus() != 1) {
             throw new IllegalStateException("Ca làm việc này đã được chốt trước đó!");
@@ -77,7 +89,7 @@ public class ShiftServiceImpl implements ShiftService {
         if (cashRefunds == null) cashRefunds = BigDecimal.ZERO;
 
         BigDecimal expectedCash = openingCash.add(cashSales).subtract(cashRefunds);
-        BigDecimal closingCash = request.getClosingCashActual();
+        BigDecimal closingCash = request.getClosingCashActual() != null ? request.getClosingCashActual() : expectedCash;
         BigDecimal difference = closingCash.subtract(expectedCash);
 
         // If discrepancy != 0 and note is blank, require explanation
