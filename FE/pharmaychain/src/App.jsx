@@ -18,6 +18,10 @@ import BranchInventoryPage from './page/inventory/BranchInventoryPage';
 import InventoryAuditPage from './page/inventory/InventoryAuditPage';
 import StockRequisitionsPage from './page/inventory/StockRequisitionsPage';
 import GoodsReceiptsPage from './page/inventory/GoodsReceiptsPage';
+import PurchaseOrdersPage from './page/procurement/PurchaseOrdersPage';
+import ProfitReportPage from './page/reports/ProfitReportPage';
+import InventoryReportPage from './page/reports/InventoryReportPage';
+
 import CustomerDirectoryPage from './page/customers/CustomerDirectoryPage';
 import RfqResponsePage from './page/public/RfqResponsePage';
 import RfqPage from './page/rfq/RfqPage';
@@ -98,23 +102,23 @@ function App() {
         <Route path="/store/audit" element={<InventoryAuditPage />} />
 
         {/* Central Warehouse (LIVE - All 14 functions completed) */}
-        <Route path="/warehouse/inventory"     element={<WarehouseInventoryPage defaultTab="inventory" />} />
-        <Route path="/warehouse/adjustments"   element={<WarehouseInventoryPage defaultTab="adjustments" />} />
-        <Route path="/warehouse/alerts"        element={<WarehouseInventoryPage defaultTab="inventory" defaultExpiryFilter="EXPIRING_SOON" />} />
-        <Route path="/warehouse/receipts"      element={<WarehouseInventoryPage defaultTab="history" />} />
+        <Route path="/warehouse/inventory" element={<WarehouseInventoryPage defaultTab="inventory" />} />
+        <Route path="/warehouse/adjustments" element={<WarehouseInventoryPage defaultTab="adjustments" />} />
+        <Route path="/warehouse/alerts" element={<WarehouseInventoryPage defaultTab="inventory" defaultExpiryFilter="EXPIRING_SOON" />} />
+        <Route path="/warehouse/receipts" element={<WarehouseInventoryPage defaultTab="history" />} />
         <Route path="/warehouse/replenishment" element={<WarehouseReplenishmentPage />} />
-        <Route path="/warehouse/requests"      element={<WarehousePurchaseRequestsPage />} />
+        <Route path="/warehouse/requests" element={<WarehousePurchaseRequestsPage />} />
 
         {/* Procurement (LIVE: suppliers, purchase requests) */}
         <Route path="/supplier"               element={<SupplierPage />} />
         <Route path="/procurement/requests"   element={<WarehousePurchaseRequestsPage />} />
-        <Route path="/procurement/rfq"        element={<RfqPage />} />
-        <Route path="/procurement/proposals"  element={<PurchaseProposalsPage />} />
+        <Route path="/procurement/rfq"        element={<ComingSoon title="RFQ & Quotations" module="Procurement" />} />
+        <Route path="/procurement/proposals"  element={<ComingSoon title="Purchase Proposals" module="Procurement" />} />
         <Route path="/procurement/orders"     element={<ComingSoon title="Purchase Orders" module="Procurement" />} />
 
         {/* Reports */}
-        <Route path="/reports/profit" element={<ComingSoon title="Profit Report" module="Reports & BI" />} />
-        <Route path="/reports/inventory" element={<ComingSoon title="Inventory Report" module="Reports & BI" />} />
+        <Route path="/reports/profit" element={<ProfitReportPage />} />
+        <Route path="/reports/inventory" element={<InventoryReportPage />} />
         <Route path="/reports/sales" element={<DailySalesPage />} />
 
         {/* Fallback */}
