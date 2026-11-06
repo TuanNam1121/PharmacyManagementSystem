@@ -1,5 +1,6 @@
 package com.pharmacy.dto.customer;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +16,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class CustomerResponse {
     private Long customerId;
+
+    @JsonProperty("id")
+    public Long getId() {
+        return customerId;
+    }
     private String customerCode;
     private String fullName;
     private String phone;

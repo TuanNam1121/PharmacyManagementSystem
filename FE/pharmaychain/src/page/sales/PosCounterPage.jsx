@@ -134,7 +134,7 @@ export default function PosCounterPage() {
         try {
             const invoicePayload = {
                 shiftId: currentShift.shiftId || currentShift.id,
-                customerId: customer?.id || null,
+                customerId: customer?.customerId || customer?.id || null,
                 discount: Number(discountAmount) || 0,
                 prescriptionCode: prescriptionCode.trim() || null,
                 note: orderNote.trim() || null,
@@ -157,6 +157,8 @@ export default function PosCounterPage() {
             clearCart();
             setLastCompletedInvoice(completed);
             setPrintModalOpen(true);
+            refreshShift();
+            fetchSummary();
         } catch (err) {
             setCheckoutError(err.message || 'Thanh toán hóa đơn thất bại');
             alert(err.message || 'Thanh toán thất bại');
