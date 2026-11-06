@@ -86,4 +86,26 @@ public class SalesInvoice {
 
     @OneToMany(mappedBy = "salesInvoice", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payments = new ArrayList<>();
+
+    public void setDetails(List<SalesInvoiceDetail> details) {
+        if (this.details == null) {
+            this.details = new ArrayList<>();
+        } else {
+            this.details.clear();
+        }
+        if (details != null) {
+            this.details.addAll(details);
+        }
+    }
+
+    public void setPayments(List<Payment> payments) {
+        if (this.payments == null) {
+            this.payments = new ArrayList<>();
+        } else {
+            this.payments.clear();
+        }
+        if (payments != null) {
+            this.payments.addAll(payments);
+        }
+    }
 }

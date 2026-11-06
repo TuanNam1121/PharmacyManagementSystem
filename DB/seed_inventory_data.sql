@@ -57,3 +57,4 @@ FROM dbo.stores s
 LEFT JOIN dbo.inventories i ON i.store_id = s.id
 GROUP BY s.id, s.name;
 GO
+

@@ -141,9 +141,11 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             detail.setUnitCost(BigDecimal.ZERO);
             detail.setDosageInstruction(item.getDosageInstruction());
 
-            savedDetails.add(salesInvoiceDetailRepository.save(detail));
+            SalesInvoiceDetail saved = salesInvoiceDetailRepository.save(detail);
+            savedDetails.add(saved != null ? saved : detail);
         }
-        savedInvoice.setDetails(savedDetails);
+        savedInvoice.getDetails().clear();
+        savedInvoice.getDetails().addAll(savedDetails);
 
         // 6. Record Payment
         if (request.getPayment() != null) {
@@ -156,8 +158,9 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             payment.setTransactionRef(payReq.getTransactionRef());
             payment.setPaidAt(LocalDateTime.now());
             payment.setCreatedAt(LocalDateTime.now());
-            paymentRepository.save(payment);
-            savedInvoice.setPayments(List.of(payment));
+            Payment savedPayment = paymentRepository.save(payment);
+            savedInvoice.getPayments().clear();
+            savedInvoice.getPayments().add(savedPayment != null ? savedPayment : payment);
         }
 
         BigDecimal tenderedCash = request.getPayment() != null && request.getPayment().getTenderedCash() != null
@@ -298,7 +301,8 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
         }
 
         savedReturn.setRefundAmount(totalRefund);
-        savedReturn.setDetails(returnDetails);
+        savedReturn.getDetails().clear();
+        savedReturn.getDetails().addAll(returnDetails);
 
         // Update SalesInvoice status (3 = PARTIALLY_RETURNED, 4 = FULLY_RETURNED)
         boolean isFullReturn = totalRefund.compareTo(invoice.getFinalAmount()) >= 0;

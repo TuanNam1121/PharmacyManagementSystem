@@ -127,3 +127,4 @@ END
 ELSE
     PRINT N'Table daily_sales_reconciliations already exists';
 GO
+

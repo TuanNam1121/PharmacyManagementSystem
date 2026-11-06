@@ -63,4 +63,15 @@ public class SalesReturn {
 
     @OneToMany(mappedBy = "salesReturn", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SalesReturnDetail> details = new ArrayList<>();
+
+    public void setDetails(List<SalesReturnDetail> details) {
+        if (this.details == null) {
+            this.details = new ArrayList<>();
+        } else {
+            this.details.clear();
+        }
+        if (details != null) {
+            this.details.addAll(details);
+        }
+    }
 }
