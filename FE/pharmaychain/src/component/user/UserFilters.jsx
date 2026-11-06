@@ -21,7 +21,7 @@ export default function UserFilters({
         <input
           className="pms-input"
           type="text"
-          placeholder="Search by name, username, email, phone…"
+          placeholder="Tìm theo tên, username, email, số điện thoại…"
           value={keyword}
           onChange={(e) => onKeywordChange(e.target.value)}
         />
@@ -33,7 +33,7 @@ export default function UserFilters({
         value={roleFilter}
         onChange={(e) => onRoleChange(e.target.value)}
       >
-        <option value="">All Roles</option>
+        <option value="">Tất cả vai trò</option>
         {roles.map((r) => (
           <option key={r.id} value={r.id}>
             {r.name || r.code}
@@ -47,14 +47,14 @@ export default function UserFilters({
         value={statusFilter}
         onChange={(e) => onStatusChange(e.target.value)}
       >
-        <option value="">All Statuses</option>
-        <option value="1">Active</option>
-        <option value="0">Inactive / Locked</option>
+        <option value="">Tất cả trạng thái</option>
+        <option value="1">Đang hoạt động</option>
+        <option value="0">Đã khóa / Tạm dừng</option>
       </select>
 
       {/* Results Count */}
       <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-        Found <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> users
+        Tìm thấy <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> tài khoản
       </span>
 
       {/* Add User Button */}
@@ -62,7 +62,7 @@ export default function UserFilters({
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
-        New User
+        + Thêm Nhân Viên
       </button>
     </div>
   );

@@ -41,7 +41,7 @@ export default function WarehousePurchaseRequestsPage() {
       setList(res?.content || []);
       setTotal(res?.totalElements ?? 0);
     } catch (err) {
-      setError(err?.message || 'Failed to load purchase requests');
+      setError(err?.message || 'Không thể tải danh sách yêu cầu mua hàng');
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export default function WarehousePurchaseRequestsPage() {
         }
       } catch (err) {
         if (!ignore) {
-          setError(err?.message || 'Failed to load purchase requests');
+          setError(err?.message || 'Không thể tải danh sách yêu cầu mua hàng');
         }
       } finally {
         if (!ignore) {
@@ -90,7 +90,7 @@ export default function WarehousePurchaseRequestsPage() {
       const res = await getPurchasingStaffPurchaseRequestDetail(id);
       setSelectedDetail(res);
     } catch (err) {
-      setError(err?.message || 'Failed to load purchase request details');
+      setError(err?.message || 'Không thể tải chi tiết yêu cầu mua hàng');
     } finally {
       setDetailLoading(false);
     }
@@ -101,11 +101,11 @@ export default function WarehousePurchaseRequestsPage() {
     setError(null);
     try {
       const res = await createPurchaseRequest(payload);
-      setSuccessMsg(`Purchase request ${res?.code || ''} created successfully!`);
+      setSuccessMsg(`Đã tạo yêu cầu mua sắm ${res?.code || ''} thành công!`);
       setCreateModalOpen(false);
       await fetchList();
     } catch (err) {
-      setError(err?.message || 'Failed to create purchase request');
+      setError(err?.message || 'Lỗi khi tạo yêu cầu mua sắm');
     } finally {
       setCreateLoading(false);
     }
@@ -118,8 +118,8 @@ export default function WarehousePurchaseRequestsPage() {
       {/* Page Header */}
       <div className="pms-page-header">
         <div>
-          <h1 className="pms-page-title">Purchase Requests (Procurement Demands)</h1>
-          <p className="pms-page-sub">Submit and manage medicine procurement requests to maintain central warehouse stock</p>
+          <h1 className="pms-page-title">Yêu Cầu Mua Hàng & Bổ Sung Kho</h1>
+          <p className="pms-page-sub">Gửi và theo dõi các yêu cầu mua thuốc định kỳ để duy trì hạn mức tồn kho kho tổng</p>
         </div>
         <button
           className="btn-pms btn-pms-primary"
@@ -129,7 +129,7 @@ export default function WarehousePurchaseRequestsPage() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          New Purchase Request
+          Tạo Yêu Cầu Mua Hàng
         </button>
       </div>
 
@@ -164,7 +164,7 @@ export default function WarehousePurchaseRequestsPage() {
           <input
             className="pms-input"
             type="text"
-            placeholder="Search by code or reason…"
+            placeholder="Tìm theo mã yêu cầu hoặc lý do…"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -182,15 +182,15 @@ export default function WarehousePurchaseRequestsPage() {
             setPage(0);
           }}
         >
-          <option value="">All Statuses</option>
-          <option value="1">Submitted</option>
-          <option value="2">RFQ Sent</option>
-          <option value="4">Completed</option>
-          <option value="5">Cancelled</option>
+          <option value="">Tất cả trạng thái</option>
+          <option value="1">Đã gửi yêu cầu</option>
+          <option value="2">Đã gửi RFQ</option>
+          <option value="4">Hoàn thành</option>
+          <option value="5">Đã hủy</option>
         </select>
 
         <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
-          <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> requests
+          <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> yêu cầu
         </span>
       </div>
 
@@ -199,7 +199,7 @@ export default function WarehousePurchaseRequestsPage() {
         <div className="pms-card">
           <div className="pms-spinner-wrap">
             <div className="pms-spinner" />
-            <span className="pms-spinner-text">Loading purchase requests…</span>
+            <span className="pms-spinner-text">Đang tải danh sách yêu cầu mua sắm…</span>
           </div>
         </div>
       ) : list.length === 0 ? (
@@ -208,11 +208,10 @@ export default function WarehousePurchaseRequestsPage() {
             <div className="pms-empty-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
               </svg>
             </div>
-            <div className="pms-empty-title">No purchase requests found</div>
-            <div className="pms-empty-sub">Submit your first purchase request to order stock from suppliers.</div>
+            <div className="pms-empty-title">Không tìm thấy yêu cầu mua hàng nào</div>
+            <div className="pms-empty-sub">Hãy tạo yêu cầu mua hàng đầu tiên để bổ sung tồn kho từ nhà cung cấp.</div>
           </div>
         </div>
       ) : (
@@ -222,12 +221,12 @@ export default function WarehousePurchaseRequestsPage() {
               <thead>
                 <tr>
                   <th style={{ width: 40 }}>#</th>
-                  <th>Request Code</th>
-                  <th>Items</th>
-                  <th>Status</th>
-                  <th>Created Date</th>
-                  <th>Created By</th>
-                  <th className="text-right" style={{ width: 100 }}>Actions</th>
+                  <th>Mã Yêu Cầu</th>
+                  <th>Số Mặt Hàng</th>
+                  <th>Trạng Thái</th>
+                  <th>Ngày Lập</th>
+                  <th>Người Tạo</th>
+                  <th className="text-right" style={{ width: 100 }}>Thao Tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -238,11 +237,11 @@ export default function WarehousePurchaseRequestsPage() {
                       <span className="mono fw-700" style={{ fontSize: 13 }}>{row.code}</span>
                     </td>
                     <td>
-                      <span className="pms-badge pms-badge-neutral">{row.itemCount || (row.items ? row.items.length : 0)} items</span>
+                      <span className="pms-badge pms-badge-neutral">{row.itemCount || (row.items ? row.items.length : 0)} mặt hàng</span>
                     </td>
                     <td>
                       <span className={`pms-badge ${row.status === 4 ? 'pms-badge-success' : row.status === 5 ? 'pms-badge-danger' : 'pms-badge-info'}`}>
-                        {row.statusText || 'Submitted'}
+                        {row.status === 4 ? 'Hoàn thành' : row.status === 5 ? 'Đã hủy' : row.status === 2 ? 'Đã gửi RFQ' : 'Đã gửi duyệt'}
                       </span>
                     </td>
                     <td className="text-sm text-muted-color">{formatDate(row.createdAt)}</td>
@@ -251,7 +250,7 @@ export default function WarehousePurchaseRequestsPage() {
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
                         onClick={() => handleOpenDetail(row.id)}
-                        title="View details"
+                        title="Xem chi tiết"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />

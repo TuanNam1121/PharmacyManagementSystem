@@ -105,8 +105,8 @@ export default function SupplierPage() {
   const handleFormSuccess = async () => {
     setSuccessMsg(
       formMode === 'create'
-        ? 'Supplier partner registered successfully!'
-        : 'Supplier information updated successfully!'
+        ? 'Đăng ký nhà cung ứng đối tác thành công!'
+        : 'Cập nhật thông tin nhà cung ứng thành công!'
     );
     await fetchList();
   };
@@ -136,9 +136,9 @@ export default function SupplierPage() {
       {/* ── Page Header ── */}
       <div className="pms-page-header">
         <div>
-          <h1 className="pms-page-title">Supplier & Vendor Directory</h1>
+          <h1 className="pms-page-title">Danh Mục Nhà Cung Cấp & Đối Tác</h1>
           <p className="pms-page-sub">
-            Manage pharmaceutical suppliers, commercial vendor profiles, contact representatives, and tax compliance.
+            Quản lý nhà cung ứng dược phẩm, hồ sơ doanh nghiệp thương mại, thông tin liên hệ và tuân thủ mã số thuế.
           </p>
         </div>
       </div>

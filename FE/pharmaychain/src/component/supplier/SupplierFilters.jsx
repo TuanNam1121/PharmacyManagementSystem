@@ -18,7 +18,7 @@ export default function SupplierFilters({
         <input
           className="pms-input"
           type="text"
-          placeholder="Search by supplier name, code, contact, phone…"
+          placeholder="Tìm theo tên nhà cung cấp, mã, người liên hệ, SĐT…"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
         />
@@ -30,15 +30,15 @@ export default function SupplierFilters({
         value={statusFilter}
         onChange={(e) => onStatus(e.target.value)}
       >
-        <option value="">All Statuses</option>
-        <option value="ACTIVE">Active</option>
-        <option value="INACTIVE">Inactive</option>
-        <option value="PENDING">Pending</option>
+        <option value="">Tất cả trạng thái</option>
+        <option value="ACTIVE">Hoạt động</option>
+        <option value="INACTIVE">Ngừng hoạt động</option>
+        <option value="PENDING">Chờ duyệt</option>
       </select>
 
       {/* Results Count */}
       <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-        Found <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> suppliers
+        Tìm thấy <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> nhà cung cấp
       </span>
 
       {/* Add Supplier Button */}
@@ -46,7 +46,7 @@ export default function SupplierFilters({
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
-        New Supplier
+        Thêm Nhà Cung Cấp
       </button>
     </div>
   );

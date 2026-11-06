@@ -57,20 +57,20 @@ export default function BranchInventoryPage() {
             <div className="pms-page-header" style={{ marginBottom: 16 }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <h1 className="pms-page-title" style={{ margin: 0 }}>Branch Stock & Warning System</h1>
-                        <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Pharmacist & Store Manager</span>
+                        <h1 className="pms-page-title" style={{ margin: 0 }}>Tồn Kho Chi Nhánh &amp; Cảnh Báo An Toàn</h1>
+                        <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Dược Sĩ &amp; Cửa Hàng Trưởng</span>
                     </div>
                     <p className="pms-page-sub">
-                        Monitor live stock levels, batch numbers, expiry dates, and real-time low-stock/expiring alerts at branch pharmacies.
+                        Theo dõi số lượng tồn thực tế, số lô, hạn dùng (FEFO) và các cảnh báo sắp hết hàng hoặc cận hạn tại nhà thuốc
                     </p>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <button type="button" className="btn-pms btn-pms-secondary" onClick={reloadAll} title="Refresh">
+                    <button type="button" className="btn-pms btn-pms-secondary" onClick={reloadAll} title="Làm mới">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
                         </svg>
-                        Refresh
+                        Làm mới
                     </button>
 
                     <button
@@ -84,7 +84,7 @@ export default function BranchInventoryPage() {
                             <line x1="12" y1="18" x2="12" y2="12" />
                             <line x1="9" y1="15" x2="15" y2="15" />
                         </svg>
-                        Create Requisition
+                        + Tạo Yêu Cầu Điều Chuyển
                     </button>
                 </div>
             </div>
@@ -136,19 +136,19 @@ export default function BranchInventoryPage() {
                         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14, flex: 1 }}>
                             {/* Store Selector */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Branch:</label>
+                                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Chi nhánh:</label>
                                 <select
                                     className="pms-select"
-                                    style={{ minWidth: 220 }}
+                                    style={{ minWidth: 260 }}
                                     value={storeId}
                                     onChange={(e) => {
                                         setStoreId(e.target.value);
                                         setPage(0);
                                     }}
                                 >
-                                    <option value="1">Store #1 — Central Pharmacy</option>
-                                    <option value="2">Store #2 — Cau Giay Pharmacy</option>
-                                    <option value="3">Store #3 — Dong Da Pharmacy</option>
+                                    <option value="3">Chi nhánh 01 - Cầu Giấy (ST01)</option>
+                                    <option value="4">Chi nhánh 02 - Đống Đa (ST02)</option>
+                                    <option value="2">Kho Tổng Trung Tâm Miền Bắc (WH01)</option>
                                 </select>
                             </div>
 
@@ -168,7 +168,7 @@ export default function BranchInventoryPage() {
                                         setSearch(e.target.value);
                                         setPage(0);
                                     }}
-                                    placeholder="Search by product name, active ingredient, barcode, batch..."
+                                    placeholder="Tìm theo tên thuốc, hoạt chất, mã vạch, số lô..."
                                 />
                             </div>
                         </div>
@@ -180,28 +180,28 @@ export default function BranchInventoryPage() {
                                 className={`pms-tab ${warningFilter === 'ALL' ? 'active' : ''}`}
                                 onClick={() => { setWarningFilter('ALL'); setPage(0); }}
                             >
-                                All Items
+                                Tất cả thuốc
                             </button>
                             <button
                                 type="button"
                                 className={`pms-tab ${warningFilter === 'LOW_STOCK' ? 'active' : ''}`}
                                 onClick={() => { setWarningFilter('LOW_STOCK'); setPage(0); }}
                             >
-                                Low Stock
+                                Sắp hết hàng
                             </button>
                             <button
                                 type="button"
                                 className={`pms-tab ${warningFilter === 'EXPIRING_SOON' ? 'active' : ''}`}
                                 onClick={() => { setWarningFilter('EXPIRING_SOON'); setPage(0); }}
                             >
-                                Expiring Soon (≤90d)
+                                Cận hạn (≤90 ngày)
                             </button>
                             <button
                                 type="button"
                                 className={`pms-tab ${warningFilter === 'EXPIRED' ? 'active' : ''}`}
                                 onClick={() => { setWarningFilter('EXPIRED'); setPage(0); }}
                             >
-                                Expired
+                                Đã hết hạn
                             </button>
                         </div>
                     </div>
@@ -238,7 +238,7 @@ export default function BranchInventoryPage() {
             <BranchStockAuditModal
                 show={auditModalOpen}
                 onHide={() => setAuditModalOpen(false)}
-                storeName={summary?.storeName || 'Pharmacy Branch'}
+                storeName={summary?.storeName || 'Chi nhánh nhà thuốc'}
                 onConfirm={handleAuditCheck}
                 submitting={submitting}
             />

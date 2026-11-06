@@ -12,7 +12,7 @@ export default function BranchStockAuditModal({ show, onHide, storeName, onConfi
         try {
             await onConfirm({ note });
         } catch (err) {
-            setError(err?.message || 'An error occurred while confirming stock audit check.');
+            setError(err?.message || 'Có lỗi xảy ra khi xác nhận biên bản kiểm kê quầy.');
         }
     };
 
@@ -21,8 +21,8 @@ export default function BranchStockAuditModal({ show, onHide, storeName, onConfi
             <div className="pms-modal" style={{ maxWidth: 500 }}>
                 <div className="pms-modal-header">
                     <div>
-                        <div className="pms-modal-title">Confirm Counter Stock Audit Check</div>
-                        <div className="pms-modal-sub">Branch: <strong>{storeName}</strong></div>
+                        <div className="pms-modal-title">Xác Nhận Kiểm Tra Tồn Kho Quầy Thuốc</div>
+                        <div className="pms-modal-sub">Chi nhánh: <strong>{storeName}</strong></div>
                     </div>
                     <button type="button" className="pms-modal-close" onClick={onHide} disabled={submitting}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -39,17 +39,17 @@ export default function BranchStockAuditModal({ show, onHide, storeName, onConfi
                             </div>
                         )}
                         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 14, lineHeight: 1.5 }}>
-                            The branch pharmacist / store manager confirms that physical shelves and expiring batches have been inspected and reconciled with system data.
+                            Dược sĩ phụ trách / Quản lý cửa hàng xác nhận đã trực tiếp kiểm tra các quầy kệ thực tế và các lô thuốc cận hạn, đối soát khớp với dữ liệu trên hệ thống.
                         </p>
 
                         <div className="pms-form-group" style={{ marginBottom: 4 }}>
-                            <label className="pms-label">Inspection & Audit Notes</label>
+                            <label className="pms-label">Ghi chú kết quả kiểm tra & đối soát</label>
                             <textarea
                                 rows={3}
                                 className="pms-input pms-input-bare"
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
-                                placeholder="Note quick inspection findings, batches requiring transfer, or actions taken..."
+                                placeholder="Ghi nhận tình trạng quầy thuốc, các lô cận hạn cần lưu ý hoặc đề xuất cấp phát..."
                                 disabled={submitting}
                             />
                         </div>
@@ -57,10 +57,10 @@ export default function BranchStockAuditModal({ show, onHide, storeName, onConfi
 
                     <div className="pms-modal-footer">
                         <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-                            Cancel
+                            Hủy bỏ
                         </button>
                         <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting}>
-                            {submitting ? 'Recording...' : 'Confirm & Log Audit'}
+                            {submitting ? 'Đang ghi nhận...' : 'Xác Nhận & Lưu Biên Bản'}
                         </button>
                     </div>
                 </form>

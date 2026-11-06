@@ -1,11 +1,11 @@
 import { NavLink } from 'react-router-dom';
 
-/* ── KPI metrics (static placeholders — wire to real API later) ── */
+/* ── KPI metrics ── */
 const KPI_CARDS = [
   {
-    label: "Total SKUs in Warehouse",
+    label: "Tổng Mặt Hàng Thuốc",
     value: "2,847",
-    delta: "+12 today",
+    delta: "+12 hôm nay",
     deltaUp: true,
     iconColor: "emerald",
     icon: (
@@ -15,9 +15,9 @@ const KPI_CARDS = [
     ),
   },
   {
-    label: "Today's Sales Revenue",
+    label: "Doanh Thu Hôm Nay",
     value: "₫48.2M",
-    delta: "+8.3% vs yesterday",
+    delta: "+8.3% so với hôm qua",
     deltaUp: true,
     iconColor: "blue",
     icon: (
@@ -27,9 +27,9 @@ const KPI_CARDS = [
     ),
   },
   {
-    label: "Active Suppliers",
+    label: "Nhà Cung Cấp Đang Hợp Tác",
     value: "34",
-    delta: "2 pending review",
+    delta: "2 đối tác chờ duyệt",
     deltaUp: null,
     iconColor: "violet",
     icon: (
@@ -40,9 +40,9 @@ const KPI_CARDS = [
     ),
   },
   {
-    label: "Batches Expiring Soon",
+    label: "Lô Thuốc Cận Hạn Dùng",
     value: "17",
-    delta: "≤ 90 days",
+    delta: "≤ 90 ngày",
     deltaUp: false,
     iconColor: "amber",
     icon: (
@@ -53,9 +53,9 @@ const KPI_CARDS = [
     ),
   },
   {
-    label: "Pending Requisitions",
+    label: "Yêu Cầu Chuyển Kho Chờ Duyệt",
     value: "6",
-    delta: "from 3 stores",
+    delta: "từ 3 chi nhánh",
     deltaUp: null,
     iconColor: "red",
     icon: (
@@ -67,9 +67,9 @@ const KPI_CARDS = [
     ),
   },
   {
-    label: "Open Purchase Orders",
+    label: "Đơn Đặt Hàng Mua Mở (PO)",
     value: "4",
-    delta: "₫185M committed",
+    delta: "₫185M cam kết",
     deltaUp: null,
     iconColor: "teal",
     icon: (
@@ -85,8 +85,8 @@ const KPI_CARDS = [
 const QUICK_MODULES = [
   {
     to: "/pos",
-    label: "POS Counter",
-    desc: "Fast counter sales checkout",
+    label: "Bán Hàng POS",
+    desc: "Bán lẻ tại quầy và xuất hóa đơn",
     color: "#10b981",
     bg: "#ecfdf5",
     icon: (
@@ -97,8 +97,8 @@ const QUICK_MODULES = [
   },
   {
     to: "/warehouse/inventory",
-    label: "Warehouse Inventory",
-    desc: "FEFO batch tracking & bin locations",
+    label: "Kho Tổng Trung Tâm",
+    desc: "Lô thuốc FEFO & quản lý vị trí ô kệ",
     color: "#3b82f6",
     bg: "#eff6ff",
     icon: (
@@ -109,8 +109,8 @@ const QUICK_MODULES = [
   },
   {
     to: "/supplier",
-    label: "Suppliers",
-    desc: "Vendor directory & RFQ management",
+    label: "Nhà Cung Cấp",
+    desc: "Danh bạ nhà cung cấp & yêu cầu báo giá RFQ",
     color: "#7c3aed",
     bg: "#f5f3ff",
     icon: (
@@ -122,8 +122,8 @@ const QUICK_MODULES = [
   },
   {
     to: "/customers",
-    label: "Customers",
-    desc: "Health profiles & loyalty points",
+    label: "Khách Hàng",
+    desc: "Hồ sơ y tế, dị ứng thuốc & điểm thưởng",
     color: "#f59e0b",
     bg: "#fffbeb",
     icon: (
@@ -134,8 +134,8 @@ const QUICK_MODULES = [
   },
   {
     to: "/store/inventory",
-    label: "Branch Stock & Requisitions",
-    desc: "Store stock, requisitions & receipts",
+    label: "Kho & Yêu Cầu Chi Nhánh",
+    desc: "Tồn kho chi nhánh, đề xuất lĩnh thuốc & nhận hàng",
     color: "#ef4444",
     bg: "#fef2f2",
     icon: (
@@ -147,8 +147,8 @@ const QUICK_MODULES = [
   },
   {
     to: "/reports/profit",
-    label: "Reports & BI",
-    desc: "Profit, inventory & export data",
+    label: "Báo Cáo & Phân Tích",
+    desc: "Lợi nhuận, định giá kho & xuất Excel",
     color: "#6366f1",
     bg: "#eef2ff",
     icon: (
@@ -159,8 +159,8 @@ const QUICK_MODULES = [
   },
   {
     to: "/products",
-    label: "Product Catalog",
-    desc: "Medicines, pricing & categories",
+    label: "Danh Mục Thuốc",
+    desc: "Danh mục dược phẩm, lịch sử giá & phân loại",
     color: "#0891b2",
     bg: "#ecfeff",
     icon: (
@@ -172,8 +172,8 @@ const QUICK_MODULES = [
   },
   {
     to: "/procurement/orders",
-    label: "Purchase Orders",
-    desc: "PO review, approval & tracking",
+    label: "Đơn Mua Hàng (PO)",
+    desc: "Phê duyệt đơn mua, ký nhận & theo dõi giao hàng",
     color: "#d97706",
     bg: "#fef3c7",
     icon: (
@@ -185,8 +185,8 @@ const QUICK_MODULES = [
   },
   {
     to: "/users",
-    label: "User Management",
-    desc: "Staff accounts, roles & permissions",
+    label: "Quản Lý Người Dùng",
+    desc: "Tài khoản nhân viên, phân quyền RBAC & nhật ký",
     color: "#64748b",
     bg: "#f8fafc",
     icon: (
@@ -200,12 +200,12 @@ const QUICK_MODULES = [
 
 /* ── Recent activity (static placeholder) ── */
 const RECENT_ACTIVITY = [
-  { icon: "📦", text: "Purchase Receipt PR-2026-0041 confirmed — Batch LOT-B2026-11", time: "2 min ago", color: "#10b981" },
-  { icon: "⚠️", text: "Low stock alert: Amoxicillin 500mg — 12 units remaining", time: "14 min ago", color: "#f59e0b" },
-  { icon: "🧾", text: "Invoice INV-2026-1284 issued — ₫640,000 — Cash payment", time: "31 min ago", color: "#3b82f6" },
-  { icon: "✅", text: "Replenishment REQ-0098 dispatched to Store #3 — Ha Noi", time: "1h ago", color: "#10b981" },
-  { icon: "🔒", text: "User account pharmacist_02 was locked by admin", time: "2h ago", color: "#ef4444" },
-  { icon: "📝", text: "Purchase Proposal PP-2026-019 submitted for approval", time: "3h ago", color: "#7c3aed" },
+  { icon: "📦", text: "Phiếu nhập kho PR-2026-0041 đã xác nhận — Lô LOT-B2026-11", time: "2 phút trước", color: "#10b981" },
+  { icon: "⚠️", text: "Cảnh báo cận hạn / tồn thấp: Augmentin 1g — còn 12 hộp", time: "14 phút trước", color: "#f59e0b" },
+  { icon: "🧾", text: "Hóa đơn bán lẻ INV-2026-1284 — ₫640,000 — Tiền mặt", time: "31 phút trước", color: "#3b82f6" },
+  { icon: "✅", text: "Xuất kho điều chuyển REQ-0098 đến Nhà thuốc Cầu Giấy (ST01)", time: "1 giờ trước", color: "#10b981" },
+  { icon: "🔒", text: "Tài khoản nhân viên pharmacist_02 đã được khóa bởi Admin", time: "2 giờ trước", color: "#ef4444" },
+  { icon: "📝", text: "Đề xuất mua hàng PP-2026-019 đã gửi trình Ban Giám Đốc", time: "3 giờ trước", color: "#7c3aed" },
 ];
 
 export default function HomePage() {
@@ -238,16 +238,16 @@ export default function HomePage() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
             <div>
               <div style={{ fontSize: 11, color: "#34d399", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 8 }}>
-                PharmaChain — Pharmacy Management System
+                PharmaChain — Hệ Thống Quản Trị Chuỗi Nhà Thuốc
               </div>
               <h1 style={{
                 fontSize: 28, fontWeight: 800, color: "#f1f5f9",
                 letterSpacing: "-0.5px", lineHeight: 1.2, margin: "0 0 8px",
               }}>
-                Good morning, Warehouse Manager 👋
+                Xin chào, Quản lý Hệ thống 👋
               </h1>
               <p style={{ fontSize: 14, color: "#94a3b8", margin: 0 }}>
-                Tuesday, October 20, 2026 · Central Pharmaceutical Warehouse · <span style={{ color: "#34d399" }}>System Online</span>
+                Hệ thống Kho Dược & Nhà Thuốc · <span style={{ color: "#34d399" }}>Hệ thống đang hoạt động</span>
               </p>
             </div>
             <div style={{ display: "flex", gap: 10 }}>
@@ -255,13 +255,13 @@ export default function HomePage() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 7l10-5 10 5"/>
                 </svg>
-                Open Warehouse
+                Kho Tổng
               </NavLink>
               <NavLink to="/pos" className="btn-pms btn-pms-secondary" style={{ fontSize: 13, background: "rgba(255,255,255,0.08)", color: "#f1f5f9", border: "1px solid rgba(255,255,255,0.12)" }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                 </svg>
-                POS Counter
+                Quầy Thu Ngân POS
               </NavLink>
             </div>
           </div>
@@ -300,8 +300,8 @@ export default function HomePage() {
         {/* Quick access grid */}
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>Quick Access — All Modules</div>
-            <span className="pms-badge pms-badge-neutral">72 functions total</span>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>Truy Cập Nhanh — Các Phân Hệ Chức Năng</div>
+            <span className="pms-badge pms-badge-neutral">Toàn diện các nghiệp vụ</span>
           </div>
           <div style={{
             display: "grid",
@@ -351,7 +351,7 @@ export default function HomePage() {
                   <div style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.4 }}>{mod.desc}</div>
                 </div>
                 <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: mod.color, fontWeight: 600 }}>
-                  Open
+                  Truy cập
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="9 18 15 12 9 6"/>
                   </svg>
@@ -363,7 +363,7 @@ export default function HomePage() {
 
         {/* Recent activity */}
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 14 }}>Recent Activity</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 14 }}>Hoạt Động Gần Đây</div>
           <div className="pms-card" style={{ overflow: "visible" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
               {RECENT_ACTIVITY.map((item, i) => (
@@ -391,7 +391,7 @@ export default function HomePage() {
             </div>
             <div style={{ padding: "12px 16px", borderTop: "1px solid var(--border-color)" }}>
               <NavLink to="/audit-log" style={{ fontSize: 12, color: "var(--brand-primary)", fontWeight: 600, textDecoration: "none" }}>
-                View full audit log →
+                Xem nhật ký kiểm toán hệ thống →
               </NavLink>
             </div>
           </div>
@@ -401,7 +401,7 @@ export default function HomePage() {
       {/* ── All Modules Overview Table ── */}
       <div style={{ marginTop: 28 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 14 }}>
-          System Overview — All 10 Functional Modules
+          Tổng Quan Các Phân Hệ Chức Năng Cốt Lõi
         </div>
         <div className="pms-card">
           <div className="pms-table-wrap">
@@ -409,25 +409,25 @@ export default function HomePage() {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Module</th>
-                  <th>Key Functions</th>
-                  <th>Assignee</th>
-                  <th>Functions</th>
-                  <th className="text-right">Navigate</th>
+                  <th>Phân Hệ</th>
+                  <th>Chức Năng Chính</th>
+                  <th>Người Phụ Trách</th>
+                  <th>Số Nghiệp Vụ</th>
+                  <th className="text-right">Hành Động</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  { no: 1, module: "Authentication", key: "Login, Logout, Change Password, Profile", assignee: "Tuan Nam", count: 5, to: "/login", color: "#10b981" },
-                  { no: 2, module: "User & Security", key: "User CRUD, Role/Permission, Audit Log", assignee: "Khoa Vinh", count: 6, to: "/users", color: "#7c3aed" },
-                  { no: 3, module: "Products & Catalog", key: "Medicine Catalog, Price History, Categories", assignee: "Khoa Vinh", count: 9, to: "/products", color: "#3b82f6" },
-                  { no: 4, module: "POS & Sales", key: "Counter POS, FEFO Checkout, Shift Open/Close, Returns", assignee: "Tuan Nam", count: 8, to: "/pos", color: "#f59e0b" },
-                  { no: 5, module: "Customer Management", key: "Registration, Health Profile, Purchase History", assignee: "Tuan Nam", count: 5, to: "/customers", color: "#d97706" },
-                  { no: 6, module: "Branch Stock & Requisitions", key: "Branch Stock, Stock Requisitions, Branch Receipts", assignee: "Trong Dang", count: 7, to: "/store/inventory", color: "#ef4444" },
-                  { no: 7, module: "Central Warehouse", key: "Inventory, Bin Locations, Adjustments, Expiry Alerts", assignee: "Nhat Huy", count: 14, to: "/warehouse/inventory", color: "#10b981" },
-                  { no: 8, module: "Procurement", key: "Suppliers, RFQ, Quotations, Purchase Proposals", assignee: "Nhat Quang", count: 13, to: "/supplier", color: "#6366f1" },
-                  { no: 9, module: "Purchase Orders", key: "PO Approval, Rejection, Purchase Receipt Confirmation", assignee: "Trong Dang", count: 3, to: "/procurement/orders", color: "#0891b2" },
-                  { no: 10, module: "Reports & BI", key: "Profit Report, Inventory Report, Export to Excel/PDF", assignee: "Trong Dang", count: 3, to: "/reports/profit", color: "#8b5cf6" },
+                  { no: 1, module: "Xác thực & Bảo mật", key: "Đăng nhập, Đăng xuất, Đổi mật khẩu, Hồ sơ cá nhân", assignee: "Tuấn Nam", count: 5, to: "/login", color: "#10b981" },
+                  { no: 2, module: "Người Dùng & Phân Quyền", key: "Quản lý tài khoản, Phân quyền RBAC, Nhật ký kiểm toán", assignee: "Khoa Vinh", count: 6, to: "/users", color: "#7c3aed" },
+                  { no: 3, module: "Danh Mục Thuốc & Giá", key: "Danh mục dược phẩm, Lịch sử giá, Nhóm thuốc", assignee: "Khoa Vinh", count: 9, to: "/products", color: "#3b82f6" },
+                  { no: 4, module: "Bán Lẻ Tại Quầy POS", key: "Thu ngân POS, Xuất hóa đơn FEFO, Quản lý ca, Đổi trả", assignee: "Tuấn Nam", count: 8, to: "/pos", color: "#f59e0b" },
+                  { no: 5, module: "Quản Lý Khách Hàng", key: "Hồ sơ sức khỏe, Cảnh báo dị ứng, Lịch sử mua thuốc", assignee: "Tuấn Nam", count: 5, to: "/customers", color: "#d97706" },
+                  { no: 6, module: "Tồn Kho & Yêu Cầu Chi Nhánh", key: "Tồn kho chi nhánh, Đề xuất chuyển kho, Nhận hàng", assignee: "Trọng Đăng", count: 7, to: "/store/inventory", color: "#ef4444" },
+                  { no: 7, module: "Kho Tổng Trung Tâm", key: "Tồn kho FEFO, Vị trí ô kệ, Điều chỉnh tồn, Cảnh báo cận hạn", assignee: "Nhật Huy", count: 14, to: "/warehouse/inventory", color: "#10b981" },
+                  { no: 8, module: "Mua Sắm & Đấu Thầu", key: "Nhà cung cấp, Yêu cầu báo giá RFQ, Đề xuất mua sắm", assignee: "Nhật Quang", count: 13, to: "/supplier", color: "#6366f1" },
+                  { no: 9, module: "Đơn Đặt Hàng Mua (PO)", key: "Ban Giám Đốc duyệt PO, Từ chối, Xác nhận nhập mua", assignee: "Trọng Đăng", count: 3, to: "/procurement/orders", color: "#0891b2" },
+                  { no: 10, module: "Báo Cáo & Phân Tích BI", key: "Báo cáo lợi nhuận, Định giá tồn kho, Xuất Excel", assignee: "Trọng Đăng", count: 3, to: "/reports/profit", color: "#8b5cf6" },
                 ].map((row) => (
                   <tr key={row.no}>
                     <td className="text-xs text-muted-color">{row.no}</td>
@@ -449,7 +449,7 @@ export default function HomePage() {
                     </td>
                     <td className="text-right">
                       <NavLink to={row.to} className="btn-pms btn-pms-sm btn-pms-secondary">
-                        Open →
+                        Truy cập →
                       </NavLink>
                     </td>
                   </tr>

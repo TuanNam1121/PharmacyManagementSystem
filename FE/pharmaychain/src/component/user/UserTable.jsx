@@ -24,7 +24,7 @@ export default function UserTable({
       <div className="pms-card">
         <div className="pms-spinner-wrap">
           <div className="pms-spinner" />
-          <span className="pms-spinner-text">Loading user accounts…</span>
+          <span className="pms-spinner-text">Đang tải danh sách tài khoản nhân viên…</span>
         </div>
       </div>
     );
@@ -42,8 +42,8 @@ export default function UserTable({
               <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
           </div>
-          <div className="pms-empty-title">No user accounts found</div>
-          <div className="pms-empty-sub">No user records matched your search or filter criteria.</div>
+          <div className="pms-empty-title">Không tìm thấy tài khoản nào</div>
+          <div className="pms-empty-sub">Không có bản ghi nhân viên nào phù hợp với bộ lọc tìm kiếm.</div>
         </div>
       </div>
     );
@@ -57,7 +57,7 @@ export default function UserTable({
           <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="12" cy="12" r="10" />
           </svg>
-          Active
+          Đang hoạt động
         </span>
       );
     }
@@ -67,7 +67,7 @@ export default function UserTable({
           <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="12" cy="12" r="10" />
           </svg>
-          Locked
+          Đã khóa
         </span>
       );
     }
@@ -76,7 +76,7 @@ export default function UserTable({
         <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
           <circle cx="12" cy="12" r="10" />
         </svg>
-        Disabled
+        Vô hiệu hóa
       </span>
     );
   };
@@ -87,13 +87,13 @@ export default function UserTable({
         <table className="pms-table">
           <thead>
             <tr>
-              <th style={{ width: 44 }}>#</th>
-              <th>User / Account</th>
-              <th>Role</th>
-              <th>Contact Info</th>
-              <th>Status</th>
-              <th>Registered At</th>
-              <th className="text-right" style={{ width: 175 }}>Actions</th>
+              <th style={{ width: 44 }}>STT</th>
+              <th>Nhân Viên / Tài Khoản</th>
+              <th>Vai Trò Hệ Thống</th>
+              <th>Thông Tin Liên Hệ</th>
+              <th>Trạng Thái</th>
+              <th>Ngày Tạo</th>
+              <th className="text-right" style={{ width: 175 }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -164,7 +164,7 @@ export default function UserTable({
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
                         <circle cx="12" cy="12" r="6" />
                       </svg>
-                      {u.roleName || u.roleCode || 'Unassigned'}
+                      {u.roleName || u.roleCode || 'Chưa phân vai trò'}
                     </span>
                   </td>
                   <td>
@@ -188,7 +188,7 @@ export default function UserTable({
                       {/* View Detail */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
-                        title="View Account Details"
+                        title="Xem chi tiết tài khoản"
                         onClick={() => onView(u.id)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -197,10 +197,10 @@ export default function UserTable({
                         </svg>
                       </button>
 
-                      {/* Edit (UC08) */}
+                      {/* Edit */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
-                        title="Edit User Profile"
+                        title="Chỉnh sửa thông tin"
                         onClick={() => onEdit(u)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -209,11 +209,11 @@ export default function UserTable({
                         </svg>
                       </button>
 
-                      {/* Assign Role (Dedicated Action) */}
+                      {/* Assign Role */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
                         style={{ color: 'var(--brand-primary)' }}
-                        title="Assign Role"
+                        title="Phân quyền & vai trò"
                         onClick={() => onAssignRole && onAssignRole(u)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -221,13 +221,13 @@ export default function UserTable({
                         </svg>
                       </button>
 
-                      {/* Lock / Unlock (UC10) */}
+                      {/* Lock / Unlock */}
                       <button
                         className={`btn-pms btn-pms-sm ${isActive ? 'btn-pms-ghost' : 'btn-pms-outline'}`}
                         style={{
                           color: isActive ? 'var(--status-danger)' : 'var(--brand-primary)',
                         }}
-                        title={isActive ? 'Lock or Inactive Account' : 'Active Account'}
+                        title={isActive ? 'Khóa hoặc vô hiệu hóa tài khoản' : 'Mở khóa tài khoản'}
                         onClick={() => onLockUnlock(u)}
                       >
                         {isActive ? (

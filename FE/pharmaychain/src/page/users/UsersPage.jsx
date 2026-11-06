@@ -96,7 +96,7 @@ export default function UsersPage() {
     setFormModalOpen(true);
   };
 
-  // Open Edit Modal — fetch full detail first to ensure dateOfBirth, address etc. are populated
+  // Open Edit Modal
   const handleEdit = async (user) => {
     setFormMode('edit');
     let fullUser = user;
@@ -125,29 +125,37 @@ export default function UsersPage() {
     setRoleModalOpen(true);
   };
 
-  // Open Lock/Unlock Modal (UC10)
+  // Open Lock/Unlock Modal
   const handleOpenLockModal = (user) => {
     setSelectedUserForLock(user);
     setLockModalOpen(true);
   };
 
-  // Handle Form Submit (UC07 / UC08)
+  // Handle Form Submit
   const handleFormSubmit = async (payload) => {
     if (formMode === 'create') {
       await handleCreateUser(payload);
+      setSuccessMsg('Đã tạo tài khoản nhân viên mới thành công!');
     } else {
       await handleUpdateUser(editingUser.id, payload);
+      setSuccessMsg('Đã cập nhật thông tin hồ sơ nhân viên thành công!');
     }
   };
 
   // Handle Assign Role Confirm
   const handleRoleConfirm = async (id, roleId, userName) => {
     await handleAssignRole(id, roleId, userName);
+    setSuccessMsg(`Đã phân vai trò mới cho nhân viên ${userName} thành công!`);
   };
 
-  // Handle Lock / Unlock Confirm (UC10)
+  // Handle Lock / Unlock Confirm
   const handleLockUnlockConfirm = async (id, targetStatus, reason) => {
     await handleToggleStatus(id, targetStatus, reason);
+    setSuccessMsg(
+      targetStatus === 1
+        ? 'Đã mở khóa tài khoản nhân viên thành công!'
+        : 'Đã khóa/vô hiệu hóa tài khoản thành công!'
+    );
   };
 
   return (
@@ -155,9 +163,9 @@ export default function UsersPage() {
       {/* ── Page Header ── */}
       <div className="pms-page-header">
         <div>
-          <h1 className="pms-page-title">User & Security Management</h1>
+          <h1 className="pms-page-title">Quản Lý Nhân Viên &amp; Phân Quyền (RBAC)</h1>
           <p className="pms-page-sub">
-            Manage system accounts, configure role-based access control (RBAC), and monitor staff credentials.
+            Quản trị tài khoản nhân viên, thiết lập vai trò phân quyền và kiểm soát bảo mật hệ thống
           </p>
         </div>
       </div>

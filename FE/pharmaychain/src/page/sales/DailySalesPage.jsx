@@ -42,20 +42,20 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
             <div className="pms-page-header" style={{ marginBottom: 16 }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <h1 className="pms-page-title" style={{ margin: 0 }}>Daily Sales Report & Reconciliation</h1>
-                        <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Store Manager</span>
+                        <h1 className="pms-page-title" style={{ margin: 0 }}>Báo Cáo Doanh Thu & Đối Soát Bán Hàng Hàng Ngày</h1>
+                        <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Cửa Hàng Trưởng</span>
                     </div>
                     <p className="pms-page-sub">
-                        Monitor real-time sales revenue, reconcile cashier shift cash counts, and close the daily sales ledger.
+                        Theo dõi doanh thu bán hàng theo thời gian thực, đối soát doanh số và tiền mặt của các ca làm việc, chốt sổ bán hàng hàng ngày.
                     </p>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <button type="button" className="btn-pms btn-pms-secondary" onClick={reloadAll} title="Refresh data">
+                    <button type="button" className="btn-pms btn-pms-secondary" onClick={reloadAll} title="Làm mới dữ liệu">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
                         </svg>
-                        Refresh
+                        Làm mới
                     </button>
 
                     <button
@@ -67,7 +67,7 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                             <polyline points="22 4 12 14.01 9 11.01" />
                         </svg>
-                        {isReconciled ? 'Update Reconciliation' : 'Reconcile & Close Ledger'}
+                        {isReconciled ? 'Cập nhật đối soát' : 'Đối soát & Chốt sổ ca'}
                     </button>
                 </div>
             </div>
@@ -79,22 +79,23 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                             {/* Store Picker */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Store Branch:</label>
+                                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Chi nhánh:</label>
                                 <select
                                     className="pms-select"
-                                    style={{ minWidth: 240 }}
+                                    style={{ minWidth: 260 }}
                                     value={storeId}
                                     onChange={(e) => setStoreId(e.target.value)}
                                 >
-                                    <option value="1">Store #1 — Central Pharmacy</option>
-                                    <option value="2">Store #2 — Cau Giay Pharmacy</option>
-                                    <option value="3">Store #3 — Dong Da Pharmacy</option>
+                                    <option value="3">Chi nhánh 01 — Nhà thuốc Cầu Giấy (ST01)</option>
+                                    <option value="4">Chi nhánh 02 — Nhà thuốc Đống Đa (ST02)</option>
+                                    <option value="1">Trụ sở chính — Văn phòng điều hành (HQ)</option>
+                                    <option value="2">Kho tổng trung tâm Miền Bắc (WH01)</option>
                                 </select>
                             </div>
 
                             {/* Date Picker */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Business Date:</label>
+                                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Ngày kinh doanh:</label>
                                 <input
                                     type="date"
                                     className="pms-input pms-input-bare"
@@ -108,8 +109,8 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                         {/* Reconcile Info Badge */}
                         {isReconciled && (
                             <div style={{ fontSize: 12.5, color: 'var(--color-success-text)', background: 'var(--color-success-bg)', padding: '6px 14px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #a7f3d0' }}>
-                                <span>✓ Reconciled by: <strong>{overview?.reconciledByName || 'Store Manager'}</strong></span>
-                                {overview?.reconciledAt && <span>on {formatDate(overview.reconciledAt)}</span>}
+                                <span>✓ Đã đối soát bởi: <strong>{overview?.reconciledByName || 'Cửa Hàng Trưởng'}</strong></span>
+                                {overview?.reconciledAt && <span>vào lúc {formatDate(overview.reconciledAt)}</span>}
                             </div>
                         )}
                     </div>
@@ -161,7 +162,7 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                         <rect x="14" y="14" width="7" height="7" />
                         <rect x="3" y="14" width="7" height="7" />
                     </svg>
-                    Overview & Reconciliation
+                    Tổng Quan & Đối Soát
                 </button>
                 <button
                     type="button"
@@ -172,7 +173,7 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                         <polyline points="14 2 14 8 20 8" />
                     </svg>
-                    Sales Invoices ({invTotal})
+                    Hóa Đơn Bán Hàng ({invTotal})
                 </button>
                 <button
                     type="button"
@@ -183,7 +184,7 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                         <circle cx="12" cy="12" r="10" />
                         <polyline points="12 6 12 12 16 14" />
                     </svg>
-                    Cashier Shifts ({shifts?.length || 0})
+                    Ca Làm Việc Thu Ngân ({shifts?.length || 0})
                 </button>
             </div>
 
@@ -194,9 +195,9 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                     <div className="pms-card">
                         <div className="pms-card-header">
                             <div>
-                                <div className="pms-card-title">Revenue Reconciliation by Payment Method</div>
+                                <div className="pms-card-title">Đối Soát Doanh Thu Theo Phương Thức Thanh Toán</div>
                                 <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-                                    Compare system-recorded transactions against physical cash counts
+                                    So sánh số liệu ghi nhận trên hệ thống POS với số tiền mặt thực tế kiểm đếm
                                 </div>
                             </div>
                         </div>
@@ -204,18 +205,18 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                             <table className="pms-table">
                                 <thead>
                                     <tr>
-                                        <th>Payment Method</th>
-                                        <th style={{ textAlign: 'right' }}>System Recorded</th>
-                                        <th style={{ textAlign: 'right' }}>Actual Counted</th>
-                                        <th style={{ textAlign: 'right' }}>Variance</th>
+                                        <th>Phương Thức</th>
+                                        <th style={{ textAlign: 'right' }}>Hệ Thống Ghi Nhận</th>
+                                        <th style={{ textAlign: 'right' }}>Thực Tế Kiểm Đếm</th>
+                                        <th style={{ textAlign: 'right' }}>Chênh Lệch</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td><strong>Cash at Register</strong></td>
+                                        <td><strong>Tiền mặt tại két</strong></td>
                                         <td style={{ textAlign: 'right', fontWeight: 600 }}>{money(overview?.systemCash || 0)}</td>
                                         <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--brand-primary-dark)' }}>
-                                            {money(overview?.actualCash ?? overview?.systemCash ?? 0)}
+                                             {money(overview?.actualCash ?? overview?.systemCash ?? 0)}
                                         </td>
                                         <td style={{
                                             textAlign: 'right',
@@ -226,19 +227,19 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Bank Transfer</strong></td>
+                                        <td><strong>Chuyển khoản ngân hàng</strong></td>
                                         <td style={{ textAlign: 'right' }}>{money(overview?.systemBank || 0)}</td>
                                         <td style={{ textAlign: 'right' }}>{money(overview?.systemBank || 0)}</td>
                                         <td style={{ textAlign: 'right', color: 'var(--color-success)' }}>0 ₫</td>
                                     </tr>
                                     <tr>
-                                        <td><strong>E-Wallet (VNPay)</strong></td>
+                                        <td><strong>Ví điện tử (VNPay/MoMo)</strong></td>
                                         <td style={{ textAlign: 'right' }}>{money(overview?.systemVnpay || 0)}</td>
                                         <td style={{ textAlign: 'right' }}>{money(overview?.systemVnpay || 0)}</td>
                                         <td style={{ textAlign: 'right', color: 'var(--color-success)' }}>0 ₫</td>
                                     </tr>
                                     <tr style={{ background: 'var(--bg-canvas)' }}>
-                                        <td><strong style={{ fontSize: 13.5 }}>TOTAL</strong></td>
+                                        <td><strong style={{ fontSize: 13.5 }}>TỔNG CỘNG</strong></td>
                                         <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--brand-primary)' }}>
                                             {money(overview?.systemTotal || 0)}
                                         </td>
@@ -258,7 +259,7 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
 
                             {overview?.note && (
                                 <div style={{ padding: '14px 20px', background: 'var(--bg-canvas)', borderTop: '1px solid var(--border-color)', fontSize: 13 }}>
-                                    <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Reconciliation Note: </span>
+                                    <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Ghi chú đối soát: </span>
                                     <span>{overview.note}</span>
                                 </div>
                             )}
@@ -269,11 +270,11 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         <div className="pms-card">
                             <div className="pms-card-header">
-                                <div className="pms-card-title">Store Manager Action</div>
+                                <div className="pms-card-title">Hành Động Quản Lý</div>
                             </div>
                             <div className="pms-card-body">
                                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.5 }}>
-                                    At the end of business hours and after receiving register drawers from cashiers, count actual cash and reconcile the ledger.
+                                    Vào cuối ngày làm việc hoặc sau khi nhận bàn giao két thu ngân, đếm tiền mặt thực tế và xác nhận chốt sổ đối soát.
                                 </p>
                                 <button
                                     type="button"
@@ -285,29 +286,29 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                                         <polyline points="22 4 12 14.01 9 11.01" />
                                     </svg>
-                                    {isReconciled ? 'Edit / Update Reconciliation' : 'Proceed to Reconcile Cash'}
+                                    {isReconciled ? 'Chỉnh Sửa / Cập Nhật Đối Soát' : 'Tiến Hành Đối Soát Tiền Mặt'}
                                 </button>
                             </div>
                         </div>
 
                         <div className="pms-card">
                             <div className="pms-card-header" style={{ background: 'var(--bg-canvas)' }}>
-                                <div className="pms-card-title">Audit Trail</div>
+                                <div className="pms-card-title">Nhật Ký Đối Soát</div>
                             </div>
                             <div className="pms-card-body" style={{ background: 'var(--bg-canvas)' }}>
                                 <div style={{ fontSize: 13, color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: 8 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>Status:</span>
+                                        <span>Trạng thái:</span>
                                         <span className={`pms-badge ${isReconciled ? 'pms-badge-success' : 'pms-badge-warning'}`}>
-                                            {isReconciled ? 'Reconciled' : 'Pending Count'}
+                                            {isReconciled ? 'Đã đối soát' : 'Chờ kiểm đếm'}
                                         </span>
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>Auditor:</span>
-                                        <strong style={{ color: 'var(--text-primary)' }}>{overview?.reconciledByName || 'Not Reconciled'}</strong>
+                                        <span>Người đối soát:</span>
+                                        <strong style={{ color: 'var(--text-primary)' }}>{overview?.reconciledByName || 'Chưa đối soát'}</strong>
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>Timestamp:</span>
+                                        <span>Thời điểm:</span>
                                         <strong>{overview?.reconciledAt ? formatDate(overview.reconciledAt) : 'N/A'}</strong>
                                     </div>
                                 </div>

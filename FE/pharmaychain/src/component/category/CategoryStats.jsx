@@ -4,9 +4,9 @@ export default function CategoryStats({ total = 0, categories = [] }) {
 
   const stats = [
     {
-      label: 'Total Categories',
+      label: 'Tổng Số Danh Mục',
       value: total,
-      sub: 'taxonomy entries',
+      sub: 'nhóm phân loại dược phẩm',
       iconColor: 'indigo',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -18,9 +18,9 @@ export default function CategoryStats({ total = 0, categories = [] }) {
       ),
     },
     {
-      label: 'Active Categories',
+      label: 'Đang Hoạt Động',
       value: activeCount,
-      sub: 'available for products',
+      sub: 'áp dụng gán thuốc & phân loại',
       iconColor: 'blue',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -29,9 +29,9 @@ export default function CategoryStats({ total = 0, categories = [] }) {
       ),
     },
     {
-      label: 'Inactive Categories',
+      label: 'Ngừng Hoạt Động',
       value: inactiveCount,
-      sub: 'suspended or archived',
+      sub: 'tạm dừng hoặc lưu trữ',
       iconColor: 'red',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

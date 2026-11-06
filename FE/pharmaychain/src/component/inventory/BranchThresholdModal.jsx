@@ -20,7 +20,7 @@ export default function BranchThresholdModal({ show, onHide, item, onConfirm, su
         setError(null);
         const num = Number(minQuantity);
         if (isNaN(num) || num < 0) {
-            setError('Minimum stock threshold cannot be negative');
+            setError('Định mức tồn kho tối thiểu không được là số âm');
             return;
         }
         try {
@@ -30,7 +30,7 @@ export default function BranchThresholdModal({ show, onHide, item, onConfirm, su
                 note,
             });
         } catch (err) {
-            setError(err?.message || 'An error occurred while updating threshold');
+            setError(err?.message || 'Có lỗi xảy ra khi cập nhật định mức tồn kho');
         }
     };
 
@@ -39,7 +39,7 @@ export default function BranchThresholdModal({ show, onHide, item, onConfirm, su
             <div className="pms-modal" style={{ maxWidth: 480 }}>
                 <div className="pms-modal-header">
                     <div>
-                        <div className="pms-modal-title">Adjust Minimum Stock Warning Threshold</div>
+                        <div className="pms-modal-title">Điều Chỉnh Định Mức Cảnh Báo Tồn Kho Tối Thiểu</div>
                         <div className="pms-modal-sub">{item.productName} ({item.unit})</div>
                     </div>
                     <button type="button" className="pms-modal-close" onClick={onHide} disabled={submitting}>
@@ -58,30 +58,30 @@ export default function BranchThresholdModal({ show, onHide, item, onConfirm, su
                         )}
 
                         <div className="pms-form-group">
-                            <label className="pms-label">Minimum Stock Quantity *</label>
+                            <label className="pms-label">Số lượng tồn kho an toàn tối thiểu *</label>
                             <input
                                 type="number"
                                 min="0"
                                 className="pms-input pms-input-bare"
                                 value={minQuantity}
                                 onChange={(e) => setMinQuantity(e.target.value)}
-                                placeholder="e.g., 20"
+                                placeholder="Ví dụ: 20"
                                 required
                                 disabled={submitting}
                             />
                             <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>
-                                When physical quantity at this branch is $\le$ this threshold, the system displays a yellow/red low stock indicator.
+                                Khi tồn kho thực tế tại chi nhánh này nhỏ hơn hoặc bằng định mức, hệ thống sẽ kích hoạt cảnh báo thiếu hàng cần cấp phát.
                             </div>
                         </div>
 
                         <div className="pms-form-group" style={{ marginBottom: 4 }}>
-                            <label className="pms-label">Adjustment Reason (Audit Log)</label>
+                            <label className="pms-label">Lý do điều chỉnh (Nhật ký kiểm toán)</label>
                             <textarea
                                 rows={2}
                                 className="pms-input pms-input-bare"
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
-                                placeholder="Note reason for changing minimum threshold..."
+                                placeholder="Ghi chú lý do thay đổi định mức an toàn..."
                                 disabled={submitting}
                             />
                         </div>
@@ -89,10 +89,10 @@ export default function BranchThresholdModal({ show, onHide, item, onConfirm, su
 
                     <div className="pms-modal-footer">
                         <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-                            Cancel
+                            Hủy bỏ
                         </button>
                         <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting}>
-                            {submitting ? 'Saving...' : 'Save Changes'}
+                            {submitting ? 'Đang lưu...' : 'Lưu Thay Đổi'}
                         </button>
                     </div>
                 </form>

@@ -9,11 +9,11 @@ import {
 import PurchaseOrderDetailModal from '../../component/procurement/PurchaseOrderDetailModal';
 
 const STATUS_TABS = [
-    { label: 'All Orders', value: '' },
-    { label: 'Pending Approval', value: 1 },
-    { label: 'Approved', value: 2 },
-    { label: 'Rejected', value: 3 },
-    { label: 'Completed', value: 5 },
+    { label: 'Tất cả đơn hàng', value: '' },
+    { label: 'Chờ phê duyệt', value: 1 },
+    { label: 'Đã duyệt', value: 2 },
+    { label: 'Đã từ chối', value: 3 },
+    { label: 'Hoàn tất', value: 5 },
 ];
 
 export default function PurchaseOrdersPage() {
@@ -48,7 +48,7 @@ export default function PurchaseOrdersPage() {
             setList(res?.content || []);
             setTotal(res?.totalElements ?? 0);
         } catch (err) {
-            setErrorMsg(err?.message || 'Failed to load purchase orders.');
+            setErrorMsg(err?.message || 'Không thể tải danh sách đơn đặt hàng thu mua.');
         } finally {
             setLoading(false);
         }
@@ -70,7 +70,7 @@ export default function PurchaseOrdersPage() {
             const res = await getPurchaseOrderDetail(targetId);
             setSelectedDetail(res);
         } catch (err) {
-            setErrorMsg(err?.message || 'Failed to load purchase order details.');
+            setErrorMsg(err?.message || 'Không thể tải chi tiết đơn đặt hàng thu mua.');
         } finally {
             setDetailLoading(false);
         }
@@ -81,11 +81,11 @@ export default function PurchaseOrdersPage() {
         setErrorMsg(null);
         try {
             const res = await approvePurchaseOrder(id, { actionByUsername: 'admin', reason: note });
-            setSuccessMsg(`Purchase Order ${res?.code || ''} approved successfully!`);
+            setSuccessMsg(`Đơn đặt hàng thu mua ${res?.code || ''} đã được phê duyệt thành công!`);
             setSelectedDetail(res);
             await fetchOrders();
         } catch (err) {
-            setErrorMsg(err?.message || 'Failed to approve purchase order.');
+            setErrorMsg(err?.message || 'Phê duyệt đơn đặt hàng thất bại.');
         } finally {
             setActionLoading(false);
         }
@@ -96,11 +96,11 @@ export default function PurchaseOrdersPage() {
         setErrorMsg(null);
         try {
             const res = await rejectPurchaseOrder(id, { actionByUsername: 'admin', reason });
-            setSuccessMsg(`Purchase Order ${res?.code || ''} was rejected.`);
+            setSuccessMsg(`Đơn đặt hàng thu mua ${res?.code || ''} đã bị từ chối.`);
             setSelectedDetail(res);
             await fetchOrders();
         } catch (err) {
-            setErrorMsg(err?.message || 'Failed to reject purchase order.');
+            setErrorMsg(err?.message || 'Từ chối đơn đặt hàng thất bại.');
         } finally {
             setActionLoading(false);
         }
@@ -117,9 +117,9 @@ export default function PurchaseOrdersPage() {
             {/* Header */}
             <div className="pms-page-header">
                 <div>
-                    <h1 className="pms-page-title">Purchase Orders (General Manager Review)</h1>
+                    <h1 className="pms-page-title">Đơn Đặt Hàng Thu Mua (Ban Giám Đốc Phê Duyệt)</h1>
                     <p className="pms-page-sub">
-                        Review incoming supplier purchase proposals, inspect line-item quotations, and authorize procurement execution.
+                        Xem xét đề xuất mua sắm thuốc, thẩm định bảng so sánh báo giá nhà cung cấp và phê duyệt phát hành đơn PO chính thức.
                     </p>
                 </div>
             </div>
@@ -151,21 +151,21 @@ export default function PurchaseOrdersPage() {
             {/* Metric Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 20 }}>
                 <div className="pms-card" style={{ padding: '16px 20px' }}>
-                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Total Purchase Orders</div>
+                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Tổng Số Đơn Hàng PO</div>
                     <div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', marginTop: 4 }}>{total}</div>
                 </div>
                 <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid #f59e0b' }}>
-                    <div style={{ fontSize: 12, color: '#b45309', fontWeight: 600 }}>Pending Approval (Current View)</div>
+                    <div style={{ fontSize: 12, color: '#b45309', fontWeight: 600 }}>Chờ Phê Duyệt</div>
                     <div style={{ fontSize: 24, fontWeight: 700, color: '#d97706', marginTop: 4 }}>{pendingCount}</div>
                 </div>
                 <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid #10b981' }}>
-                    <div style={{ fontSize: 12, color: '#047857', fontWeight: 600 }}>Approved Orders</div>
+                    <div style={{ fontSize: 12, color: '#047857', fontWeight: 600 }}>Đã Phê Duyệt</div>
                     <div style={{ fontSize: 24, fontWeight: 700, color: '#059669', marginTop: 4 }}>{approvedCount}</div>
                 </div>
                 <div className="pms-card" style={{ padding: '16px 20px' }}>
-                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Role Context</div>
+                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Thẩm Quyền Ký Duyệt</div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb', marginTop: 8 }}>
-                        General Manager (Authorized)
+                        Ban Giám Đốc (CEO / GD Vận Hành)
                     </div>
                 </div>
             </div>
@@ -195,7 +195,7 @@ export default function PurchaseOrdersPage() {
                         <input
                             type="text"
                             className="pms-input"
-                            placeholder="Search by PO code, PR, or supplier…"
+                            placeholder="Tìm theo mã PO, mã yêu cầu hoặc nhà cung cấp…"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onKeyDown={(e) => {
@@ -213,7 +213,7 @@ export default function PurchaseOrdersPage() {
                                 fetchOrders();
                             }}
                         >
-                            Search
+                            Tìm kiếm
                         </button>
                     </div>
                 </div>
@@ -226,14 +226,14 @@ export default function PurchaseOrdersPage() {
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>PO Code</th>
-                                <th>PR Reference</th>
-                                <th>Supplier Name</th>
-                                <th style={{ textAlign: 'right' }}>Total Amount (₫)</th>
-                                <th>Status</th>
-                                <th>Created Date</th>
-                                <th>Approved By</th>
-                                <th style={{ textAlign: 'center' }}>Actions</th>
+                                <th>Mã Đơn PO</th>
+                                <th>Yêu Cầu Tham Chiếu</th>
+                                <th>Nhà Cung Cấp</th>
+                                <th style={{ textAlign: 'right' }}>Tổng Giá Trị (₫)</th>
+                                <th>Trạng Thái</th>
+                                <th>Ngày Lập Đơn</th>
+                                <th>Người Phê Duyệt</th>
+                                <th style={{ textAlign: 'center' }}>Thao Tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -242,14 +242,14 @@ export default function PurchaseOrdersPage() {
                                     <td colSpan={9} style={{ textAlign: 'center', padding: '40px' }}>
                                         <div className="pms-spinner" />
                                         <span style={{ display: 'block', marginTop: 10, color: '#64748b' }}>
-                                            Loading Purchase Orders…
+                                            Đang tải danh sách đơn đặt hàng…
                                         </span>
                                     </td>
                                 </tr>
                             ) : list.length === 0 ? (
                                 <tr>
                                     <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                                        No purchase orders found matching your criteria.
+                                        Không tìm thấy đơn đặt hàng thu mua nào phù hợp.
                                     </td>
                                 </tr>
                             ) : (
@@ -279,7 +279,7 @@ export default function PurchaseOrdersPage() {
                                                                     : 'pms-badge-neutral'
                                                         }`}
                                                 >
-                                                    {po.statusText}
+                                                    {po.statusText || (po.status === 1 ? 'Chờ duyệt' : po.status === 2 ? 'Đã duyệt' : po.status === 3 ? 'Từ chối' : 'Hoàn tất')}
                                                 </span>
                                             </td>
                                             <td>{formatDate(po.createdAt)}</td>
@@ -290,7 +290,7 @@ export default function PurchaseOrdersPage() {
                                                     style={{ fontSize: 12, padding: '4px 10px' }}
                                                     onClick={() => handleOpenDetail(po)}
                                                 >
-                                                    {isPending ? 'Review / Approve' : 'View Details'}
+                                                    {isPending ? 'Xem xét / Phê duyệt' : 'Xem chi tiết'}
                                                 </button>
                                             </td>
                                         </tr>
@@ -313,7 +313,7 @@ export default function PurchaseOrdersPage() {
                         }}
                     >
                         <span style={{ fontSize: 13, color: '#64748b' }}>
-                            Showing {list.length} of {total} orders
+                            Hiển thị {list.length} / {total} đơn hàng
                         </span>
                         <div style={{ display: 'flex', gap: 6 }}>
                             <button
@@ -321,7 +321,7 @@ export default function PurchaseOrdersPage() {
                                 disabled={page === 0}
                                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                             >
-                                Previous
+                                ← Trang trước
                             </button>
                             <span style={{ padding: '6px 12px', fontSize: 13, fontWeight: 600 }}>
                                 {page + 1} / {totalPages}
@@ -331,7 +331,7 @@ export default function PurchaseOrdersPage() {
                                 disabled={page >= totalPages - 1}
                                 onClick={() => setPage((p) => p + 1)}
                             >
-                                Next
+                                Trang sau →
                             </button>
                         </div>
                     </div>

@@ -9,11 +9,11 @@ export default function WarehousePurchaseRequestDetailModal({ show, onHide, deta
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">
-              Purchase Request {detail?.code ? `— ${detail.code}` : ''}
+              Yêu Cầu Mua Hàng {detail?.code ? `— ${detail.code}` : ''}
             </div>
-            <div className="pms-modal-sub">Replenishment request submitted to procurement</div>
+            <div className="pms-modal-sub">Phiếu đề xuất mua bổ sung tồn kho gửi phòng Thu mua</div>
           </div>
-          <button className="pms-modal-close" onClick={onHide}>
+          <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -24,7 +24,7 @@ export default function WarehousePurchaseRequestDetailModal({ show, onHide, deta
           {loading ? (
             <div className="pms-spinner-wrap">
               <div className="pms-spinner" />
-              <span className="pms-spinner-text">Loading request details…</span>
+              <span className="pms-spinner-text">Đang tải chi tiết yêu cầu mua hàng…</span>
             </div>
           ) : detail ? (
             <div>
@@ -35,22 +35,22 @@ export default function WarehousePurchaseRequestDetailModal({ show, onHide, deta
                 borderRadius: 'var(--border-radius-md)', padding: '16px 20px', marginBottom: 20,
               }}>
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Request Code</div>
+                  <div className="pms-detail-label">Mã Yêu Cầu</div>
                   <div className="pms-detail-value mono fw-700">{detail.code}</div>
                 </div>
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Status</div>
+                  <div className="pms-detail-label">Trạng Thái</div>
                   <div style={{ marginTop: 2 }}>
-                    <span className="pms-badge pms-badge-info">{detail.statusText || 'Submitted'}</span>
+                    <span className="pms-badge pms-badge-info">{detail.statusText || 'Đã gửi'}</span>
                   </div>
                 </div>
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Submitted Date</div>
+                  <div className="pms-detail-label">Ngày Gửi</div>
                   <div className="pms-detail-value">{formatDate(detail.createdAt)}</div>
                 </div>
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Created By</div>
-                  <div className="pms-detail-value fw-600">{detail.createdByUsername || 'Warehouse Staff'}</div>
+                  <div className="pms-detail-label">Người Tạo</div>
+                  <div className="pms-detail-value fw-600">{detail.createdByUsername || 'Nhân viên Kho'}</div>
                 </div>
               </div>
 
@@ -60,7 +60,7 @@ export default function WarehousePurchaseRequestDetailModal({ show, onHide, deta
                   borderRadius: 'var(--border-radius-md)', border: '1px solid var(--border-color)',
                   marginBottom: 20, fontSize: 13,
                 }}>
-                  <strong style={{ color: 'var(--text-primary)' }}>Reason: </strong>
+                  <strong style={{ color: 'var(--text-primary)' }}>Lý Do / Giải Trình: </strong>
                   <span style={{ color: 'var(--text-secondary)' }}>{detail.reason}</span>
                 </div>
               )}
@@ -72,11 +72,11 @@ export default function WarehousePurchaseRequestDetailModal({ show, onHide, deta
                     <thead>
                       <tr>
                         <th style={{ width: 40 }}>#</th>
-                        <th>Medicine / Product</th>
-                        <th>Barcode</th>
-                        <th>Unit</th>
-                        <th className="text-right">Requested Qty</th>
-                        <th>Notes</th>
+                        <th>Tên Thuốc / Sản Phẩm</th>
+                        <th>Mã Thuốc</th>
+                        <th>ĐVT</th>
+                        <th className="text-right">SL Yêu Cầu</th>
+                        <th>Ghi Chú</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -94,7 +94,7 @@ export default function WarehousePurchaseRequestDetailModal({ show, onHide, deta
                       ) : (
                         <tr>
                           <td colSpan="6" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
-                            No items in this request.
+                            Không có mặt hàng nào trong yêu cầu này.
                           </td>
                         </tr>
                       )}
@@ -105,13 +105,13 @@ export default function WarehousePurchaseRequestDetailModal({ show, onHide, deta
             </div>
           ) : (
             <div className="pms-empty">
-              <div className="pms-empty-title">No data available</div>
+              <div className="pms-empty-title">Không có dữ liệu chi tiết</div>
             </div>
           )}
         </div>
 
         <div className="pms-modal-footer">
-          <button className="btn-pms btn-pms-secondary" onClick={onHide}>Close</button>
+          <button className="btn-pms btn-pms-secondary" onClick={onHide}>Đóng</button>
         </div>
       </div>
     </div>

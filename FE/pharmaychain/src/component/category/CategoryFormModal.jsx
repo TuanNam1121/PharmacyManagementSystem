@@ -44,9 +44,9 @@ export default function CategoryFormModal({
 
   const validate = () => {
     const e = {};
-    if (!form.name.trim()) e.name = 'Category name is required';
-    if (form.name.trim().length > 150) e.name = 'Category name must not exceed 150 characters';
-    if (form.description.trim().length > 500) e.description = 'Description must not exceed 500 characters';
+    if (!form.name.trim()) e.name = 'Tên danh mục không được để trống';
+    if (form.name.trim().length > 150) e.name = 'Tên danh mục không được vượt quá 150 ký tự';
+    if (form.description.trim().length > 500) e.description = 'Mô tả không được vượt quá 500 ký tự';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -68,7 +68,6 @@ export default function CategoryFormModal({
       const payload = {
         name: form.name.trim(),
         description: form.description.trim() || null,
-        // Status is managed via the dedicated Toggle Status action (CategoryStatusModal), not the edit form
       };
 
       if (isEdit && category?.id) {
@@ -82,7 +81,7 @@ export default function CategoryFormModal({
       if (onSuccess) await onSuccess();
       onHide();
     } catch (err) {
-      setServerError(err?.message || (isEdit ? 'Failed to update category' : 'Failed to create category'));
+      setServerError(err?.message || (isEdit ? 'Cập nhật danh mục thất bại' : 'Thêm mới danh mục thất bại'));
     } finally {
       setSubmitting(false);
     }
@@ -95,15 +94,15 @@ export default function CategoryFormModal({
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">
-              {isEdit ? 'Edit Category' : 'New Product Category'}
+              {isEdit ? 'Chỉnh Sửa Nhóm Danh Mục' : 'Thêm Nhóm Danh Mục Mới'}
             </div>
             <div className="pms-modal-sub">
               {isEdit
-                ? `Update taxonomy details for "${category?.name || ''}"`
-                : 'Add a new product category to the pharmaceutical catalog taxonomy'}
+                ? `Cập nhật thông tin phân loại cho "${category?.name || ''}"`
+                : 'Thêm nhóm phân loại dược phẩm mới vào hệ thống danh mục chuỗi nhà thuốc'}
             </div>
           </div>
-          <button className="pms-modal-close" onClick={handleClose} aria-label="Close">
+          <button className="pms-modal-close" onClick={handleClose} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -130,18 +129,18 @@ export default function CategoryFormModal({
             {/* Category Details */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
-                Category Information
+                Thông Tin Phân Loại Danh Mục
               </div>
 
               {/* Name */}
               <div className="pms-form-group" style={{ marginBottom: 14 }}>
-                <label className="pms-label">Category Name *</label>
+                <label className="pms-label">Tên Nhóm Danh Mục *</label>
                 <input
                   type="text"
                   className="pms-input pms-input-bare"
                   value={form.name}
                   onChange={(e) => setField('name', e.target.value)}
-                  placeholder="e.g. Antibiotics, Vitamins & Supplements"
+                  placeholder="Ví dụ: Kháng Sinh & Kháng Khuẩn, Giảm Đau Hạ Sốt, Tim Mạch…"
                   maxLength={150}
                   required
                 />
@@ -152,13 +151,13 @@ export default function CategoryFormModal({
 
               {/* Description */}
               <div className="pms-form-group" style={{ marginBottom: 14 }}>
-                <label className="pms-label">Description</label>
+                <label className="pms-label">Mô Tả Nghiệp Vụ</label>
                 <textarea
                   className="pms-input pms-input-bare"
                   rows={4}
                   value={form.description}
                   onChange={(e) => setField('description', e.target.value)}
-                  placeholder="Brief description of what products belong to this category…"
+                  placeholder="Mô tả phạm vi áp dụng, điều kiện bảo quản GSP hoặc các nhóm hoạt chất thuộc danh mục này…"
                   maxLength={500}
                   style={{ resize: 'vertical' }}
                 />
@@ -169,19 +168,16 @@ export default function CategoryFormModal({
                   <div style={{ color: 'var(--status-danger)', fontSize: 11.5, marginTop: 4 }}>{errors.description}</div>
                 )}
               </div>
-
-              {/* Status — only shown in edit mode */}
-              {/* Status is managed via the dedicated Toggle Status action; removed from edit form to avoid confusion */}
             </div>
           </div>
 
           {/* Modal Footer */}
           <div className="pms-modal-footer">
             <button type="button" className="btn-pms btn-pms-secondary" onClick={handleClose} disabled={submitting}>
-              Cancel
+              Hủy
             </button>
             <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting}>
-              {submitting ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Category'}
+              {submitting ? 'Đang lưu…' : isEdit ? 'Lưu Thay Đổi' : 'Tạo Danh Mục'}
             </button>
           </div>
         </form>

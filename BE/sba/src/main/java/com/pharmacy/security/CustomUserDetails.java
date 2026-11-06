@@ -1,6 +1,7 @@
 package com.pharmacy.security;
 
 import com.pharmacy.entity.Account;
+import com.pharmacy.entity.enums.AccountStatus;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -64,7 +65,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return account.getStatus() != null && account.getStatus() == 1;
+        return account.getStatus() != null && account.getStatus() != AccountStatus.LOCKED;
     }
 
     @Override
@@ -74,7 +75,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return account.getStatus() != null && account.getStatus() == 1;
+        return account.getStatus() == AccountStatus.ACTIVE;
     }
 }
 

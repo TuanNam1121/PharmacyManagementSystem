@@ -49,7 +49,7 @@ export default function AuditCountingModal({ show, audit, onHide, onSubmitCount,
         });
 
         if (items.some(x => x === null)) {
-            setError('Please enter counted quantity for all inventory items before submitting.');
+            setError('Vui lòng nhập số lượng thực đếm cho toàn bộ danh mục thuốc trước khi gửi duyệt.');
             return;
         }
 
@@ -60,7 +60,7 @@ export default function AuditCountingModal({ show, audit, onHide, onSubmitCount,
             });
             onHide();
         } catch (err) {
-            setError(err?.message || 'Failed to submit inventory counts.');
+            setError(err?.message || 'Không thể nộp kết quả kiểm đếm kho.');
         }
     };
 
@@ -69,9 +69,9 @@ export default function AuditCountingModal({ show, audit, onHide, onSubmitCount,
             <div className="pms-modal" style={{ maxWidth: 900, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
                 <div className="pms-modal-header">
                     <div>
-                        <h3 className="pms-modal-title">Perform Physical Stock Count</h3>
+                        <h3 className="pms-modal-title">Thực Hiện Kiểm Đếm Tồn Kho Thực Tế</h3>
                         <p className="pms-modal-sub" style={{ fontSize: 12, margin: 0, color: 'var(--text-secondary)' }}>
-                            Audit: <strong>{audit.code}</strong> — Branch: <strong>{audit.storeName}</strong>
+                            Mã kiểm kê: <strong>{audit.code}</strong> — Chi nhánh: <strong>{audit.storeName}</strong>
                         </p>
                     </div>
                     <button type="button" className="pms-modal-close" onClick={onHide} disabled={submitting}>
@@ -90,19 +90,19 @@ export default function AuditCountingModal({ show, audit, onHide, onSubmitCount,
                         )}
 
                         <div className="pms-alert pms-alert-info" style={{ marginBottom: 16, fontSize: 13 }}>
-                            Please verify physical shelf items against system stock. The variance will calculate automatically.
+                            Vui lòng kiểm đếm thuốc thực tế tại quầy/kệ và đối chiếu với số liệu sổ sách hệ thống. Mức chênh lệch sẽ được tự động tính toán.
                         </div>
 
                         <div style={{ overflowX: 'auto' }}>
                             <table className="pms-table">
                                 <thead>
                                     <tr>
-                                        <th>Product Name</th>
-                                        <th>Batch Number</th>
-                                        <th style={{ textAlign: 'right' }}>System Qty</th>
-                                        <th style={{ width: 140, textAlign: 'center' }}>Counted Qty <span style={{ color: 'var(--danger)' }}>*</span></th>
-                                        <th style={{ textAlign: 'right', width: 90 }}>Variance</th>
-                                        <th>Discrepancy Note</th>
+                                        <th>Tên biệt dược & Quy cách</th>
+                                        <th>Số lô</th>
+                                        <th style={{ textAlign: 'right' }}>Tồn sổ sách</th>
+                                        <th style={{ width: 140, textAlign: 'center' }}>SL thực đếm <span style={{ color: 'var(--danger)' }}>*</span></th>
+                                        <th style={{ textAlign: 'right', width: 90 }}>Chênh lệch</th>
+                                        <th>Ghi chú lý do lệch</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -139,7 +139,7 @@ export default function AuditCountingModal({ show, audit, onHide, onSubmitCount,
                                                     <input
                                                         type="text"
                                                         className="pms-input"
-                                                        placeholder="Damage, missing, etc."
+                                                        placeholder="Hỏng vỡ, thiếu tem, thừa kho..."
                                                         value={notes[item.id] || ''}
                                                         onChange={(e) => handleNoteChange(item.id, e.target.value)}
                                                         disabled={submitting}
@@ -156,10 +156,10 @@ export default function AuditCountingModal({ show, audit, onHide, onSubmitCount,
 
                     <div className="pms-modal-footer">
                         <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-                            Cancel
+                            Hủy bỏ
                         </button>
                         <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting}>
-                            {submitting ? 'Submitting Count...' : 'Submit Count to Store Manager'}
+                            {submitting ? 'Đang gửi kết quả...' : 'Nộp Báo Cáo Kiểm Đếm Cho Quản Lý'}
                         </button>
                     </div>
                 </form>

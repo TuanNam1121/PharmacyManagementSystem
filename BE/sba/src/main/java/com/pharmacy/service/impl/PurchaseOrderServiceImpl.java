@@ -69,7 +69,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         Account approver = resolveActor(request.getActionByUsername());
 
         Short oldStatus = pp.getStatus();
-        pp.setStatus((short) 2); // 2 = Approved
+        pp.setStatus(com.pharmacy.entity.enums.PurchaseProposalStatus.APPROVED.getCode());
         pp.setApprovedBy(approver);
         pp.setApprovedAt(LocalDateTime.now());
         purchaseProposalRepository.save(pp);
@@ -112,7 +112,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         Account reviewer = resolveActor(request.getActionByUsername());
 
         Short oldStatus = pp.getStatus();
-        pp.setStatus((short) 3); // 3 = Rejected
+        pp.setStatus(com.pharmacy.entity.enums.PurchaseProposalStatus.REJECTED.getCode());
         pp.setRejectReason(request.getReason().trim());
         pp.setApprovedBy(reviewer);
         pp.setApprovedAt(LocalDateTime.now());
@@ -142,11 +142,15 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     }
 
     private PurchaseOrderResponse mapToResponseSummary(PurchaseProposal pp) {
+        com.pharmacy.entity.PurchaseRequest firstPr = (pp.getRequests() != null && !pp.getRequests().isEmpty())
+                ? pp.getRequests().get(0).getPurchaseRequest()
+                : null;
+
         return PurchaseOrderResponse.builder()
                 .id(pp.getId())
                 .code(pp.getCode())
-                .purchaseRequestId(pp.getPurchaseRequest() != null ? pp.getPurchaseRequest().getId() : null)
-                .purchaseRequestCode(pp.getPurchaseRequest() != null ? pp.getPurchaseRequest().getCode() : null)
+                .purchaseRequestId(firstPr != null ? firstPr.getId() : null)
+                .purchaseRequestCode(firstPr != null ? firstPr.getCode() : null)
                 .supplierQuotationId(pp.getSupplierQuotation() != null ? pp.getSupplierQuotation().getId() : null)
                 .supplierQuotationCode(pp.getSupplierQuotation() != null ? pp.getSupplierQuotation().getCode() : null)
                 .supplierId(pp.getSupplierQuotation() != null && pp.getSupplierQuotation().getSupplier() != null

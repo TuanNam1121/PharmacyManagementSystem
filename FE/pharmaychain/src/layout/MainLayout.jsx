@@ -7,7 +7,7 @@ import ChangePasswordModal from "../component/auth/ChangePasswordModal";
 const NAV_MODULES = [
   {
     key: "auth",
-    label: "Authentication",
+    label: "Tài khoản & Xác thực",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -15,12 +15,12 @@ const NAV_MODULES = [
       </svg>
     ),
     items: [
-      { to: "/profile", label: "My Profile" },
+      { to: "/profile", label: "Hồ sơ cá nhân" },
     ],
   },
   {
     key: "users",
-    label: "User & Security",
+    label: "Người dùng & Bảo mật",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -30,13 +30,13 @@ const NAV_MODULES = [
       </svg>
     ),
     items: [
-      { to: "/users", label: "User List" },
-      { to: "/audit-log", label: "Audit Log" },
+      { to: "/users", label: "Danh sách người dùng" },
+      { to: "/audit-log", label: "Nhật ký kiểm toán" },
     ],
   },
   {
     key: "products",
-    label: "Products & Catalog",
+    label: "Sản phẩm & Danh mục",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
@@ -44,13 +44,13 @@ const NAV_MODULES = [
       </svg>
     ),
     items: [
-      { to: "/products", label: "Product Catalog" },
-      { to: "/categories", label: "Categories" },
+      { to: "/products", label: "Danh mục sản phẩm" },
+      { to: "/categories", label: "Nhóm thuốc" },
     ],
   },
   {
     key: "sales",
-    label: "POS & Sales",
+    label: "Bán hàng & Quầy POS",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <line x1="12" y1="1" x2="12" y2="23" />
@@ -58,14 +58,14 @@ const NAV_MODULES = [
       </svg>
     ),
     items: [
-      { to: "/pos", label: "POS Counter" },
-      { to: "/shifts", label: "Shift Management" },
-      { to: "/sales", label: "Sales Invoices" },
+      { to: "/pos", label: "Quầy bán lẻ POS" },
+      { to: "/shifts", label: "Quản lý ca làm việc" },
+      { to: "/sales", label: "Hóa đơn bán lẻ" },
     ],
   },
   {
     key: "customers",
-    label: "Customers",
+    label: "Khách hàng",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -73,12 +73,12 @@ const NAV_MODULES = [
       </svg>
     ),
     items: [
-      { to: "/customers", label: "Customer Directory" },
+      { to: "/customers", label: "Danh bạ khách hàng" },
     ],
   },
   {
     key: "store-inventory",
-    label: "Branch Stock & Requisitions",
+    label: "Kho chi nhánh & Nhận hàng",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -86,15 +86,15 @@ const NAV_MODULES = [
       </svg>
     ),
     items: [
-      { to: "/store/inventory", label: "Branch Stock" },
-      { to: "/store/requisitions", label: "Stock Requisitions" },
-      { to: "/store/receipts", label: "Store Goods Receipts" },
-      { to: "/store/audit", label: "Inventory Audit" },
+      { to: "/store/inventory", label: "Tồn kho chi nhánh" },
+      { to: "/store/requisitions", label: "Yêu cầu điều chuyển" },
+      { to: "/store/receipts", label: "Nhận hàng từ kho tổng" },
+      { to: "/store/audit", label: "Kiểm kê định kỳ" },
     ],
   },
   {
     key: "warehouse",
-    label: "Central Warehouse",
+    label: "Kho tổng trung tâm",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
@@ -103,17 +103,17 @@ const NAV_MODULES = [
       </svg>
     ),
     items: [
-      { to: "/warehouse/inventory", label: "Inventory & Stock" },
-      { to: "/warehouse/adjustments", label: "Adjustments" },
-      { to: "/warehouse/alerts", label: "Expiry & Low Stock Alerts" },
-      { to: "/warehouse/replenishment", label: "Store Replenishment" },
-      { to: "/warehouse/receipts", label: "Purchase Receipts" },
-      { to: "/warehouse/requests", label: "Purchase Requests" },
+      { to: "/warehouse/inventory", label: "Tồn kho & Vị trí ô kệ" },
+      { to: "/warehouse/adjustments", label: "Điều chỉnh tồn kho" },
+      { to: "/warehouse/alerts", label: "Cảnh báo hạn dùng & Tồn thấp" },
+      { to: "/warehouse/replenishment", label: "Điều chuyển chi nhánh" },
+      { to: "/warehouse/receipts", label: "Lịch sử nhập mua" },
+      { to: "/warehouse/requests", label: "Yêu cầu mua hàng" },
     ],
   },
   {
     key: "procurement",
-    label: "Procurement",
+    label: "Thu mua & Đấu thầu",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -124,16 +124,16 @@ const NAV_MODULES = [
       </svg>
     ),
     items: [
-      { to: "/supplier", label: "Suppliers" },
-      { to: "/procurement/requests", label: "Purchase Requests" },
-      { to: "/procurement/rfq", label: "RFQ & Quotations" },
-      { to: "/procurement/proposals", label: "Purchase Proposals" },
-      { to: "/procurement/orders", label: "Purchase Orders" },
+      { to: "/supplier", label: "Nhà cung cấp" },
+      { to: "/procurement/requests", label: "Yêu cầu mua hàng" },
+      { to: "/procurement/rfq", label: "Yêu cầu báo giá (RFQ)" },
+      { to: "/procurement/proposals", label: "Đề xuất mua hàng" },
+      { to: "/procurement/orders", label: "Đơn đặt hàng thu mua" },
     ],
   },
   {
     key: "reporting",
-    label: "Reports & BI",
+    label: "Báo cáo & Thống kê",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <line x1="18" y1="20" x2="18" y2="10" />
@@ -142,42 +142,42 @@ const NAV_MODULES = [
       </svg>
     ),
     items: [
-      { to: "/reports/profit", label: "Profit Report" },
-      { to: "/reports/inventory", label: "Inventory Report" },
-      { to: "/reports/sales", label: "Daily Sales" },
+      { to: "/reports/profit", label: "Báo cáo lợi nhuận" },
+      { to: "/reports/inventory", label: "Báo cáo xuất nhập tồn" },
+      { to: "/reports/sales", label: "Doanh thu theo ngày" },
     ],
   },
 ];
 
 const BREADCRUMB_MAP = {
-  "/": ["Home"],
-  "/warehouse/inventory": ["Central Warehouse", "Inventory & Stock"],
-  "/supplier": ["Procurement", "Suppliers"],
-  "/login": ["Authentication", "Login"],
-  "/profile": ["Authentication", "My Profile"],
-  "/users": ["User & Security", "User List"],
-  "/audit-log": ["User & Security", "Audit Log"],
-  "/products": ["Products & Catalog", "Product Catalog"],
-  "/categories": ["Products & Catalog", "Categories"],
-  "/pos": ["POS & Sales", "POS Counter"],
-  "/shifts": ["POS & Sales", "Shift Management"],
-  "/sales": ["POS & Sales", "Sales Invoices"],
-  "/customers": ["Customers", "Customer Directory"],
-  "/store/inventory": ["Branch Stock & Requisitions", "Branch Stock"],
-  "/store/requisitions": ["Branch Stock & Requisitions", "Stock Requisitions"],
-  "/store/receipts": ["Branch Stock & Requisitions", "Store Goods Receipts"],
-  "/store/audit": ["Branch Stock & Requisitions", "Inventory Audit"],
-  "/warehouse/adjustments": ["Central Warehouse", "Adjustments"],
-  "/warehouse/alerts": ["Central Warehouse", "Expiry & Low Stock Alerts"],
-  "/warehouse/replenishment": ["Central Warehouse", "Store Replenishment"],
-  "/warehouse/receipts": ["Central Warehouse", "Purchase Receipts"],
-  "/procurement/requests": ["Procurement", "Purchase Requests"],
-  "/procurement/rfq": ["Procurement", "RFQ & Quotations"],
-  "/procurement/proposals": ["Procurement", "Purchase Proposals"],
-  "/procurement/orders": ["Procurement", "Purchase Orders"],
-  "/reports/profit": ["Reports & BI", "Profit Report"],
-  "/reports/inventory": ["Reports & BI", "Inventory Report"],
-  "/reports/sales": ["Reports & BI", "Daily Sales"],
+  "/": ["Trang chủ"],
+  "/warehouse/inventory": ["Kho tổng trung tâm", "Tồn kho & Vị trí ô kệ"],
+  "/supplier": ["Thu mua & Đấu thầu", "Nhà cung cấp"],
+  "/login": ["Xác thực", "Đăng nhập"],
+  "/profile": ["Tài khoản", "Hồ sơ cá nhân"],
+  "/users": ["Người dùng & Bảo mật", "Danh sách người dùng"],
+  "/audit-log": ["Người dùng & Bảo mật", "Nhật ký kiểm toán"],
+  "/products": ["Sản phẩm & Danh mục", "Danh mục sản phẩm"],
+  "/categories": ["Sản phẩm & Danh mục", "Nhóm thuốc"],
+  "/pos": ["Bán hàng & POS", "Quầy bán lẻ POS"],
+  "/shifts": ["Bán hàng & POS", "Quản lý ca làm việc"],
+  "/sales": ["Bán hàng & POS", "Hóa đơn bán lẻ"],
+  "/customers": ["Khách hàng", "Danh bạ khách hàng"],
+  "/store/inventory": ["Kho chi nhánh & Nhận hàng", "Tồn kho chi nhánh"],
+  "/store/requisitions": ["Kho chi nhánh & Nhận hàng", "Yêu cầu điều chuyển"],
+  "/store/receipts": ["Kho chi nhánh & Nhận hàng", "Nhận hàng từ kho tổng"],
+  "/store/audit": ["Kho chi nhánh & Nhận hàng", "Kiểm kê định kỳ"],
+  "/warehouse/adjustments": ["Kho tổng trung tâm", "Điều chỉnh tồn kho"],
+  "/warehouse/alerts": ["Kho tổng trung tâm", "Cảnh báo hạn dùng & Tồn thấp"],
+  "/warehouse/replenishment": ["Kho tổng trung tâm", "Điều chuyển chi nhánh"],
+  "/warehouse/receipts": ["Kho tổng trung tâm", "Lịch sử nhập mua"],
+  "/procurement/requests": ["Thu mua & Đấu thầu", "Yêu cầu mua hàng"],
+  "/procurement/rfq": ["Thu mua & Đấu thầu", "Yêu cầu báo giá (RFQ)"],
+  "/procurement/proposals": ["Thu mua & Đấu thầu", "Đề xuất mua hàng"],
+  "/procurement/orders": ["Thu mua & Đấu thầu", "Đơn đặt hàng thu mua"],
+  "/reports/profit": ["Báo cáo & Thống kê", "Báo cáo lợi nhuận"],
+  "/reports/inventory": ["Báo cáo & Thống kê", "Báo cáo xuất nhập tồn"],
+  "/reports/sales": ["Báo cáo & Thống kê", "Doanh thu theo ngày"],
 };
 
 export default function MainLayout() {
@@ -288,7 +288,7 @@ export default function MainLayout() {
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
-            Dashboard
+            Bảng điều khiển
           </NavLink>
 
           {/* Divider */}
@@ -397,7 +397,7 @@ export default function MainLayout() {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             </svg>
-            {crumbs.length === 0 && <span className="current">Dashboard</span>}
+            {crumbs.length === 0 && <span className="current">Bảng điều khiển</span>}
             {crumbs.map((c, i) => (
               <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 {i > 0 && <span className="sep">/</span>}
@@ -407,7 +407,7 @@ export default function MainLayout() {
           </div>
 
           <div className="pms-topbar-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button className="btn-pms btn-pms-ghost btn-pms-icon" title="Notifications" style={{ position: "relative" }}>
+            <button className="btn-pms btn-pms-ghost btn-pms-icon" title="Thông báo" style={{ position: "relative" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />

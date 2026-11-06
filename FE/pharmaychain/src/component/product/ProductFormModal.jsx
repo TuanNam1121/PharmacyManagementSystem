@@ -61,9 +61,9 @@ export default function ProductFormModal({
 
   const validate = () => {
     const e = {};
-    if (!form.name.trim()) e.name = 'Product name is required';
-    if (!form.unit.trim()) e.unit = 'Unit is required';
-    if (!form.categoryId) e.categoryId = 'Please select a category';
+    if (!form.name.trim()) e.name = 'Tên thuốc/sản phẩm không được để trống';
+    if (!form.unit.trim()) e.unit = 'Đơn vị tính không được để trống';
+    if (!form.categoryId) e.categoryId = 'Vui lòng chọn danh mục dược phẩm';
 
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -109,7 +109,7 @@ export default function ProductFormModal({
       if (onSuccess) await onSuccess();
       onHide();
     } catch (err) {
-      setServerError(err?.message || (isEdit ? 'Failed to update product' : 'Failed to create product'));
+      setServerError(err?.message || (isEdit ? 'Cập nhật thông tin thuốc thất bại' : 'Thêm mới thuốc thất bại'));
     } finally {
       setSubmitting(false);
     }
@@ -142,15 +142,15 @@ export default function ProductFormModal({
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">
-              {isEdit ? 'Edit Product' : 'Add New Product'}
+              {isEdit ? 'Chỉnh Sửa Thông Tin Thuốc' : 'Thêm Thuốc Mới Vào Danh Mục'}
             </div>
             <div className="pms-modal-sub">
               {isEdit
-                ? `Update catalog details for "${product?.name || ''}"`
-                : 'Add a new product or medication to the central catalog'}
+                ? `Cập nhật thông tin danh mục cho "${product?.name || ''}"`
+                : 'Thêm mới sản phẩm/thuốc vào danh mục quản lý kho trung tâm'}
             </div>
           </div>
-          <button className="pms-modal-close" onClick={handleClose} aria-label="Close">
+          <button className="pms-modal-close" onClick={handleClose} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -176,15 +176,15 @@ export default function ProductFormModal({
 
             {/* ── Section 1: Basic Info ── */}
             <div style={{ marginBottom: 20 }}>
-              {sectionTitle(1, 'Basic Information')}
+              {sectionTitle(1, 'Thông Tin Cơ Bản')}
               <div className="pms-form-group" style={{ marginBottom: 14 }}>
-                <label className="pms-label">Product Name *</label>
+                <label className="pms-label">Tên Thuốc / Sản Phẩm *</label>
                 <input
                   type="text"
                   className="pms-input pms-input-bare"
                   value={form.name}
                   onChange={(e) => setField('name', e.target.value)}
-                  placeholder="e.g. Paracetamol 500mg, Amoxicillin 250mg"
+                  placeholder="Ví dụ: Panadol Extra, Augmentin 1g, Paracetamol 500mg"
                   maxLength={250}
                   required
                 />
@@ -193,7 +193,7 @@ export default function ProductFormModal({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
                 <div className="pms-form-group">
-                  <label className="pms-label">Category *</label>
+                  <label className="pms-label">Nhóm Danh Mục *</label>
                   <select
                     className="pms-select"
                     style={{ width: '100%' }}
@@ -201,7 +201,7 @@ export default function ProductFormModal({
                     onChange={(e) => setField('categoryId', e.target.value)}
                     required
                   >
-                    <option value="">— Select Category —</option>
+                    <option value="">— Chọn nhóm danh mục —</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
@@ -211,13 +211,13 @@ export default function ProductFormModal({
                   {fieldErr('categoryId')}
                 </div>
                 <div className="pms-form-group">
-                  <label className="pms-label">Unit of Measure *</label>
+                  <label className="pms-label">Đơn Vị Tính *</label>
                   <input
                     type="text"
                     className="pms-input pms-input-bare"
                     value={form.unit}
                     onChange={(e) => setField('unit', e.target.value)}
-                    placeholder="e.g. Box, Blister, Bottle, Tube"
+                    placeholder="Ví dụ: Hộp, Vỉ, Chai, Ống, Tuýp"
                     maxLength={30}
                     required
                   />
@@ -226,13 +226,13 @@ export default function ProductFormModal({
               </div>
 
               <div className="pms-form-group">
-                <label className="pms-label">Barcode / GTIN</label>
+                <label className="pms-label">Mã Vạch / Mã GTIN</label>
                 <input
                   type="text"
                   className="pms-input pms-input-bare mono"
                   value={form.barcode}
                   onChange={(e) => setField('barcode', e.target.value)}
-                  placeholder="e.g. 8935001234567"
+                  placeholder="Ví dụ: 8935001234567"
                   maxLength={50}
                 />
               </div>
@@ -240,27 +240,27 @@ export default function ProductFormModal({
 
             {/* ── Section 2: Clinical Details ── */}
             <div style={{ marginBottom: 20 }}>
-              {sectionTitle(2, 'Clinical Details')}
+              {sectionTitle(2, 'Thông Tin Dược Lý & Lâm Sàng')}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
                 <div className="pms-form-group">
-                  <label className="pms-label">Active Ingredient</label>
+                  <label className="pms-label">Hoạt Chất Chính</label>
                   <input
                     type="text"
                     className="pms-input pms-input-bare"
                     value={form.activeIngredient}
                     onChange={(e) => setField('activeIngredient', e.target.value)}
-                    placeholder="e.g. Paracetamol, Ibuprofen"
+                    placeholder="Ví dụ: Paracetamol, Amoxicillin + Clavulanic Acid"
                     maxLength={250}
                   />
                 </div>
                 <div className="pms-form-group">
-                  <label className="pms-label">Manufacturer</label>
+                  <label className="pms-label">Nhà Sản Xuất</label>
                   <input
                     type="text"
                     className="pms-input pms-input-bare"
                     value={form.manufacturer}
                     onChange={(e) => setField('manufacturer', e.target.value)}
-                    placeholder="e.g. DHG Pharma, Sanofi"
+                    placeholder="Ví dụ: Dược Hậu Giang (DHG), Sanofi, GSK"
                     maxLength={200}
                   />
                 </div>
@@ -274,16 +274,16 @@ export default function ProductFormModal({
                   style={{ width: 15, height: 15, cursor: 'pointer', accentColor: 'var(--brand-primary)' }}
                 />
                 <label htmlFor="isPrescription" style={{ fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', userSelect: 'none' }}>
-                  Requires Prescription (Rx)
+                  Thuốc Kê Đơn Bắt Buộc (Thuốc Đơn Rx)
                 </label>
               </div>
             </div>
 
             {/* ── Section 3: Stock Settings ── */}
             <div style={{ marginBottom: 20 }}>
-              {sectionTitle(3, 'Inventory & Stock')}
+              {sectionTitle(3, 'Cài Đặt Định Mức Tồn Kho')}
               <div className="pms-form-group" style={{ maxWidth: 320 }}>
-                <label className="pms-label">Min. Stock Alert Quantity</label>
+                <label className="pms-label">Định Mức Tồn Tối Thiểu (Cảnh Báo)</label>
                 <input
                   type="number"
                   className="pms-input pms-input-bare"
@@ -294,16 +294,16 @@ export default function ProductFormModal({
                   step="1"
                 />
                 <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                  Ngưỡng cảnh báo sắp hết hàng tại kho. Giá sản phẩm được quản lý riêng biệt tại mục <em>"Set/Update Price"</em>.
+                  Ngưỡng cảnh báo sắp hết hàng tại kho. Đơn giá bán được thiết lập tại chức năng <em>"Thiết Lập Giá"</em>.
                 </span>
               </div>
             </div>
 
             {/* ── Section 4: Media & Additional ── */}
             <div style={{ marginBottom: 8 }}>
-              {sectionTitle(4, 'Media & Details')}
+              {sectionTitle(4, 'Hình Ảnh & Mô Tả Chi Tiết')}
               <div className="pms-form-group" style={{ marginBottom: 14 }}>
-                <label className="pms-label">Product Image URL</label>
+                <label className="pms-label">Đường Dẫn Hình Ảnh (URL)</label>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                   <input
                     type="text"
@@ -330,7 +330,7 @@ export default function ProductFormModal({
                     >
                       <img
                         src={form.imageUrl}
-                        alt="Preview"
+                        alt="Xem trước ảnh thuốc"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
@@ -343,13 +343,13 @@ export default function ProductFormModal({
               </div>
 
               <div className="pms-form-group" style={{ marginBottom: 12 }}>
-                <label className="pms-label">Description</label>
+                <label className="pms-label">Mô Tả & Hướng Dẫn Sử Dụng</label>
                 <textarea
                   className="pms-input pms-input-bare"
                   rows={3}
                   value={form.description}
                   onChange={(e) => setField('description', e.target.value)}
-                  placeholder="Optional product description, usage notes, warnings…"
+                  placeholder="Ghi chú công dụng, chống chỉ định, cảnh báo đặc biệt (nếu có)…"
                   style={{ resize: 'vertical' }}
                 />
               </div>
@@ -359,10 +359,10 @@ export default function ProductFormModal({
           {/* Modal Footer */}
           <div className="pms-modal-footer">
             <button type="button" className="btn-pms btn-pms-secondary" onClick={handleClose} disabled={submitting}>
-              Cancel
+              Hủy
             </button>
             <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting}>
-              {submitting ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Product'}
+              {submitting ? 'Đang lưu…' : isEdit ? 'Lưu Thay Đổi' : 'Thêm Sản Phẩm'}
             </button>
           </div>
         </form>

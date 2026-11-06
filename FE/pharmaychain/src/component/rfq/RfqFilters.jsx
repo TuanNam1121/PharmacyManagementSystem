@@ -5,10 +5,10 @@ export default function RfqFilters({
   onStatusChange,
 }) {
   const statusOptions = [
-    { value: '', label: 'All Statuses' },
-    { value: 'SENT', label: 'Sent' },
-    { value: 'RESPONDED', label: 'Responded' },
-    { value: 'EXPIRED', label: 'Expired' },
+    { value: '', label: 'Tất cả trạng thái' },
+    { value: 'SENT', label: 'Đã gửi' },
+    { value: 'RESPONDED', label: 'Đã phản hồi' },
+    { value: 'EXPIRED', label: 'Đã hết hạn' },
   ];
 
   return (
@@ -23,7 +23,7 @@ export default function RfqFilters({
         <input
           className="pms-input"
           type="text"
-          placeholder="Search RFQ code, supplier, proposal…"
+          placeholder="Tìm kiếm mã RFQ, nhà cung cấp, đề xuất…"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
         />

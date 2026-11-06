@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { formatDate } from '../../utils/format';
 
 const STATUS_BADGES = {
-    0: { label: 'Draft', cls: 'pms-badge pms-badge-neutral' },
-    1: { label: 'Pending Approval', cls: 'pms-badge pms-badge-warning' },
-    2: { label: 'Approved', cls: 'pms-badge pms-badge-success' },
-    3: { label: 'Rejected', cls: 'pms-badge pms-badge-danger' },
-    4: { label: 'Partially Received', cls: 'pms-badge pms-badge-info' },
-    5: { label: 'Completed', cls: 'pms-badge pms-badge-success' },
+    0: { label: 'Bản nháp', cls: 'pms-badge pms-badge-neutral' },
+    1: { label: 'Chờ phê duyệt', cls: 'pms-badge pms-badge-warning' },
+    2: { label: 'Đã phê duyệt', cls: 'pms-badge pms-badge-success' },
+    3: { label: 'Đã từ chối', cls: 'pms-badge pms-badge-danger' },
+    4: { label: 'Đã nhận một phần', cls: 'pms-badge pms-badge-info' },
+    5: { label: 'Đã hoàn tất', cls: 'pms-badge pms-badge-success' },
 };
 
 export default function PurchaseOrderDetailModal({
@@ -27,7 +27,7 @@ export default function PurchaseOrderDetailModal({
     if (!show) return null;
 
     const badge = STATUS_BADGES[detail?.status] || {
-        label: detail?.statusText || 'Unknown',
+        label: detail?.statusText || 'Không xác định',
         cls: 'pms-badge pms-badge-neutral',
     };
 
@@ -35,7 +35,7 @@ export default function PurchaseOrderDetailModal({
 
     const handleConfirmReject = () => {
         if (!rejectReason.trim()) {
-            setErrorMsg('Rejection reason is required (Business Rule AT01).');
+            setErrorMsg('Vui lòng nhập lý do từ chối đơn đặt hàng.');
             return;
         }
         setErrorMsg('');
@@ -59,11 +59,11 @@ export default function PurchaseOrderDetailModal({
                 <div className="pms-modal-header">
                     <div>
                         <div className="pms-modal-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span>Purchase Order: {detail?.code || '—'}</span>
+                            <span>Đơn Đặt Hàng: {detail?.code || '—'}</span>
                             <span className={badge.cls}>{badge.label}</span>
                         </div>
                         <div className="pms-modal-sub">
-                            Review supplier quotation items and approve or reject order (UC67 General Manager)
+                            Kiểm tra danh mục hàng hóa báo giá từ nhà cung cấp và phê duyệt hoặc từ chối đơn đặt hàng
                         </div>
                     </div>
                     <button className="pms-modal-close" onClick={onHide} disabled={actionLoading}>
@@ -77,7 +77,7 @@ export default function PurchaseOrderDetailModal({
                         <div className="pms-spinner-wrap" style={{ padding: '40px 0', textAlign: 'center' }}>
                             <div className="pms-spinner" />
                             <span className="pms-spinner-text" style={{ display: 'block', marginTop: 10 }}>
-                                Loading purchase order items…
+                                Đang tải danh sách hàng hóa trong đơn đặt hàng…
                             </span>
                         </div>
                     ) : detail ? (
@@ -103,7 +103,7 @@ export default function PurchaseOrderDetailModal({
                             >
                                 <div>
                                     <div style={{ fontSize: 11, textTransform: 'uppercase', color: '#64748b', fontWeight: 600 }}>
-                                        Supplier
+                                        Nhà Cung Cấp
                                     </div>
                                     <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a', marginTop: 2 }}>
                                         {detail.supplierName || '—'}
@@ -113,32 +113,32 @@ export default function PurchaseOrderDetailModal({
 
                                 <div>
                                     <div style={{ fontSize: 11, textTransform: 'uppercase', color: '#64748b', fontWeight: 600 }}>
-                                        PR Reference
+                                        Phiếu Yêu Cầu Gốc
                                     </div>
                                     <div style={{ fontWeight: 600, fontSize: 13, marginTop: 2 }}>
-                                        {detail.purchaseRequestCode || 'Direct'}
+                                        {detail.purchaseRequestCode || 'Trực tiếp'}
                                     </div>
                                     <div style={{ fontSize: 11, color: '#64748b' }}>
-                                        Quotation: {detail.supplierQuotationCode || '—'}
+                                        Báo giá: {detail.supplierQuotationCode || '—'}
                                     </div>
                                 </div>
 
                                 <div>
                                     <div style={{ fontSize: 11, textTransform: 'uppercase', color: '#64748b', fontWeight: 600 }}>
-                                        Total Order Value
+                                        Tổng Giá Trị Đơn Hàng
                                     </div>
                                     <div style={{ fontWeight: 700, fontSize: 16, color: '#059669', marginTop: 2 }}>
                                         {Number(detail.totalAmount || 0).toLocaleString('vi-VN')} ₫
                                     </div>
-                                    <div style={{ fontSize: 11, color: '#64748b' }}>Includes Tax</div>
+                                    <div style={{ fontSize: 11, color: '#64748b' }}>Đã gồm thuế GTGT</div>
                                 </div>
 
                                 <div>
                                     <div style={{ fontSize: 11, textTransform: 'uppercase', color: '#64748b', fontWeight: 600 }}>
-                                        Submitted By / Date
+                                        Người Lập / Ngày Lập
                                     </div>
                                     <div style={{ fontWeight: 600, fontSize: 13, marginTop: 2 }}>
-                                        {detail.createdByUsername || 'Purchasing Staff'}
+                                        {detail.createdByUsername || 'Nhân viên Mua hàng'}
                                     </div>
                                     <div style={{ fontSize: 11, color: '#64748b' }}>
                                         {formatDate(detail.createdAt)}
@@ -157,7 +157,7 @@ export default function PurchaseOrderDetailModal({
                                         marginBottom: 20,
                                     }}
                                 >
-                                    <strong style={{ color: '#b91c1c' }}>Rejection Reason: </strong>
+                                    <strong style={{ color: '#b91c1c' }}>Lý Do Từ Chối: </strong>
                                     <span style={{ color: '#7f1d1d' }}>{detail.rejectReason}</span>
                                 </div>
                             )}
@@ -174,25 +174,25 @@ export default function PurchaseOrderDetailModal({
                                         color: '#15803d',
                                     }}
                                 >
-                                    ✓ Approved by <strong>{detail.approvedByUsername}</strong> on {formatDate(detail.approvedAt)}
+                                    ✓ Đã phê duyệt bởi <strong>{detail.approvedByUsername}</strong> vào ngày {formatDate(detail.approvedAt)}
                                 </div>
                             )}
 
                             {/* Items Table */}
                             <div style={{ marginBottom: 20 }}>
-                                <h4 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Order Line Items</h4>
+                                <h4 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Danh Sách Mặt Hàng Đặt Mua</h4>
                                 <div className="pms-table-container">
                                     <table className="pms-table">
                                         <thead>
                                             <tr>
                                                 <th>#</th>
-                                                <th>Medicine / Product</th>
-                                                <th>Barcode</th>
-                                                <th>Unit</th>
-                                                <th style={{ textAlign: 'right' }}>Qty</th>
-                                                <th style={{ textAlign: 'right' }}>Unit Price (₫)</th>
-                                                <th style={{ textAlign: 'right' }}>Tax (%)</th>
-                                                <th style={{ textAlign: 'right' }}>Subtotal (₫)</th>
+                                                <th>Tên Thuốc / Sản Phẩm</th>
+                                                <th>Mã Vạch</th>
+                                                <th>ĐVT</th>
+                                                <th style={{ textAlign: 'right' }}>Số Lượng</th>
+                                                <th style={{ textAlign: 'right' }}>Đơn Giá (₫)</th>
+                                                <th style={{ textAlign: 'right' }}>Thuế (%)</th>
+                                                <th style={{ textAlign: 'right' }}>Thành Tiền (₫)</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -202,7 +202,7 @@ export default function PurchaseOrderDetailModal({
                                                         <td>{idx + 1}</td>
                                                         <td className="fw-600">{it.productName || '—'}</td>
                                                         <td className="mono" style={{ fontSize: 12 }}>{it.productBarcode || '—'}</td>
-                                                        <td>{it.unit || 'Box'}</td>
+                                                        <td>{it.unit || 'Hộp'}</td>
                                                         <td style={{ textAlign: 'right', fontWeight: 600 }}>{it.quantity}</td>
                                                         <td style={{ textAlign: 'right' }}>
                                                             {Number(it.unitPrice || 0).toLocaleString('vi-VN')}
@@ -216,14 +216,14 @@ export default function PurchaseOrderDetailModal({
                                             ) : (
                                                 <tr>
                                                     <td colSpan={8} style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
-                                                        No item breakdown found for this quotation.
+                                                        Không có dữ liệu mặt hàng chi tiết cho đơn này.
                                                     </td>
                                                 </tr>
                                             )}
                                         </tbody>
                                         <tfoot>
                                             <tr style={{ background: '#f8fafc', fontWeight: 700 }}>
-                                                <td colSpan={7} style={{ textAlign: 'right' }}>Grand Total (VAT Included):</td>
+                                                <td colSpan={7} style={{ textAlign: 'right' }}>Tổng Tiền (Đã Gồm VAT):</td>
                                                 <td style={{ textAlign: 'right', color: '#059669', fontSize: 15 }}>
                                                     {Number(detail.totalAmount || 0).toLocaleString('vi-VN')} ₫
                                                 </td>
@@ -245,12 +245,12 @@ export default function PurchaseOrderDetailModal({
                                     }}
                                 >
                                     <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#9f1239', marginBottom: 6 }}>
-                                        Rejection Justification * (Business Rule AT01)
+                                        Lý Do Từ Chối Đơn Hàng *
                                     </label>
                                     <textarea
                                         rows={3}
                                         className="pms-input"
-                                        placeholder="Enter reason for rejecting this purchase order (e.g., Quotation price exceeds budget, supplier terms unfavorable)..."
+                                        placeholder="Nhập lý do từ chối đơn đặt hàng này (ví dụ: Giá báo vượt ngân sách, điều khoản giao hàng không phù hợp)..."
                                         value={rejectReason}
                                         onChange={(e) => setRejectReason(e.target.value)}
                                         style={{ width: '100%', marginBottom: 10 }}
@@ -266,7 +266,7 @@ export default function PurchaseOrderDetailModal({
                                             }}
                                             disabled={actionLoading}
                                         >
-                                            Cancel
+                                            Hủy
                                         </button>
                                         <button
                                             type="button"
@@ -274,7 +274,7 @@ export default function PurchaseOrderDetailModal({
                                             onClick={handleConfirmReject}
                                             disabled={actionLoading}
                                         >
-                                            {actionLoading ? 'Rejecting…' : 'Confirm Rejection'}
+                                            {actionLoading ? 'Đang từ chối…' : 'Xác Nhận Từ Chối'}
                                         </button>
                                     </div>
                                 </div>
@@ -286,7 +286,7 @@ export default function PurchaseOrderDetailModal({
                 {/* Footer Actions */}
                 <div className="pms-modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <button className="btn-pms btn-pms-secondary" onClick={onHide} disabled={actionLoading}>
-                        Close
+                        Đóng
                     </button>
 
                     {isPending && !rejectMode && (
@@ -297,7 +297,7 @@ export default function PurchaseOrderDetailModal({
                                 onClick={() => setRejectMode(true)}
                                 disabled={actionLoading}
                             >
-                                Reject Order…
+                                Từ Chối Đơn…
                             </button>
                             <button
                                 type="button"
@@ -306,7 +306,7 @@ export default function PurchaseOrderDetailModal({
                                 disabled={actionLoading}
                                 style={{ background: '#059669', borderColor: '#059669' }}
                             >
-                                {actionLoading ? 'Approving…' : '✓ Approve Purchase Order'}
+                                {actionLoading ? 'Đang duyệt…' : '✓ Duyệt Đơn Đặt Hàng'}
                             </button>
                         </div>
                     )}

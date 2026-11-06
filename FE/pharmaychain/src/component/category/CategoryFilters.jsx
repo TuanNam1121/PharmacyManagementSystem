@@ -18,7 +18,7 @@ export default function CategoryFilters({
         <input
           className="pms-input"
           type="text"
-          placeholder="Search by category name or description…"
+          placeholder="Tìm theo tên danh mục hoặc mô tả…"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
         />
@@ -30,14 +30,14 @@ export default function CategoryFilters({
         value={statusFilter}
         onChange={(e) => onStatus(e.target.value)}
       >
-        <option value="">All Statuses</option>
-        <option value="1">Active</option>
-        <option value="0">Inactive</option>
+        <option value="">Tất cả trạng thái</option>
+        <option value="1">Đang hoạt động</option>
+        <option value="0">Ngừng hoạt động</option>
       </select>
 
       {/* Results Count */}
       <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-        Found <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> categories
+        Tìm thấy <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> nhóm danh mục
       </span>
 
       {/* Add Category Button */}
@@ -45,7 +45,7 @@ export default function CategoryFilters({
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
         </svg>
-        New Category
+        + Thêm Danh Mục
       </button>
     </div>
   );

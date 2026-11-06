@@ -5,9 +5,9 @@ export default function DailySalesStats({ overview, loading }) {
     const difference = overview?.difference ?? 0;
 
     const getDifferenceStyle = () => {
-        if (difference === 0) return { color: 'var(--color-success)', text: '100% Balanced' };
-        if (difference > 0) return { color: 'var(--color-info)', text: `Surplus +${money(difference)}` };
-        return { color: 'var(--color-danger)', text: `Shortage ${money(difference)}` };
+        if (difference === 0) return { color: 'var(--color-success)', text: 'Cân bằng khớp 100%' };
+        if (difference > 0) return { color: 'var(--color-info)', text: `Thừa tiền +${money(difference)}` };
+        return { color: 'var(--color-danger)', text: `Thiếu tiền ${money(difference)}` };
     };
 
     const diffInfo = getDifferenceStyle();
@@ -17,7 +17,7 @@ export default function DailySalesStats({ overview, loading }) {
             {/* KPI 1: Total System Revenue */}
             <div className="pms-stat-card">
                 <div className="pms-stat-top">
-                    <span className="pms-stat-label">Total System Revenue</span>
+                    <span className="pms-stat-label">Tổng Doanh Thu Hệ Thống</span>
                     <div className="pms-stat-icon" style={{ background: 'var(--brand-primary-glow)', color: 'var(--brand-primary)' }}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="12" y1="1" x2="12" y2="23" />
@@ -32,14 +32,14 @@ export default function DailySalesStats({ overview, loading }) {
                     <span className="pms-badge pms-badge-success" style={{ fontSize: 11 }}>
                         +{overview?.growthPercentageVsYesterday || 0}%
                     </span>
-                    <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>vs yesterday</span>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>so với hôm qua</span>
                 </div>
             </div>
 
             {/* KPI 2: Payment Breakdown */}
             <div className="pms-stat-card">
                 <div className="pms-stat-top">
-                    <span className="pms-stat-label">Payment Breakdown</span>
+                    <span className="pms-stat-label">Cơ Cấu Phương Thức</span>
                     <div className="pms-stat-icon" style={{ background: 'rgba(59, 130, 246, 0.12)', color: 'var(--color-info)' }}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="2" y="5" width="20" height="14" rx="2" />
@@ -49,15 +49,15 @@ export default function DailySalesStats({ overview, loading }) {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>Cash:</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>Tiền mặt:</span>
                         <strong>{loading ? '...' : money(overview?.systemCash || 0)}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>Bank Transfer:</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>Chuyển khoản / Thẻ:</span>
                         <strong>{loading ? '...' : money(overview?.systemBank || 0)}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>VNPay Wallet:</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>Ví VietQR:</span>
                         <strong>{loading ? '...' : money(overview?.systemVnpay || 0)}</strong>
                     </div>
                 </div>
@@ -66,7 +66,7 @@ export default function DailySalesStats({ overview, loading }) {
             {/* KPI 3: Invoices & Shifts */}
             <div className="pms-stat-card">
                 <div className="pms-stat-top">
-                    <span className="pms-stat-label">Invoices & Shifts</span>
+                    <span className="pms-stat-label">Hóa Đơn & Ca Trực</span>
                     <div className="pms-stat-icon" style={{ background: 'rgba(245, 158, 11, 0.12)', color: 'var(--color-warning)' }}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="12" cy="12" r="10" />
@@ -79,14 +79,14 @@ export default function DailySalesStats({ overview, loading }) {
                         <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>
                             {loading ? '...' : (overview?.totalInvoices || 0)}
                         </div>
-                        <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>Daily Invoices</div>
+                        <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>Đơn trong ngày</div>
                     </div>
                     <div style={{ width: 1, background: 'var(--border-color)' }} />
                     <div>
                         <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>
                             {loading ? '...' : (overview?.totalShifts || 0)}
                         </div>
-                        <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>Cashier Shifts</div>
+                        <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>Ca làm việc</div>
                     </div>
                 </div>
             </div>
@@ -94,13 +94,13 @@ export default function DailySalesStats({ overview, loading }) {
             {/* KPI 4: Reconciliation Status */}
             <div className="pms-stat-card">
                 <div className="pms-stat-top">
-                    <span className="pms-stat-label">Reconciliation Status</span>
+                    <span className="pms-stat-label">Trạng Thái Đối Soát</span>
                     <span className={`pms-badge ${isReconciled ? 'pms-badge-success' : 'pms-badge-warning'}`}>
-                        {isReconciled ? '✓ Reconciled' : '⏳ Pending'}
+                        {isReconciled ? '✓ Đã đối soát' : '⏳ Chờ đối soát'}
                     </span>
                 </div>
                 <div style={{ marginTop: 6 }}>
-                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Actual Physical Cash:</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Tiền mặt thực tế kiểm két:</div>
                     <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>
                         {loading ? '...' : money(overview?.actualCash ?? overview?.systemCash ?? 0)}
                     </div>

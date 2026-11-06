@@ -157,7 +157,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .genderCode(genderCode)
                 .address(address)
                 .avatarUrl(avatarUrl)
-                .status(account.getStatus())
+                .status(account.getStatus() != null ? account.getStatus().getCode() : null)
                 .createdAt(account.getCreatedAt())
                 .build();
     }

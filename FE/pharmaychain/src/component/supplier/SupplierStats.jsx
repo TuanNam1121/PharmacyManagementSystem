@@ -5,9 +5,9 @@ export default function SupplierStats({ total = 0, suppliers = [] }) {
 
   const stats = [
     {
-      label: 'Total Suppliers',
+      label: 'Tổng Nhà Cung Cấp',
       value: total,
-      sub: 'registered vendors',
+      sub: 'đối tác trong hệ thống',
       iconColor: 'emerald',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -19,9 +19,9 @@ export default function SupplierStats({ total = 0, suppliers = [] }) {
       ),
     },
     {
-      label: 'Active Partners',
+      label: 'Đang Hợp Tác',
       value: activeCount,
-      sub: 'procurement-ready',
+      sub: 'sẵn sàng giao dịch',
       iconColor: 'blue',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -30,9 +30,9 @@ export default function SupplierStats({ total = 0, suppliers = [] }) {
       ),
     },
     {
-      label: 'Inactive Partners',
+      label: 'Tạm Ngừng',
       value: inactiveCount,
-      sub: 'suspended or paused',
+      sub: 'tạm ngưng hoặc khóa',
       iconColor: 'red',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -43,9 +43,9 @@ export default function SupplierStats({ total = 0, suppliers = [] }) {
       ),
     },
     {
-      label: 'Tax Compliant',
+      label: 'Đầy Đủ MST',
       value: withTaxCodeCount,
-      sub: 'verified tax ID on file',
+      sub: 'đã xác thực mã số thuế',
       iconColor: 'amber',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

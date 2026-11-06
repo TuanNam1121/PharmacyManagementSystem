@@ -2,12 +2,9 @@ package com.pharmacy.service.impl;
 
 import com.pharmacy.dto.report.ProfitReportRequest;
 import com.pharmacy.dto.report.ProfitReportResponse;
-import com.pharmacy.entity.AuditLog;
-import com.pharmacy.entity.SalesInvoice;
 import com.pharmacy.entity.SalesInvoiceDetail;
 import com.pharmacy.entity.Store;
 import com.pharmacy.entity.enums.SalesInvoiceStatus;
-import com.pharmacy.repository.AuditLogRepository;
 import com.pharmacy.repository.SalesInvoiceDetailRepository;
 import com.pharmacy.repository.StoreRepository;
 import com.pharmacy.service.ProfitExcelExportService;

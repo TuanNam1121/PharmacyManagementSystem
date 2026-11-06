@@ -27,7 +27,7 @@ export default function InventoryReportPage() {
             });
             setReport(data);
         } catch (err) {
-            setErrorMsg(err?.message || 'Failed to load inventory valuation report.');
+            setErrorMsg(err?.message || 'Không thể tải báo cáo định giá tồn kho.');
         } finally {
             setLoading(false);
         }
@@ -46,9 +46,9 @@ export default function InventoryReportPage() {
                 storeId: storeId ? Number(storeId) : undefined,
                 stockStatus,
             });
-            setSuccessMsg('Executive Inventory Excel report exported successfully! Audit log committed.');
+            setSuccessMsg('Xuất báo cáo tồn kho & định giá Excel thành công!');
         } catch (err) {
-            setErrorMsg(err?.message || 'Failed to export inventory Excel report.');
+            setErrorMsg(err?.message || 'Lỗi khi xuất tệp báo cáo tồn kho Excel.');
         } finally {
             setExporting(false);
         }
@@ -76,11 +76,11 @@ export default function InventoryReportPage() {
             <div className="pms-page-header">
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <h1 className="pms-page-title">Executive Inventory & Stock Valuation Report</h1>
-                        <span className="pms-badge pms-badge-info">General Manager</span>
+                        <h1 className="pms-page-title">Báo Cáo Tồn Kho & Định Giá Dược Phẩm</h1>
+                        <span className="pms-badge pms-badge-info">Ban Giám Đốc</span>
                     </div>
                     <p className="pms-page-sub">
-                        Monitor chain-wide inventory valuation, safety stock alerts, batch expiry risks, and stock movement trails.
+                        Giám sát giá trị định giá tồn kho toàn chuỗi, cảnh báo ngưỡng an toàn, nguy cơ cận hạn lô thuốc và lịch sử biến động thẻ kho.
                     </p>
                 </div>
 
@@ -93,7 +93,7 @@ export default function InventoryReportPage() {
                         style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                     >
                         <span>📊</span>
-                        <span>{exporting ? 'Generating Excel…' : 'Export Executive Excel'}</span>
+                        <span>{exporting ? 'Đang tạo Excel…' : 'Xuất Báo Cáo Excel'}</span>
                     </button>
                 </div>
             </div>
@@ -119,33 +119,34 @@ export default function InventoryReportPage() {
                         {/* Branch & Status Selection */}
                         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <label style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>Branch:</label>
+                                <label style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>Chi nhánh:</label>
                                 <select
                                     className="pms-select"
                                     value={storeId}
                                     onChange={(e) => setStoreId(e.target.value)}
-                                    style={{ minWidth: 220, padding: '5px 10px' }}
+                                    style={{ minWidth: 240, padding: '5px 10px' }}
                                 >
-                                    <option value="">All Branches (Chain-wide)</option>
-                                    <option value="1">Store #1 — Central Pharmacy</option>
-                                    <option value="2">Store #2 — Cau Giay Pharmacy</option>
-                                    <option value="3">Store #3 — Dong Da Pharmacy</option>
+                                    <option value="">Toàn hệ thống (Tất cả chi nhánh)</option>
+                                    <option value="3">Chi nhánh 01 — Nhà thuốc Cầu Giấy (ST01)</option>
+                                    <option value="4">Chi nhánh 02 — Nhà thuốc Đống Đa (ST02)</option>
+                                    <option value="1">Trụ sở chính — Văn phòng điều hành (HQ)</option>
+                                    <option value="2">Kho tổng trung tâm Miền Bắc (WH01)</option>
                                 </select>
                             </div>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <label style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>Stock Status:</label>
+                                <label style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>Tình trạng kho:</label>
                                 <select
                                     className="pms-select"
                                     value={stockStatus}
                                     onChange={(e) => setStockStatus(e.target.value)}
-                                    style={{ minWidth: 180, padding: '5px 10px' }}
+                                    style={{ minWidth: 200, padding: '5px 10px' }}
                                 >
-                                    <option value="ALL">All Stock Conditions</option>
-                                    <option value="IN_STOCK">Healthy Stock</option>
-                                    <option value="LOW_STOCK">⚠️ Low Stock Warning</option>
-                                    <option value="OUT_OF_STOCK">🚨 Out of Stock (Zero)</option>
-                                    <option value="EXPIRING_SOON">⏰ Expiring Soon (&lt; 90 Days)</option>
+                                    <option value="ALL">Tất cả tình trạng kho</option>
+                                    <option value="IN_STOCK">Tồn kho an toàn (Đạt chuẩn)</option>
+                                    <option value="LOW_STOCK">⚠️ Cảnh báo tồn dưới mức an toàn</option>
+                                    <option value="OUT_OF_STOCK">🚨 Đã hết hàng trong kho (0)</option>
+                                    <option value="EXPIRING_SOON">⏰ Thuốc cận hạn dùng (&lt; 90 ngày)</option>
                                 </select>
                             </div>
 
@@ -153,9 +154,9 @@ export default function InventoryReportPage() {
                                 type="button"
                                 className="btn-pms btn-pms-secondary"
                                 onClick={handleReset}
-                                title="Reset filters to default (AT02)"
+                                title="Đặt lại bộ lọc về mặc định"
                             >
-                                Reset
+                                Đặt lại
                             </button>
                         </div>
 
@@ -164,7 +165,7 @@ export default function InventoryReportPage() {
                             <input
                                 type="text"
                                 className="pms-input"
-                                placeholder="Search medicine, barcode, batch..."
+                                placeholder="Tìm tên thuốc, mã vạch, số lô..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 style={{ width: 280, fontSize: 13 }}
@@ -179,57 +180,57 @@ export default function InventoryReportPage() {
                 {/* 1. Valuation at Cost */}
                 <div className="pms-card" style={{ padding: '18px 20px', borderLeft: '4px solid #0284c7' }}>
                     <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Total Inventory Value (Cost)
+                        Tổng Giá Trị Tồn Kho (Giá Vốn)
                     </div>
                     <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', marginTop: 6 }}>
                         {Number(report?.totalValuationCost || 0).toLocaleString('vi-VN')} ₫
                     </div>
                     <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-                        Procurement capital invested
+                        Vốn đầu tư nhập kho
                     </div>
                 </div>
 
                 {/* 2. Valuation at Retail */}
                 <div className="pms-card" style={{ padding: '18px 20px', borderLeft: '4px solid #10b981' }}>
                     <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Potential Retail Value
+                        Giá Trị Bán Lẻ Ước Tính
                     </div>
                     <div style={{ fontSize: 24, fontWeight: 800, color: '#059669', marginTop: 6 }}>
                         {Number(report?.totalValuationRetail || 0).toLocaleString('vi-VN')} ₫
                     </div>
                     <div style={{ fontSize: 12, color: '#059669', fontWeight: 600, marginTop: 4 }}>
-                        Potential Margin: {report?.potentialMarginPercentage || 0}%
+                        Biên LN tiềm năng: {report?.potentialMarginPercentage || 0}%
                     </div>
                 </div>
 
                 {/* 3. Total Physical Units */}
                 <div className="pms-card" style={{ padding: '18px 20px', borderLeft: '4px solid #6366f1' }}>
                     <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Total Physical Volume
+                        Tổng Số Lượng Tồn Thực Tế
                     </div>
                     <div style={{ fontSize: 24, fontWeight: 800, color: '#4338ca', marginTop: 6 }}>
                         {Number(report?.totalUnitsInStock || 0).toLocaleString('vi-VN')}
                     </div>
                     <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-                        Across <strong>{report?.totalSkus || 0}</strong> active medicines
+                        Trên <strong>{report?.totalSkus || 0}</strong> mặt hàng thuốc
                     </div>
                 </div>
 
                 {/* 4. Risk & Safety Alerts */}
                 <div className="pms-card" style={{ padding: '18px 20px', borderLeft: '4px solid #ef4444' }}>
                     <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Inventory Risk Alerts
+                        Cảnh Báo Rủi Ro Tồn Kho
                     </div>
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 8 }}>
                         <span className="pms-badge pms-badge-warning" style={{ fontSize: 12 }}>
-                            {report?.lowStockCount || 0} Low Stock
+                            {report?.lowStockCount || 0} Dưới ngưỡng
                         </span>
                         <span className="pms-badge pms-badge-danger" style={{ fontSize: 12 }}>
-                            {report?.expiringSoonCount || 0} Expiring
+                            {report?.expiringSoonCount || 0} Cận hạn
                         </span>
                     </div>
                     <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
-                        Out of stock: {report?.outOfStockCount || 0} items
+                        Hết hàng: {report?.outOfStockCount || 0} mặt hàng
                     </div>
                 </div>
             </div>
@@ -250,7 +251,7 @@ export default function InventoryReportPage() {
                     }}
                     onClick={() => setActiveTab('items')}
                 >
-                    📦 Stock Levels & Valuation ({report?.items?.length || 0})
+                    📦 Mức Tồn & Định Giá Lô Thuốc ({report?.items?.length || 0})
                 </button>
 
                 <button
@@ -267,7 +268,7 @@ export default function InventoryReportPage() {
                     }}
                     onClick={() => setActiveTab('stores')}
                 >
-                    🏪 Branch Valuation Comparison ({report?.storeBreakdown?.length || 0})
+                    🏪 So Sánh Định Giá Theo Chi Nhánh ({report?.storeBreakdown?.length || 0})
                 </button>
 
                 <button
@@ -284,7 +285,7 @@ export default function InventoryReportPage() {
                     }}
                     onClick={() => setActiveTab('movements')}
                 >
-                    🔄 Stock Movements & Audit Trail ({report?.movements?.length || 0})
+                    🔄 Biến Động Thẻ Kho & Nhật Ký ({report?.movements?.length || 0})
                 </button>
             </div>
 
@@ -296,15 +297,15 @@ export default function InventoryReportPage() {
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Product / Medicine</th>
-                                    <th>Barcode</th>
-                                    <th>Batch No</th>
-                                    <th>Expiry Date</th>
-                                    <th>Branch</th>
-                                    <th style={{ textAlign: 'right' }}>Stock Qty</th>
-                                    <th style={{ textAlign: 'right' }}>Cost Price (₫)</th>
-                                    <th style={{ textAlign: 'right' }}>Valuation (Cost)</th>
-                                    <th style={{ textAlign: 'center' }}>Stock Status</th>
+                                    <th>Tên Thuốc / Dược Phẩm</th>
+                                    <th>Mã Vạch</th>
+                                    <th>Số Lô (Batch)</th>
+                                    <th>Hạn Dùng (EXP)</th>
+                                    <th>Chi Nhánh / Kho</th>
+                                    <th style={{ textAlign: 'right' }}>Số Lượng Tồn</th>
+                                    <th style={{ textAlign: 'right' }}>Đơn Giá Vốn (₫)</th>
+                                    <th style={{ textAlign: 'right' }}>Định Giá (Vốn)</th>
+                                    <th style={{ textAlign: 'center' }}>Tình Trạng Kho</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -313,14 +314,14 @@ export default function InventoryReportPage() {
                                         <td colSpan={10} style={{ textAlign: 'center', padding: '40px' }}>
                                             <div className="pms-spinner" />
                                             <span style={{ display: 'block', marginTop: 10, color: '#64748b' }}>
-                                                Computing stock levels and valuations…
+                                                Đang tính toán số lượng tồn và định giá…
                                             </span>
                                         </td>
                                     </tr>
                                 ) : filteredItems.length === 0 ? (
                                     <tr>
                                         <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                                            No inventory items matching your selected criteria.
+                                            Không tìm thấy mặt hàng nào phù hợp với bộ lọc.
                                         </td>
                                     </tr>
                                 ) : (
@@ -339,7 +340,7 @@ export default function InventoryReportPage() {
                                                     <span style={{ color: isExpiring ? '#dc2626' : 'inherit', fontWeight: isExpiring ? 700 : 400 }}>
                                                         {item.expiryDate ? formatDate(item.expiryDate) : '—'}
                                                     </span>
-                                                    {isExpiring && <span style={{ fontSize: 11, display: 'block', color: '#dc2626' }}>({item.daysUntilExpiry}d left)</span>}
+                                                    {isExpiring && <span style={{ fontSize: 11, display: 'block', color: '#dc2626' }}>(Còn {item.daysUntilExpiry} ngày)</span>}
                                                 </td>
                                                 <td>{item.storeName}</td>
                                                 <td style={{ textAlign: 'right', fontWeight: 700, color: isOut ? '#dc2626' : isLow ? '#d97706' : '#0f172a' }}>
@@ -351,7 +352,7 @@ export default function InventoryReportPage() {
                                                 </td>
                                                 <td style={{ textAlign: 'center' }}>
                                                     <span className={`pms-badge ${isOut ? 'pms-badge-danger' : isLow ? 'pms-badge-warning' : 'pms-badge-success'}`}>
-                                                        {isOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'Healthy'}
+                                                        {isOut ? 'Hết hàng' : isLow ? 'Sắp hết' : 'Đạt chuẩn'}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -368,22 +369,22 @@ export default function InventoryReportPage() {
             {activeTab === 'stores' && (
                 <div className="pms-card" style={{ padding: 0 }}>
                     <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-color, #e2e8f0)' }}>
-                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Store Branch Inventory Valuation Breakdown</h3>
-                        <span style={{ fontSize: 12, color: '#64748b' }}>Comparison of capital held in stock across all chain branches</span>
+                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Phân Bổ Định Giá Tồn Kho Giữa Các Chi Nhánh</h3>
+                        <span style={{ fontSize: 12, color: '#64748b' }}>So sánh nguồn vốn tồn kho đang lưu trữ tại các chi nhánh và kho trung tâm</span>
                     </div>
 
                     <div className="pms-table-container">
                         <table className="pms-table">
                             <thead>
                                 <tr>
-                                    <th>Store Code</th>
-                                    <th>Store Branch Name</th>
-                                    <th style={{ textAlign: 'right' }}>Active SKUs</th>
-                                    <th style={{ textAlign: 'right' }}>Total Units</th>
-                                    <th style={{ textAlign: 'right' }}>Valuation at Cost (₫)</th>
-                                    <th style={{ textAlign: 'right' }}>Retail Value (₫)</th>
-                                    <th style={{ textAlign: 'right' }}>Potential Profit (₫)</th>
-                                    <th style={{ textAlign: 'center' }}>Potential Margin</th>
+                                    <th>Mã Chi Nhánh</th>
+                                    <th>Tên Chi Nhánh / Kho</th>
+                                    <th style={{ textAlign: 'right' }}>Số Mặt Hàng</th>
+                                    <th style={{ textAlign: 'right' }}>Tổng Đơn Vị</th>
+                                    <th style={{ textAlign: 'right' }}>Định Giá Theo Vốn (₫)</th>
+                                    <th style={{ textAlign: 'right' }}>Giá Trị Bán Lẻ (₫)</th>
+                                    <th style={{ textAlign: 'right' }}>Lợi Nhuận Tiềm Năng (₫)</th>
+                                    <th style={{ textAlign: 'center' }}>Biên LN Tiềm Năng</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -396,7 +397,7 @@ export default function InventoryReportPage() {
                                 ) : (report?.storeBreakdown || []).length === 0 ? (
                                     <tr>
                                         <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                                            No branch valuation data available.
+                                            Không có dữ liệu định giá của chi nhánh.
                                         </td>
                                     </tr>
                                 ) : (
@@ -429,22 +430,22 @@ export default function InventoryReportPage() {
             {activeTab === 'movements' && (
                 <div className="pms-card" style={{ padding: 0 }}>
                     <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-color, #e2e8f0)' }}>
-                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Chain Stock Movements Audit Log</h3>
-                        <span style={{ fontSize: 12, color: '#64748b' }}>Real-time audit log of stock inflows, sales deductions, transfers, and adjustments</span>
+                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Nhật Ký Biến Động Thẻ Kho Toàn Chuỗi</h3>
+                        <span style={{ fontSize: 12, color: '#64748b' }}>Theo dõi theo thời gian thực các giao dịch nhập kho, bán hàng, điều chuyển và kiểm kê</span>
                     </div>
 
                     <div className="pms-table-container">
                         <table className="pms-table">
                             <thead>
                                 <tr>
-                                    <th>Date & Time</th>
-                                    <th>Branch</th>
-                                    <th>Product Name</th>
-                                    <th>Batch No</th>
-                                    <th>Movement Type</th>
-                                    <th style={{ textAlign: 'right' }}>Qty Change</th>
-                                    <th style={{ textAlign: 'right' }}>Ending Stock</th>
-                                    <th>Reference</th>
+                                    <th>Thời Gian</th>
+                                    <th>Chi Nhánh / Kho</th>
+                                    <th>Tên Thuốc</th>
+                                    <th>Số Lô</th>
+                                    <th>Loại Biến Động</th>
+                                    <th style={{ textAlign: 'right' }}>Biến Động (Qty)</th>
+                                    <th style={{ textAlign: 'right' }}>Tồn Sau Động</th>
+                                    <th>Chứng Từ Tham Chiếu</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -457,7 +458,7 @@ export default function InventoryReportPage() {
                                 ) : (report?.movements || []).length === 0 ? (
                                     <tr>
                                         <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                                            No stock movement logs recorded in this period.
+                                            Không có bản ghi biến động kho trong khoảng thời gian này.
                                         </td>
                                     </tr>
                                 ) : (

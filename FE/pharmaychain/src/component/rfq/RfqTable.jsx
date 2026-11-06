@@ -18,25 +18,25 @@ export default function RfqTable({
   const getStatusBadge = (status) => {
     switch (status) {
       case "SENT":
-        return <span className="pms-badge pms-badge-info">Sent</span>;
+        return <span className="pms-badge pms-badge-info">Đã gửi</span>;
       case "RESPONDED":
-        return <span className="pms-badge pms-badge-success">Responded</span>;
+        return <span className="pms-badge pms-badge-success">Đã phản hồi</span>;
       case "EXPIRED":
-        return <span className="pms-badge pms-badge-warning">Expired</span>;
+        return <span className="pms-badge pms-badge-warning">Đã hết hạn</span>;
       default:
-        return <span className="pms-badge">Unknown</span>;
+        return <span className="pms-badge">Không xác định</span>;
     }
   };
 
   const columns = [
     { key: "id", label: "#", width: 50 },
-    { key: "code", label: "RFQ Code", width: 120 },
-    { key: "supplier", label: "Supplier", width: 180 },
-    { key: "purchaseProposal", label: "Purchase Proposal", width: 140 },
-    { key: "status", label: "Status", width: 100 },
-    { key: "sentAt", label: "Sent Date", width: 100 },
-    { key: "deadline", label: "Deadline", width: 100 },
-    { key: "actions", label: "ACTIONS", width: 120 },
+    { key: "code", label: "Mã RFQ", width: 120 },
+    { key: "supplier", label: "Nhà Cung Cấp", width: 180 },
+    { key: "purchaseProposal", label: "Đề Xuất Mua Hàng", width: 140 },
+    { key: "status", label: "Trạng Thái", width: 100 },
+    { key: "sentAt", label: "Ngày Gửi", width: 100 },
+    { key: "deadline", label: "Hạn Chót", width: 100 },
+    { key: "actions", label: "THAO TÁC", width: 120 },
   ];
 
   if (loading) {
@@ -60,7 +60,7 @@ export default function RfqTable({
               >
                 <div className="pms-loading">
                   <div className="pms-loading-spinner"></div>
-                  <div>Loading RFQs...</div>
+                  <div>Đang tải danh sách yêu cầu báo giá...</div>
                 </div>
               </td>
             </tr>
@@ -90,7 +90,7 @@ export default function RfqTable({
                 style={{ textAlign: "center", padding: 48 }}
               >
                 <div style={{ color: "var(--text-muted)", fontSize: 14 }}>
-                  No RFQs found. Try adjusting your filters.
+                  Không tìm thấy yêu cầu báo giá nào phù hợp bộ lọc.
                 </div>
               </td>
             </tr>
@@ -159,8 +159,8 @@ export default function RfqTable({
                     style={{ fontSize: 11 }}
                   >
                     {rfq.expiredAt && new Date(rfq.expiredAt) < new Date()
-                      ? "Overdue"
-                      : "Active"}
+                      ? "Quá hạn"
+                      : "Còn hiệu lực"}
                   </div>
                 )}
               </td>
@@ -180,14 +180,14 @@ export default function RfqTable({
                     disabled={rfq.status !== "RESPONDED"}
                     title={
                       rfq.status !== "RESPONDED"
-                        ? "Only RFQs with status RESPONDED can be compared"
-                        : ""
+                        ? "Chỉ các RFQ có trạng thái ĐÃ PHẢN HỒI mới có thể so sánh báo giá"
+                        : "Chọn để so sánh báo giá"
                     }
                   />
                   <button
                     className="btn-pms btn-pms-ghost btn-pms-sm"
                     onClick={() => onViewDetail(rfq.id)}
-                    title="View details"
+                    title="Xem chi tiết"
                   >
                     <svg
                       width="14"

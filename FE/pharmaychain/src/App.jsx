@@ -11,9 +11,11 @@ import WarehouseInventoryPage from './page/warehouse/WarehouseInventoryPage';
 import WarehouseReplenishmentPage from './page/warehouse/WarehouseReplenishmentPage';
 import WarehousePurchaseRequestsPage from './page/warehouse/WarehousePurchaseRequestsPage';
 import UsersPage from './page/users/UsersPage';
+import AuditLogPage from './page/audit/AuditLogPage';
 import DailySalesPage from './page/sales/DailySalesPage';
 import PosCounterPage from './page/sales/PosCounterPage';
-import ProductCatalogPage from './page/products/ProductCatalogPage';
+import ProductPage from './page/product/ProductPage';
+import CategoryPage from './page/category/CategoryPage';
 import BranchInventoryPage from './page/inventory/BranchInventoryPage';
 import InventoryAuditPage from './page/inventory/InventoryAuditPage';
 import StockRequisitionsPage from './page/inventory/StockRequisitionsPage';
@@ -81,11 +83,11 @@ function App() {
 
         {/* User & Security */}
         <Route path="/users" element={<UsersPage />} />
-        <Route path="/audit-log" element={<ComingSoon title="Audit Log" module="User & Security" />} />
+        <Route path="/audit-log" element={<AuditLogPage />} />
 
         {/* Products & Catalog */}
-        <Route path="/products" element={<ProductCatalogPage />} />
-        <Route path="/categories" element={<ComingSoon title="Categories" module="Products & Catalog" />} />
+        <Route path="/products" element={<ProductPage />} />
+        <Route path="/categories" element={<CategoryPage />} />
 
         {/* POS & Sales */}
         <Route path="/pos" element={<PosCounterPage />} />
@@ -109,12 +111,12 @@ function App() {
         <Route path="/warehouse/replenishment" element={<WarehouseReplenishmentPage />} />
         <Route path="/warehouse/requests" element={<WarehousePurchaseRequestsPage />} />
 
-        {/* Procurement (LIVE: suppliers, purchase requests) */}
+        {/* Procurement (LIVE: suppliers, purchase requests, RFQ, proposals, orders) */}
         <Route path="/supplier"               element={<SupplierPage />} />
         <Route path="/procurement/requests"   element={<WarehousePurchaseRequestsPage />} />
-        <Route path="/procurement/rfq"        element={<ComingSoon title="RFQ & Quotations" module="Procurement" />} />
-        <Route path="/procurement/proposals"  element={<ComingSoon title="Purchase Proposals" module="Procurement" />} />
-        <Route path="/procurement/orders"     element={<ComingSoon title="Purchase Orders" module="Procurement" />} />
+        <Route path="/procurement/rfq"        element={<RfqPage />} />
+        <Route path="/procurement/proposals"  element={<PurchaseProposalsPage />} />
+        <Route path="/procurement/orders"     element={<PurchaseOrdersPage />} />
 
         {/* Reports */}
         <Route path="/reports/profit" element={<ProfitReportPage />} />

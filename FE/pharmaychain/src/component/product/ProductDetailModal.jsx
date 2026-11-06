@@ -30,7 +30,7 @@ export default function ProductDetailModal({
       const res = await viewPriceHistory(productId);
       setPriceHistories(Array.isArray(res) ? res : []);
     } catch (err) {
-      setHistoryError(err?.message || 'Failed to load price history.');
+      setHistoryError(err?.message || 'Không thể tải lịch sử biến động giá.');
     } finally {
       setHistoryLoading(false);
     }
@@ -47,7 +47,7 @@ export default function ProductDetailModal({
       return (
         <span className="pms-badge pms-badge-success">
           <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-          Active
+          Đang kinh doanh
         </span>
       );
     }
@@ -55,14 +55,14 @@ export default function ProductDetailModal({
       return (
         <span className="pms-badge pms-badge-neutral">
           <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-          Discontinued
+          Ngừng lưu hành
         </span>
       );
     }
     return (
       <span className="pms-badge pms-badge-danger">
         <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-        Inactive
+        Ngừng kinh doanh
       </span>
     );
   };
@@ -73,10 +73,10 @@ export default function ProductDetailModal({
         {/* Header */}
         <div className="pms-modal-header">
           <div>
-            <div className="pms-modal-title">Product Details</div>
-            <div className="pms-modal-sub">Full catalog information, pricing and product metadata</div>
+            <div className="pms-modal-title">Chi Tiết Sản Phẩm &amp; Dược Phẩm</div>
+            <div className="pms-modal-sub">Thông tin danh mục, thông số dược lý và biến động giá niêm yết</div>
           </div>
-          <button className="pms-modal-close" onClick={onHide} aria-label="Close">
+          <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -100,7 +100,7 @@ export default function ProductDetailModal({
               transition: 'all 0.2s',
             }}
           >
-            Overview
+            Tổng Quan Sản Phẩm
           </button>
           <button
             type="button"
@@ -120,7 +120,7 @@ export default function ProductDetailModal({
               transition: 'all 0.2s',
             }}
           >
-            Price History
+            Lịch Sử Giá Niêm Yết
             {priceHistories.length > 0 && (
               <span
                 style={{
@@ -142,11 +142,11 @@ export default function ProductDetailModal({
           {loading ? (
             <div className="pms-spinner-wrap" style={{ padding: '40px 0' }}>
               <div className="pms-spinner" />
-              <span className="pms-spinner-text">Loading product details…</span>
+              <span className="pms-spinner-text">Đang tải thông tin sản phẩm…</span>
             </div>
           ) : !detail ? (
             <div className="pms-empty">
-              <div className="pms-empty-title">Product information not available</div>
+              <div className="pms-empty-title">Không tìm thấy thông tin sản phẩm</div>
             </div>
           ) : activeTab === 'overview' ? (
             <div>
@@ -163,7 +163,7 @@ export default function ProductDetailModal({
                   marginBottom: 20,
                 }}
               >
-                {/* Product Image / Avatar (Req 5) */}
+                {/* Product Image / Avatar */}
                 <div
                   style={{
                     width: 68,
@@ -214,17 +214,17 @@ export default function ProductDetailModal({
                     </h3>
                     {renderStatusBadge(detail.status)}
                     {isRx ? (
-                      <span className="pms-badge pms-badge-warning">Rx</span>
+                      <span className="pms-badge pms-badge-warning">Thuốc Kê Đơn (Rx)</span>
                     ) : (
-                      <span className="pms-badge pms-badge-neutral">OTC</span>
+                      <span className="pms-badge pms-badge-neutral">Không Kê Đơn (OTC)</span>
                     )}
                   </div>
                   <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 4, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                     {detail.categoryName && (
-                      <span>Category: <strong style={{ color: 'var(--text-secondary)' }}>{detail.categoryName}</strong></span>
+                      <span>Danh mục: <strong style={{ color: 'var(--text-secondary)' }}>{detail.categoryName}</strong></span>
                     )}
                     {detail.barcode && (
-                      <span>Barcode: <strong className="mono" style={{ color: 'var(--text-primary)' }}>{detail.barcode}</strong></span>
+                      <span>Mã vạch: <strong className="mono" style={{ color: 'var(--text-primary)' }}>{detail.barcode}</strong></span>
                     )}
                   </div>
                 </div>
@@ -241,23 +241,23 @@ export default function ProductDetailModal({
                   }}
                 >
                   <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
-                    Pricing &amp; Stock
+                    Đơn Giá &amp; Tồn Kho
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Selling Price:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Giá Bán Lẻ:</span>{' '}
                       <strong style={{ color: 'var(--text-primary)', fontSize: 14 }}>{money(detail.sellingPrice)}</strong>
                     </div>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Cost Price:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Giá Vốn Dự Kiến:</span>{' '}
                       <strong style={{ color: 'var(--text-primary)' }}>{money(detail.costPrice)}</strong>
                     </div>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Unit:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Đơn Vị Tính:</span>{' '}
                       <strong style={{ color: 'var(--text-primary)' }}>{detail.unit || '—'}</strong>
                     </div>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Minimum Stock:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Tồn Kho Tối Thiểu:</span>{' '}
                       <strong style={{ color: 'var(--text-primary)' }}>{detail.minQuantity ?? '—'}</strong>
                     </div>
                   </div>
@@ -272,23 +272,23 @@ export default function ProductDetailModal({
                   }}
                 >
                   <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
-                    Product Info
+                    Thông Số Dược Phẩm
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Active Ingredient:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Hoạt Chất Chính:</span>{' '}
                       <strong style={{ color: 'var(--text-primary)' }}>{detail.activeIngredient || '—'}</strong>
                     </div>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Manufacturer:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Nhà Sản Xuất:</span>{' '}
                       <strong style={{ color: 'var(--text-primary)' }}>{detail.manufacturer || '—'}</strong>
                     </div>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Added On:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Ngày Tạo:</span>{' '}
                       <strong style={{ color: 'var(--text-primary)' }}>{formatDate(detail.createdAt)}</strong>
                     </div>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Last Updated:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Cập Nhật Cuối:</span>{' '}
                       <strong style={{ color: 'var(--text-primary)' }}>{formatDate(detail.updatedAt) || '—'}</strong>
                     </div>
                   </div>
@@ -305,7 +305,7 @@ export default function ProductDetailModal({
                   }}
                 >
                   <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>
-                    Description
+                    Mô Tả &amp; Công Dụng
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, background: 'var(--bg-canvas)', padding: '10px 12px', borderRadius: 6 }}>
                     {detail.description}
@@ -314,31 +314,31 @@ export default function ProductDetailModal({
               )}
             </div>
           ) : (
-            /* Tab: Price History (UC15) */
+            /* Tab: Price History */
             <div>
               {historyLoading ? (
                 <div className="pms-spinner-wrap" style={{ padding: '30px 0' }}>
                   <div className="pms-spinner" />
-                  <span className="pms-spinner-text">Loading price history…</span>
+                  <span className="pms-spinner-text">Đang tải lịch sử giá…</span>
                 </div>
               ) : historyError ? (
                 <div className="pms-alert pms-alert-danger">{historyError}</div>
               ) : priceHistories.length === 0 ? (
                 <div className="pms-empty" style={{ padding: '30px 0' }}>
-                  <div className="pms-empty-title">No price history available</div>
-                  <div className="pms-empty-sub">Cost and selling price changes will be automatically logged here.</div>
+                  <div className="pms-empty-title">Chưa có lịch sử thay đổi giá</div>
+                  <div className="pms-empty-sub">Các đợt điều chỉnh giá bán và giá vốn sẽ được tự động ghi nhận tại đây.</div>
                 </div>
               ) : (
                 <div className="pms-table-wrap">
                   <table className="pms-table">
                     <thead>
                       <tr>
-                        <th>Effective Date</th>
-                        <th>Cost Price</th>
-                        <th>Selling Price</th>
-                        <th>Difference</th>
-                        <th>Performed By</th>
-                        <th>Reason</th>
+                        <th>Ngày Áp Dụng</th>
+                        <th>Giá Vốn</th>
+                        <th>Giá Bán Lẻ</th>
+                        <th>Chênh Lệch</th>
+                        <th>Người Thực Hiện</th>
+                        <th>Lý Do Điều Chỉnh</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -363,10 +363,10 @@ export default function ProductDetailModal({
                               {money(diff)} ({marginPercent}%)
                             </td>
                             <td style={{ fontSize: 12.5, color: 'var(--text-primary)' }}>
-                              {h.accountFullName || h.accountUsername || 'System'}
+                              {h.accountFullName || h.accountUsername || 'Hệ thống'}
                             </td>
                             <td style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
-                              {h.reason || 'Updated from product management form'}
+                              {h.reason || 'Cập nhật từ biểu mẫu điều chỉnh giá'}
                             </td>
                           </tr>
                         );
@@ -381,7 +381,7 @@ export default function ProductDetailModal({
 
         {/* Footer */}
         <div className="pms-modal-footer">
-          <button className="btn-pms btn-pms-secondary" onClick={onHide}>Close</button>
+          <button className="btn-pms btn-pms-secondary" onClick={onHide}>Đóng</button>
           {detail && onEdit && (
             <button
               className="btn-pms btn-pms-primary"
@@ -394,7 +394,7 @@ export default function ProductDetailModal({
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
-              Edit Product
+              Chỉnh Sửa Thuốc
             </button>
           )}
         </div>

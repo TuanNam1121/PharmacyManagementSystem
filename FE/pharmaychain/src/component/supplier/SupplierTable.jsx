@@ -15,7 +15,7 @@ export default function SupplierTable({
       <div className="pms-card">
         <div className="pms-spinner-wrap">
           <div className="pms-spinner" />
-          <span className="pms-spinner-text">Loading suppliers directory…</span>
+          <span className="pms-spinner-text">Đang tải danh bạ nhà cung cấp…</span>
         </div>
       </div>
     );
@@ -33,8 +33,8 @@ export default function SupplierTable({
               <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
           </div>
-          <div className="pms-empty-title">No suppliers found</div>
-          <div className="pms-empty-sub">No supplier records matched your search or status filter.</div>
+          <div className="pms-empty-title">Không tìm thấy nhà cung cấp nào</div>
+          <div className="pms-empty-sub">Không có bản ghi nào khớp với điều kiện tìm kiếm hoặc trạng thái đã chọn.</div>
         </div>
       </div>
     );
@@ -47,13 +47,13 @@ export default function SupplierTable({
           <thead>
             <tr>
               <th style={{ width: 44 }}>#</th>
-              <th>Supplier / Partner</th>
-              <th>Contact Person</th>
-              <th>Contact Details</th>
-              <th>Tax Code</th>
-              <th>Status</th>
-              <th>Created Date</th>
-              <th className="text-right" style={{ width: 110 }}>Actions</th>
+              <th>Nhà Cung Cấp / Đối Tác</th>
+              <th>Người Liên Hệ</th>
+              <th>Thông Tin Liên Lạc</th>
+              <th>Mã Số Thuế</th>
+              <th>Trạng Thái</th>
+              <th>Ngày Tạo</th>
+              <th className="text-right" style={{ width: 110 }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -137,7 +137,7 @@ export default function SupplierTable({
                         return (
                           <span className="pms-badge pms-badge-success">
                             <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /></svg>
-                            Active
+                            Hoạt động
                           </span>
                         );
                       }
@@ -145,14 +145,14 @@ export default function SupplierTable({
                         return (
                           <span className="pms-badge pms-badge-warning">
                             <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /></svg>
-                            Pending
+                            Chờ duyệt
                           </span>
                         );
                       }
                       return (
                         <span className="pms-badge pms-badge-danger">
                           <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /></svg>
-                          Inactive
+                          Ngừng hoạt động
                         </span>
                       );
                     })()}
@@ -165,7 +165,7 @@ export default function SupplierTable({
                       {/* View Details */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
-                        title="View Supplier Details"
+                        title="Xem chi tiết nhà cung cấp"
                         onClick={() => onView(row.id)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -177,7 +177,7 @@ export default function SupplierTable({
                       {/* Edit Supplier */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
-                        title="Edit Supplier"
+                        title="Chỉnh sửa nhà cung cấp"
                         onClick={() => onEdit(row)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -190,7 +190,7 @@ export default function SupplierTable({
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
                         style={{ color: 'var(--brand-primary)' }}
-                        title="Send RFQ Email"
+                        title="Gửi email báo giá (RFQ)"
                         onClick={() => onSendRfq && onSendRfq(row)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -203,7 +203,7 @@ export default function SupplierTable({
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
                         style={{ color: 'var(--status-danger)' }}
-                        title="Deactivate Supplier"
+                        title="Ngừng hoạt động / Xóa nhà cung cấp"
                         onClick={() => onDelete && onDelete(row)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

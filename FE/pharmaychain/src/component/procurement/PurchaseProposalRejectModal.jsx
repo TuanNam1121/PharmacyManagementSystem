@@ -14,12 +14,12 @@ export default function PurchaseProposalRejectModal({
       <div className="pms-modal" style={{ maxWidth: 480 }}>
         <div className="pms-modal-header">
           <div>
-            <div className="pms-modal-title">Reject Purchase Proposal</div>
+            <div className="pms-modal-title">Từ Chối Đề Xuất Mua Hàng</div>
             <div className="pms-modal-sub">
-              {code ? `Proposal ${code}` : 'Reject this purchase proposal'}
+              {code ? `Đề xuất ${code}` : 'Từ chối đề xuất mua hàng này'}
             </div>
           </div>
-          <button className="pms-modal-close" onClick={onHide} aria-label="Close">
+          <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -29,14 +29,14 @@ export default function PurchaseProposalRejectModal({
         <form onSubmit={onSubmit}>
           <div className="pms-modal-body">
             <div style={{ marginBottom: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-              Reason <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
+              Lý do từ chối <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(không bắt buộc)</span>
             </div>
             <textarea
               className="pms-input"
               rows={3}
               value={reason}
               onChange={(e) => onReasonChange(e.target.value)}
-              placeholder="e.g. Prices too high, please re-negotiate with suppliers..."
+              placeholder="Ví dụ: Đơn giá chưa tối ưu, đề nghị đàm phán lại báo giá với nhà cung cấp..."
               disabled={submitting}
               style={{ width: '100%', resize: 'vertical' }}
               autoFocus
@@ -45,10 +45,10 @@ export default function PurchaseProposalRejectModal({
 
           <div className="pms-modal-footer">
             <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-              Cancel
+              Hủy
             </button>
             <button type="submit" className="btn-pms btn-pms-danger" disabled={submitting}>
-              {submitting ? 'Rejecting…' : 'Reject'}
+              {submitting ? 'Đang xử lý…' : 'Xác Nhận Từ Chối'}
             </button>
           </div>
         </form>

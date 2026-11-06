@@ -74,21 +74,21 @@ export default function UserFormModal({
 
     // Basic validation
     if (!formData.fullName.trim()) {
-      setErrorMsg('Full Name is required.');
+      setErrorMsg('Họ và tên nhân viên không được để trống.');
       return;
     }
     if (!formData.email.trim()) {
-      setErrorMsg('Email address is required.');
+      setErrorMsg('Địa chỉ email không được để trống.');
       return;
     }
 
     if (!isEdit) {
       if (!formData.username.trim() || formData.username.trim().length < 3) {
-        setErrorMsg('Username must be at least 3 characters.');
+        setErrorMsg('Tên đăng nhập phải có ít nhất 3 ký tự.');
         return;
       }
       if (!formData.password || formData.password.length < 6) {
-        setErrorMsg('Password must be at least 6 characters.');
+        setErrorMsg('Mật khẩu khởi tạo phải có ít nhất 6 ký tự.');
         return;
       }
     }
@@ -114,16 +114,16 @@ export default function UserFormModal({
       await onSubmit(payload);
       onHide();
     } catch (err) {
-      setErrorMsg(err?.message || 'Failed to save user account.');
+      setErrorMsg(err?.message || 'Lưu thông tin tài khoản thất bại.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const getStatusText = (status) => {
-    if (Number(status) === 1) return { text: 'Active', badge: 'pms-badge-success' };
-    if (Number(status) === 2) return { text: 'Locked', badge: 'pms-badge-danger' };
-    return { text: 'Disabled / Inactive', badge: 'pms-badge-neutral' };
+    if (Number(status) === 1) return { text: 'Đang hoạt động', badge: 'pms-badge-success' };
+    if (Number(status) === 2) return { text: 'Đã khóa', badge: 'pms-badge-danger' };
+    return { text: 'Vô hiệu hóa', badge: 'pms-badge-neutral' };
   };
 
   const currentStatusInfo = getStatusText(formData.status);
@@ -135,15 +135,15 @@ export default function UserFormModal({
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">
-              {isEdit ? 'Edit User Profile' : 'Create New User Account'}
+              {isEdit ? 'Chỉnh Sửa Hồ Sơ Nhân Viên' : 'Tạo Tài Khoản Nhân Viên Mới'}
             </div>
             <div className="pms-modal-sub">
               {isEdit
-                ? `Update account details and personal profile for @${user?.username}`
-                : 'Register a new staff member with credentials and profile details'}
+                ? `Cập nhật thông tin định danh và hồ sơ cá nhân cho tài khoản @${user?.username}`
+                : 'Đăng ký tài khoản nhân viên mới vào hệ thống quản lý chuỗi'}
             </div>
           </div>
-          <button className="pms-modal-close" onClick={onHide} aria-label="Close">
+          <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -170,15 +170,15 @@ export default function UserFormModal({
             {/* Section 1: Credentials */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
-                1. Account Credentials & Security
+                1. Thông Tin Tài Khoản &amp; Bảo Mật
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div className="pms-form-group">
-                  <label className="pms-label">Username *</label>
+                  <label className="pms-label">Tên Đăng Nhập *</label>
                   <input
                     className="pms-input pms-input-bare"
                     name="username"
-                    placeholder="e.g. jdoe"
+                    placeholder="Ví dụ: nva_pharmacist"
                     value={formData.username}
                     onChange={handleChange}
                     disabled={isEdit}
@@ -186,19 +186,19 @@ export default function UserFormModal({
                   />
                   {isEdit && (
                     <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>
-                      Username cannot be changed after creation.
+                      Tên đăng nhập cố định và không thể thay đổi sau khi tạo.
                     </span>
                   )}
                 </div>
 
                 {!isEdit ? (
                   <div className="pms-form-group">
-                    <label className="pms-label">Initial Password *</label>
+                    <label className="pms-label">Mật Khẩu Khởi Tạo *</label>
                     <input
                       className="pms-input pms-input-bare"
                       type="password"
                       name="password"
-                      placeholder="Min 6 characters"
+                      placeholder="Tối thiểu 6 ký tự"
                       value={formData.password}
                       onChange={handleChange}
                       required
@@ -206,13 +206,13 @@ export default function UserFormModal({
                   </div>
                 ) : (
                   <div className="pms-form-group">
-                    <label className="pms-label">Account Status (Read-only)</label>
+                    <label className="pms-label">Trạng Thái Tài Khoản</label>
                     <div style={{ display: 'flex', alignItems: 'center', height: 38, gap: 8 }}>
                       <span className={`pms-badge ${currentStatusInfo.badge}`}>
                         {currentStatusInfo.text}
                       </span>
                       <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                        (Use Lock/Unlock action on user list to change status)
+                        (Sử dụng nút Khóa/Mở Khóa tại bảng danh sách)
                       </span>
                     </div>
                   </div>
@@ -222,7 +222,7 @@ export default function UserFormModal({
               {!isEdit && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 12 }}>
                   <div className="pms-form-group">
-                    <label className="pms-label">Initial Status</label>
+                    <label className="pms-label">Trạng Thái Khởi Tạo</label>
                     <select
                       className="pms-select"
                       style={{ width: '100%' }}
@@ -230,13 +230,13 @@ export default function UserFormModal({
                       value={formData.status}
                       onChange={handleChange}
                     >
-                      <option value="1">Active</option>
-                      <option value="0">Disabled</option>
+                      <option value="1">Đang hoạt động</option>
+                      <option value="0">Vô hiệu hóa</option>
                     </select>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', paddingTop: 20 }}>
                     <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      Note: New accounts are created with no role assigned. Use <strong>Assign Role</strong> action after creation.
+                      Lưu ý: Tài khoản mới chưa có vai trò. Sử dụng thao tác <strong>Phân Vai Trò</strong> sau khi tạo.
                     </span>
                   </div>
                 </div>
@@ -246,15 +246,15 @@ export default function UserFormModal({
             {/* Section 2: Personal Profile */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
-                2. Personal Details
+                2. Thông Tin Cá Nhân &amp; Hồ Sơ
               </div>
 
               <div className="pms-form-group" style={{ marginBottom: 14 }}>
-                <label className="pms-label">Full Name *</label>
+                <label className="pms-label">Họ và Tên Nhân Viên *</label>
                 <input
                   className="pms-input pms-input-bare"
                   name="fullName"
-                  placeholder="e.g. John Doe"
+                  placeholder="Ví dụ: Nguyễn Văn An"
                   value={formData.fullName}
                   onChange={handleChange}
                   required
@@ -263,23 +263,23 @@ export default function UserFormModal({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
                 <div className="pms-form-group">
-                  <label className="pms-label">Email Address *</label>
+                  <label className="pms-label">Địa Chỉ Email *</label>
                   <input
                     className="pms-input pms-input-bare"
                     type="email"
                     name="email"
-                    placeholder="e.g. user@pharmacy.com"
+                    placeholder="Ví dụ: nhanvien@pharmacy.com"
                     value={formData.email}
                     onChange={handleChange}
                     required
                   />
                 </div>
                 <div className="pms-form-group">
-                  <label className="pms-label">Phone Number</label>
+                  <label className="pms-label">Số Điện Thoại</label>
                   <input
                     className="pms-input pms-input-bare"
                     name="phone"
-                    placeholder="e.g. +84 912 345 678"
+                    placeholder="Ví dụ: 0912 345 678"
                     value={formData.phone}
                     onChange={handleChange}
                   />
@@ -288,7 +288,7 @@ export default function UserFormModal({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
                 <div className="pms-form-group">
-                  <label className="pms-label">Date of Birth</label>
+                  <label className="pms-label">Ngày Sinh</label>
                   <input
                     className="pms-input pms-input-bare"
                     type="date"
@@ -298,7 +298,7 @@ export default function UserFormModal({
                   />
                 </div>
                 <div className="pms-form-group">
-                  <label className="pms-label">Gender</label>
+                  <label className="pms-label">Giới Tính</label>
                   <select
                     className="pms-select"
                     style={{ width: '100%' }}
@@ -306,26 +306,26 @@ export default function UserFormModal({
                     value={formData.gender}
                     onChange={handleChange}
                   >
-                    <option value="1">Male</option>
-                    <option value="2">Female</option>
-                    <option value="0">Other</option>
+                    <option value="1">Nam</option>
+                    <option value="2">Nữ</option>
+                    <option value="0">Khác</option>
                   </select>
                 </div>
               </div>
 
               <div className="pms-form-group" style={{ marginBottom: 14 }}>
-                <label className="pms-label">Address</label>
+                <label className="pms-label">Địa Chỉ Thường Trú</label>
                 <input
                   className="pms-input pms-input-bare"
                   name="address"
-                  placeholder="Residential or work address"
+                  placeholder="Địa chỉ cư trú hoặc nơi làm việc"
                   value={formData.address}
                   onChange={handleChange}
                 />
               </div>
 
               <div className="pms-form-group">
-                <label className="pms-label">Avatar URL (Optional)</label>
+                <label className="pms-label">Ảnh Đại Diện (URL)</label>
                 <input
                   className="pms-input pms-input-bare"
                   name="avatarUrl"
@@ -340,10 +340,10 @@ export default function UserFormModal({
           {/* Modal Footer */}
           <div className="pms-modal-footer">
             <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-              Cancel
+              Hủy
             </button>
             <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting}>
-              {submitting ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Account'}
+              {submitting ? 'Đang lưu…' : isEdit ? 'Lưu Thay Đổi' : 'Tạo Tài Khoản'}
             </button>
           </div>
         </form>

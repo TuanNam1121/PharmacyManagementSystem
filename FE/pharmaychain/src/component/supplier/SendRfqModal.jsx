@@ -30,15 +30,15 @@ export default function SendRfqModal({ show, onHide, supplier, supplierSelectMod
       fetchSuppliers();
     }
     // Pre-fill subject with default
-    setSubject(`Request for Quotation${supplier?.name ? ` - ${supplier.name}` : ''}`);
-    setContent(`Dear ${supplier?.contactPerson || 'Supplier'},
+    setSubject(`Yêu cầu báo giá dược phẩm${supplier?.name ? ` - ${supplier.name}` : ''}`);
+    setContent(`Kính gửi ${supplier?.contactPerson || 'Quý Nhà cung cấp'},
 
-We would like to request a quotation for the following items:
+Chúng tôi xin gửi tới Quý công ty danh mục yêu cầu báo giá cho các sản phẩm dược phẩm theo đề xuất mua hàng đính kèm.
 
-Please submit your quotation via the link provided in this email.
+Quý công ty vui lòng xem chi tiết và phản hồi đơn giá trực tuyến qua đường dẫn bảo mật được cấp trong thư này.
 
-Best regards,
-Purchasing Team`);
+Trân trọng cảm ơn,
+Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
   }, [show, supplier, supplierSelectMode, fetchProposals, fetchSuppliers, setSubject, setContent]);
 
   const handleClose = () => {
@@ -52,7 +52,7 @@ Purchasing Team`);
     <div className="pms-modal-overlay">
       <div className="pms-modal" style={{ maxWidth: 600 }}>
         <div className="pms-modal-header">
-          <h3 className="pms-modal-title">Send RFQ to Supplier</h3>
+          <h3 className="pms-modal-title">Gửi Yêu Cầu Báo Giá (RFQ)</h3>
           <button className="pms-modal-close" onClick={handleClose}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -64,12 +64,12 @@ Purchasing Team`);
         <div className="pms-modal-body">
           {/* Supplier Info / Selection */}
           <div className="pms-form-group">
-            <label className="pms-form-label" htmlFor="supplier">Supplier *</label>
+            <label className="pms-form-label" htmlFor="supplier">Nhà Cung Cấp *</label>
             {supplierSelectMode ? (
               suppliersLoading ? (
                 <div className="pms-spinner-wrap">
                   <div className="pms-spinner" />
-                  <span className="pms-spinner-text">Loading suppliers...</span>
+                  <span className="pms-spinner-text">Đang tải danh sách nhà cung cấp...</span>
                 </div>
               ) : (
                 <select
@@ -79,7 +79,7 @@ Purchasing Team`);
                   onChange={(e) => setSelectedSupplierId(e.target.value)}
                   required
                 >
-                  <option value="">-- Select a supplier --</option>
+                  <option value="">-- Chọn nhà cung cấp --</option>
                   {suppliers.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name} ({s.code})
@@ -90,12 +90,12 @@ Purchasing Team`);
             ) : (
               <div className="pms-readonly-field">
                 <strong>{supplier.name}</strong> ({supplier.code})<br />
-                {supplier.contactPerson && <span>Contact: {supplier.contactPerson}</span>}<br />
+                {supplier.contactPerson && <span>Người liên hệ: {supplier.contactPerson}</span>}<br />
                 {supplier.email && <span>Email: {supplier.email}</span>}
               </div>
             )}
             {supplierSelectMode && suppliers.length === 0 && !suppliersLoading && (
-              <div className="pms-form-hint">No active suppliers available.</div>
+              <div className="pms-form-hint">Không có nhà cung cấp nào đang hoạt động.</div>
             )}
           </div>
 
@@ -116,7 +116,7 @@ Purchasing Team`);
               if (onSuccess) {
                 onSuccess();
               } else {
-                alert('RFQ sent successfully!');
+                alert('Đã gửi yêu cầu báo giá RFQ thành công!');
               }
               onHide();
             }
@@ -124,12 +124,12 @@ Purchasing Team`);
             {/* Purchase Proposal Selection */}
             <div className="pms-form-group">
               <label className="pms-form-label" htmlFor="purchaseProposal">
-                Purchase Proposal *
+                Đề Xuất Mua Hàng Gốc *
               </label>
               {loading ? (
                 <div className="pms-spinner-wrap">
                   <div className="pms-spinner" />
-                  <span className="pms-spinner-text">Loading purchase proposals...</span>
+                  <span className="pms-spinner-text">Đang tải danh sách đề xuất mua hàng...</span>
                 </div>
               ) : (
                 <select
@@ -139,23 +139,23 @@ Purchasing Team`);
                   onChange={(e) => setSelectedProposalId(e.target.value)}
                   required
                 >
-                  <option value="">-- Select a purchase proposal --</option>
+                  <option value="">-- Chọn đề xuất mua hàng --</option>
                   {proposals.map(proposal => (
                     <option key={proposal.id} value={proposal.id}>
-                      {proposal.code} ({proposal.purchaseRequests?.length || 0} PRs)
+                      {proposal.code} ({proposal.purchaseRequests?.length || 0} yêu cầu)
                     </option>
                   ))}
                 </select>
               )}
               {proposals.length === 0 && !loading && (
-                <div className="pms-form-hint">No available purchase proposals.</div>
+                <div className="pms-form-hint">Không có đề xuất mua hàng nào khả dụng.</div>
               )}
             </div>
 
             {/* Subject */}
             <div className="pms-form-group">
               <label className="pms-form-label" htmlFor="subject">
-                Email Subject *
+                Tiêu Đề Email *
               </label>
               <input
                 id="subject"
@@ -163,7 +163,7 @@ Purchasing Team`);
                 className="pms-form-input"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="Enter email subject"
+                placeholder="Nhập tiêu đề email"
                 required
               />
             </div>
@@ -171,7 +171,7 @@ Purchasing Team`);
             {/* Content */}
             <div className="pms-form-group">
               <label className="pms-form-label" htmlFor="content">
-                Email Content *
+                Nội Dung Email *
               </label>
               <textarea
                 id="content"
@@ -179,14 +179,14 @@ Purchasing Team`);
                 rows={8}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Enter email content. A link for quotation submission will be automatically appended."
+                placeholder="Nhập nội dung thư. Đường dẫn phản hồi báo giá sẽ tự động được thêm vào cuối email."
                 required
               />
             </div>
 
             <div className="pms-form-hint">
-              A secure link for quotation submission will be included in the email automatically.
-              The link will expire in 3 days.
+              Đường dẫn bảo mật để nhà cung cấp điền báo giá sẽ được hệ thống đính kèm tự động trong email.
+              Liên kết có hiệu lực trong vòng 3 ngày kể từ khi gửi.
             </div>
 
             {/* Modal Footer */}
@@ -197,7 +197,7 @@ Purchasing Team`);
                 onClick={handleClose}
                 disabled={submitting}
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="submit"
@@ -207,9 +207,9 @@ Purchasing Team`);
                 {submitting ? (
                   <>
                     <div className="pms-spinner" style={{ width: 14, height: 14, marginRight: 8 }} />
-                    Sending...
+                    Đang gửi…
                   </>
-                ) : 'Send RFQ'}
+                ) : 'Gửi RFQ'}
               </button>
             </div>
           </form>

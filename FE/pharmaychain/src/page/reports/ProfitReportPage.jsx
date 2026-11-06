@@ -28,7 +28,7 @@ export default function ProfitReportPage() {
     const fetchReport = useCallback(async () => {
         // Validation check (Alternative flow AT01)
         if (startDate && endDate && startDate > endDate) {
-            setErrorMsg('Validation Error: Start date cannot be after End date.');
+            setErrorMsg('Lỗi xác thực: Ngày bắt đầu không thể sau ngày kết thúc.');
             return;
         }
 
@@ -42,7 +42,7 @@ export default function ProfitReportPage() {
             });
             setReport(data);
         } catch (err) {
-            setErrorMsg(err?.message || 'Failed to load profit report.');
+            setErrorMsg(err?.message || 'Không thể tải báo cáo lợi nhuận.');
         } finally {
             setLoading(false);
         }
@@ -53,7 +53,6 @@ export default function ProfitReportPage() {
         fetchReport();
     }, [fetchReport]);
 
-
     const handleExportExcel = async () => {
         setExporting(true);
         setErrorMsg(null);
@@ -63,9 +62,9 @@ export default function ProfitReportPage() {
                 endDate,
                 storeId: storeId ? Number(storeId) : undefined,
             });
-            setSuccessMsg('Executive Excel report exported successfully!');
+            setSuccessMsg('Xuất báo cáo tài chính Excel thành công!');
         } catch (err) {
-            setErrorMsg(err?.message || 'Failed to export Excel report.');
+            setErrorMsg(err?.message || 'Lỗi khi xuất tệp báo cáo Excel.');
         } finally {
             setExporting(false);
         }
@@ -111,8 +110,6 @@ export default function ProfitReportPage() {
         setSuccessMsg(null);
     };
 
-
-
     // Filter products by search term
     const filteredProducts = (report?.topProducts || []).filter((p) =>
         p.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -125,11 +122,11 @@ export default function ProfitReportPage() {
             <div className="pms-page-header">
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <h1 className="pms-page-title">Executive Profit & Margin Report</h1>
-                        <span className="pms-badge pms-badge-info">General Manager</span>
+                        <h1 className="pms-page-title">Báo Cáo Doanh Thu & Biên Lợi Nhuận</h1>
+                        <span className="pms-badge pms-badge-info">Ban Giám Đốc</span>
                     </div>
                     <p className="pms-page-sub">
-                        Analyze gross revenue, cost of goods sold (COGS), profit margins, and branch financial performance.
+                        Phân tích doanh thu gộp, giá vốn hàng bán (COGS), biên lợi nhuận và hiệu quả tài chính chuỗi nhà thuốc.
                     </p>
                 </div>
 
@@ -142,11 +139,9 @@ export default function ProfitReportPage() {
                         style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                     >
                         <span>📊</span>
-                        <span>{exporting ? 'Generating Excel…' : 'Export Executive Excel'}</span>
+                        <span>{exporting ? 'Đang tạo Excel…' : 'Xuất Báo Cáo Excel'}</span>
                     </button>
                 </div>
-
-
             </div>
 
             {/* ── Alerts ── */}
@@ -179,18 +174,18 @@ export default function ProfitReportPage() {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'space-between' }}>
                         {/* Quick Period Presets */}
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginRight: 4 }}>Period:</span>
-                            <button type="button" className="btn-pms btn-pms-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => handlePresetChange('today')}>Today</button>
-                            <button type="button" className="btn-pms btn-pms-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => handlePresetChange('7days')}>Last 7 Days</button>
-                            <button type="button" className="btn-pms btn-pms-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => handlePresetChange('thisMonth')}>This Month</button>
-                            <button type="button" className="btn-pms btn-pms-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => handlePresetChange('lastMonth')}>Last Month</button>
-                            <button type="button" className="btn-pms btn-pms-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => handlePresetChange('quarter')}>This Quarter</button>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginRight: 4 }}>Kỳ báo cáo:</span>
+                            <button type="button" className="btn-pms btn-pms-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => handlePresetChange('today')}>Hôm nay</button>
+                            <button type="button" className="btn-pms btn-pms-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => handlePresetChange('7days')}>7 ngày qua</button>
+                            <button type="button" className="btn-pms btn-pms-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => handlePresetChange('thisMonth')}>Tháng này</button>
+                            <button type="button" className="btn-pms btn-pms-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => handlePresetChange('lastMonth')}>Tháng trước</button>
+                            <button type="button" className="btn-pms btn-pms-secondary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => handlePresetChange('quarter')}>Quý này</button>
                         </div>
 
                         {/* Date Range & Store Selection */}
                         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>From:</label>
+                                <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>Từ ngày:</label>
                                 <input
                                     type="date"
                                     className="pms-input"
@@ -201,7 +196,7 @@ export default function ProfitReportPage() {
                             </div>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>To:</label>
+                                <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>Đến ngày:</label>
                                 <input
                                     type="date"
                                     className="pms-input"
@@ -215,21 +210,22 @@ export default function ProfitReportPage() {
                                 className="pms-select"
                                 value={storeId}
                                 onChange={(e) => setStoreId(e.target.value)}
-                                style={{ minWidth: 200, padding: '5px 10px' }}
+                                style={{ minWidth: 240, padding: '5px 10px' }}
                             >
-                                <option value="">All Branches (Chain-wide)</option>
-                                <option value="1">Store #1 — Central Pharmacy</option>
-                                <option value="2">Store #2 — Cau Giay Pharmacy</option>
-                                <option value="3">Store #3 — Dong Da Pharmacy</option>
+                                <option value="">Toàn hệ thống (Tất cả chi nhánh)</option>
+                                <option value="3">Chi nhánh 01 — Nhà thuốc Cầu Giấy (ST01)</option>
+                                <option value="4">Chi nhánh 02 — Nhà thuốc Đống Đa (ST02)</option>
+                                <option value="1">Trụ sở chính — Văn phòng điều hành (HQ)</option>
+                                <option value="2">Kho tổng trung tâm Miền Bắc (WH01)</option>
                             </select>
 
                             <button
                                 type="button"
                                 className="btn-pms btn-pms-secondary"
                                 onClick={handleReset}
-                                title="Reset filters to default (AT02)"
+                                title="Đặt lại bộ lọc về mặc định"
                             >
-                                Reset
+                                Đặt lại
                             </button>
                         </div>
                     </div>
@@ -241,52 +237,52 @@ export default function ProfitReportPage() {
                 {/* 1. Total Revenue */}
                 <div className="pms-card" style={{ padding: '18px 20px', borderLeft: '4px solid #0284c7' }}>
                     <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Total Revenue (Gross)
+                        Tổng Doanh Thu (Gross)
                     </div>
                     <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', marginTop: 6 }}>
                         {Number(report?.totalRevenue || 0).toLocaleString('vi-VN')} ₫
                     </div>
                     <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-                        From <strong>{report?.totalInvoices || 0}</strong> paid orders
+                        Từ <strong>{report?.totalInvoices || 0}</strong> hóa đơn hoàn tất
                     </div>
                 </div>
 
                 {/* 2. Total COGS */}
                 <div className="pms-card" style={{ padding: '18px 20px', borderLeft: '4px solid #f59e0b' }}>
                     <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Cost of Goods Sold (COGS)
+                        Giá Vốn Hàng Bán (COGS)
                     </div>
                     <div style={{ fontSize: 24, fontWeight: 800, color: '#b45309', marginTop: 6 }}>
                         {Number(report?.totalCost || 0).toLocaleString('vi-VN')} ₫
                     </div>
                     <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-                        Procurement base costs
+                        Giá vốn nhập kho cơ sở
                     </div>
                 </div>
 
                 {/* 3. Gross Profit */}
                 <div className="pms-card" style={{ padding: '18px 20px', borderLeft: '4px solid #10b981' }}>
                     <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Net Gross Profit
+                        Lợi Nhuận Gộp Thuần
                     </div>
                     <div style={{ fontSize: 24, fontWeight: 800, color: '#059669', marginTop: 6 }}>
                         {Number(report?.grossProfit || 0).toLocaleString('vi-VN')} ₫
                     </div>
                     <div style={{ fontSize: 12, color: '#059669', fontWeight: 600, marginTop: 4 }}>
-                        ✓ Revenue minus Cost
+                        ✓ Doanh thu trừ Giá vốn
                     </div>
                 </div>
 
                 {/* 4. Profit Margin */}
                 <div className="pms-card" style={{ padding: '18px 20px', borderLeft: '4px solid #8b5cf6' }}>
                     <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Gross Margin %
+                        Tỷ Suất Lợi Nhuận Gộp %
                     </div>
                     <div style={{ fontSize: 24, fontWeight: 800, color: '#6d28d9', marginTop: 6 }}>
                         {report?.grossMarginPercentage || 0}%
                     </div>
                     <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-                        AOV: {Number(report?.averageOrderValue || 0).toLocaleString('vi-VN')} ₫
+                        Giá trị đơn TB: {Number(report?.averageOrderValue || 0).toLocaleString('vi-VN')} ₫
                     </div>
                 </div>
             </div>
@@ -307,7 +303,7 @@ export default function ProfitReportPage() {
                     }}
                     onClick={() => setActiveTab('products')}
                 >
-                    💊 Product Profitability ({report?.topProducts?.length || 0})
+                    💊 Lợi Nhuận Theo Thuốc / Sản Phẩm ({report?.topProducts?.length || 0})
                 </button>
 
                 <button
@@ -324,7 +320,7 @@ export default function ProfitReportPage() {
                     }}
                     onClick={() => setActiveTab('stores')}
                 >
-                    🏪 Store / Branch Comparison ({report?.storeBreakdown?.length || 0})
+                    🏪 So Sánh Giữa Các Chi Nhánh ({report?.storeBreakdown?.length || 0})
                 </button>
 
                 <button
@@ -341,7 +337,7 @@ export default function ProfitReportPage() {
                     }}
                     onClick={() => setActiveTab('timeline')}
                 >
-                    📅 Daily Timeline & Trends ({report?.dailyTrends?.length || 0})
+                    📅 Xu Hướng & Tiến Độ Theo Ngày ({report?.dailyTrends?.length || 0})
                 </button>
             </div>
 
@@ -350,13 +346,13 @@ export default function ProfitReportPage() {
                 <div className="pms-card" style={{ padding: 0 }}>
                     <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-color, #e2e8f0)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Medicine & Product Profit Breakdown</h3>
-                            <span style={{ fontSize: 12, color: '#64748b' }}>Ranked by highest gross margin contribution</span>
+                            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Chi Tiết Lợi Nhuận Theo Thuốc & Sản Phẩm</h3>
+                            <span style={{ fontSize: 12, color: '#64748b' }}>Xếp theo đóng góp tỷ suất lợi nhuận cao nhất</span>
                         </div>
                         <input
                             type="text"
                             className="pms-input"
-                            placeholder="Search by product name or barcode..."
+                            placeholder="Tìm theo tên thuốc hoặc mã vạch..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             style={{ width: 300, fontSize: 13 }}
@@ -368,14 +364,14 @@ export default function ProfitReportPage() {
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Product / Medicine</th>
-                                    <th>Barcode</th>
-                                    <th>Unit</th>
-                                    <th style={{ textAlign: 'right' }}>Qty Sold</th>
-                                    <th style={{ textAlign: 'right' }}>Revenue (₫)</th>
-                                    <th style={{ textAlign: 'right' }}>COGS (₫)</th>
-                                    <th style={{ textAlign: 'right' }}>Gross Profit (₫)</th>
-                                    <th style={{ textAlign: 'center' }}>Margin (%)</th>
+                                    <th>Tên Thuốc / Sản Phẩm</th>
+                                    <th>Mã Vạch</th>
+                                    <th>Đơn Vị</th>
+                                    <th style={{ textAlign: 'right' }}>Số Lượng Bán</th>
+                                    <th style={{ textAlign: 'right' }}>Doanh Thu (₫)</th>
+                                    <th style={{ textAlign: 'right' }}>Giá Vốn (₫)</th>
+                                    <th style={{ textAlign: 'right' }}>Lợi Nhuận Gộp (₫)</th>
+                                    <th style={{ textAlign: 'center' }}>Biên LN (%)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -384,14 +380,14 @@ export default function ProfitReportPage() {
                                         <td colSpan={9} style={{ textAlign: 'center', padding: '40px' }}>
                                             <div className="pms-spinner" />
                                             <span style={{ display: 'block', marginTop: 10, color: '#64748b' }}>
-                                                Computing profit metrics…
+                                                Đang tính toán số liệu lợi nhuận…
                                             </span>
                                         </td>
                                     </tr>
                                 ) : filteredProducts.length === 0 ? (
                                     <tr>
                                         <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                                            No sales recorded for the selected filter parameters.
+                                            Không có dữ liệu bán hàng cho bộ lọc đã chọn.
                                         </td>
                                     </tr>
                                 ) : (
@@ -432,21 +428,21 @@ export default function ProfitReportPage() {
             {activeTab === 'stores' && (
                 <div className="pms-card" style={{ padding: 0 }}>
                     <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-color, #e2e8f0)' }}>
-                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Store Branch Financial Performance</h3>
-                        <span style={{ fontSize: 12, color: '#64748b' }}>Compare revenue, costs, and profit generated across chain branches</span>
+                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Hiệu Quả Doanh Thu Các Chi Nhánh</h3>
+                        <span style={{ fontSize: 12, color: '#64748b' }}>So sánh doanh thu, giá vốn và lợi nhuận giữa các chi nhánh trong chuỗi</span>
                     </div>
 
                     <div className="pms-table-container">
                         <table className="pms-table">
                             <thead>
                                 <tr>
-                                    <th>Store Code</th>
-                                    <th>Branch Name</th>
-                                    <th style={{ textAlign: 'right' }}>Paid Invoices</th>
-                                    <th style={{ textAlign: 'right' }}>Total Revenue (₫)</th>
-                                    <th style={{ textAlign: 'right' }}>Total Cost (₫)</th>
-                                    <th style={{ textAlign: 'right' }}>Gross Profit (₫)</th>
-                                    <th style={{ textAlign: 'center' }}>Profit Margin (%)</th>
+                                    <th>Mã Chi Nhánh</th>
+                                    <th>Tên Chi Nhánh</th>
+                                    <th style={{ textAlign: 'right' }}>Hóa Đơn Hoàn Tất</th>
+                                    <th style={{ textAlign: 'right' }}>Tổng Doanh Thu (₫)</th>
+                                    <th style={{ textAlign: 'right' }}>Tổng Giá Vốn (₫)</th>
+                                    <th style={{ textAlign: 'right' }}>Lợi Nhuận Gộp (₫)</th>
+                                    <th style={{ textAlign: 'center' }}>Tỷ Suất LN (%)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -459,7 +455,7 @@ export default function ProfitReportPage() {
                                 ) : (report?.storeBreakdown || []).length === 0 ? (
                                     <tr>
                                         <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                                            No branch sales data available.
+                                            Không có dữ liệu bán hàng của chi nhánh.
                                         </td>
                                     </tr>
                                 ) : (
@@ -489,20 +485,20 @@ export default function ProfitReportPage() {
             {activeTab === 'timeline' && (
                 <div className="pms-card" style={{ padding: 0 }}>
                     <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-color, #e2e8f0)' }}>
-                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Daily Financial Progress & Margin Trend</h3>
-                        <span style={{ fontSize: 12, color: '#64748b' }}>Chronological performance log for the active reporting period</span>
+                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Tiến Độ Tài Chính & Biên Lợi Nhuận Hàng Ngày</h3>
+                        <span style={{ fontSize: 12, color: '#64748b' }}>Nhật ký số liệu kinh doanh theo từng ngày trong kỳ báo cáo</span>
                     </div>
 
                     <div className="pms-table-container">
                         <table className="pms-table">
                             <thead>
                                 <tr>
-                                    <th>Business Date</th>
-                                    <th style={{ textAlign: 'right' }}>Invoices</th>
-                                    <th style={{ textAlign: 'right' }}>Gross Sales (₫)</th>
-                                    <th style={{ textAlign: 'right' }}>COGS (₫)</th>
-                                    <th style={{ textAlign: 'right' }}>Gross Profit (₫)</th>
-                                    <th style={{ textAlign: 'center' }}>Margin (%)</th>
+                                    <th>Ngày Kinh Doanh</th>
+                                    <th style={{ textAlign: 'right' }}>Số Hóa Đơn</th>
+                                    <th style={{ textAlign: 'right' }}>Doanh Thu (₫)</th>
+                                    <th style={{ textAlign: 'right' }}>Giá Vốn (₫)</th>
+                                    <th style={{ textAlign: 'right' }}>Lợi Nhuận Gộp (₫)</th>
+                                    <th style={{ textAlign: 'center' }}>Tỷ Suất (%)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -515,7 +511,7 @@ export default function ProfitReportPage() {
                                 ) : (report?.dailyTrends || []).length === 0 ? (
                                     <tr>
                                         <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                                            No daily transaction history in this period.
+                                            Không có giao dịch bán hàng trong khoảng thời gian này.
                                         </td>
                                     </tr>
                                 ) : (

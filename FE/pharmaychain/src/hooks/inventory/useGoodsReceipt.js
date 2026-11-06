@@ -8,7 +8,7 @@ export const useGoodsReceipt = () => {
     const [page, setPage] = useState(0);
     const [size] = useState(10);
     const [search, setSearch] = useState('');
-    const [storeId, setStoreId] = useState(1);
+    const [storeId, setStoreId] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [listLoading, setListLoading] = useState(false);
 
@@ -147,6 +147,8 @@ export const useGoodsReceipt = () => {
         openRejectModal,
         handleConfirmReceipt,
         handleRejectReceipt,
+        storeId,
+        setStoreId,
         error,
         setError,
         successMsg,

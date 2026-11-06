@@ -78,7 +78,7 @@ export default function RfqPage() {
     if (selectedRfqs.length > 0) {
       const firstSelected = selectedRfqs[0];
       if (firstSelected.purchaseProposalId !== rfqPurchaseProposalId) {
-        setUiError('Only RFQs from the same Purchase Proposal can be compared together');
+        setUiError('Chỉ có thể so sánh các yêu cầu báo giá (RFQ) xuất phát từ cùng một đề xuất mua hàng!');
         return;
       }
     }
@@ -87,19 +87,19 @@ export default function RfqPage() {
 
   const handleCompareSelected = async () => {
     if (selectedRfqs.length < 2) {
-      setUiError('Please select at least 2 RFQs to compare');
+      setUiError('Vui lòng chọn ít nhất 2 RFQ để thực hiện so sánh báo giá');
       return;
     }
 
     const firstProposalId = selectedRfqs[0]?.purchaseProposalId;
     if (!firstProposalId) {
-      setUiError('Selected RFQs must have a valid purchase proposal');
+      setUiError('Các RFQ đã chọn phải liên kết với một đề xuất mua hàng hợp lệ');
       return;
     }
 
     const allSameProposal = selectedRfqs.every((r) => r.purchaseProposalId === firstProposalId);
     if (!allSameProposal) {
-      setUiError('All selected RFQs must belong to the same Purchase Proposal');
+      setUiError('Tất cả RFQ được chọn phải thuộc cùng một đề xuất mua hàng');
       return;
     }
 
@@ -115,9 +115,9 @@ export default function RfqPage() {
     <div>
       <div className="pms-page-header">
         <div>
-          <h1 className="pms-page-title">RFQ & Quotations</h1>
+          <h1 className="pms-page-title">Yêu Cầu Báo Giá &amp; Đấu Thầu (RFQ)</h1>
           <p className="pms-page-sub">
-            Manage Requests for Quotation, review supplier responses, and compare quotations.
+            Quản lý yêu cầu chào giá gửi nhà cung cấp, tiếp nhận báo giá và thẩm định ma trận so sánh giá
           </p>
         </div>
         <button
@@ -129,7 +129,7 @@ export default function RfqPage() {
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
             <polyline points="22,6 12,13 2,6" />
           </svg>
-          Send RFQ Email
+          Gửi Yêu Cầu Báo Giá (Email)
         </button>
       </div>
 
@@ -157,14 +157,14 @@ export default function RfqPage() {
         <div className="pms-alert pms-alert-info" style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <div>
-              <strong>{selectedRfqs.length} RFQ(s) selected</strong> from the same Purchase Proposal. {selectedRfqs.map((r) => r.code).join(', ')}
+              <strong>Đã chọn {selectedRfqs.length} RFQ</strong> từ cùng một đề xuất mua hàng: {selectedRfqs.map((r) => r.code).join(', ')}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn-pms btn-pms-primary" onClick={handleCompareSelected}>
-                Compare Selected
+                So Sánh Báo Giá Đã Chọn
               </button>
               <button className="btn-pms btn-pms-ghost" onClick={handleClearSelection}>
-                Clear
+                Bỏ chọn
               </button>
             </div>
           </div>
@@ -214,7 +214,7 @@ export default function RfqPage() {
             );
             setDetailModalOpen(false);
             setSuccessMsg(
-              `Selected ${sameProposalRfqs.length} RFQ(s) from the same Purchase Proposal. Click "Compare Selected" to view comparison.`
+              `Đã chọn ${sameProposalRfqs.length} RFQ từ cùng đề xuất. Nhấn "So Sánh Báo Giá Đã Chọn" để xem bảng đối chiếu chi tiết.`
             );
           }
         }}
@@ -231,7 +231,7 @@ export default function RfqPage() {
         show={sendModalOpen}
         onHide={() => setSendModalOpen(false)}
         supplierSelectMode
-        onSuccess={() => { fetchRfqs(); setSuccessMsg('RFQ sent successfully!'); }}
+        onSuccess={() => { fetchRfqs(); setSuccessMsg('Gửi yêu cầu báo giá thành công!'); }}
       />
     </div>
   );

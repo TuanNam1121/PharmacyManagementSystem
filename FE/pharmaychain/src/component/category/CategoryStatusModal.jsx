@@ -24,12 +24,12 @@ export default function CategoryStatusModal({
     setErrorMsg(null);
     setSubmitting(true);
     try {
-      // Toggle status: 1 -> 0 (Inactive), 0 -> 1 (Active)
+      // Toggle status: 1 -> 0 (Ngừng hoạt động), 0 -> 1 (Hoạt động)
       const targetStatus = isCurrentlyActive ? 0 : 1;
       await onConfirm(category.id, targetStatus);
       onHide();
     } catch (err) {
-      setErrorMsg(err?.message || 'Status change operation failed.');
+      setErrorMsg(err?.message || 'Cập nhật trạng thái danh mục thất bại.');
     } finally {
       setSubmitting(false);
     }
@@ -42,13 +42,13 @@ export default function CategoryStatusModal({
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">
-              {isCurrentlyActive ? 'Disable Category' : 'Activate Category'}
+              {isCurrentlyActive ? 'Ngừng Hoạt Động Danh Mục' : 'Kích Hoạt Lại Danh Mục'}
             </div>
             <div className="pms-modal-sub">
-              Category: <strong>{category.name}</strong>
+              Danh mục: <strong>{category.name}</strong>
             </div>
           </div>
-          <button className="pms-modal-close" onClick={onHide} aria-label="Close">
+          <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -70,8 +70,8 @@ export default function CategoryStatusModal({
             {isCurrentlyActive ? (
               <div>
                 <p style={{ fontSize: 13.5, color: 'var(--text-primary)', marginBottom: 14 }}>
-                  Are you sure you want to change the category <strong>"{category.name}"</strong> to{' '}
-                  <span className="pms-badge pms-badge-danger">INACTIVE</span> status?
+                  Bạn có chắc chắn muốn chuyển danh mục <strong>"{category.name}"</strong> sang trạng thái{' '}
+                  <span className="pms-badge pms-badge-danger">NGỪNG HOẠT ĐỘNG</span> không?
                 </p>
 
                 <div
@@ -85,18 +85,18 @@ export default function CategoryStatusModal({
                     lineHeight: '1.5',
                   }}
                 >
-                  <strong style={{ color: 'var(--status-danger)' }}>Business Note:</strong>
+                  <strong style={{ color: 'var(--status-danger)' }}>Lưu ý nghiệp vụ:</strong>
                   <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
-                    <li>Cannot disable if there are still active products belonging to this category.</li>
-                    <li>Products belonging to this category remain safely preserved in the database.</li>
+                    <li>Không thể ngừng hoạt động nếu vẫn còn các loại thuốc đang kinh doanh thuộc nhóm này.</li>
+                    <li>Các sản phẩm và dữ liệu lịch sử liên kết vẫn được bảo toàn nguyên vẹn trong cơ sở dữ liệu.</li>
                   </ul>
                 </div>
               </div>
             ) : (
               <div>
                 <p style={{ fontSize: 13.5, color: 'var(--text-primary)', marginBottom: 14 }}>
-                  Are you sure you want to reactivate the category <strong>"{category.name}"</strong> to{' '}
-                  <span className="pms-badge pms-badge-success">ACTIVE</span> status?
+                  Bạn có chắc chắn muốn kích hoạt lại danh mục <strong>"{category.name}"</strong> sang trạng thái{' '}
+                  <span className="pms-badge pms-badge-success">ĐANG HOẠT ĐỘNG</span>?
                 </p>
                 <div
                   style={{
@@ -109,7 +109,7 @@ export default function CategoryStatusModal({
                     lineHeight: '1.5',
                   }}
                 >
-                  <strong style={{ color: 'var(--brand-primary)' }}>Information:</strong> Once activated, staff can continue selecting this category when managing categories and product classifications.
+                  <strong style={{ color: 'var(--brand-primary)' }}>Thông tin:</strong> Sau khi kích hoạt, nhân viên có thể tiếp tục chọn danh mục này khi thêm mới thuốc hoặc cập nhật phân loại.
                 </div>
               </div>
             )}
@@ -118,7 +118,7 @@ export default function CategoryStatusModal({
           {/* Footer */}
           <div className="pms-modal-footer">
             <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
@@ -126,10 +126,10 @@ export default function CategoryStatusModal({
               disabled={submitting}
             >
               {submitting
-                ? 'Processing…'
+                ? 'Đang xử lý…'
                 : isCurrentlyActive
-                ? 'Confirm Disable'
-                : 'Activate Category'}
+                ? 'Xác Nhận Ngừng Hoạt Động'
+                : 'Kích Hoạt Danh Mục'}
             </button>
           </div>
         </form>

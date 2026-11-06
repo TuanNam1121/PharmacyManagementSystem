@@ -23,7 +23,7 @@ export default function WarehouseReplenishmentDetailModal({
 
   const handleConfirmReject = () => {
     if (!rejectReason.trim()) {
-      alert('Please specify a rejection reason');
+      alert('Vui lòng nhập lý do từ chối yêu cầu điều phối.');
       return;
     }
     onReject(detail.id, rejectReason.trim());
@@ -37,11 +37,11 @@ export default function WarehouseReplenishmentDetailModal({
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">
-              Store Replenishment Request {detail?.code ? `— ${detail.code}` : ''}
+              Yêu Cầu Cấp Bổ Sung Thuốc {detail?.code ? `— ${detail.code}` : ''}
             </div>
-            <div className="pms-modal-sub">Stock requisition from retail branch to central warehouse</div>
+            <div className="pms-modal-sub">Phiếu điều phối hàng từ chi nhánh bán lẻ đến Kho Tổng</div>
           </div>
-          <button className="pms-modal-close" onClick={onHide}>
+          <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -52,7 +52,7 @@ export default function WarehouseReplenishmentDetailModal({
           {loading ? (
             <div className="pms-spinner-wrap">
               <div className="pms-spinner" />
-              <span className="pms-spinner-text">Loading request details…</span>
+              <span className="pms-spinner-text">Đang tải chi tiết yêu cầu…</span>
             </div>
           ) : detail ? (
             <div>
@@ -63,24 +63,24 @@ export default function WarehouseReplenishmentDetailModal({
                 borderRadius: 'var(--border-radius-md)', padding: '16px 20px', marginBottom: 20,
               }}>
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Request Code</div>
+                  <div className="pms-detail-label">Mã Yêu Cầu</div>
                   <div className="pms-detail-value mono fw-700">{detail.code}</div>
                 </div>
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Requesting Store</div>
+                  <div className="pms-detail-label">Chi Nhánh Đặt Hàng</div>
                   <div className="pms-detail-value fw-700" style={{ color: 'var(--brand-primary)' }}>
-                    {detail.storeName || 'Branch Store'}
+                    {detail.storeName || 'Chi Nhánh'}
                   </div>
                 </div>
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Requested Date</div>
+                  <div className="pms-detail-label">Ngày Yêu Cầu</div>
                   <div className="pms-detail-value">{formatDate(detail.createdAt)}</div>
                 </div>
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Status</div>
+                  <div className="pms-detail-label">Trạng Thái</div>
                   <div style={{ marginTop: 2 }}>
                     <span className={`pms-badge ${isApproved ? 'pms-badge-success' : isRejected ? 'pms-badge-danger' : isDispatched ? 'pms-badge-info' : 'pms-badge-warning'}`}>
-                      {detail.statusText || 'Pending Review'}
+                      {detail.statusText || 'Chờ xét duyệt'}
                     </span>
                   </div>
                 </div>
@@ -88,7 +88,7 @@ export default function WarehouseReplenishmentDetailModal({
 
               {isRejected && detail.rejectReason && (
                 <div className="pms-alert pms-alert-danger" style={{ marginBottom: 20 }}>
-                  <strong>Rejection Reason: </strong> {detail.rejectReason}
+                  <strong>Lý Do Từ Chối: </strong> {detail.rejectReason}
                 </div>
               )}
 
@@ -99,13 +99,13 @@ export default function WarehouseReplenishmentDetailModal({
                     <thead>
                       <tr>
                         <th style={{ width: 40 }}>#</th>
-                        <th>Medicine / Product</th>
-                        <th>Barcode</th>
-                        <th>Unit</th>
-                        <th className="text-right">Requested Qty</th>
-                        <th className="text-right">Approved Qty</th>
-                        <th className="text-right">Warehouse Available Stock</th>
-                        <th>Stock Check</th>
+                        <th>Tên Thuốc / Sản Phẩm</th>
+                        <th>Mã Thuốc</th>
+                        <th>ĐVT</th>
+                        <th className="text-right">SL Yêu Cầu</th>
+                        <th className="text-right">SL Duyệt</th>
+                        <th className="text-right">Tồn Kho Tổng Khả Dụng</th>
+                        <th>Kiểm Tra Tồn</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -127,9 +127,9 @@ export default function WarehouseReplenishmentDetailModal({
                               </td>
                               <td>
                                 {hasEnough ? (
-                                  <span className="pms-badge pms-badge-success" style={{ fontSize: 11 }}>In Stock</span>
+                                  <span className="pms-badge pms-badge-success" style={{ fontSize: 11 }}>Đủ tồn kho</span>
                                 ) : (
-                                  <span className="pms-badge pms-badge-warning" style={{ fontSize: 11 }}>Low Warehouse Stock</span>
+                                  <span className="pms-badge pms-badge-warning" style={{ fontSize: 11 }}>Thiếu tồn kho</span>
                                 )}
                               </td>
                             </tr>
@@ -138,7 +138,7 @@ export default function WarehouseReplenishmentDetailModal({
                       ) : (
                         <tr>
                           <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
-                            No items found in this requisition.
+                            Không có danh mục mặt hàng nào trong yêu cầu này.
                           </td>
                         </tr>
                       )}
@@ -154,22 +154,22 @@ export default function WarehouseReplenishmentDetailModal({
                   borderRadius: 'var(--border-radius-md)', border: '1px solid var(--color-danger)',
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-danger)', marginBottom: 8 }}>
-                    Specify reason for rejecting this replenishment request:
+                    Nhập lý do từ chối yêu cầu cấp hàng:
                   </div>
                   <input
                     type="text"
                     className="pms-input"
-                    placeholder="e.g. Central stock reserved for hospital quota, please re-request next week..."
+                    placeholder="VD: Kho tổng đang ưu tiên hạn ngạch chi nhánh khác, đề nghị gửi lại vào tuần sau..."
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
                     autoFocus
                   />
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
                     <button className="btn-pms btn-pms-sm btn-pms-secondary" onClick={() => setRejecting(false)}>
-                      Cancel
+                      Hủy
                     </button>
                     <button className="btn-pms btn-pms-sm btn-pms-danger" onClick={handleConfirmReject} disabled={actionLoading}>
-                      Confirm Rejection
+                      Xác Nhận Từ Chối
                     </button>
                   </div>
                 </div>
@@ -177,13 +177,13 @@ export default function WarehouseReplenishmentDetailModal({
             </div>
           ) : (
             <div className="pms-empty">
-              <div className="pms-empty-title">No data available</div>
+              <div className="pms-empty-title">Không có dữ liệu chi tiết</div>
             </div>
           )}
         </div>
 
         <div className="pms-modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button className="btn-pms btn-pms-secondary" onClick={onHide}>Close</button>
+          <button className="btn-pms btn-pms-secondary" onClick={onHide}>Đóng</button>
           <div style={{ display: 'flex', gap: 8 }}>
             {isPending && !rejecting && (
               <>
@@ -193,7 +193,7 @@ export default function WarehouseReplenishmentDetailModal({
                   disabled={actionLoading}
                   style={{ color: 'var(--color-danger)' }}
                 >
-                  Reject Request
+                  Từ Chối Phiếu
                 </button>
                 <button
                   className="btn-pms btn-pms-primary"
@@ -201,7 +201,7 @@ export default function WarehouseReplenishmentDetailModal({
                   disabled={actionLoading}
                   style={{ background: 'var(--color-success)', borderColor: 'var(--color-success)' }}
                 >
-                  {actionLoading ? 'Approving…' : 'Approve Request'}
+                  {actionLoading ? 'Đang duyệt…' : 'Phê Duyệt Yêu Cầu'}
                 </button>
               </>
             )}
@@ -221,7 +221,7 @@ export default function WarehouseReplenishmentDetailModal({
                   <circle cx="5.5" cy="18.5" r="2.5"/>
                   <circle cx="18.5" cy="18.5" r="2.5"/>
                 </svg>
-                Dispatch Goods (Create Goods Issue)
+                Xuất Kho Điều Phối (Tạo Phiếu Xuất)
               </button>
             )}
           </div>

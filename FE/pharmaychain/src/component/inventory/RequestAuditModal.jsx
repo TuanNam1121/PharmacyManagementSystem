@@ -12,7 +12,7 @@ export default function RequestAuditModal({ show, onHide, onConfirm, submitting 
         e.preventDefault();
         setError(null);
         if (!storeId || !auditDate) {
-            setError('Please select branch store and audit date.');
+            setError('Vui lòng chọn chi nhánh nhà thuốc và ngày kiểm kê.');
             return;
         }
         try {
@@ -23,7 +23,7 @@ export default function RequestAuditModal({ show, onHide, onConfirm, submitting 
             });
             onHide();
         } catch (err) {
-            setError(err?.message || 'Failed to submit audit session request.');
+            setError(err?.message || 'Không thể gửi yêu cầu đợt kiểm kê.');
         }
     };
 
@@ -32,9 +32,9 @@ export default function RequestAuditModal({ show, onHide, onConfirm, submitting 
             <div className="pms-modal" style={{ maxWidth: 520 }}>
                 <div className="pms-modal-header">
                     <div>
-                        <h3 className="pms-modal-title">Request Stocktaking Session</h3>
+                        <h3 className="pms-modal-title">Yêu Cầu Mở Đợt Kiểm Kê Kho</h3>
                         <p className="pms-modal-sub" style={{ fontSize: 12, margin: 0, color: 'var(--text-secondary)' }}>
-                            Role: <strong>Pharmacist</strong> — Request will be forwarded to Store Manager for approval
+                            Vai trò: <strong>Dược sĩ phụ trách</strong> — Yêu cầu sẽ được chuyển đến Quản lý Cửa Hàng để phê duyệt
                         </p>
                     </div>
                     <button type="button" className="pms-modal-close" onClick={onHide} disabled={submitting}>
@@ -56,11 +56,11 @@ export default function RequestAuditModal({ show, onHide, onConfirm, submitting 
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
                             </svg>
-                            Creating this request will snapshot system stock for all active items in the branch. Counting can only begin <strong>after the Store Manager accepts</strong> this request.
+                            Tạo yêu cầu này sẽ chốt số liệu tồn kho sổ sách cho tất cả mặt hàng tại chi nhánh. Việc kiểm đếm thực tế chỉ bắt đầu sau khi <strong>Quản lý Cửa Hàng phê duyệt</strong> yêu cầu.
                         </div>
 
                         <div className="pms-form-group" style={{ marginBottom: 14 }}>
-                            <label className="pms-label" style={{ fontWeight: 600 }}>Branch Pharmacy <span style={{ color: 'var(--danger)' }}>*</span></label>
+                            <label className="pms-label" style={{ fontWeight: 600 }}>Chi nhánh kiểm kê <span style={{ color: 'var(--danger)' }}>*</span></label>
                             <select
                                 className="pms-select"
                                 value={storeId}
@@ -68,14 +68,14 @@ export default function RequestAuditModal({ show, onHide, onConfirm, submitting 
                                 disabled={submitting}
                                 style={{ width: '100%' }}
                             >
-                                <option value="1">Store #1 — Central Pharmacy</option>
-                                <option value="2">Store #2 — Cau Giay Pharmacy</option>
-                                <option value="3">Store #3 — Dong Da Pharmacy</option>
+                                <option value="3">Chi nhánh 01 — Cầu Giấy (ST01)</option>
+                                <option value="4">Chi nhánh 02 — Đống Đa (ST02)</option>
+                                <option value="2">Kho Tổng Trung Tâm (WH01)</option>
                             </select>
                         </div>
 
                         <div className="pms-form-group" style={{ marginBottom: 14 }}>
-                            <label className="pms-label" style={{ fontWeight: 600 }}>Planned Audit Date <span style={{ color: 'var(--danger)' }}>*</span></label>
+                            <label className="pms-label" style={{ fontWeight: 600 }}>Ngày kiểm kê dự kiến <span style={{ color: 'var(--danger)' }}>*</span></label>
                             <input
                                 type="date"
                                 className="pms-input"
@@ -87,11 +87,11 @@ export default function RequestAuditModal({ show, onHide, onConfirm, submitting 
                         </div>
 
                         <div className="pms-form-group">
-                            <label className="pms-label" style={{ fontWeight: 600 }}>Audit Purpose & Notes</label>
+                            <label className="pms-label" style={{ fontWeight: 600 }}>Mục đích kiểm kê & Ghi chú</label>
                             <textarea
                                 rows={3}
                                 className="pms-input"
-                                placeholder="E.g., Monthly scheduled audit, prescription drug check, or discrepancy investigation..."
+                                placeholder="Ví dụ: Kiểm kê định kỳ cuối tháng, kiểm tra đột xuất tủ thuốc gây nghiện, đối soát số liệu lệch..."
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
                                 disabled={submitting}
@@ -102,10 +102,10 @@ export default function RequestAuditModal({ show, onHide, onConfirm, submitting 
 
                     <div className="pms-modal-footer">
                         <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-                            Cancel
+                            Hủy bỏ
                         </button>
                         <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting}>
-                            {submitting ? 'Submitting Request...' : 'Send Request to Manager'}
+                            {submitting ? 'Đang gửi yêu cầu...' : 'Gửi Yêu Cầu Cho Quản Lý'}
                         </button>
                     </div>
                 </form>

@@ -107,9 +107,9 @@ export default function OpenShiftModal({
                                 value={storeId}
                                 onChange={(e) => setStoreId(e.target.value)}
                             >
-                                <option value="1">Chi nhánh 1 — Nhà thuốc Trung tâm (Hà Nội)</option>
-                                <option value="2">Chi nhánh 2 — Nhà thuốc Cầu Giấy</option>
-                                <option value="3">Chi nhánh 3 — Nhà thuốc Đống Đa</option>
+                                <option value="3">Chi nhánh 01 — Cầu Giấy (ST01)</option>
+                                <option value="4">Chi nhánh 02 — Đống Đa (ST02)</option>
+                                <option value="1">Trụ Sở Chính — Tổng Công Ty</option>
                             </select>
                         </div>
 
