@@ -463,6 +463,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         }).collect(Collectors.toList());
 
         resp.setItems(items);
+        resp.setItemCount(items.size());
         return resp;
     }
 
@@ -782,6 +783,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                 .createdAt(pr.getCreatedAt())
                 .approvedAt(pr.getApprovedAt())
                 .items(Collections.emptyList())
+                .itemCount(pr.getDetails() != null ? pr.getDetails().size() : 0)
                 .build();
     }
 

@@ -94,8 +94,9 @@ public class SupplierController {
 
         @DeleteMapping("/{id}")
         public ResponseEntity<ApiResponse<SupplierResponse>> deleteSupplier(
-                        @PathVariable Long id) {
-                SupplierResponse data = supplierService.deleteSupplier(id);
+                        @PathVariable Long id,
+                        @RequestParam(required = false) String reason) {
+                SupplierResponse data = supplierService.deleteSupplier(id, reason);
                 return ResponseEntity.ok(
                                 ApiResponse.success("Supplier deleted successfully", data));
         }

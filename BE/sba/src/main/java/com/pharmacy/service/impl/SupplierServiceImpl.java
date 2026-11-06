@@ -99,15 +99,15 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Transactional
     @Override
-    public SupplierResponse deleteSupplier(Long id) {
+    public SupplierResponse deleteSupplier(Long id, String reason) {
         if (id == null)
             throw new IllegalArgumentException("Invalid request to delete supplier");
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Supplier not found with id: " + id));
-        System.out.println("DEBUG - Deleting (soft delete) supplier id=" + id + ", current status=" + supplier.getStatus());
         supplier.setStatus(SupplierStatus.INACTIVE);
-        System.out.println("DEBUG - After soft delete, status=" + supplier.getStatus());
-        return SupplierResponse.fromEntityToDelete(supplier);
+        supplier.setDeleteReason(reason != null && !reason.trim().isEmpty() ? reason.trim() : null);
+        Supplier savedSupplier = supplierRepository.save(supplier);
+        return SupplierResponse.fromEntityToDelete(savedSupplier);
     }
 
 }

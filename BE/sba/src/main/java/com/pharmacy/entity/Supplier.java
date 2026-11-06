@@ -59,6 +59,10 @@ public class Supplier {
     @Column(name = "note", length = 1000)
     private String note;
 
+    @Nationalized
+    @Column(name = "delete_reason", length = 500)
+    private String deleteReason;
+
     @ColumnDefault("sysdatetime()")
     @Column(name = "created_at", nullable = false)
     @CreationTimestamp 
