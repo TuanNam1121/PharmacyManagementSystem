@@ -1,6 +1,5 @@
 package com.pharmacy.dto.purchaseproposal;
 
-import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,8 +14,27 @@ import java.util.List;
 public class CreatePurchaseProposalRequest {
 
     /**
-     * One or more purchase requests to consolidate into a single proposal.
+     * Optional purchase requests to consolidate into a single proposal.
      */
-    @NotEmpty(message = "At least one purchase request is required")
     private List<Long> purchaseRequestIds;
+
+    /**
+     * Optional direct items chosen proactively by purchasing staff.
+     */
+    private List<CreateProposalItemRequest> items;
+
+    /**
+     * Proactive purchase justification/note (e.g. good price, promotional discount).
+     */
+    private String note;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CreateProposalItemRequest {
+        private Long productId;
+        private Integer quantity;
+        private String note;
+    }
 }

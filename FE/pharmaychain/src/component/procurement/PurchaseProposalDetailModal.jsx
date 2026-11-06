@@ -3,12 +3,15 @@ import { formatDate } from '../../utils/format';
 export default function PurchaseProposalDetailModal({ show, onHide, detail, loading }) {
   if (!show) return null;
 
-  const renderStatusBadge = (status) => {
+  const renderStatusBadge = (status, statusText) => {
     const s = Number(status);
-    if (s === 1) return <span className="pms-badge pms-badge-success">Sẵn sàng tạo RFQ</span>;
-    if (s === 2) return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
-    if (s === 3) return <span className="pms-badge pms-badge-neutral">Hoàn tất</span>;
-    return <span className="pms-badge pms-badge-info">Đã lập đề xuất</span>;
+    if (s === 2) return <span className="pms-badge pms-badge-success">Đã phê duyệt</span>;
+    if (s === 1) return <span className="pms-badge pms-badge-warning">Chờ phê duyệt</span>;
+    if (s === 3) return <span className="pms-badge pms-badge-danger">Đã từ chối</span>;
+    if (s === 4) return <span className="pms-badge pms-badge-info">Nhập một phần</span>;
+    if (s === 5) return <span className="pms-badge pms-badge-success">Hoàn tất</span>;
+    if (s === 6) return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
+    return <span className="pms-badge pms-badge-info">{statusText || 'Đã lập đề xuất'}</span>;
   };
 
   return (
@@ -49,7 +52,7 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
                 <div className="pms-detail-row">
                   <div className="pms-detail-label">Trạng Thái</div>
                   <div style={{ marginTop: 2 }}>
-                    {renderStatusBadge(detail.status)}
+                    {renderStatusBadge(detail.status, detail.statusText)}
                   </div>
                 </div>
                 <div className="pms-detail-row">

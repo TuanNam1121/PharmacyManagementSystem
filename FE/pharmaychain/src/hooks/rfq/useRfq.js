@@ -216,17 +216,23 @@ export function useRfqSelection(data) {
 /**
  * Hook: Gửi RFQ đến nhà cung cấp
  */
-export function useSendRfq(supplier) {
+export function useSendRfq(supplier, initialProposalId = null) {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [proposals, setProposals] = useState([]);
-  const [selectedProposalId, setSelectedProposalId] = useState('');
+  const [selectedProposalId, setSelectedProposalId] = useState(initialProposalId ? String(initialProposalId) : '');
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoading, setSuppliersLoading] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState(supplier?.id ?? '');
+
+  useEffect(() => {
+    if (initialProposalId) {
+      setSelectedProposalId(String(initialProposalId));
+    }
+  }, [initialProposalId]);
 
   const fetchSuppliers = useCallback(async () => {
     setSuppliersLoading(true);

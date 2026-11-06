@@ -5,10 +5,14 @@ import com.pharmacy.dto.procurement.PurchaseOrderResponse;
 import com.pharmacy.entity.Account;
 import com.pharmacy.entity.AuditLog;
 import com.pharmacy.entity.PurchaseProposal;
+import com.pharmacy.entity.PurchaseProposalRequest;
+import com.pharmacy.entity.PurchaseRequest;
 import com.pharmacy.entity.SupplierQuotationDetail;
+import com.pharmacy.entity.enums.PurchaseRequestStatus;
 import com.pharmacy.repository.AccountRepository;
 import com.pharmacy.repository.AuditLogRepository;
 import com.pharmacy.repository.PurchaseProposalRepository;
+import com.pharmacy.repository.PurchaseRequestRepository;
 import com.pharmacy.repository.SupplierQuotationDetailRepository;
 import com.pharmacy.service.PurchaseOrderService;
 import jakarta.persistence.EntityNotFoundException;
@@ -18,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +36,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private final SupplierQuotationDetailRepository quotationDetailRepository;
     private final AccountRepository accountRepository;
     private final AuditLogRepository auditLogRepository;
+    private final PurchaseRequestRepository purchaseRequestRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -46,10 +52,33 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         PurchaseProposal pp = purchaseProposalRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new EntityNotFoundException("Purchase Order not found with ID: " + id));
 
-        List<SupplierQuotationDetail> details = quotationDetailRepository
-                .findBySupplierQuotationIdWithProduct(pp.getSupplierQuotation().getId());
+        List<SupplierQuotationDetail> details = (pp.getSupplierQuotation() != null)
+                ? quotationDetailRepository.findBySupplierQuotationIdWithProduct(pp.getSupplierQuotation().getId())
+                : Collections.emptyList();
 
-        return mapToResponseDetail(pp, details);
+        PurchaseOrderResponse res = mapToResponseDetail(pp, details);
+
+        // Fallback to proposal details if no supplier quotation is linked yet
+        if ((res.getItems() == null || res.getItems().isEmpty()) && pp.getDetails() != null && !pp.getDetails().isEmpty()) {
+            List<PurchaseOrderResponse.PurchaseOrderItemDto> items = pp.getDetails().stream()
+                    .map(d -> PurchaseOrderResponse.PurchaseOrderItemDto.builder()
+                            .id(d.getId())
+                            .productId(d.getProduct() != null ? d.getProduct().getId() : null)
+                            .productBarcode(d.getProduct() != null ? d.getProduct().getBarcode() : null)
+                            .productName(d.getProduct() != null ? d.getProduct().getName() : null)
+                            .unit(d.getProduct() != null ? d.getProduct().getUnit() : null)
+                            .quantity(d.getQuantity())
+                            .unitPrice(d.getProduct() != null && d.getProduct().getCostPrice() != null ? d.getProduct().getCostPrice() : BigDecimal.ZERO)
+                            .taxRate(BigDecimal.ZERO)
+                            .subtotal(d.getProduct() != null && d.getProduct().getCostPrice() != null
+                                    ? d.getProduct().getCostPrice().multiply(BigDecimal.valueOf(d.getQuantity()))
+                                    : BigDecimal.ZERO)
+                            .build())
+                    .collect(Collectors.toList());
+            res.setItems(items);
+        }
+
+        return res;
     }
 
     @Override
@@ -69,10 +98,22 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         Account approver = resolveActor(request.getActionByUsername());
 
         Short oldStatus = pp.getStatus();
-        pp.setStatus(com.pharmacy.entity.enums.PurchaseProposalStatus.APPROVED.getCode());
+        pp.setStatus((short) 2); // 2 = Approved
         pp.setApprovedBy(approver);
         pp.setApprovedAt(LocalDateTime.now());
         purchaseProposalRepository.save(pp);
+
+        // Synchronize linked purchase requests to COMPLETED / approved (status 4)
+        if (pp.getRequests() != null) {
+            for (PurchaseProposalRequest link : pp.getRequests()) {
+                PurchaseRequest pr = link.getPurchaseRequest();
+                if (pr != null) {
+                    pr.setStatus(PurchaseRequestStatus.COMPLETED.getCode());
+                    pr.setUpdatedAt(LocalDateTime.now());
+                    purchaseRequestRepository.save(pr);
+                }
+            }
+        }
 
         // BR-02: Write immutable audit log
         AuditLog log = new AuditLog();
@@ -112,7 +153,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         Account reviewer = resolveActor(request.getActionByUsername());
 
         Short oldStatus = pp.getStatus();
-        pp.setStatus(com.pharmacy.entity.enums.PurchaseProposalStatus.REJECTED.getCode());
+        pp.setStatus((short) 3); // 3 = Rejected
         pp.setRejectReason(request.getReason().trim());
         pp.setApprovedBy(reviewer);
         pp.setApprovedAt(LocalDateTime.now());

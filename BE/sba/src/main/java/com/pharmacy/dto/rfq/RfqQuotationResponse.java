@@ -92,8 +92,8 @@ public record RfqQuotationResponse(
                                                                         .unit(p != null ? p.getUnit() : "")
                                                                         .requestedQuantity(p != null
                                                                                         ? finalReqQtyMap.getOrDefault(
-                                                                                                        p.getId(), 0)
-                                                                                        : 0)
+                                                                                                        p.getId(), qty)
+                                                                                        : qty)
                                                                         .unitPrice(price)
                                                                         .subtotal(price.multiply(
                                                                                         BigDecimal.valueOf(qty)))
@@ -102,6 +102,25 @@ public record RfqQuotationResponse(
                                                 })
                                                 .toList();
                         }
+                } else if (rfq.getPurchaseProposal() != null && rfq.getPurchaseProposal().getDetails() != null) {
+                        // When quotation hasn't arrived yet, show requested items from the proposal
+                        items = rfq.getPurchaseProposal().getDetails().stream()
+                                        .map(d -> {
+                                                Product p = d.getProduct();
+                                                int qty = d.getQuantity() != null ? d.getQuantity() : 0;
+                                                BigDecimal cost = (p != null && p.getCostPrice() != null) ? p.getCostPrice() : BigDecimal.ZERO;
+                                                return QuotationItemResponse.builder()
+                                                                .productId(p != null ? p.getId() : null)
+                                                                .productName(p != null ? p.getName() : "")
+                                                                .productCode(p != null ? p.getBarcode() : "")
+                                                                .unit(p != null ? p.getUnit() : "")
+                                                                .requestedQuantity(qty)
+                                                                .unitPrice(cost)
+                                                                .subtotal(cost.multiply(BigDecimal.valueOf(qty)))
+                                                                .supplierNote(null)
+                                                                .build();
+                                        })
+                                        .toList();
                 }
 
                 return RfqQuotationResponse.builder()

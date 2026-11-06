@@ -144,11 +144,25 @@ export default function WarehouseInventoryPage({
   return (
     <div>
       {/* ── Page Header ── */}
-      <div className="pms-page-header">
+      <div className="pms-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 className="pms-page-title">{header.title}</h1>
           <p className="pms-page-sub">{header.sub}</p>
         </div>
+        <button
+          type="button"
+          className="pms-btn pms-btn-primary"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          onClick={() => navigate('/warehouse/requests')}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="12" y1="18" x2="12" y2="12" />
+            <line x1="9" y1="15" x2="15" y2="15" />
+          </svg>
+          Yêu Cầu Mua Hàng Bổ Sung Kho
+        </button>
       </div>
 
       {/* ── Alerts ── */}
