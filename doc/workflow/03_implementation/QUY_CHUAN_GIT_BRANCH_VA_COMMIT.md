@@ -64,3 +64,4 @@ Trước khi tạo commit và đẩy code lên remote:
    git status
    ```
    $\rightarrow$ Đảm bảo không commit nhầm các file tạm (`.DS_Store`, `node_modules`, `target/`, file logs).
+

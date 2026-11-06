@@ -66,3 +66,4 @@ git commit -m "feat(ui): create product list and modal form components"
 - [ ] Backend build thành công (`mvn compile` 0 lỗi).
 - [ ] Frontend build thành công (`npm run build` 0 lỗi).
 - [ ] Sẵn sàng chuyển giao mã nguồn sang Giai đoạn 4 để viết Unit Test & kiểm thử nghiệm thu.
+

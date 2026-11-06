@@ -49,3 +49,4 @@ Các biểu mẫu chuẩn sẵn sàng để sao chép và sử dụng cho từng
 4. [Biểu mẫu Kế Hoạch Triển Khai (Implementation Plan)](./03_implementation/BIEU_MAU_KE_HOACH_TRIEN_KHAI.md)
 5. [Quy chuẩn Phân Nhánh Git & Commit Message](./03_implementation/QUY_CHUAN_GIT_BRANCH_VA_COMMIT.md)
 6. [Biểu mẫu Ma Trận Kiểm Thử & Báo Cáo Test](./04_testing/BIEU_MAU_TEST_PLAN_VA_TEST_CASES.md)
+

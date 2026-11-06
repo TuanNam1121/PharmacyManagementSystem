@@ -544,3 +544,4 @@ PRINT N'8. Tổng giám đốc:     Username: gm01            | Email: gm@pharma
 PRINT N'9. Tài khoản bị khóa: Username: locked_user     | (status = 0, kiểm thử HTTP 403)';
 PRINT N'=====================================================================';
 GO
+

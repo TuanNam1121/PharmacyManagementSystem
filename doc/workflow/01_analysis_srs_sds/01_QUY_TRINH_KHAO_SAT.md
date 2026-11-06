@@ -46,3 +46,4 @@ Giai đoạn này nhằm đảm bảo lập trình viên / AI agent hiểu sâu 
 - [ ] Đã hoàn thành điền tài liệu theo mẫu: [`BIEU_MAU_PHAN_TICH_YEU_CAU.md`](./BIEU_MAU_PHAN_TICH_YEU_CAU.md).
 - [ ] Không còn sự hiểu sai về Use Case và Business Rules cốt lõi.
 - [ ] Đã chỉ rõ tất cả các file code BE, FE, DB liên quan trực tiếp.
+

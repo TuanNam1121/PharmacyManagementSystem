@@ -30,3 +30,4 @@
   - [x] **CHẤP THUẬN (APPROVED)**: Được phép bắt đầu chuyển sang **Giai đoạn 3 (Implement)**.
   - [ ] **CHƯA ĐỒNG Ý (REJECTED)**: Cần chỉnh sửa lại Spec và họp làm rõ thêm.
 - **Ký duyệt (Sign-off by)**: `[Tên PO]` - `YYYY-MM-DD`
+

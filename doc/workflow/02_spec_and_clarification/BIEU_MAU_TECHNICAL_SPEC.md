@@ -138,3 +138,4 @@ CREATE TABLE dbo.products (
 - Endpoint chỉ chấp nhận request có Bearer JWT Token hợp lệ còn thời hạn.
 - Kiểm tra quyền hạn chi tiết bằng `@PreAuthorize("hasAuthority('...')")`.
 - Ghi nhật ký kiểm toán vào bảng `dbo.audit_logs` khi có hành động tạo mới, cập nhật hoặc xóa sản phẩm.
+

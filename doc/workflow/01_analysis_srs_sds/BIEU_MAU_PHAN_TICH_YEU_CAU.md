@@ -58,3 +58,4 @@
 - [ ] **Khoảng trống tài liệu (Gap)**: `[Ví dụ: SRS chưa định nghĩa rõ quy cách đóng gói hộp/vỉ/viên có hệ số quy đổi hay không?]`
 - [ ] **Rủi ro ảnh hưởng (Impact)**: `[Ví dụ: Sửa bảng products có thể ảnh hưởng đến màn hình POS bán lẻ]`
 - [ ] **Vấn đề cần làm rõ**: `[Liệt kê các câu hỏi để chuyển tiếp sang Giai đoạn 2]`
+

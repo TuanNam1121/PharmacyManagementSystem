@@ -54,3 +54,4 @@ $\rightarrow$ Lập bảng câu hỏi làm rõ theo mẫu [`BIEU_MAU_CAU_HOI_LAM
 - [ ] Tài liệu Technical Spec hoàn chỉnh đã được hoàn thiện.
 - [ ] Toàn bộ các câu hỏi làm rõ quan trọng (Blocker / High) đã có phản hồi chính thức từ PO.
 - [ ] Đã có xác nhận (Sign-off) chấp thuận triển khai từ người có thẩm quyền.
+

@@ -52,3 +52,4 @@
 | `YYYY-MM-DD HH:mm` | Tạo DDL và JPA Entity `Product` | Done | `abc1234` | Đã link foreign key category |
 | `YYYY-MM-DD HH:mm` | Triển khai ProductService & API Controller | Done | `def5678` | Bổ sung check quyền RBAC |
 | `YYYY-MM-DD HH:mm` | Xây dựng UI Danh sách và Modal thêm mới | Done | `9876543` | Test UI hiển thị mượt mà |
+

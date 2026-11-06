@@ -81,3 +81,4 @@ Tính năng chỉ được coi là hoàn tất khi:
 1. Toàn bộ Unit Tests và Integration Tests đều màu xanh (Pass).
 2. Tài liệu báo cáo nghiệm thu [`BIEU_MAU_BAO_CAO_NGHIEM_THU.md`](./BIEU_MAU_BAO_CAO_NGHIEM_THU.md) đã được hoàn tất và ký nhận.
 3. Nhánh tính năng sẵn sàng để mở Pull Request merge vào `main`.
+
