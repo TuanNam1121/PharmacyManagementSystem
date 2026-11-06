@@ -529,9 +529,53 @@ BEGIN
         SELECT 1 FROM dbo.price_histories ph WHERE ph.product_id = p.id
     );
 END;
+GO
 
 PRINT N'=====================================================================';
-PRINT N'>>> HOÀN TẤT NẠP SEED MASTER DATA THÀNH CÔNG!';
+PRINT N'>>> [8/8] NẠP LÔ THUỐC MẪU & TỒN KHO BAN ĐẦU CHO CÁC CHI NHÁNH / QUẦY POS...';
+PRINT N'=====================================================================';
+
+-- Đảm bảo mỗi sản phẩm đều có ít nhất 1 lô thuốc hợp lệ (HSD 2028)
+DECLARE @defaultSupplierId BIGINT = (SELECT TOP 1 id FROM dbo.suppliers ORDER BY id);
+
+INSERT INTO dbo.product_batches (product_id, batch_number, manufacture_date, expiry_date, supplier_id, created_at)
+SELECT 
+    p.id,
+    'LOT-' + RIGHT('000' + CAST(p.id AS VARCHAR(10)), 3) + '-2026',
+    CAST('2026-01-15' AS DATE),
+    CAST('2028-12-31' AS DATE),
+    ISNULL((SELECT TOP 1 id FROM dbo.suppliers WHERE id = (p.id % 5 + 1)), @defaultSupplierId),
+    SYSDATETIME()
+FROM dbo.products p
+WHERE NOT EXISTS (
+    SELECT 1 FROM dbo.product_batches pb WHERE pb.product_id = p.id
+);
+GO
+
+-- Nạp tồn kho ban đầu cho từng chi nhánh và quầy POS
+INSERT INTO dbo.inventories (store_id, product_id, batch_id, location_id, quantity, version, updated_at)
+SELECT 
+    s.id AS store_id,
+    p.id AS product_id,
+    b.id AS batch_id,
+    (SELECT TOP 1 loc.id FROM dbo.warehouse_locations loc WHERE loc.store_id = s.id),
+    CASE 
+        WHEN s.type = 2 THEN 1000  -- Kho tổng 1,000 hộp
+        ELSE 250                   -- Chi nhánh / Quầy POS 250 hộp
+    END AS quantity,
+    0 AS version,
+    SYSDATETIME() AS updated_at
+FROM dbo.stores s
+CROSS JOIN dbo.products p
+JOIN dbo.product_batches b ON b.product_id = p.id
+WHERE NOT EXISTS (
+    SELECT 1 FROM dbo.inventories inv 
+    WHERE inv.store_id = s.id AND inv.product_id = p.id AND inv.batch_id = b.id
+);
+GO
+
+PRINT N'=====================================================================';
+PRINT N'>>> HOÀN TẤT NẠP SEED MASTER DATA & TỒN KHO THÀNH CÔNG!';
 PRINT N'DANH SÁCH TÀI KHOẢN MẪU ĐĂNG NHẬP (MẬT KHẨU CHUNG: Password@123):';
 PRINT N'1. Admin:             Username: admin           | Email: admin@pharmacy.com';
 PRINT N'2. Dược sĩ / POS:     Username: pharmacist_hn01 | Email: pharmacist1@pharmacy.com';
