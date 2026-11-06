@@ -11,10 +11,12 @@ public interface InventoryAuditRepository extends JpaRepository<InventoryAudit, 
 
     @Query("""
             SELECT a FROM InventoryAudit a
-            WHERE (:status IS NULL OR a.status = :status)
+            WHERE (:storeId IS NULL OR a.store.id = :storeId)
+              AND (:status IS NULL OR a.status = :status)
               AND (:search IS NULL OR LOWER(a.code) LIKE LOWER(CONCAT('%', :search, '%')))
             """)
     Page<InventoryAudit> findAllWithFilter(
+            @Param("storeId") Long storeId,
             @Param("status") Short status,
             @Param("search") String search,
             Pageable pageable);

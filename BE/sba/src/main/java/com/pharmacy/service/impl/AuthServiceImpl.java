@@ -220,6 +220,13 @@ public class AuthServiceImpl implements AuthService {
             avatarUrl = account.getAccountInformation().getAvatarUrl();
         }
 
+        Long storeId = null;
+        String storeName = null;
+        if (account.getStore() != null) {
+            storeId = account.getStore().getId();
+            storeName = account.getStore().getName();
+        }
+
         UserSummaryDto userSummary = UserSummaryDto.builder()
                 .accountId(account.getId())
                 .username(account.getUsername())
@@ -228,8 +235,8 @@ public class AuthServiceImpl implements AuthService {
                 .role(roleCode)
                 .roleName(roleName)
                 .avatarUrl(avatarUrl)
-                .storeId(null)
-                .storeName(null)
+                .storeId(storeId)
+                .storeName(storeName)
                 .build();
 
         return LoginResponse.builder()

@@ -198,9 +198,9 @@ export default function StockRequisitionsPage() {
             {/* ── Page Header ── */}
             <div className="pms-page-header">
                 <div>
-                    <h1 className="pms-page-title">Yêu Cầu Điều Chuyển Hàng</h1>
+                    <h1 className="pms-page-title">Yêu Cầu Lĩnh Thuốc Chi Nhánh</h1>
                     <p className="pms-page-sub">
-                        Quản lý phiếu xin cấp phát thuốc từ chi nhánh nhà thuốc gửi lên Kho Tổng Trung Tâm
+                        Quản lý phiếu xin cấp phát thuốc từ chi nhánh gửi lên Kho Tổng Trung Tâm theo quy chuẩn GSP.
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
@@ -219,7 +219,7 @@ export default function StockRequisitionsPage() {
                             <line x1="12" y1="5" x2="12" y2="19" />
                             <line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
-                        + Tạo Yêu Cầu Điều Chuyển
+                        Tạo Yêu Cầu Lĩnh Thuốc
                     </button>
                 </div>
             </div>
@@ -239,24 +239,94 @@ export default function StockRequisitionsPage() {
                 </div>
             )}
 
+            {/* ── KPI Stats Cards — Chuẩn chung đồng bộ ── */}
+            <div className="pms-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 20 }}>
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon emerald">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">TỔNG YÊU CẦU LĨNH THUỐC</div>
+                        <div className="pms-stat-value">{total}</div>
+                        <div className="pms-stat-sub">yêu cầu xin cấp phát gửi kho tổng</div>
+                    </div>
+                </div>
+
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">CHỜ BAN QUẢN LÝ DUYỆT</div>
+                        <div className="pms-stat-value">{list.filter(x => x.status === 0).length}</div>
+                        <div className="pms-stat-sub">đang chờ quản lý phê duyệt</div>
+                    </div>
+                </div>
+
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon amber">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="1" y="3" width="15" height="13" />
+                            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                            <circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">KHO TỔNG ĐÃ XUẤT HÀNG</div>
+                        <div className="pms-stat-value">{list.filter(x => x.status === 2).length}</div>
+                        <div className="pms-stat-sub">đang trên đường vận chuyển</div>
+                    </div>
+                </div>
+
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon emerald">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">ĐÃ NHẬP KHO CHI NHÁNH</div>
+                        <div className="pms-stat-value">{list.filter(x => x.status === 3).length}</div>
+                        <div className="pms-stat-sub">đã cập nhật vào tồn kho quầy</div>
+                    </div>
+                </div>
+            </div>
+
             {/* ── Filters ── */}
             <div className="pms-card" style={{ marginBottom: 20 }}>
                 <div className="pms-card-body" style={{ padding: '14px 20px' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14 }}>
-                        {/* Store selector */}
+                        {/* Branch Indicator Badge */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Chi nhánh:</label>
-                            <select
-                                className="pms-select"
-                                style={{ minWidth: 240 }}
-                                value={storeId}
-                                onChange={e => { setStoreId(e.target.value); setPage(0); }}
+                            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Chi nhánh:</span>
+                            <span
+                                className="pms-badge pms-badge-neutral"
+                                style={{
+                                    fontSize: 12,
+                                    padding: '5px 12px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    background: '#f1f5f9',
+                                    color: '#0f172a',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: 6,
+                                    fontWeight: 600,
+                                }}
+                                title="Chi nhánh yêu cầu đang xem (đồng bộ theo Bảng điều hướng Sidebar)"
                             >
-                                <option value="">Tất cả cơ sở</option>
-                                <option value="3">Chi nhánh 01 - Cầu Giấy (ST01)</option>
-                                <option value="4">Chi nhánh 02 - Đống Đa (ST02)</option>
-                                <option value="2">Kho Tổng Trung Tâm Miền Bắc (WH01)</option>
-                            </select>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                </svg>
+                                {String(storeId) === '3' ? 'Chi nhánh 01 - Cầu Giấy (ST01)' : String(storeId) === '4' ? 'Chi nhánh 02 - Đống Đa (ST02)' : 'Theo phân quyền'}
+                            </span>
                         </div>
 
                         {/* Search */}

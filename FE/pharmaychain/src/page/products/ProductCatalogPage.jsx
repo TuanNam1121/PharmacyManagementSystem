@@ -120,27 +120,61 @@ export default function ProductCatalogPage() {
         </div>
       )}
 
-      {/* ── Stats Grid ── */}
-      <div className="pms-stat-grid" style={{ marginBottom: 20 }}>
+      {/* ── Stats Grid (Standardized) ── */}
+      <div className="pms-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', width: '100%', marginBottom: 20 }}>
         <div className="pms-stat-card">
-          <div className="pms-stat-label">Tổng Mặt Hàng Đăng Ký</div>
-          <div className="pms-stat-val">{totalItems}</div>
-          <div className="pms-stat-sub">Mặt hàng dược phẩm hoạt động</div>
+          <div className="pms-stat-icon emerald">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+          </div>
+          <div>
+            <div className="pms-stat-label">Tổng Mặt Hàng Đăng Ký</div>
+            <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>{totalItems}</div>
+            <div className="pms-stat-sub">Mặt hàng dược phẩm hoạt động</div>
+          </div>
         </div>
         <div className="pms-stat-card">
-          <div className="pms-stat-label">Thuốc Có Mã Vạch</div>
-          <div className="pms-stat-val" style={{ color: 'var(--brand-primary)' }}>{withBarcode}</div>
-          <div className="pms-stat-sub">Sẵn sàng quét bán POS</div>
+          <div className="pms-stat-icon blue">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+              <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+            </svg>
+          </div>
+          <div>
+            <div className="pms-stat-label">Thuốc Có Mã Vạch</div>
+            <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>{withBarcode}</div>
+            <div className="pms-stat-sub">Sẵn sàng quét bán POS</div>
+          </div>
         </div>
         <div className="pms-stat-card">
-          <div className="pms-stat-label">Đơn Vị Quy Cách</div>
-          <div className="pms-stat-val">{units.length}</div>
-          <div className="pms-stat-sub">Quy cách đóng gói chuẩn</div>
+          <div className="pms-stat-icon violet">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+          </div>
+          <div>
+            <div className="pms-stat-label">Đơn Vị Quy Cách</div>
+            <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>{units.length}</div>
+            <div className="pms-stat-sub">Quy cách đóng gói chuẩn</div>
+          </div>
         </div>
         <div className="pms-stat-card">
-          <div className="pms-stat-label">Giá Nhập Bình Quân</div>
-          <div className="pms-stat-val" style={{ fontSize: 20 }}>{money(avgPrice)}</div>
-          <div className="pms-stat-sub">Giá tham chiếu nhập kho</div>
+          <div className="pms-stat-icon amber">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </div>
+          <div>
+            <div className="pms-stat-label">Giá Nhập Bình Quân</div>
+            <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>{money(avgPrice)}</div>
+            <div className="pms-stat-sub">Giá tham chiếu nhập kho</div>
+          </div>
         </div>
       </div>
 
@@ -381,7 +415,7 @@ export default function ProductCatalogPage() {
                   color: 'var(--text-secondary)',
                 }}
               >
-                💡 <strong>Gợi ý tác vụ:</strong> Bạn có thể theo dõi lượng tồn kho thực tế tại Kho Tổng hoặc Chi nhánh, hoặc trực tiếp lập yêu cầu mua sắm bổ sung thuốc này.
+                <strong>Gợi ý tác vụ:</strong> Bạn có thể theo dõi lượng tồn kho thực tế tại Kho Tổng hoặc Chi nhánh, hoặc trực tiếp lập yêu cầu mua sắm bổ sung thuốc này.
               </div>
             </div>
             <div className="pms-modal-footer">

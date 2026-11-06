@@ -177,7 +177,12 @@ export default function ResetPasswordPage() {
               lineHeight: 1.6,
             }}
           >
-            <div style={{ fontSize: '24px', marginBottom: '6px' }}>🎉</div>
+            <div style={{ marginBottom: '8px' }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" style={{ margin: '0 auto' }}>
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            </div>
             <strong>Đặt lại mật khẩu thành công!</strong>
             <div style={{ fontSize: '13px', marginTop: '4px' }}>
               Đang chuyển hướng về trang đăng nhập...
@@ -271,7 +276,17 @@ export default function ResetPasswordPage() {
                       color: '#94a3b8',
                     }}
                   >
-                    {showNew ? '👁' : '👁‍🗨'}
+                    {showNew ? (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    ) : (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                      </svg>
+                    )}
                   </button>
                 </div>
 
@@ -338,7 +353,17 @@ export default function ResetPasswordPage() {
                       color: '#94a3b8',
                     }}
                   >
-                    {showConfirm ? '👁' : '👁‍🗨'}
+                    {showConfirm ? (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    ) : (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                      </svg>
+                    )}
                   </button>
                 </div>
                 {fieldErrors.confirmPassword && (

@@ -1,16 +1,37 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getRequisitionList, getRequisitionDetail, createStockRequisition } from '../../api/StockRequisitionAPI';
 
 export const useStockRequisition = () => {
+    const [searchParams] = useSearchParams();
+    const initialStoreId = searchParams.get('storeId') || localStorage.getItem('pms_selected_store_id') || 3;
+
     // ── list state ──────────────────────────────────────────────────────────────
     const [list, setList] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(0);
     const [size] = useState(10);
     const [search, setSearch] = useState('');
-    const [storeId, setStoreId] = useState(1);
+    const [storeId, setStoreId] = useState(initialStoreId);
     const [statusFilter, setStatusFilter] = useState('');
     const [listLoading, setListLoading] = useState(false);
+
+    useEffect(() => {
+        const urlStoreId = searchParams.get('storeId');
+        if (urlStoreId && String(urlStoreId) !== String(storeId)) {
+            setStoreId(urlStoreId);
+        }
+    }, [searchParams, storeId]);
+
+    useEffect(() => {
+        const handleStoreChange = (e) => {
+            if (e?.detail?.storeId && String(e.detail.storeId) !== String(storeId)) {
+                setStoreId(e.detail.storeId);
+            }
+        };
+        window.addEventListener('pms:store-changed', handleStoreChange);
+        return () => window.removeEventListener('pms:store-changed', handleStoreChange);
+    }, [storeId]);
 
     // ── detail modal state ───────────────────────────────────────────────────────
     const [selectedItem, setSelectedItem] = useState(null);

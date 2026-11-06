@@ -1,15 +1,6 @@
-import { money, formatDate } from '../../utils/format';
+import { money, formatDateTime } from '../../utils/format';
 
 export default function DailySalesShiftsTable({ shifts, loading }) {
-    const formatTime = (iso) => {
-        if (!iso) return '-';
-        try {
-            const d = new Date(iso);
-            return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + formatDate(iso);
-        } catch {
-            return iso;
-        }
-    };
 
     return (
         <div className="pms-card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -63,8 +54,8 @@ export default function DailySalesShiftsTable({ shifts, loading }) {
                                         <td>
                                             <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{s.cashierUsername}</div>
                                         </td>
-                                        <td style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>{formatTime(s.openedAt)}</td>
-                                        <td style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>{formatTime(s.closedAt)}</td>
+                                        <td style={{ fontSize: 12.5, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{formatDateTime(s.openedAt)}</td>
+                                        <td style={{ fontSize: 12.5, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{formatDateTime(s.closedAt)}</td>
                                         <td style={{ textAlign: 'right' }}>{money(s.openingCash)}</td>
                                         <td style={{ textAlign: 'right' }}>{money(s.expectedCash)}</td>
                                         <td style={{ textAlign: 'right', fontWeight: 600 }}>{money(s.closingCash)}</td>

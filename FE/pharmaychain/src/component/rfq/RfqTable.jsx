@@ -1,3 +1,5 @@
+import { formatDate } from "../../utils/format";
+
 export default function RfqTable({
   data,
   loading,
@@ -5,16 +7,6 @@ export default function RfqTable({
   onViewDetail,
   onToggleSelect,
 }) {
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   const getStatusBadge = (status) => {
     switch (status) {
       case "SENT":
@@ -23,8 +15,10 @@ export default function RfqTable({
         return <span className="pms-badge pms-badge-success">Đã phản hồi</span>;
       case "EXPIRED":
         return <span className="pms-badge pms-badge-warning">Đã hết hạn</span>;
+      case "CANCELLED":
+        return <span className="pms-badge pms-badge-neutral">Đã hủy</span>;
       default:
-        return <span className="pms-badge">Không xác định</span>;
+        return <span className="pms-badge pms-badge-neutral">{status || "Đã hủy"}</span>;
     }
   };
 
@@ -36,7 +30,7 @@ export default function RfqTable({
     { key: "status", label: "Trạng Thái", width: 100 },
     { key: "sentAt", label: "Ngày Gửi", width: 100 },
     { key: "deadline", label: "Hạn Chót", width: 100 },
-    { key: "actions", label: "THAO TÁC", width: 120 },
+    { key: "actions", label: "Thao Tác", width: 120, align: "center" },
   ];
 
   if (loading) {
@@ -46,7 +40,7 @@ export default function RfqTable({
           <thead>
             <tr>
               {columns.map((col) => (
-                <th key={col.key} style={{ width: col.width }}>
+                <th key={col.key} style={{ width: col.width, textAlign: col.align || 'left' }}>
                   {col.label}
                 </th>
               ))}
@@ -77,7 +71,7 @@ export default function RfqTable({
           <thead>
             <tr>
               {columns.map((col) => (
-                <th key={col.key} style={{ width: col.width }}>
+                <th key={col.key} style={{ width: col.width, textAlign: col.align || 'left' }}>
                   {col.label}
                 </th>
               ))}
@@ -153,22 +147,22 @@ export default function RfqTable({
               {/* Deadline (expiredAt) */}
               <td>
                 <div>{formatDate(rfq.expiredAt)}</div>
-                {rfq.status === "SENT" && (
+                {rfq.status === "SENT" && rfq.expiredAt && !isNaN(new Date(rfq.expiredAt).getTime()) && (
                   <div
                     className="pms-table-cell-secondary"
                     style={{ fontSize: 11 }}
                   >
-                    {rfq.expiredAt && new Date(rfq.expiredAt) < new Date()
+                    {new Date(rfq.expiredAt) < new Date()
                       ? "Quá hạn"
                       : "Còn hiệu lực"}
                   </div>
                 )}
               </td>
               {/* Actions */}
-              <td>
+              <td style={{ textAlign: "center" }}>
                 <div
                   className="pms-table-actions"
-                  style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+                  style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                 >
                   {/* Compare selection */}
                   <input
@@ -183,11 +177,13 @@ export default function RfqTable({
                         ? "Chỉ các RFQ có trạng thái ĐÃ PHẢN HỒI mới có thể so sánh báo giá"
                         : "Chọn để so sánh báo giá"
                     }
+                    aria-label="Chọn so sánh báo giá"
                   />
                   <button
-                    className="btn-pms btn-pms-ghost btn-pms-sm"
+                    className="pms-icon-btn view"
                     onClick={() => onViewDetail(rfq.id)}
-                    title="Xem chi tiết"
+                    title="Xem chi tiết báo giá"
+                    aria-label="Xem chi tiết"
                   >
                     <svg
                       width="14"

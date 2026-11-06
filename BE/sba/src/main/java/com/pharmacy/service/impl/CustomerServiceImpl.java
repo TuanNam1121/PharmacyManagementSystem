@@ -28,7 +28,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -87,8 +89,28 @@ public class CustomerServiceImpl implements CustomerService {
 
         Page<Customer> customerPage = customerRepository.findAll(spec, pageable);
 
-        List<CustomerResponse> content = customerPage.getContent().stream()
-                .map(this::mapToCustomerResponse)
+        List<Customer> customers = customerPage.getContent();
+        Map<Long, BigDecimal> spentMap = new HashMap<>();
+        if (!customers.isEmpty()) {
+            List<Long> ids = customers.stream().map(Customer::getId).collect(Collectors.toList());
+            try {
+                List<Object[]> rows = salesInvoiceRepository.sumFinalAmountByCustomerIds(ids);
+                if (rows != null) {
+                    for (Object[] r : rows) {
+                        if (r != null && r.length >= 2 && r[0] != null) {
+                            Long cId = ((Number) r[0]).longValue();
+                            BigDecimal spent = r[1] != null ? (BigDecimal) r[1] : BigDecimal.ZERO;
+                            spentMap.put(cId, spent);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+                // fallback gracefully
+            }
+        }
+
+        List<CustomerResponse> content = customers.stream()
+                .map(c -> mapToCustomerResponse(c, spentMap.getOrDefault(c.getId(), BigDecimal.ZERO)))
                 .collect(Collectors.toList());
 
         if (membershipTier != null && !membershipTier.trim().isEmpty() && !"ALL".equalsIgnoreCase(membershipTier)) {
@@ -332,6 +354,10 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     private CustomerResponse mapToCustomerResponse(Customer customer) {
+        return mapToCustomerResponse(customer, BigDecimal.ZERO);
+    }
+
+    private CustomerResponse mapToCustomerResponse(Customer customer, BigDecimal totalSpent) {
         CustomerHealthProfile health = customer.getHealthProfile();
         boolean hasAllergies = health != null && health.getAllergies() != null && !health.getAllergies().isBlank();
         String allergies = health != null ? health.getAllergies() : null;
@@ -344,9 +370,9 @@ public class CustomerServiceImpl implements CustomerService {
 
         String customerCode = String.format("KH-%06d", customer.getId());
 
-        Integer loyaltyPoints = 0;
-        BigDecimal totalSpent = BigDecimal.ZERO;
-        String membershipTier = "STANDARD";
+        BigDecimal safeSpent = totalSpent != null ? totalSpent : BigDecimal.ZERO;
+        String membershipTier = calculateTier(safeSpent);
+        Integer loyaltyPoints = safeSpent.divide(BigDecimal.valueOf(10000), 0, RoundingMode.DOWN).intValue();
 
         return CustomerResponse.builder()
                 .customerId(customer.getId())
@@ -360,7 +386,7 @@ public class CustomerServiceImpl implements CustomerService {
                 .address(customer.getAddress())
                 .membershipTier(membershipTier)
                 .loyaltyPoints(loyaltyPoints)
-                .totalSpent(totalSpent)
+                .totalSpent(safeSpent)
                 .status(customer.getStatus())
                 .hasAllergies(hasAllergies)
                 .allergies(allergies)

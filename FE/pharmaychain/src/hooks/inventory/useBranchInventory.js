@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
     getBranchInventory,
     getBranchInventorySummary,
@@ -8,9 +9,36 @@ import {
 } from '../../api/BranchInventoryAPI';
 
 export const useBranchInventory = () => {
-    const [storeId, setStoreId] = useState(2);
+    const [searchParams] = useSearchParams();
+    const urlWarning = searchParams.get('warningFilter');
+    const initialStoreId = searchParams.get('storeId') || localStorage.getItem('pms_selected_store_id') || 3;
+    const [storeId, setStoreId] = useState(initialStoreId);
     const [search, setSearch] = useState('');
-    const [warningFilter, setWarningFilter] = useState('ALL'); // ALL, LOW_STOCK, EXPIRING_SOON, EXPIRED, OUT_OF_STOCK
+    const [warningFilter, setWarningFilter] = useState(urlWarning || 'ALL'); // ALL, LOW_STOCK, EXPIRING_SOON, EXPIRED, OUT_OF_STOCK
+
+    useEffect(() => {
+        const urlStoreId = searchParams.get('storeId');
+        if (urlStoreId && String(urlStoreId) !== String(storeId)) {
+            setStoreId(urlStoreId);
+        }
+    }, [searchParams, storeId]);
+
+    useEffect(() => {
+        const handleStoreChange = (e) => {
+            if (e?.detail?.storeId && String(e.detail.storeId) !== String(storeId)) {
+                setStoreId(e.detail.storeId);
+            }
+        };
+        window.addEventListener('pms:store-changed', handleStoreChange);
+        return () => window.removeEventListener('pms:store-changed', handleStoreChange);
+    }, [storeId]);
+
+    useEffect(() => {
+        const filter = searchParams.get('warningFilter');
+        if (filter) {
+            setWarningFilter(filter);
+        }
+    }, [searchParams]);
     const [page, setPage] = useState(0);
     const [size] = useState(10);
     const [total, setTotal] = useState(0);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
-export default function RequestAuditModal({ show, onHide, onConfirm, submitting }) {
-    const [storeId, setStoreId] = useState('1');
+export default function RequestAuditModal({ show, defaultStoreId = '3', onHide, onConfirm, submitting }) {
+    const [storeId, setStoreId] = useState(String(defaultStoreId || '3'));
     const [auditDate, setAuditDate] = useState(new Date().toISOString().split('T')[0]);
     const [reason, setReason] = useState('');
     const [error, setError] = useState(null);
@@ -70,7 +70,6 @@ export default function RequestAuditModal({ show, onHide, onConfirm, submitting 
                             >
                                 <option value="3">Chi nhánh 01 — Cầu Giấy (ST01)</option>
                                 <option value="4">Chi nhánh 02 — Đống Đa (ST02)</option>
-                                <option value="2">Kho Tổng Trung Tâm (WH01)</option>
                             </select>
                         </div>
 

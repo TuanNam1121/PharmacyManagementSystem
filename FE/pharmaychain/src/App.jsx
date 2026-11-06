@@ -109,7 +109,7 @@ function App() {
         <Route path="/warehouse/alerts" element={<WarehouseInventoryPage defaultTab="inventory" defaultExpiryFilter="EXPIRING_SOON" />} />
         <Route path="/warehouse/receipts" element={<WarehouseInventoryPage defaultTab="history" />} />
         <Route path="/warehouse/replenishment" element={<WarehouseReplenishmentPage />} />
-        <Route path="/warehouse/requests" element={<WarehousePurchaseRequestsPage />} />
+        <Route path="/warehouse/requests" element={<Navigate to="/procurement/requests" replace />} />
 
         {/* Procurement (LIVE: suppliers, purchase requests, RFQ, proposals, orders) */}
         <Route path="/supplier"               element={<SupplierPage />} />

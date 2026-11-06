@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useGoodsReceipt } from '../../hooks/inventory/useGoodsReceipt';
+import { formatDate } from '../../utils/format';
 
 // ── Cấu hình trạng thái tiếng Việt ─────────────────────────────────────────────
 const STATUS_MAP = {
@@ -81,7 +82,7 @@ function DetailModal({ show, item, loading, onHide, onOpenConfirm, onOpenReject 
                             {/* Thông báo nếu bị từ chối */}
                             {item.status === 4 && (
                                 <div className="pms-alert pms-alert-danger" style={{ marginBottom: 16 }}>
-                                    🚫 <strong>Phiếu nhận hàng này đã bị từ chối tiếp nhận.</strong>
+                                    <strong>Phiếu nhận hàng này đã bị từ chối tiếp nhận.</strong>
                                     {item.note && item.note.includes('REJECTED:') && (
                                         <div style={{ marginTop: 4, fontSize: 13 }}>
                                             Lý do: {item.note.split('REJECTED:').pop().trim()}
@@ -190,7 +191,7 @@ function DetailModal({ show, item, loading, onHide, onOpenConfirm, onOpenReject 
                                     style={{ background: 'linear-gradient(135deg,#dc2626,#ef4444)', color: '#fff', border: '1px solid #dc2626', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontWeight: 600 }}
                                     onClick={() => { onHide(); onOpenReject(item); }}
                                 >
-                                    🚫 Từ chối nhận
+                                    Từ chối nhận
                                 </button>
                             </>
                         )}
@@ -227,7 +228,7 @@ function RejectModal({ show, item, submitting, onHide, onSubmit }) {
             <div className="pms-modal" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit}>
                     <div className="pms-modal-header" style={{ borderBottom: '2px solid #ef4444' }}>
-                        <h3 className="pms-modal-title" style={{ color: '#dc2626' }}>🚫 Từ chối tiếp nhận kiện hàng</h3>
+                        <h3 className="pms-modal-title" style={{ color: '#dc2626' }}>Từ chối tiếp nhận kiện hàng</h3>
                         <button type="button" className="pms-modal-close" onClick={onHide}>✕</button>
                     </div>
                     <div className="pms-modal-body">
@@ -270,7 +271,7 @@ function RejectModal({ show, item, submitting, onHide, onSubmit }) {
                             style={{ background: 'linear-gradient(135deg,#dc2626,#ef4444)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', cursor: 'pointer', fontWeight: 700, opacity: submitting ? 0.7 : 1 }}
                             disabled={submitting}
                         >
-                            {submitting ? 'Đang xử lý...' : '🚫 Xác nhận từ chối'}
+                            {submitting ? 'Đang xử lý...' : 'Xác nhận từ chối'}
                         </button>
                     </div>
                 </form>
@@ -339,19 +340,19 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
             <div className="pms-modal" style={{ maxWidth: 860 }} onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleConfirm}>
                     <div className="pms-modal-header" style={{ borderBottom: '2px solid #16a34a' }}>
-                        <h3 className="pms-modal-title" style={{ color: '#16a34a' }}>✅ Kiểm đếm thực tế & Nhập kho chi nhánh</h3>
+                        <h3 className="pms-modal-title" style={{ color: '#16a34a' }}>Kiểm đếm thực tế & Nhập kho chi nhánh</h3>
                         <button type="button" className="pms-modal-close" onClick={onHide}>✕</button>
                     </div>
 
                     <div className="pms-modal-body">
                         {validationError && (
                             <div className="pms-alert pms-alert-danger" style={{ marginBottom: 16 }}>
-                                ⚠️ {validationError}
+                                {validationError}
                             </div>
                         )}
 
                         <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: '10px 16px', marginBottom: 14, fontSize: 13 }}>
-                            📦 <strong>Mã phiếu: {item.code}</strong> &nbsp;|&nbsp; Xuất từ: {item.fromStoreName || 'Kho Tổng Trung Tâm'}
+                            <strong>Mã phiếu: {item.code}</strong> &nbsp;|&nbsp; Xuất từ: {item.fromStoreName || 'Kho Tổng Trung Tâm'}
                             &nbsp;|&nbsp; {item.totalItems ?? 0} mặt hàng — {item.totalQuantity ?? 0} đơn vị xuất
                         </div>
 
@@ -505,20 +506,20 @@ export default function GoodsReceiptsPage() {
 
     return (
         <div>
-            {/* Header */}
-            <div className="pms-page-header" style={{ marginBottom: 16 }}>
+            {/* Header — chuẩn chung đồng bộ */}
+            <div className="pms-page-header">
                 <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <h1 className="pms-page-title" style={{ margin: 0 }}>Nhận hàng điều chuyển chi nhánh</h1>
-                        <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Cửa hàng trưởng</span>
-                    </div>
-                    <p className="pms-page-subtitle" style={{ margin: 0 }}>
-                        Theo dõi các lô hàng điều chuyển từ Kho tổng trung tâm. Bấm <strong>Duyệt nhận</strong> để nhập vào kho chi nhánh hoặc <strong>Từ chối</strong> nếu phát hiện sai lệch / hư hỏng.
+                    <h1 className="pms-page-title">Nhận hàng điều chuyển chi nhánh</h1>
+                    <p className="pms-page-sub">
+                        Theo dõi các lô hàng điều chuyển từ Kho tổng trung tâm, xác nhận tiếp nhận hoặc từ chối khi có sai lệch.
                     </p>
                 </div>
                 <div>
                     <button type="button" className="btn-pms btn-pms-secondary" onClick={fetchList} disabled={listLoading}>
-                        🔄 Làm mới
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                        </svg>
+                        Làm mới
                     </button>
                 </div>
             </div>
@@ -537,28 +538,61 @@ export default function GoodsReceiptsPage() {
                 </div>
             )}
 
-            {/* Thẻ thống kê KPI */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 20 }}>
-                <div className="pms-card" style={{ padding: '16px 20px' }}>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600 }}>TỔNG SỐ PHIẾU</div>
-                    <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{total}</div>
-                </div>
-                <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--info, #0284c7)' }}>
-                    <div style={{ color: 'var(--info, #0284c7)', fontSize: 12, fontWeight: 600 }}>⏳ ĐANG CHỜ DUYỆT NHẬN</div>
-                    <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>
-                        {list.filter(x => x.status === 1).length}
+            {/* Thẻ thống kê KPI — chuẩn chung theo WarehouseStats */}
+            <div className="pms-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 20 }}>
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon emerald">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">TỔNG SỐ PHIẾU NHẬN</div>
+                        <div className="pms-stat-value">{total}</div>
+                        <div className="pms-stat-sub">lịch sử điều chuyển từ kho tổng</div>
                     </div>
                 </div>
-                <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--success, #22c55e)' }}>
-                    <div style={{ color: 'var(--success, #22c55e)', fontSize: 12, fontWeight: 600 }}>✅ ĐÃ NHẬP KHO THÀNH CÔNG</div>
-                    <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>
-                        {list.filter(x => x.status === 2 || x.status === 3).length}
+
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="1" y="3" width="15" height="13" />
+                            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                            <circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">ĐANG VẬN CHUYỂN</div>
+                        <div className="pms-stat-value">{list.filter(x => x.status === 1).length}</div>
+                        <div className="pms-stat-sub">chờ tiếp nhận và kiểm đếm</div>
                     </div>
                 </div>
-                <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--danger, #ef4444)' }}>
-                    <div style={{ color: 'var(--danger, #ef4444)', fontSize: 12, fontWeight: 600 }}>🚫 ĐÃ TỪ CHỐI TIẾP NHẬN</div>
-                    <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>
-                        {list.filter(x => x.status === 4).length}
+
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon emerald">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">ĐÃ NHẬP KHO THÀNH CÔNG</div>
+                        <div className="pms-stat-value">{list.filter(x => x.status === 2 || x.status === 3).length}</div>
+                        <div className="pms-stat-sub">đã cập nhật vào tồn kho quầy</div>
+                    </div>
+                </div>
+
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon red">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">ĐÃ TỪ CHỐI TIẾP NHẬN</div>
+                        <div className="pms-stat-value">{list.filter(x => x.status === 4).length}</div>
+                        <div className="pms-stat-sub">phát hiện chênh lệch hoặc hư hại</div>
                     </div>
                 </div>
             </div>
@@ -579,24 +613,21 @@ export default function GoodsReceiptsPage() {
                             </button>
                         ))}
 
-                        <select
-                            className="pms-input"
-                            style={{ fontSize: 12, padding: '5px 10px', marginLeft: 8 }}
-                            value={storeId}
-                            onChange={(e) => { setStoreId(e.target.value); setPage(0); }}
-                        >
-                            <option value="">Tất cả chi nhánh</option>
-                            <option value="3">Chi nhánh 01 - Cầu Giấy (ST01)</option>
-                            <option value="4">Chi nhánh 02 - Đống Đa (ST02)</option>
-                        </select>
+                        <span className="pms-badge pms-badge-neutral" style={{ fontSize: 12, padding: '5px 10px', marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                <circle cx="12" cy="10" r="3" />
+                            </svg>
+                            Chi nhánh: {storeId === '3' ? 'Chi nhánh 01 (ST01)' : storeId === '4' ? 'Chi nhánh 02 (ST02)' : 'Theo phân quyền'}
+                        </span>
                     </div>
 
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <input
                             type="text"
                             className="pms-input"
-                            style={{ width: 280 }}
-                            placeholder="Tìm mã phiếu nhận, yêu cầu, vận chuyển..."
+                            style={{ width: 260 }}
+                            placeholder="Tìm mã phiếu nhận, vận chuyển..."
                             value={search}
                             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
                         />
@@ -604,20 +635,16 @@ export default function GoodsReceiptsPage() {
                 </div>
             </div>
 
-            {/* Bảng danh sách phiếu nhận */}
+            {/* Bảng danh sách phiếu nhận — tinh gọn không cuộn ngang */}
             <div className="pms-card" style={{ overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
+                <div className="pms-table-wrap">
                     <table className="pms-table">
                         <thead>
                             <tr>
-                                <th>Mã phiếu nhận</th>
-                                <th>Yêu cầu nguồn</th>
-                                <th>Kho xuất</th>
-                                <th>Đơn vị vận chuyển</th>
-                                <th style={{ textAlign: 'right' }}>Số mặt hàng</th>
-                                <th style={{ textAlign: 'right' }}>Tổng SL xuất</th>
-                                <th>Ngày xuất kho</th>
-                                <th>Ngày nhận hàng</th>
+                                <th>Mã phiếu & Nguồn</th>
+                                <th>Xuất kho & Vận chuyển</th>
+                                <th style={{ textAlign: 'right' }}>Số lượng xuất</th>
+                                <th>Thời gian</th>
                                 <th>Trạng thái</th>
                                 <th style={{ textAlign: 'center' }}>Thao tác</th>
                             </tr>
@@ -625,11 +652,11 @@ export default function GoodsReceiptsPage() {
                         <tbody>
                             {listLoading ? (
                                 <tr>
-                                    <td colSpan="10" style={{ textAlign: 'center', padding: 32 }}>Đang nạp dữ liệu phiếu nhận...</td>
+                                    <td colSpan="6" style={{ textAlign: 'center', padding: 32 }}>Đang nạp dữ liệu phiếu nhận...</td>
                                 </tr>
                             ) : list.length === 0 ? (
                                 <tr>
-                                    <td colSpan="10" style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
+                                    <td colSpan="6" style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
                                         Không tìm thấy phiếu nhận hàng nào phù hợp với bộ lọc.
                                     </td>
                                 </tr>
@@ -644,21 +671,40 @@ export default function GoodsReceiptsPage() {
                                             >
                                                 {item.code}
                                             </button>
+                                            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+                                                {item.stockRequisitionCode ? `Nguồn: ${item.stockRequisitionCode}` : 'Điều chuyển kho'}
+                                            </div>
                                         </td>
-                                        <td>{item.stockRequisitionCode || '—'}</td>
-                                        <td>{item.fromStoreName || 'Kho Tổng Trung Tâm'}</td>
-                                        <td>{item.carrier || '—'}</td>
-                                        <td style={{ textAlign: 'right' }}>{item.totalItems ?? 0}</td>
-                                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{item.totalQuantity ?? 0}</td>
-                                        <td>{item.dispatchedAt ? new Date(item.dispatchedAt).toLocaleDateString('vi-VN') : '—'}</td>
-                                        <td>{item.receivedAt ? new Date(item.receivedAt).toLocaleDateString('vi-VN') : '—'}</td>
+                                        <td>
+                                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                                                {item.fromStoreName || 'Kho Tổng Trung Tâm'}
+                                            </div>
+                                            <div style={{ fontSize: 11, color: 'var(--text-secondary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.carrier}>
+                                                {item.carrier || 'Đội xe nội bộ'}
+                                            </div>
+                                        </td>
+                                        <td style={{ textAlign: 'right' }}>
+                                            <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                                                {item.totalQuantity ?? 0} đơn vị
+                                            </div>
+                                            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                                                {item.totalItems ?? 0} mặt hàng
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style={{ fontSize: 12 }}>
+                                                Xuất: <strong>{item.dispatchedAt ? formatDate(item.dispatchedAt) : '—'}</strong>
+                                            </div>
+                                            <div style={{ fontSize: 11, color: item.receivedAt ? 'var(--color-success)' : 'var(--text-secondary)' }}>
+                                                Nhận: {item.receivedAt ? formatDate(item.receivedAt) : 'Chờ tiếp nhận'}
+                                            </div>
+                                        </td>
                                         <td><StatusBadge status={item.status} /></td>
                                         <td style={{ textAlign: 'center' }}>
                                             <div style={{ display: 'inline-flex', gap: 6 }}>
                                                 <button
                                                     type="button"
-                                                    className="btn-pms btn-pms-secondary"
-                                                    style={{ fontSize: 12, padding: '4px 8px' }}
+                                                    className="btn-pms btn-pms-secondary btn-pms-sm"
                                                     onClick={() => openDetail(item)}
                                                 >
                                                     Chi tiết
@@ -667,19 +713,19 @@ export default function GoodsReceiptsPage() {
                                                     <>
                                                         <button
                                                             type="button"
-                                                            className="btn-pms"
-                                                            style={{ fontSize: 12, padding: '4px 10px', background: '#16a34a', color: '#fff', border: '1px solid #16a34a', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+                                                            className="btn-pms btn-pms-sm"
+                                                            style={{ background: '#16a34a', color: '#fff', border: '1px solid #16a34a', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
                                                             onClick={() => openConfirmModal(item)}
                                                         >
-                                                            ✅ Duyệt nhận
+                                                            ✓ Nhận
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            className="btn-pms"
-                                                            style={{ fontSize: 12, padding: '4px 10px', background: '#ef4444', color: '#fff', border: '1px solid #ef4444', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+                                                            className="btn-pms btn-pms-sm"
+                                                            style={{ background: '#ef4444', color: '#fff', border: '1px solid #ef4444', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
                                                             onClick={() => openRejectModal(item)}
                                                         >
-                                                            🚫 Từ chối
+                                                            ✕ Từ chối
                                                         </button>
                                                     </>
                                                 )}

@@ -199,15 +199,15 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     private String getStatusText(Short status) {
         if (status == null)
-            return "Unknown";
+            return "Không xác định";
         return switch (status) {
-            case 0 -> "Draft";
-            case 1 -> "Pending Approval";
-            case 2 -> "Approved";
-            case 3 -> "Rejected";
-            case 4 -> "Partially Received";
-            case 5 -> "Completed";
-            default -> "Status " + status;
+            case 0 -> "Bản nháp";
+            case 1 -> "Chờ phê duyệt";
+            case 2 -> "Đã phê duyệt";
+            case 3 -> "Đã từ chối";
+            case 4 -> "Nhập một phần";
+            case 5 -> "Hoàn tất";
+            default -> "Trạng thái " + status;
         };
     }
 }

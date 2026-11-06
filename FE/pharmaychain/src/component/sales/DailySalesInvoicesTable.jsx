@@ -1,4 +1,4 @@
-import { money, formatDate } from '../../utils/format';
+import { money, formatDateTime, formatPaymentMethod } from '../../utils/format';
 
 function Pagination({ total, page, size, onPage }) {
     if (total <= size) return null;
@@ -26,15 +26,6 @@ function Pagination({ total, page, size, onPage }) {
 }
 
 export default function DailySalesInvoicesTable({ invoices, loading, total, page, size, onPage }) {
-    const formatTime = (iso) => {
-        if (!iso) return '-';
-        try {
-            const d = new Date(iso);
-            return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + formatDate(iso);
-        } catch {
-            return iso;
-        }
-    };
 
     return (
         <div className="pms-card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -90,12 +81,21 @@ export default function DailySalesInvoicesTable({ invoices, loading, total, page
                                             <span style={{ color: 'var(--text-muted)' }}>-</span>
                                         )}
                                     </td>
-                                    <td style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
-                                        {formatTime(inv.paidAt || inv.createdAt)}
+                                    <td style={{ fontSize: 12.5, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                                        {formatDateTime(inv.paidAt || inv.createdAt)}
                                     </td>
                                     <td>
-                                        <span className="pms-badge pms-badge-info" style={{ fontSize: 11.5 }}>
-                                            {inv.paymentMethod === 'CASH' ? 'Tiền mặt' : (inv.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản / Thẻ' : (inv.paymentMethod === 'VNPAY_QR' ? 'VietQR' : inv.paymentMethod || 'Tiền mặt'))}
+                                        <span
+                                            className={`pms-badge ${
+                                                formatPaymentMethod(inv.paymentMethod) === 'Tiền mặt'
+                                                    ? 'pms-badge-success'
+                                                    : formatPaymentMethod(inv.paymentMethod) === 'Ví VietQR'
+                                                    ? 'pms-badge-violet'
+                                                    : 'pms-badge-info'
+                                            }`}
+                                            style={{ fontSize: 11.5 }}
+                                        >
+                                            {formatPaymentMethod(inv.paymentMethod)}
                                         </span>
                                     </td>
                                     <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>

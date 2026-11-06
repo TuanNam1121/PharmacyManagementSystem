@@ -101,6 +101,7 @@ export default function InventoryAuditPage() {
     const {
         auditList, total, page, setPage, size,
         search, setSearch,
+        storeId,
         statusFilter, setStatusFilter,
         listLoading,
         selectedAudit,
@@ -137,14 +138,11 @@ export default function InventoryAuditPage() {
     return (
         <div>
             {/* ── Page Header ── */}
-            <div className="pms-page-header" style={{ marginBottom: 16 }}>
+            <div className="pms-page-header">
                 <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <h1 className="pms-page-title" style={{ margin: 0 }}>Kiểm Kê Kho Định Kỳ &amp; Cân Bằng Tồn</h1>
-                        <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Dược Sĩ &amp; Cửa Hàng Trưởng</span>
-                    </div>
+                    <h1 className="pms-page-title">Kiểm Kê Kho Định Kỳ &amp; Cân Bằng Tồn</h1>
                     <p className="pms-page-sub">
-                        Quy trình lập đề xuất kiểm kê, phê duyệt, đếm thực tế tại kệ và đối soát chênh lệch tồn kho GSP
+                        Quy trình lập đề xuất kiểm kê, phê duyệt, đếm thực tế tại kệ và đối soát chênh lệch tồn kho GSP.
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
@@ -163,7 +161,7 @@ export default function InventoryAuditPage() {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
-                        + Đề Xuất Phiên Kiểm Kê
+                        Đề Xuất Phiên Kiểm Kê
                     </button>
                 </div>
             </div>
@@ -185,18 +183,106 @@ export default function InventoryAuditPage() {
                 </div>
             )}
 
+            {/* ── KPI Stats Cards — Chuẩn chung đồng bộ ── */}
+            <div className="pms-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 20 }}>
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon emerald">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">TỔNG PHIÊN KIỂM KÊ</div>
+                        <div className="pms-stat-value">{total}</div>
+                        <div className="pms-stat-sub">phiên kiểm kê tại chi nhánh</div>
+                    </div>
+                </div>
+
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">ĐANG KIỂM ĐẾM THỰC TẾ</div>
+                        <div className="pms-stat-value">{auditList.filter(x => x.status === 1).length}</div>
+                        <div className="pms-stat-sub">dược sĩ đang kiểm đếm tại kệ</div>
+                    </div>
+                </div>
+
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon amber">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">CHỜ QUẢN LÝ ĐỐI SOÁT</div>
+                        <div className="pms-stat-value">{auditList.filter(x => x.status === 2).length}</div>
+                        <div className="pms-stat-sub">đã gửi số liệu đếm thực tế</div>
+                    </div>
+                </div>
+
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon emerald">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">ĐÃ HOÀN TẤT &amp; CÂN BẰNG</div>
+                        <div className="pms-stat-value">{auditList.filter(x => x.status === 3).length}</div>
+                        <div className="pms-stat-sub">đã cân bằng khớp tồn sổ sách</div>
+                    </div>
+                </div>
+            </div>
+
             {/* ── Filter Card ── */}
             <div className="pms-card" style={{ marginBottom: 20 }}>
                 <div className="pms-card-body" style={{ padding: '14px 20px' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
-                        <div className="pms-input-wrap" style={{ flex: 1, minWidth: 260 }}>
-                            <input
-                                type="text"
-                                className="pms-input"
-                                value={search}
-                                onChange={e => { setSearch(e.target.value); setPage(0); }}
-                                placeholder="Tìm theo mã phiên kiểm kê..."
-                            />
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, flex: 1 }}>
+                            {/* Branch Indicator Badge */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Chi nhánh:</span>
+                                <span
+                                    className="pms-badge pms-badge-neutral"
+                                    style={{
+                                        fontSize: 12,
+                                        padding: '5px 12px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        background: '#f1f5f9',
+                                        color: '#0f172a',
+                                        border: '1px solid #cbd5e1',
+                                        borderRadius: 6,
+                                        fontWeight: 600,
+                                    }}
+                                    title="Chi nhánh kiểm kê đang xem (đồng bộ theo Bảng điều hướng Sidebar)"
+                                >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                        <circle cx="12" cy="10" r="3" />
+                                    </svg>
+                                    {String(storeId) === '3' ? 'Chi nhánh 01 - Cầu Giấy (ST01)' : String(storeId) === '4' ? 'Chi nhánh 02 - Đống Đa (ST02)' : 'Theo phân quyền'}
+                                </span>
+                            </div>
+
+                            <div className="pms-input-wrap" style={{ flex: 1, minWidth: 240 }}>
+                                <input
+                                    type="text"
+                                    className="pms-input"
+                                    value={search}
+                                    onChange={e => { setSearch(e.target.value); setPage(0); }}
+                                    placeholder="Tìm theo mã phiên kiểm kê..."
+                                />
+                            </div>
                         </div>
 
                         <div className="pms-tabs" style={{ margin: 0 }}>
@@ -311,6 +397,7 @@ export default function InventoryAuditPage() {
             {/* ── Modals ── */}
             <RequestAuditModal
                 show={requestModalOpen}
+                defaultStoreId={storeId}
                 onHide={() => setRequestModalOpen(false)}
                 onConfirm={handleRequestAudit}
                 submitting={submitting}

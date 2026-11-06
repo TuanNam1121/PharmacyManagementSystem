@@ -191,7 +191,6 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                 >
                                     <option value="3">Chi nhánh 01 — Cầu Giấy (ST01)</option>
                                     <option value="4">Chi nhánh 02 — Đống Đa (ST02)</option>
-                                    <option value="1">Trụ Sở Chính — Tổng Công Ty</option>
                                 </select>
                             </div>
 

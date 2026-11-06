@@ -50,7 +50,7 @@ export default function CategoryTable({
               <th>Trạng Thái</th>
               <th>Người Tạo</th>
               <th>Ngày Tạo</th>
-              <th className="text-right" style={{ width: 140 }}>Thao Tác</th>
+              <th style={{ width: 140, textAlign: 'center' }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -128,8 +128,8 @@ export default function CategoryTable({
                   <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                     {formatDate(row.createdAt)}
                   </td>
-                  <td className="text-right">
-                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                       {/* Edit Category */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"

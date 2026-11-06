@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import useShift from '../../hooks/sales/useShift';
 import usePosCart from '../../hooks/sales/usePosCart';
 import { useAuth } from '../../context/AuthContext';
@@ -67,6 +68,16 @@ export default function PosCounterPage() {
         netAmount,
         estimatedPoints,
     } = usePosCart();
+
+    const location = useLocation();
+
+    // Auto-select customer if navigated from Customer Directory
+    useEffect(() => {
+        const preSelected = location.state?.selectedCustomer || location.state?.customer;
+        if (preSelected) {
+            selectCustomer(preSelected);
+        }
+    }, [location.state, selectCustomer]);
 
     const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
     const [checkoutError, setCheckoutError] = useState(null);

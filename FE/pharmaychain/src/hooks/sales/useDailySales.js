@@ -8,9 +8,20 @@ import {
 
 export const useDailySales = ({ initialTab = 'overview' } = {}) => {
     const todayStr = new Date().toISOString().split('T')[0];
-    const [storeId, setStoreId] = useState(1);
+    const initialStoreId = localStorage.getItem('pms_selected_store_id') || 3;
+    const [storeId, setStoreId] = useState(initialStoreId);
     const [date, setDate] = useState(todayStr);
     const [activeTab, setActiveTab] = useState(initialTab); // 'overview' | 'invoices' | 'shifts'
+
+    useEffect(() => {
+        const handleStoreChange = (e) => {
+            if (e?.detail?.storeId && String(e.detail.storeId) !== String(storeId)) {
+                setStoreId(e.detail.storeId);
+            }
+        };
+        window.addEventListener('pms:store-changed', handleStoreChange);
+        return () => window.removeEventListener('pms:store-changed', handleStoreChange);
+    }, [storeId]);
 
     // Overview state
     const [overview, setOverview] = useState(null);

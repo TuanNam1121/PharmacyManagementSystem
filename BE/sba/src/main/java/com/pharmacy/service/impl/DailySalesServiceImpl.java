@@ -97,7 +97,7 @@ public class DailySalesServiceImpl implements DailySalesService {
                 LocalDateTime startOfDay = businessDate.atStartOfDay();
                 LocalDateTime endOfDay = businessDate.atTime(LocalTime.MAX);
 
-                return invoiceRepository.findInvoicesByDateRangePaged(startOfDay, endOfDay, pageable)
+                return invoiceRepository.findInvoicesByDateRangePaged(storeId, startOfDay, endOfDay, pageable)
                                 .map(inv -> SalesInvoiceSummaryDto.builder()
                                                 .id(inv.getId())
                                                 .code(inv.getCode())

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../utils/format';
 import {
   createPurchaseProposal,
@@ -27,6 +28,7 @@ function Pagination({ total, page, size, onPage }) {
 }
 
 export default function PurchaseProposalsPage() {
+  const navigate = useNavigate();
   const [list, setList] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -140,11 +142,12 @@ export default function PurchaseProposalsPage() {
     { value: '3', label: 'Hoàn tất' },
   ];
 
-  const getStatusBadge = (statusCode, text) => {
-    if (statusCode === 1) return <span className="pms-badge pms-badge-success">{text || 'Đã duyệt'}</span>;
-    if (statusCode === 2) return <span className="pms-badge pms-badge-danger">{text || 'Đã từ chối'}</span>;
-    if (statusCode === 3) return <span className="pms-badge pms-badge-secondary">{text || 'Hoàn tất'}</span>;
-    return <span className="pms-badge pms-badge-info">{text || 'Chờ duyệt'}</span>;
+  const getStatusBadge = (statusCode) => {
+    const s = Number(statusCode);
+    if (s === 1) return <span className="pms-badge pms-badge-success">Đã phê duyệt</span>;
+    if (s === 2) return <span className="pms-badge pms-badge-danger">Đã từ chối</span>;
+    if (s === 3) return <span className="pms-badge pms-badge-neutral">Hoàn tất</span>;
+    return <span className="pms-badge pms-badge-info">Chờ phê duyệt</span>;
   };
 
   return (
@@ -158,7 +161,10 @@ export default function PurchaseProposalsPage() {
           className="btn-pms btn-pms-primary"
           onClick={() => setCreateModalOpen(true)}
         >
-          + Tạo Đề Xuất Mua Hàng
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Tạo Đề Xuất Mua Hàng
         </button>
       </div>
 
@@ -220,7 +226,7 @@ export default function PurchaseProposalsPage() {
                   <th>Yêu Cầu Mua Hàng Liên Kết</th>
                   <th>Trạng Thái</th>
                   <th>Ngày Lập</th>
-                  <th className="text-right" style={{ width: 160 }}>Thao Tác</th>
+                  <th style={{ width: 130, textAlign: 'center' }}>Thao Tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -245,30 +251,32 @@ export default function PurchaseProposalsPage() {
                         ? row.purchaseRequests.map((r) => r.code).join(', ')
                         : '—'}</td>
                       <td>
-                        {getStatusBadge(row.status, row.statusText)}
+                        {getStatusBadge(row.status)}
                       </td>
                       <td className="text-sm text-muted-color">{formatDate(row.createdAt)}</td>
-                      <td className="text-right">
-                        <div style={{ display: 'inline-flex', gap: 4, justifyContent: 'flex-end' }}>
-                          {row.status === 0 && (
+                      <td style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                          {Number(row.status) === 0 && (
                             <>
                               <button
-                                className="btn-pms btn-pms-ghost btn-pms-sm"
+                                className="pms-icon-btn edit"
                                 style={{ color: 'var(--color-success)' }}
                                 onClick={() => handleApprove(row)}
                                 disabled={actionLoadingId === row.id}
-                                title="Phê duyệt đề xuất"
+                                title="Phê duyệt đề xuất mua hàng"
+                                aria-label="Phê duyệt đề xuất"
                               >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                   <polyline points="20 6 9 17 4 12" />
                                 </svg>
                               </button>
                               <button
-                                className="btn-pms btn-pms-ghost btn-pms-sm"
+                                className="pms-icon-btn danger"
                                 style={{ color: 'var(--color-danger)' }}
                                 onClick={() => handleOpenReject(row)}
                                 disabled={actionLoadingId === row.id}
-                                title="Từ chối đề xuất"
+                                title="Từ chối đề xuất mua hàng"
+                                aria-label="Từ chối đề xuất"
                               >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -276,10 +284,25 @@ export default function PurchaseProposalsPage() {
                               </button>
                             </>
                           )}
+                          {Number(row.status) === 1 && (
+                            <button
+                              className="pms-icon-btn edit"
+                              style={{ color: 'var(--brand-primary)' }}
+                              onClick={() => navigate(`/procurement/rfq?proposalId=${row.id}`)}
+                              title="Tạo yêu cầu báo giá RFQ gửi nhà cung cấp"
+                              aria-label="Tạo RFQ báo giá"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                              </svg>
+                            </button>
+                          )}
                           <button
-                            className="btn-pms btn-pms-ghost btn-pms-sm"
+                            className="pms-icon-btn view"
                             onClick={() => handleOpenDetail(row.id)}
-                            title="Xem chi tiết"
+                            title="Xem chi tiết đề xuất"
+                            aria-label="Xem chi tiết"
                           >
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>

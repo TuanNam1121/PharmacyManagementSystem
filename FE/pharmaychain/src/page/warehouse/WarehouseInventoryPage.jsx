@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useWarehouseInventory } from '../../hooks/warehouse/useWarehouseInventory';
 import WarehouseStats from '../../component/warehouse/WarehouseStats';
 import WarehouseFilters from '../../component/warehouse/WarehouseFilters';
@@ -12,7 +14,7 @@ import WarehouseAdjustmentListTable from '../../component/warehouse/WarehouseAdj
 const TABS = [
   {
     key: 'inventory',
-    label: 'Tồn kho & Vị trí ô kệ',
+    label: 'Tồn kho tổng FEFO',
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
@@ -22,7 +24,7 @@ const TABS = [
   },
   {
     key: 'history',
-    label: 'Lịch sử nhập mua',
+    label: 'Lịch sử phiếu nhập kho',
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -82,6 +84,30 @@ export default function WarehouseInventoryPage({
     handleApproveAdjustment, handleRejectAdjustment,
     error, setError, successMsg, setSuccessMsg,
   } = useWarehouseInventory({ initialTab: defaultTab, initialExpiryFilter: defaultExpiryFilter });
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname === '/warehouse/receipts') {
+      setActiveTab('history');
+    } else if (location.pathname === '/warehouse/adjustments') {
+      setActiveTab('adjustments');
+    } else if (location.pathname === '/warehouse/inventory') {
+      setActiveTab('inventory');
+    }
+  }, [location.pathname, setActiveTab]);
+
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+    if (key === 'inventory' && location.pathname !== '/warehouse/inventory') {
+      navigate('/warehouse/inventory');
+    } else if (key === 'history' && location.pathname !== '/warehouse/receipts') {
+      navigate('/warehouse/receipts');
+    } else if (key === 'adjustments' && location.pathname !== '/warehouse/adjustments') {
+      navigate('/warehouse/adjustments');
+    }
+  };
 
   const openLocationModal = (row) => { setSelectedInventory(row); setLocationModalOpen(true); };
   const openAdjustmentModal = (row) => { setSelectedForAdj(row); setAdjModalOpen(true); };
@@ -162,7 +188,7 @@ export default function WarehouseInventoryPage({
           <button
             key={tab.key}
             className={`pms-tab ${activeTab === tab.key ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => handleTabChange(tab.key)}
           >
             {tab.icon}
             {tab.label}

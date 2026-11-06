@@ -86,7 +86,7 @@ export default function ProductTable({
               <th>Phân Loại</th>
               <th>Tồn Tối Thiểu</th>
               <th>Trạng Thái</th>
-              <th className="text-right" style={{ width: 148 }}>Thao Tác</th>
+              <th style={{ width: 150, textAlign: 'center' }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -219,8 +219,8 @@ export default function ProductTable({
                   </td>
 
                   {/* Actions */}
-                  <td className="text-right">
-                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                       {/* View */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"

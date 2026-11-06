@@ -54,7 +54,11 @@ export default function UserLockModal({
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">
-              {isCurrentlyActive ? 'Khóa / Vô Hiệu Hóa Tài Khoản' : 'Mở Khóa Tài Khoản'}
+              {isCurrentlyActive
+                ? 'Khóa / Vô Hiệu Hóa Tài Khoản'
+                : Number(user?.status) === 0
+                ? 'Kích Hoạt Lại Tài Khoản (Bị vô hiệu hóa)'
+                : 'Mở Khóa Tài Khoản Nhân Viên'}
             </div>
             <div className="pms-modal-sub">
               Nhân viên: <strong>{user.fullName || user.username}</strong> (@{user.username})
@@ -125,12 +129,21 @@ export default function UserLockModal({
             ) : (
               <div>
                 <p style={{ fontSize: 13.5, color: 'var(--text-primary)', marginBottom: 16 }}>
-                  Bạn có chắc chắn muốn mở khóa cho tài khoản <strong>@{user.username}</strong> không?
-                  Sau khi mở khóa, nhân viên có thể đăng nhập vào hệ thống bình thường.
+                  {Number(user?.status) === 0 ? (
+                    <>
+                      Bạn có chắc chắn muốn phục hồi và kích hoạt lại tài khoản <strong>@{user.username}</strong> không?
+                      Sau khi kích hoạt, nhân viên có thể đăng nhập và thực hiện nghiệp vụ bình thường.
+                    </>
+                  ) : (
+                    <>
+                      Bạn có chắc chắn muốn mở khóa cho tài khoản <strong>@{user.username}</strong> không?
+                      Sau khi mở khóa, nhân viên có thể đăng nhập vào hệ thống bình thường.
+                    </>
+                  )}
                 </p>
 
                 <div className="pms-form-group">
-                  <label className="pms-label">Ghi chú mở khóa (Tùy chọn)</label>
+                  <label className="pms-label">{Number(user?.status) === 0 ? 'Ghi chú kích hoạt lại (Tùy chọn)' : 'Ghi chú mở khóa (Tùy chọn)'}</label>
                   <textarea
                     className="pms-input pms-input-bare"
                     rows={3}
@@ -157,6 +170,8 @@ export default function UserLockModal({
                 ? 'Đang xử lý…'
                 : isCurrentlyActive
                 ? 'Xác Nhận Khóa Tài Khoản'
+                : Number(user?.status) === 0
+                ? 'Kích Hoạt Lại Tài Khoản'
                 : 'Mở Khóa Tài Khoản'}
             </button>
           </div>

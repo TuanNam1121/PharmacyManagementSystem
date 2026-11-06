@@ -142,6 +142,13 @@ public class ProfileServiceImpl implements ProfileService {
             }
         }
 
+        Long storeId = null;
+        String storeName = null;
+        if (account.getStore() != null) {
+            storeId = account.getStore().getId();
+            storeName = account.getStore().getName();
+        }
+
         return UserProfileResponse.builder()
                 .accountId(account.getId())
                 .username(account.getUsername())
@@ -149,8 +156,8 @@ public class ProfileServiceImpl implements ProfileService {
                 .phone(account.getPhone())
                 .role(roleCode)
                 .roleName(roleName)
-                .storeId(null)
-                .storeName(null)
+                .storeId(storeId)
+                .storeName(storeName)
                 .fullName(fullName)
                 .dateOfBirth(info != null ? info.getDateOfBirth() : null)
                 .gender(genderLabel)

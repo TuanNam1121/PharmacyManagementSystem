@@ -85,7 +85,7 @@ export default function CustomerFilters({
       {/* Export Button */}
       {onExport && (
         <button
-          className="pms-btn pms-btn-secondary"
+          className="btn-pms btn-pms-secondary"
           onClick={onExport}
           title="Xuất danh sách khách hàng"
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
@@ -101,7 +101,7 @@ export default function CustomerFilters({
 
       {/* Register New Customer Button */}
       <button
-        className="pms-btn pms-btn-primary"
+        className="btn-pms btn-pms-primary"
         onClick={onAddNew}
         style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
       >

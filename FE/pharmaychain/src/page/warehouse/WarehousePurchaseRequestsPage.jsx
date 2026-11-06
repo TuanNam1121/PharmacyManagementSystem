@@ -5,8 +5,10 @@ import {
   getPurchasingStaffPurchaseRequestDetail,
   createPurchaseRequest,
 } from '../../api/WarehouseInventoryAPI';
+import { createPurchaseProposal } from '../../api/PurchaseProposalAPI';
 import WarehouseCreatePurchaseRequestModal from '../../component/warehouse/WarehouseCreatePurchaseRequestModal';
 import WarehousePurchaseRequestDetailModal from '../../component/warehouse/WarehousePurchaseRequestDetailModal';
+import PurchaseProposalCreateModal from '../../component/procurement/PurchaseProposalCreateModal';
 
 export default function WarehousePurchaseRequestsPage() {
   const [list, setList] = useState([]);
@@ -24,8 +26,32 @@ export default function WarehousePurchaseRequestsPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState(null);
 
+  const [proposalModalOpen, setProposalModalOpen] = useState(false);
+  const [proposalPreselectedId, setProposalPreselectedId] = useState(null);
+  const [proposalLoading, setProposalLoading] = useState(false);
+
   const [successMsg, setSuccessMsg] = useState(null);
   const [error, setError] = useState(null);
+
+  const handleCreateProposalFromRequest = (requestId) => {
+    setProposalPreselectedId(requestId);
+    setProposalModalOpen(true);
+  };
+
+  const handleProposalSubmit = async (payload) => {
+    setProposalLoading(true);
+    setError(null);
+    try {
+      const res = await createPurchaseProposal(payload);
+      setSuccessMsg(`Đã tạo đề xuất mua hàng ${res?.code || ''} thành công!`);
+      setProposalModalOpen(false);
+      await fetchList();
+    } catch (err) {
+      setError(err?.message || 'Tạo đề xuất mua hàng thất bại');
+    } finally {
+      setProposalLoading(false);
+    }
+  };
 
   // Dùng để refresh danh sách thủ công (ví dụ sau khi tạo mới thành công)
   const fetchList = useCallback(async () => {
@@ -226,7 +252,7 @@ export default function WarehousePurchaseRequestsPage() {
                   <th>Trạng Thái</th>
                   <th>Ngày Lập</th>
                   <th>Người Tạo</th>
-                  <th className="text-right" style={{ width: 100 }}>Thao Tác</th>
+                  <th style={{ width: 100, textAlign: 'center' }}>Thao Tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -246,16 +272,35 @@ export default function WarehousePurchaseRequestsPage() {
                     </td>
                     <td className="text-sm text-muted-color">{formatDate(row.createdAt)}</td>
                     <td className="text-sm text-muted-color">{row.createdByUsername || '—'}</td>
-                    <td className="text-right">
-                      <button
-                        className="btn-pms btn-pms-ghost btn-pms-sm"
-                        onClick={() => handleOpenDetail(row.id)}
-                        title="Xem chi tiết"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-                        </svg>
-                      </button>
+                    <td style={{ textAlign: 'center' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                        {Number(row.status) === 1 && (
+                          <button
+                            className="pms-icon-btn edit"
+                            style={{ color: 'var(--brand-primary)' }}
+                            onClick={() => handleCreateProposalFromRequest(row.id)}
+                            title="Tạo đề xuất mua hàng từ yêu cầu này"
+                            aria-label="Tạo đề xuất mua hàng"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                              <polyline points="14 2 14 8 20 8"/>
+                              <line x1="12" y1="18" x2="12" y2="12"/>
+                              <line x1="9" y1="15" x2="15" y2="15"/>
+                            </svg>
+                          </button>
+                        )}
+                        <button
+                          className="pms-icon-btn view"
+                          onClick={() => handleOpenDetail(row.id)}
+                          title="Xem chi tiết yêu cầu"
+                          aria-label="Xem chi tiết"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                          </svg>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -294,6 +339,13 @@ export default function WarehousePurchaseRequestsPage() {
         onHide={() => { setDetailModalOpen(false); setSelectedDetail(null); }}
         detail={selectedDetail}
         loading={detailLoading}
+      />
+      <PurchaseProposalCreateModal
+        show={proposalModalOpen}
+        onHide={() => { setProposalModalOpen(false); setProposalPreselectedId(null); }}
+        onSubmit={handleProposalSubmit}
+        loading={proposalLoading}
+        preselectedId={proposalPreselectedId}
       />
     </div>
   );

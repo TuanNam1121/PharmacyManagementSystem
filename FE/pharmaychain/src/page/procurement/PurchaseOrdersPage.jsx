@@ -16,6 +16,25 @@ const STATUS_TABS = [
     { label: 'Hoàn tất', value: 5 },
 ];
 
+const getPoStatusBadge = (status, statusText) => {
+    switch (Number(status)) {
+        case 0:
+            return <span className="pms-badge pms-badge-neutral">Bản nháp</span>;
+        case 1:
+            return <span className="pms-badge pms-badge-warning">Chờ phê duyệt</span>;
+        case 2:
+            return <span className="pms-badge pms-badge-success">Đã phê duyệt</span>;
+        case 3:
+            return <span className="pms-badge pms-badge-danger">Đã từ chối</span>;
+        case 4:
+            return <span className="pms-badge pms-badge-info">Nhập một phần</span>;
+        case 5:
+            return <span className="pms-badge pms-badge-success">Hoàn tất</span>;
+        default:
+            return <span className="pms-badge pms-badge-neutral">{statusText || 'Không xác định'}</span>;
+    }
+};
+
 export default function PurchaseOrdersPage() {
     const [list, setList] = useState([]);
     const [total, setTotal] = useState(0);
@@ -138,7 +157,10 @@ export default function PurchaseOrdersPage() {
             )}
             {errorMsg && (
                 <div className="pms-alert pms-alert-danger" style={{ marginBottom: 16 }}>
-                    <span>⚠️ {errorMsg}</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <span>{errorMsg}</span>
                     <button
                         style={{ background: 'none', border: 'none', cursor: 'pointer', float: 'right' }}
                         onClick={() => setErrorMsg(null)}
@@ -148,24 +170,59 @@ export default function PurchaseOrdersPage() {
                 </div>
             )}
 
-            {/* Metric Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 20 }}>
-                <div className="pms-card" style={{ padding: '16px 20px' }}>
-                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Tổng Số Đơn Hàng PO</div>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', marginTop: 4 }}>{total}</div>
+            {/* Metric Cards (Standardized) */}
+            <div className="pms-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', width: '100%', marginBottom: 20 }}>
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon emerald">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">Tổng Số Đơn Hàng PO</div>
+                        <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>{total}</div>
+                        <div className="pms-stat-sub">Đơn đặt hàng nhà cung cấp</div>
+                    </div>
                 </div>
-                <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid #f59e0b' }}>
-                    <div style={{ fontSize: 12, color: '#b45309', fontWeight: 600 }}>Chờ Phê Duyệt</div>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: '#d97706', marginTop: 4 }}>{pendingCount}</div>
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon amber">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">Chờ Phê Duyệt</div>
+                        <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>{pendingCount}</div>
+                        <div className="pms-stat-sub">Cần Ban Giám Đốc duyệt</div>
+                    </div>
                 </div>
-                <div className="pms-card" style={{ padding: '16px 20px', borderLeft: '4px solid #10b981' }}>
-                    <div style={{ fontSize: 12, color: '#047857', fontWeight: 600 }}>Đã Phê Duyệt</div>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: '#059669', marginTop: 4 }}>{approvedCount}</div>
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">Đã Phê Duyệt</div>
+                        <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>{approvedCount}</div>
+                        <div className="pms-stat-sub">Sẵn sàng gửi nhà cung cấp</div>
+                    </div>
                 </div>
-                <div className="pms-card" style={{ padding: '16px 20px' }}>
-                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Thẩm Quyền Ký Duyệt</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb', marginTop: 8 }}>
-                        Ban Giám Đốc (CEO / GD Vận Hành)
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon violet">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">Thẩm Quyền Ký Duyệt</div>
+                        <div className="pms-stat-value" style={{ fontSize: 18, whiteSpace: 'nowrap' }}>Ban Giám Đốc</div>
+                        <div className="pms-stat-sub">CEO / Giám Đốc Vận Hành</div>
                     </div>
                 </div>
             </div>
@@ -269,18 +326,7 @@ export default function PurchaseOrdersPage() {
                                                 {Number(po.totalAmount || 0).toLocaleString('vi-VN')}
                                             </td>
                                             <td>
-                                                <span
-                                                    className={`pms-badge ${po.status === 1
-                                                            ? 'pms-badge-warning'
-                                                            : po.status === 2 || po.status === 5
-                                                                ? 'pms-badge-success'
-                                                                : po.status === 3
-                                                                    ? 'pms-badge-danger'
-                                                                    : 'pms-badge-neutral'
-                                                        }`}
-                                                >
-                                                    {po.statusText || (po.status === 1 ? 'Chờ duyệt' : po.status === 2 ? 'Đã duyệt' : po.status === 3 ? 'Từ chối' : 'Hoàn tất')}
-                                                </span>
+                                                {getPoStatusBadge(po.status, po.statusText)}
                                             </td>
                                             <td>{formatDate(po.createdAt)}</td>
                                             <td style={{ fontSize: 13 }}>{po.approvedByUsername || '—'}</td>

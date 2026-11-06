@@ -1,13 +1,17 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useBranchInventory } from '../../hooks/inventory/useBranchInventory';
 import BranchInventoryStats from '../../component/inventory/BranchInventoryStats';
 import BranchInventoryTable from '../../component/inventory/BranchInventoryTable';
 import BranchInventoryDetailModal from '../../component/inventory/BranchInventoryDetailModal';
 import BranchThresholdModal from '../../component/inventory/BranchThresholdModal';
 import BranchStockAuditModal from '../../component/inventory/BranchStockAuditModal';
-import { useNavigate } from 'react-router-dom';
+import { getAuthorizedStores, DEFAULT_RETAIL_STORES } from '../../api/StoreAPI';
 
 export default function BranchInventoryPage() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const [storeList, setStoreList] = useState(DEFAULT_RETAIL_STORES);
     const {
         storeId,
         setStoreId,
@@ -41,6 +45,20 @@ export default function BranchInventoryPage() {
         handleAuditCheck,
     } = useBranchInventory();
 
+    useEffect(() => {
+        getAuthorizedStores().then((data) => {
+            if (data && data.length > 0) {
+                setStoreList(data);
+                const paramStoreId = searchParams.get('storeId');
+                if (paramStoreId) {
+                    setStoreId(paramStoreId);
+                } else if (!storeId || !data.some(s => String(s.id) === String(storeId))) {
+                    setStoreId(data[0].id);
+                }
+            }
+        });
+    }, [searchParams]);
+
     const openDetail = (item) => {
         setSelectedItem(item);
         setDetailModalOpen(true);
@@ -51,17 +69,16 @@ export default function BranchInventoryPage() {
         setThresholdModalOpen(true);
     };
 
+    const activeStore = (storeList || []).find((s) => String(s.id) === String(storeId)) || (storeList && storeList[0]);
+
     return (
         <div>
-            {/* ── Page Header ── */}
-            <div className="pms-page-header" style={{ marginBottom: 16 }}>
+            {/* ── Page Header — Chuẩn chung đồng bộ ── */}
+            <div className="pms-page-header">
                 <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <h1 className="pms-page-title" style={{ margin: 0 }}>Tồn Kho Chi Nhánh &amp; Cảnh Báo An Toàn</h1>
-                        <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Dược Sĩ &amp; Cửa Hàng Trưởng</span>
-                    </div>
+                    <h1 className="pms-page-title">Tồn kho chi nhánh &amp; Cảnh báo an toàn</h1>
                     <p className="pms-page-sub">
-                        Theo dõi số lượng tồn thực tế, số lô, hạn dùng (FEFO) và các cảnh báo sắp hết hàng hoặc cận hạn tại nhà thuốc
+                        Theo dõi số lượng tồn thực tế, số lô, hạn dùng (FEFO) và các cảnh báo sắp hết hàng hoặc cận hạn tại nhà thuốc.
                     </p>
                 </div>
 
@@ -84,7 +101,7 @@ export default function BranchInventoryPage() {
                             <line x1="12" y1="18" x2="12" y2="12" />
                             <line x1="9" y1="15" x2="15" y2="15" />
                         </svg>
-                        + Tạo Yêu Cầu Điều Chuyển
+                        Tạo Yêu Cầu Lĩnh Thuốc
                     </button>
                 </div>
             </div>
@@ -134,22 +151,31 @@ export default function BranchInventoryPage() {
                 <div className="pms-card-body" style={{ padding: '14px 20px' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14, flex: 1 }}>
-                            {/* Store Selector */}
+                            {/* Active Branch Badge (controlled globally via Sidebar) */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Chi nhánh:</label>
-                                <select
-                                    className="pms-select"
-                                    style={{ minWidth: 260 }}
-                                    value={storeId}
-                                    onChange={(e) => {
-                                        setStoreId(e.target.value);
-                                        setPage(0);
+                                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Chi nhánh:</span>
+                                <span
+                                    className="pms-badge pms-badge-neutral"
+                                    style={{
+                                        fontSize: 12,
+                                        padding: '5px 12px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        background: '#f1f5f9',
+                                        color: '#0f172a',
+                                        border: '1px solid #cbd5e1',
+                                        borderRadius: 6,
+                                        fontWeight: 600,
                                     }}
+                                    title="Chi nhánh đang xem (đồng bộ theo Bảng điều hướng Sidebar)"
                                 >
-                                    <option value="3">Chi nhánh 01 - Cầu Giấy (ST01)</option>
-                                    <option value="4">Chi nhánh 02 - Đống Đa (ST02)</option>
-                                    <option value="2">Kho Tổng Trung Tâm Miền Bắc (WH01)</option>
-                                </select>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                        <circle cx="12" cy="10" r="3" />
+                                    </svg>
+                                    {activeStore ? `${activeStore.name} (${activeStore.code})` : (summary?.storeName || 'Nhà thuốc chi nhánh')}
+                                </span>
                             </div>
 
                             {/* Search Input */}

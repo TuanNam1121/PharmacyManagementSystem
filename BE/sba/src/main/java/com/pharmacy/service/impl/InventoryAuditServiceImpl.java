@@ -257,7 +257,7 @@ public class InventoryAuditServiceImpl implements InventoryAuditService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<InventoryAuditDto> getAuditList(Long storeId, Short status, String search, Pageable pageable) {
-        Page<InventoryAudit> page = auditRepository.findAllWithFilter(status, search, pageable);
+        Page<InventoryAudit> page = auditRepository.findAllWithFilter(storeId, status, search, pageable);
         return PageResponse.from(page.map(a -> mapAudit(a, false)));
     }
 

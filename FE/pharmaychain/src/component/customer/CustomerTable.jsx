@@ -114,7 +114,7 @@ export default function CustomerTable({
               <th className="text-right">Tổng chi tiêu</th>
               <th>Dị ứng thuốc</th>
               <th>Trạng thái</th>
-              <th className="text-right" style={{ width: 130 }}>Thao tác</th>
+              <th style={{ width: 120, textAlign: 'center' }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -271,12 +271,13 @@ export default function CustomerTable({
                       </span>
                     )}
                   </td>
-                  <td className="text-right">
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                       {/* View Action */}
                       <button
-                        className="pms-icon-btn"
-                        title="Xem chi tiết"
+                        className="pms-icon-btn view"
+                        title="Xem chi tiết hồ sơ khách hàng"
+                        aria-label="Xem chi tiết khách hàng"
                         onClick={() => onView && onView(c)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -287,8 +288,9 @@ export default function CustomerTable({
 
                       {/* Edit Action */}
                       <button
-                        className="pms-icon-btn"
-                        title="Chỉnh sửa"
+                        className="pms-icon-btn edit"
+                        title="Chỉnh sửa thông tin khách hàng"
+                        aria-label="Chỉnh sửa khách hàng"
                         onClick={() => onEdit && onEdit(c)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -301,7 +303,8 @@ export default function CustomerTable({
                       {isActive ? (
                         <button
                           className="pms-icon-btn danger"
-                          title="Vô hiệu hóa khách hàng"
+                          title="Vô hiệu hóa / Khóa hồ sơ khách hàng"
+                          aria-label="Vô hiệu hóa khách hàng"
                           onClick={() => onDelete && onDelete(c)}
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -313,8 +316,9 @@ export default function CustomerTable({
                         </button>
                       ) : (
                         <button
-                          className="pms-icon-btn"
-                          title="Kích hoạt lại khách hàng"
+                          className="pms-icon-btn success"
+                          title="Kích hoạt lại hồ sơ khách hàng"
+                          aria-label="Kích hoạt lại khách hàng"
                           onClick={() => onReactivate && onReactivate(c)}
                           style={{ color: 'var(--brand-primary)' }}
                         >

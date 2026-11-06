@@ -166,10 +166,20 @@ export default function CustomerDirectoryPage() {
   };
 
   const handleNewSale = (customer) => {
-    showNotification(`Đang chuyển hướng sang quầy bán hàng cho khách hàng ${customer.fullName || customer.customerCode}...`, 'info');
+    const custData = {
+      id: customer.customerId || customer.id,
+      fullName: customer.fullName,
+      phone: customer.phone,
+      membershipTier: customer.membershipTier,
+      rewardPoints: customer.loyaltyPoints || customer.rewardPoints || 0,
+      allergies: customer.allergies,
+      hasAllergies: customer.hasAllergies,
+    };
+    showNotification(`Đang mở quầy bán lẻ POS cho khách hàng ${custData.fullName}...`, 'success');
+    setDetailModalOpen(false);
     setTimeout(() => {
-      navigate('/sales');
-    }, 800);
+      navigate('/pos', { state: { selectedCustomer: custData } });
+    }, 300);
   };
 
   return (

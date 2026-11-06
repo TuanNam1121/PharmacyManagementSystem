@@ -93,7 +93,7 @@ export default function UserTable({
               <th>Thông Tin Liên Hệ</th>
               <th>Trạng Thái</th>
               <th>Ngày Tạo</th>
-              <th className="text-right" style={{ width: 175 }}>Thao Tác</th>
+              <th style={{ width: 160, textAlign: 'center' }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -183,11 +183,11 @@ export default function UserTable({
                   <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                     {formatDate(u.createdAt)}
                   </td>
-                  <td className="text-right">
-                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                       {/* View Detail */}
                       <button
-                        className="btn-pms btn-pms-ghost btn-pms-sm"
+                        className="pms-icon-btn view"
                         title="Xem chi tiết tài khoản"
                         onClick={() => onView(u.id)}
                       >
@@ -199,7 +199,7 @@ export default function UserTable({
 
                       {/* Edit */}
                       <button
-                        className="btn-pms btn-pms-ghost btn-pms-sm"
+                        className="pms-icon-btn edit"
                         title="Chỉnh sửa thông tin"
                         onClick={() => onEdit(u)}
                       >
@@ -211,7 +211,7 @@ export default function UserTable({
 
                       {/* Assign Role */}
                       <button
-                        className="btn-pms btn-pms-ghost btn-pms-sm"
+                        className="pms-icon-btn"
                         style={{ color: 'var(--brand-primary)' }}
                         title="Phân quyền & vai trò"
                         onClick={() => onAssignRole && onAssignRole(u)}
@@ -221,27 +221,43 @@ export default function UserTable({
                         </svg>
                       </button>
 
-                      {/* Lock / Unlock */}
-                      <button
-                        className={`btn-pms btn-pms-sm ${isActive ? 'btn-pms-ghost' : 'btn-pms-outline'}`}
-                        style={{
-                          color: isActive ? 'var(--status-danger)' : 'var(--brand-primary)',
-                        }}
-                        title={isActive ? 'Khóa hoặc vô hiệu hóa tài khoản' : 'Mở khóa tài khoản'}
-                        onClick={() => onLockUnlock(u)}
-                      >
-                        {isActive ? (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                          </svg>
-                        ) : (
+                      {/* Lock / Unlock / Reactivate */}
+                      {Number(u.status) === 1 ? (
+                        <button
+                          className="pms-icon-btn"
+                          title="Khóa hoặc vô hiệu hóa tài khoản"
+                          onClick={() => onLockUnlock(u)}
+                        >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                             <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
                           </svg>
-                        )}
-                      </button>
+                        </button>
+                      ) : Number(u.status) === 2 ? (
+                        <button
+                          className="pms-icon-btn danger"
+                          style={{ color: '#ef4444' }}
+                          title="Tài khoản đang bị khóa (Bấm để mở khóa)"
+                          onClick={() => onLockUnlock(u)}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                          </svg>
+                        </button>
+                      ) : (
+                        <button
+                          className="pms-icon-btn"
+                          style={{ color: '#64748b' }}
+                          title="Tài khoản đang bị vô hiệu hóa (Bấm để kích hoạt lại)"
+                          onClick={() => onLockUnlock(u)}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

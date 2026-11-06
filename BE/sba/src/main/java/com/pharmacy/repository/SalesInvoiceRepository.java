@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,8 +25,9 @@ public interface SalesInvoiceRepository extends JpaRepository<SalesInvoice, Long
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT i FROM SalesInvoice i WHERE i.createdAt >= :startDate AND i.createdAt <= :endDate")
-    Page<SalesInvoice> findInvoicesByDateRangePaged(@Param("startDate") LocalDateTime startDate,
+    @Query("SELECT i FROM SalesInvoice i WHERE (:storeId IS NULL OR i.store.id = :storeId) AND i.createdAt >= :startDate AND i.createdAt <= :endDate")
+    Page<SalesInvoice> findInvoicesByDateRangePaged(@Param("storeId") Long storeId,
+            @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable);
 
@@ -42,4 +44,7 @@ public interface SalesInvoiceRepository extends JpaRepository<SalesInvoice, Long
 
     @Query("SELECT COALESCE(SUM(i.finalAmount), 0) FROM SalesInvoice i WHERE i.customer.id = :customerId AND i.status = 1")
     BigDecimal sumFinalAmountByCustomerId(@Param("customerId") Long customerId);
+
+    @Query("SELECT i.customer.id, COALESCE(SUM(i.finalAmount), 0) FROM SalesInvoice i WHERE i.customer.id IN :customerIds AND i.status = 1 GROUP BY i.customer.id")
+    List<Object[]> sumFinalAmountByCustomerIds(@Param("customerIds") Collection<Long> customerIds);
 }

@@ -90,10 +90,10 @@ export default function BranchInventoryTable({
                         <tr>
                             <th>Mã Vạch</th>
                             <th>Tên Thuốc & Hoạt Chất</th>
-                            <th>Số Lô (Batch)</th>
+                            <th>Số Lô</th>
                             <th>Hạn Dùng & Cảnh Báo</th>
-                            <th style={{ textAlign: 'right' }}>Tồn Quầy / Ngưỡng Tối Thiểu</th>
-                            <th style={{ textAlign: 'right' }}>Giá Bán Lẻ</th>
+                            <th style={{ textAlign: 'right' }}>Tồn Quầy / Ngưỡng</th>
+                            <th style={{ textAlign: 'right' }}>Giá Bán</th>
                             <th style={{ textAlign: 'right' }}>Tổng Giá Trị</th>
                             <th style={{ textAlign: 'center' }}>Vị Trí</th>
                             <th style={{ textAlign: 'center' }}>Thao Tác</th>

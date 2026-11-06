@@ -1,11 +1,17 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import { useDailySales } from '../../hooks/sales/useDailySales';
 import DailySalesStats from '../../component/sales/DailySalesStats';
 import DailySalesInvoicesTable from '../../component/sales/DailySalesInvoicesTable';
 import DailySalesShiftsTable from '../../component/sales/DailySalesShiftsTable';
 import DailySalesReconcileModal from '../../component/sales/DailySalesReconcileModal';
-import { money, formatDate } from '../../utils/format';
+import { money, formatDate, formatDateTime } from '../../utils/format';
+import { getAuthorizedStores } from '../../api/StoreAPI';
 
 export default function DailySalesPage({ defaultTab = 'overview' }) {
+    const [searchParams] = useSearchParams();
+    const [storeList, setStoreList] = useState([]);
     const {
         storeId,
         setStoreId,
@@ -34,7 +40,41 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
         handleReconcile,
     } = useDailySales({ initialTab: defaultTab });
 
+    const { user } = useAuth();
+    const rawRole = (user?.role || '').toUpperCase().replace(/^ROLE_/, '').trim();
+    const isChainManager = rawRole === 'ADMIN' || rawRole === 'GENERAL_MANAGER' || user?.roleId === 1;
+
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.pathname === '/shifts') {
+            setActiveTab('shifts');
+        } else if (location.pathname === '/sales' && defaultTab === 'invoices') {
+            setActiveTab((prev) => (prev === 'overview' ? 'overview' : 'invoices'));
+        }
+    }, [location.pathname, defaultTab, setActiveTab]);
+
+    const handleTabChange = (key) => {
+        setActiveTab(key);
+    };
+
+    useEffect(() => {
+        getAuthorizedStores().then((data) => {
+            if (data && data.length > 0) {
+                setStoreList(data);
+                const paramStoreId = searchParams.get('storeId');
+                if (paramStoreId) {
+                    setStoreId(paramStoreId);
+                } else if (!storeId || !data.some(s => String(s.id) === String(storeId))) {
+                    setStoreId(data[0].id);
+                }
+            }
+        });
+    }, [searchParams]);
+
     const isReconciled = overview?.status === 1;
+    const activeStoreObj = storeList.find((s) => String(s.id) === String(storeId)) || storeList[0];
 
     return (
         <div>
@@ -42,8 +82,26 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
             <div className="pms-page-header" style={{ marginBottom: 16 }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <h1 className="pms-page-title" style={{ margin: 0 }}>Báo Cáo Doanh Thu & Đối Soát Bán Hàng Hàng Ngày</h1>
+                        <h1 className="pms-page-title" style={{ margin: 0 }}>Báo Cáo Doanh Thu &amp; Đối Soát Bán Hàng Hàng Ngày</h1>
                         <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Cửa Hàng Trưởng</span>
+                        {activeStoreObj && (
+                            <span
+                                className="pms-badge pms-badge-neutral"
+                                style={{
+                                    fontSize: 11.5,
+                                    fontWeight: 600,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 5,
+                                }}
+                            >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                </svg>
+                                {activeStoreObj.name} ({activeStoreObj.code})
+                            </span>
+                        )}
                     </div>
                     <p className="pms-page-sub">
                         Theo dõi doanh thu bán hàng theo thời gian thực, đối soát doanh số và tiền mặt của các ca làm việc, chốt sổ bán hàng hàng ngày.
@@ -77,21 +135,25 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                 <div className="pms-card-body" style={{ padding: '14px 20px' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                            {/* Store Picker */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Chi nhánh:</label>
-                                <select
-                                    className="pms-select"
-                                    style={{ minWidth: 260 }}
-                                    value={storeId}
-                                    onChange={(e) => setStoreId(e.target.value)}
-                                >
-                                    <option value="3">Chi nhánh 01 — Nhà thuốc Cầu Giấy (ST01)</option>
-                                    <option value="4">Chi nhánh 02 — Nhà thuốc Đống Đa (ST02)</option>
-                                    <option value="1">Trụ sở chính — Văn phòng điều hành (HQ)</option>
-                                    <option value="2">Kho tổng trung tâm Miền Bắc (WH01)</option>
-                                </select>
-                            </div>
+                            {/* Branch Selector for Multi-Store Managers (Admin/GM) */}
+                            {isChainManager && storeList.length > 1 && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Chi nhánh:</label>
+                                    <select
+                                        className="pms-select"
+                                        style={{ width: 'auto', minWidth: 220, fontSize: 12.5, height: 36 }}
+                                        value={storeId}
+                                        onChange={(e) => setStoreId(e.target.value)}
+                                        title="Chọn chi nhánh đối soát doanh thu"
+                                    >
+                                        {storeList.map((s) => (
+                                            <option key={s.id} value={s.id}>
+                                                {s.code} — {s.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
 
                             {/* Date Picker */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -110,7 +172,7 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                         {isReconciled && (
                             <div style={{ fontSize: 12.5, color: 'var(--color-success-text)', background: 'var(--color-success-bg)', padding: '6px 14px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #a7f3d0' }}>
                                 <span>✓ Đã đối soát bởi: <strong>{overview?.reconciledByName || 'Cửa Hàng Trưởng'}</strong></span>
-                                {overview?.reconciledAt && <span>vào lúc {formatDate(overview.reconciledAt)}</span>}
+                                {overview?.reconciledAt && <span>vào lúc {formatDateTime(overview.reconciledAt)}</span>}
                             </div>
                         )}
                     </div>
@@ -154,7 +216,7 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                 <button
                     type="button"
                     className={`pms-tab ${activeTab === 'overview' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('overview')}
+                    onClick={() => handleTabChange('overview')}
                 >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="3" y="3" width="7" height="7" />
@@ -167,7 +229,7 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                 <button
                     type="button"
                     className={`pms-tab ${activeTab === 'invoices' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('invoices')}
+                    onClick={() => handleTabChange('invoices')}
                 >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -178,7 +240,7 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                 <button
                     type="button"
                     className={`pms-tab ${activeTab === 'shifts' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('shifts')}
+                    onClick={() => handleTabChange('shifts')}
                 >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10" />
