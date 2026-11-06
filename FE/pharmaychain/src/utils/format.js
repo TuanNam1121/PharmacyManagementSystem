@@ -59,3 +59,13 @@ export const money = (n) => {
   if (n == null || isNaN(n)) return '0 VND';
   return Number(n).toLocaleString('en-US') + ' VND';
 };
+
+export const getLocalDateStr = (date = new Date()) => {
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+

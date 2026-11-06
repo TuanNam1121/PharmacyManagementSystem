@@ -12,7 +12,8 @@ export default function CustomerHistoryDrawer({
     const [expandedInvoiceId, setExpandedInvoiceId] = useState(null);
 
     useEffect(() => {
-        if (!isOpen || !customer?.id) {
+        const custId = customer?.customerId || customer?.id;
+        if (!isOpen || !custId) {
             setHistory([]);
             return;
         }
@@ -20,7 +21,7 @@ export default function CustomerHistoryDrawer({
         const loadHistory = async () => {
             setLoading(true);
             try {
-                const data = await getCustomerPurchaseHistory(customer.id);
+                const data = await getCustomerPurchaseHistory(custId);
                 setHistory(Array.isArray(data) ? data : []);
             } catch (err) {
                 console.error('Error fetching customer history:', err);

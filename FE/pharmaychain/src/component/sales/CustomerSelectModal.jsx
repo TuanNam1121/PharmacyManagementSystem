@@ -17,7 +17,7 @@ export default function CustomerSelectModal({
             setLoading(true);
             try {
                 const res = await fetchCustomers({
-                    search: search.trim(),
+                    keyword: search.trim(),
                     status: 1, // only active
                     page: 0,
                     size: 10,
@@ -103,7 +103,7 @@ export default function CustomerSelectModal({
 
                         {!loading && customers.map((c) => (
                             <div
-                                key={c.id}
+                                key={c.customerId || c.id}
                                 onClick={() => {
                                     onSelectCustomer(c);
                                     onClose();

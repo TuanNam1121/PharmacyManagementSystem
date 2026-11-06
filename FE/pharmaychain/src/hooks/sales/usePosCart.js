@@ -172,15 +172,20 @@ export function usePosCart() {
 
     // Set selected customer with allergy check
     const selectCustomer = useCallback((cust) => {
-        setCustomer(cust);
-        if (cust) {
+        const normalized = cust ? {
+            ...cust,
+            id: cust.id || cust.customerId,
+            customerId: cust.customerId || cust.id,
+        } : null;
+        setCustomer(normalized);
+        if (normalized) {
             // Check allergy for existing cart items
             for (const item of cartItems) {
                 if (item.activeIngredient) {
-                    const matched = checkCustomerAllergy(item.activeIngredient, cust);
+                    const matched = checkCustomerAllergy(item.activeIngredient, normalized);
                     if (matched) {
                         setAllergyAlert({
-                            customerName: cust.fullName,
+                            customerName: normalized.fullName,
                             allergy: matched,
                             productName: item.productName,
                         });

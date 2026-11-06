@@ -5,9 +5,10 @@ import {
     getDailyShifts,
     reconcileDailySales,
 } from '../../api/DailySalesAPI';
+import { getLocalDateStr } from '../../utils/format';
 
 export const useDailySales = ({ initialTab = 'overview' } = {}) => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateStr();
     const initialStoreId = localStorage.getItem('pms_selected_store_id') || 3;
     const [storeId, setStoreId] = useState(initialStoreId);
     const [date, setDate] = useState(todayStr);
