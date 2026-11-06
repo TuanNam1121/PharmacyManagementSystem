@@ -1,4 +1,4 @@
-# GIAI ĐOẠN 1: QUY TRÌNH ĐỌC CODE, SRS, SDS VÀ TÀI LIỆU ĐẶC TẢ
+   # GIAI ĐOẠN 1: QUY TRÌNH ĐỌC CODE, SRS, SDS VÀ TÀI LIỆU ĐẶC TẢ
 ### Thư mục: `doc/workflow/01_analysis_srs_sds/`
 
 ## 1. Mục Đích

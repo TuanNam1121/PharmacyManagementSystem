@@ -14,7 +14,6 @@ Cancel/Return Sales Invoice
 View Customer Purchase History
 
 Customer Management :
-
 Register New Customer
 Edit Customer
 View Customer

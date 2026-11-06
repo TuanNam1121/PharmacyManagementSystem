@@ -15,14 +15,13 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CloseShiftRequest {
-    @JsonAlias({"shift_id"})
+    @JsonAlias({ "shift_id" })
     private Long shiftId;
 
     @DecimalMin(value = "0.0", inclusive = true, message = "Số tiền thực tế phải lớn hơn hoặc bằng 0")
-    @JsonAlias({"closingCash", "closing_cash", "closing_cash_actual"})
+    @JsonAlias({ "closingCash", "closing_cash", "closing_cash_actual" })
     private BigDecimal closingCashActual;
 
     @Size(max = 255, message = "Ghi chú tối đa 255 ký tự")
     private String note;
 }
-
