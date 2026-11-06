@@ -19,6 +19,7 @@ public record SupplierResponse(
         String address,
         String taxCode,
         String note,
+        String deleteReason,
         SupplierStatus status,
         String createdAt) {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -36,6 +37,7 @@ public record SupplierResponse(
                 .address(supplier.getAddress())
                 .taxCode(supplier.getTaxCode())
                 .note(supplier.getNote())
+                .deleteReason(supplier.getDeleteReason())
                 .status(supplier.getStatus())
                 .createdAt(convertLocalDateTime(supplier.getCreatedAt()))
                 .build();
@@ -71,6 +73,7 @@ public record SupplierResponse(
         return SupplierResponse.builder()
                 .id(supplier.getId())
                 .status(supplier.getStatus())
+                .deleteReason(supplier.getDeleteReason())
                 .build();
     }
 

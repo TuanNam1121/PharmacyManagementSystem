@@ -5,6 +5,8 @@ import SupplierFilters from '../../component/supplier/SupplierFilters';
 import SupplierTable from '../../component/supplier/SupplierTable';
 import SupplierDetailModal from '../../component/supplier/SupplierDetailModal';
 import SupplierCreateModal from '../../component/supplier/SupplierCreateModal';
+import SupplierDeleteModal from '../../component/supplier/SupplierDeleteModal';
+import SendRfqModal from '../../component/supplier/SendRfqModal';
 
 function Pagination({ total, page, size, onPage }) {
   if (total <= size) return null;
@@ -63,6 +65,12 @@ export default function SupplierPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState('create'); // 'create' | 'edit'
   const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [rfqModalOpen, setRfqModalOpen] = useState(false);
+  const [rfqSupplier, setRfqSupplier] = useState(null);
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   useEffect(() => {
     fetchList();
@@ -89,6 +97,11 @@ export default function SupplierPage() {
     setFormOpen(true);
   };
 
+  const handleSendRfq = (supplier) => {
+    setRfqSupplier(supplier);
+    setRfqModalOpen(true);
+  };
+
   const handleFormSuccess = async () => {
     setSuccessMsg(
       formMode === 'create'
@@ -96,6 +109,26 @@ export default function SupplierPage() {
         : 'Supplier information updated successfully!'
     );
     await fetchList();
+  };
+
+  const handleDeleteRequest = (row) => {
+    setDeleteTarget(row);
+    setDeleteReason('');
+  };
+
+  const handleConfirmDelete = async (e) => {
+    e.preventDefault();
+    if (!deleteTarget) return;
+    setDeleteSubmitting(true);
+    try {
+      await handleDelete(deleteTarget.id, deleteReason);
+      setDeleteTarget(null);
+      setDeleteReason('');
+    } catch {
+      // error handled in hook
+    } finally {
+      setDeleteSubmitting(false);
+    }
   };
 
   return (
@@ -160,7 +193,8 @@ export default function SupplierPage() {
         size={size}
         onView={handleView}
         onEdit={handleEdit}
-        onDelete={handleDelete}
+        onDelete={handleDeleteRequest}
+        onSendRfq={handleSendRfq}
       />
 
       {/* ── Pagination ── */}
@@ -187,6 +221,24 @@ export default function SupplierPage() {
         onSuccess={handleFormSuccess}
         mode={formMode}
         supplier={selectedSupplier}
+      />
+
+      {/* ── Delete / Deactivate Modal ── */}
+      <SupplierDeleteModal
+        show={!!deleteTarget}
+        onHide={() => { setDeleteTarget(null); setDeleteReason(''); }}
+        supplierName={deleteTarget?.name}
+        reason={deleteReason}
+        onReasonChange={setDeleteReason}
+        onSubmit={handleConfirmDelete}
+        submitting={deleteSubmitting}
+      />
+
+      {/* ── Send RFQ Modal ── */}
+      <SendRfqModal
+        show={rfqModalOpen}
+        onHide={() => { setRfqModalOpen(false); setRfqSupplier(null); }}
+        supplier={rfqSupplier}
       />
     </div>
   );

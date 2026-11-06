@@ -1,18 +1,31 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import MainLayout from './layout/MainLayout';
 import HomePage from './page/home/HomePage';
+import LoginPage from './page/auth/LoginPage';
+import ForgotPasswordPage from './page/auth/ForgotPasswordPage';
+import ResetPasswordPage from './page/auth/ResetPasswordPage';
+import ProfilePage from './page/profile/ProfilePage';
+import ProtectedRoute from './component/auth/ProtectedRoute';
 import SupplierPage from './page/supplier/SupplierPage';
 import WarehouseInventoryPage from './page/warehouse/WarehouseInventoryPage';
 import WarehouseReplenishmentPage from './page/warehouse/WarehouseReplenishmentPage';
 import WarehousePurchaseRequestsPage from './page/warehouse/WarehousePurchaseRequestsPage';
 import UsersPage from './page/users/UsersPage';
 import DailySalesPage from './page/sales/DailySalesPage';
-import CategoryPage from './page/category/CategoryPage';
-import ProductPage from './page/product/ProductPage';
+import PosCounterPage from './page/sales/PosCounterPage';
+import ProductCatalogPage from './page/products/ProductCatalogPage';
 import BranchInventoryPage from './page/inventory/BranchInventoryPage';
 import InventoryAuditPage from './page/inventory/InventoryAuditPage';
 import StockRequisitionsPage from './page/inventory/StockRequisitionsPage';
 import GoodsReceiptsPage from './page/inventory/GoodsReceiptsPage';
+import PurchaseOrdersPage from './page/procurement/PurchaseOrdersPage';
+import ProfitReportPage from './page/reports/ProfitReportPage';
+import InventoryReportPage from './page/reports/InventoryReportPage';
+
+import CustomerDirectoryPage from './page/customers/CustomerDirectoryPage';
+import RfqResponsePage from './page/public/RfqResponsePage';
+import RfqPage from './page/rfq/RfqPage';
+import PurchaseProposalsPage from './page/procurement/PurchaseProposalsPage';
 
 /* ── Placeholder for unbuilt pages ── */
 function ComingSoon({ title, module }) {
@@ -42,30 +55,45 @@ function ComingSoon({ title, module }) {
 function App() {
   return (
     <Routes>
-      <Route index element={<Navigate to="/home" replace />} />
-      <Route element={<MainLayout />}>
+      {/* Public Authentication Routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      {/* Public RFQ Portal for suppliers */}
+      <Route path="/rfq-response" element={<RfqResponsePage />} />
+
+      {/* Protected Application Routes */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <MainLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/home" replace />} />
+
         {/* Home */}
         <Route path="/home" element={<HomePage />} />
 
-        {/* Authentication */}
-        <Route path="/login" element={<ComingSoon title="Login" module="Authentication" />} />
-        <Route path="/profile" element={<ComingSoon title="My Profile" module="Authentication" />} />
+        {/* Profile */}
+        <Route path="/profile" element={<ProfilePage />} />
 
         {/* User & Security */}
         <Route path="/users" element={<UsersPage />} />
         <Route path="/audit-log" element={<ComingSoon title="Audit Log" module="User & Security" />} />
 
         {/* Products & Catalog */}
-        <Route path="/products" element={<ProductPage />} />
-        <Route path="/categories" element={<CategoryPage />} />
+        <Route path="/products" element={<ProductCatalogPage />} />
+        <Route path="/categories" element={<ComingSoon title="Categories" module="Products & Catalog" />} />
 
         {/* POS & Sales */}
-        <Route path="/pos" element={<ComingSoon title="POS Counter" module="POS & Sales" />} />
+        <Route path="/pos" element={<PosCounterPage />} />
         <Route path="/shifts" element={<DailySalesPage defaultTab="shifts" />} />
         <Route path="/sales" element={<DailySalesPage defaultTab="invoices" />} />
 
         {/* Customers */}
-        <Route path="/customers" element={<ComingSoon title="Customer Directory" module="Customer Management" />} />
+        <Route path="/customers" element={<CustomerDirectoryPage />} />
 
         {/* Branch Stock & Requisitions (Store Inventory) */}
         <Route path="/store/inventory" element={<BranchInventoryPage />} />
@@ -74,12 +102,12 @@ function App() {
         <Route path="/store/audit" element={<InventoryAuditPage />} />
 
         {/* Central Warehouse (LIVE - All 14 functions completed) */}
-        <Route path="/warehouse/inventory"     element={<WarehouseInventoryPage defaultTab="inventory" />} />
-        <Route path="/warehouse/adjustments"   element={<WarehouseInventoryPage defaultTab="adjustments" />} />
-        <Route path="/warehouse/alerts"        element={<WarehouseInventoryPage defaultTab="inventory" defaultExpiryFilter="EXPIRING_SOON" />} />
-        <Route path="/warehouse/receipts"      element={<WarehouseInventoryPage defaultTab="history" />} />
+        <Route path="/warehouse/inventory" element={<WarehouseInventoryPage defaultTab="inventory" />} />
+        <Route path="/warehouse/adjustments" element={<WarehouseInventoryPage defaultTab="adjustments" />} />
+        <Route path="/warehouse/alerts" element={<WarehouseInventoryPage defaultTab="inventory" defaultExpiryFilter="EXPIRING_SOON" />} />
+        <Route path="/warehouse/receipts" element={<WarehouseInventoryPage defaultTab="history" />} />
         <Route path="/warehouse/replenishment" element={<WarehouseReplenishmentPage />} />
-        <Route path="/warehouse/requests"      element={<WarehousePurchaseRequestsPage />} />
+        <Route path="/warehouse/requests" element={<WarehousePurchaseRequestsPage />} />
 
         {/* Procurement (LIVE: suppliers, purchase requests) */}
         <Route path="/supplier"               element={<SupplierPage />} />
@@ -89,8 +117,8 @@ function App() {
         <Route path="/procurement/orders"     element={<ComingSoon title="Purchase Orders" module="Procurement" />} />
 
         {/* Reports */}
-        <Route path="/reports/profit" element={<ComingSoon title="Profit Report" module="Reports & BI" />} />
-        <Route path="/reports/inventory" element={<ComingSoon title="Inventory Report" module="Reports & BI" />} />
+        <Route path="/reports/profit" element={<ProfitReportPage />} />
+        <Route path="/reports/inventory" element={<InventoryReportPage />} />
         <Route path="/reports/sales" element={<DailySalesPage />} />
 
         {/* Fallback */}

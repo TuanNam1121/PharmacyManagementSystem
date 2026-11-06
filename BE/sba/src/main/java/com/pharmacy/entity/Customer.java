@@ -1,9 +1,6 @@
 package com.pharmacy.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -20,6 +17,7 @@ import java.time.LocalDateTime;
 @Table(name = "customers")
 public class Customer {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
@@ -52,6 +50,13 @@ public class Customer {
     @ColumnDefault("1")
     @Column(name = "status", columnDefinition = "tinyint not null")
     private Short status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private Account createdBy;
+
+    @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private CustomerHealthProfile healthProfile;
 
     @NotNull
     @ColumnDefault("sysdatetime()")

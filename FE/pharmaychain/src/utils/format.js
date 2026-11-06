@@ -5,6 +5,19 @@ export const formatDate = (iso) => {
   return d.toLocaleDateString('en-US');
 };
 
+export const formatDateTime = (iso) => {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
 export const formatStatus = (status) => {
   return { label: String(status) === '1' ? 'Active' : 'Inactive', variant: 'dark' };
 };

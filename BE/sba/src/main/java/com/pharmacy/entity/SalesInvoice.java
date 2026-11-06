@@ -1,12 +1,6 @@
 package com.pharmacy.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -16,6 +10,8 @@ import org.hibernate.annotations.Nationalized;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -23,6 +19,7 @@ import java.time.LocalDateTime;
 @Table(name = "sales_invoices")
 public class SalesInvoice {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
@@ -34,6 +31,18 @@ public class SalesInvoice {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id")
     private Store store;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shift_id")
+    private Shift shift;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id")
+    private Account account;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
 
     @Size(max = 50)
     @Nationalized
@@ -57,7 +66,7 @@ public class SalesInvoice {
 
     @ColumnDefault("0")
     @Column(name = "status", columnDefinition = "tinyint not null")
-    private Short status;
+    private Short status; // 0 pending payment, 1 paid, 2 cancelled, 3 partially returned, 4 fully returned
 
     @Size(max = 500)
     @Nationalized
@@ -72,4 +81,31 @@ public class SalesInvoice {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
+    @OneToMany(mappedBy = "salesInvoice", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SalesInvoiceDetail> details = new ArrayList<>();
+
+    @OneToMany(mappedBy = "salesInvoice", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Payment> payments = new ArrayList<>();
+
+    public void setDetails(List<SalesInvoiceDetail> details) {
+        if (this.details == null) {
+            this.details = new ArrayList<>();
+        } else {
+            this.details.clear();
+        }
+        if (details != null) {
+            this.details.addAll(details);
+        }
+    }
+
+    public void setPayments(List<Payment> payments) {
+        if (this.payments == null) {
+            this.payments = new ArrayList<>();
+        } else {
+            this.payments.clear();
+        }
+        if (payments != null) {
+            this.payments.addAll(payments);
+        }
+    }
 }

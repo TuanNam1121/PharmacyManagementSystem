@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '../../utils/format';
 import {
-  getPurchaseRequests,
-  getPurchaseRequestDetail,
+  getPurchasingStaffPurchaseRequests,
+  getPurchasingStaffPurchaseRequestDetail,
   createPurchaseRequest,
 } from '../../api/WarehouseInventoryAPI';
 import WarehouseCreatePurchaseRequestModal from '../../component/warehouse/WarehouseCreatePurchaseRequestModal';
@@ -27,15 +27,16 @@ export default function WarehousePurchaseRequestsPage() {
   const [successMsg, setSuccessMsg] = useState(null);
   const [error, setError] = useState(null);
 
+  // Dùng để refresh danh sách thủ công (ví dụ sau khi tạo mới thành công)
   const fetchList = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getPurchaseRequests({
+      const res = await getPurchasingStaffPurchaseRequests({
         page,
         size,
         search,
-        status: status !== '' ? status : undefined,
+        status,
       });
       setList(res?.content || []);
       setTotal(res?.totalElements ?? 0);
@@ -46,15 +47,47 @@ export default function WarehousePurchaseRequestsPage() {
     }
   }, [page, size, search, status]);
 
+  // Hook nạp dữ liệu chính, giải quyết triệt để lỗi "cascading renders" và race condition
   useEffect(() => {
-    fetchList();
-  }, [fetchList]);
+    let ignore = false;
+
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await getPurchasingStaffPurchaseRequests({
+          page,
+          size,
+          search,
+          status,
+        });
+        if (!ignore) {
+          setList(res?.content || []);
+          setTotal(res?.totalElements ?? 0);
+        }
+      } catch (err) {
+        if (!ignore) {
+          setError(err?.message || 'Failed to load purchase requests');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      ignore = true;
+    };
+  }, [page, size, search, status]);
 
   const handleOpenDetail = async (id) => {
     setDetailLoading(true);
     setDetailModalOpen(true);
     try {
-      const res = await getPurchaseRequestDetail(id);
+      const res = await getPurchasingStaffPurchaseRequestDetail(id);
       setSelectedDetail(res);
     } catch (err) {
       setError(err?.message || 'Failed to load purchase request details');
@@ -94,7 +127,7 @@ export default function WarehousePurchaseRequestsPage() {
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           New Purchase Request
         </button>
@@ -104,7 +137,7 @@ export default function WarehousePurchaseRequestsPage() {
       {successMsg && (
         <div className="pms-alert pms-alert-success">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="20 6 9 17 4 12"/>
+            <polyline points="20 6 9 17 4 12" />
           </svg>
           {successMsg}
           <button className="pms-alert-close" onClick={() => setSuccessMsg(null)}>✕</button>
@@ -113,7 +146,7 @@ export default function WarehousePurchaseRequestsPage() {
       {error && (
         <div className="pms-alert pms-alert-danger">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
           {error}
           <button className="pms-alert-close" onClick={() => setError(null)}>✕</button>
@@ -125,7 +158,7 @@ export default function WarehousePurchaseRequestsPage() {
         <div className="pms-input-wrap" style={{ flex: 1, maxWidth: 360 }}>
           <span className="pms-input-icon">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </span>
           <input
@@ -133,7 +166,10 @@ export default function WarehousePurchaseRequestsPage() {
             type="text"
             placeholder="Search by code or reason…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
           />
         </div>
 
@@ -141,13 +177,16 @@ export default function WarehousePurchaseRequestsPage() {
           className="pms-select"
           style={{ width: 180 }}
           value={status}
-          onChange={(e) => setStatus(e.target.value)}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(0);
+          }}
         >
           <option value="">All Statuses</option>
           <option value="1">Submitted</option>
-          <option value="2">Approved</option>
-          <option value="3">Fulfilled</option>
-          <option value="4">Cancelled</option>
+          <option value="2">RFQ Sent</option>
+          <option value="4">Completed</option>
+          <option value="5">Cancelled</option>
         </select>
 
         <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
@@ -168,8 +207,8 @@ export default function WarehousePurchaseRequestsPage() {
           <div className="pms-empty">
             <div className="pms-empty-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
               </svg>
             </div>
             <div className="pms-empty-title">No purchase requests found</div>
@@ -184,7 +223,6 @@ export default function WarehousePurchaseRequestsPage() {
                 <tr>
                   <th style={{ width: 40 }}>#</th>
                   <th>Request Code</th>
-                  <th>Reason / Justification</th>
                   <th>Items</th>
                   <th>Status</th>
                   <th>Created Date</th>
@@ -199,16 +237,11 @@ export default function WarehousePurchaseRequestsPage() {
                     <td>
                       <span className="mono fw-700" style={{ fontSize: 13 }}>{row.code}</span>
                     </td>
-                    <td style={{ maxWidth: 280 }}>
-                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row.reason}>
-                        {row.reason || '—'}
-                      </div>
-                    </td>
                     <td>
                       <span className="pms-badge pms-badge-neutral">{row.itemCount || (row.items ? row.items.length : 0)} items</span>
                     </td>
                     <td>
-                      <span className={`pms-badge ${row.status === 2 ? 'pms-badge-success' : row.status === 4 ? 'pms-badge-danger' : 'pms-badge-info'}`}>
+                      <span className={`pms-badge ${row.status === 4 ? 'pms-badge-success' : row.status === 5 ? 'pms-badge-danger' : 'pms-badge-info'}`}>
                         {row.statusText || 'Submitted'}
                       </span>
                     </td>
@@ -216,14 +249,13 @@ export default function WarehousePurchaseRequestsPage() {
                     <td className="text-sm text-muted-color">{row.createdByUsername || '—'}</td>
                     <td className="text-right">
                       <button
-                        className="btn-pms btn-pms-sm btn-pms-secondary"
+                        className="btn-pms btn-pms-ghost btn-pms-sm"
                         onClick={() => handleOpenDetail(row.id)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        title="View details"
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
                         </svg>
-                        Details
                       </button>
                     </td>
                   </tr>

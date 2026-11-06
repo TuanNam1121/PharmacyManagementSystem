@@ -1,6 +1,7 @@
-import { NavLink, useLocation } from "react-router-dom";
-import { Outlet } from "react-router-dom";
-import { useState } from "react";
+import { NavLink, useLocation, useNavigate, Outlet } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { useAuth } from "../hooks/useAuth";
+import ChangePasswordModal from "../component/auth/ChangePasswordModal";
 
 // All 10 modules with their nav items
 const NAV_MODULES = [
@@ -14,7 +15,6 @@ const NAV_MODULES = [
       </svg>
     ),
     items: [
-      { to: "/login", label: "Login" },
       { to: "/profile", label: "My Profile" },
     ],
   },
@@ -182,9 +182,30 @@ const BREADCRUMB_MAP = {
 
 export default function MainLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
   const [expandedModule, setExpandedModule] = useState(null);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const dropdownRef = useRef(null);
 
   const crumbs = BREADCRUMB_MAP[location.pathname] || [];
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowUserDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Auto-expand the current active module
   const activeModule = NAV_MODULES.find((m) =>
@@ -201,8 +222,46 @@ export default function MainLayout() {
     return false;
   };
 
+  const handleConfirmLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      setShowLogoutModal(false);
+      navigate("/login", { replace: true, state: { message: "Đăng xuất thành công" } });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const displayName = user?.fullName || user?.username || "Nhân viên";
+  const displayRole = user?.roleName || user?.role || "Quản trị viên";
+  const avatarInitials = (displayName || "WH").trim().slice(0, 2).toUpperCase();
+
   return (
     <div className="pms-shell">
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div
+          style={{
+            position: "fixed",
+            top: 20,
+            right: 24,
+            zIndex: 9999,
+            background: "#ecfdf5",
+            color: "#065f46",
+            border: "1px solid #6ee7b7",
+            borderRadius: 12,
+            padding: "12px 20px",
+            boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+            fontWeight: 600,
+            fontSize: 14,
+            animation: "fadeIn 0.2s ease-out",
+          }}
+        >
+          {toastMsg}
+        </div>
+      )}
+
       {/* ── Sidebar ── */}
       <aside className="pms-sidebar">
         {/* Logo */}
@@ -289,12 +348,43 @@ export default function MainLayout() {
 
         {/* Footer */}
         <div className="pms-sidebar-footer">
-          <div className="pms-user-card">
-            <div className="pms-user-avatar">WH</div>
-            <div className="pms-user-info">
-              <div className="pms-user-name">Warehouse Manager</div>
-              <div className="pms-user-role">Administrator</div>
+          <div
+            className="pms-user-card"
+            style={{ cursor: "pointer", transition: "background 0.2s" }}
+            onClick={() => setShowLogoutModal(true)}
+            title="Bấm để đăng xuất"
+          >
+            <div className="pms-user-avatar">{avatarInitials}</div>
+            <div className="pms-user-info" style={{ flex: 1, minWidth: 0 }}>
+              <div
+                className="pms-user-name"
+                style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+              >
+                {displayName}
+              </div>
+              <div
+                className="pms-user-role"
+                style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+              >
+                {displayRole}
+              </div>
             </div>
+            <button
+              type="button"
+              className="btn-pms btn-pms-ghost btn-pms-icon"
+              style={{ padding: 4, color: "var(--sidebar-text)" }}
+              title="Đăng xuất"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowLogoutModal(true);
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </button>
           </div>
         </div>
       </aside>
@@ -316,7 +406,7 @@ export default function MainLayout() {
             ))}
           </div>
 
-          <div className="pms-topbar-actions">
+          <div className="pms-topbar-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button className="btn-pms btn-pms-ghost btn-pms-icon" title="Notifications" style={{ position: "relative" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -328,12 +418,179 @@ export default function MainLayout() {
                 borderRadius: "50%", border: "1.5px solid white",
               }} />
             </button>
-            <button className="btn-pms btn-pms-ghost btn-pms-icon" title="Settings">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-            </button>
+
+            {/* User Profile Pill & Dropdown */}
+            <div style={{ position: "relative" }} ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setShowUserDropdown((prev) => !prev)}
+                className="btn-pms btn-pms-ghost"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "4px 10px 4px 6px",
+                  borderRadius: "20px",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <div
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark))",
+                    color: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                  }}
+                >
+                  {avatarInitials}
+                </div>
+                <div style={{ textAlign: "left", lineHeight: 1.2 }}>
+                  <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>
+                    {displayName}
+                  </div>
+                  <div style={{ fontSize: "10px", color: "var(--text-secondary)" }}>
+                    {displayRole}
+                  </div>
+                </div>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  style={{ color: "var(--text-muted)", marginLeft: 2 }}
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+
+              {/* Dropdown Menu */}
+              {showUserDropdown && (
+                <div
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "calc(100% + 6px)",
+                    background: "#ffffff",
+                    borderRadius: "12px",
+                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)",
+                    width: "220px",
+                    padding: "8px 0",
+                    zIndex: 1000,
+                  }}
+                >
+                  <div style={{ padding: "8px 16px 10px 16px", borderBottom: "1px solid #f1f5f9" }}>
+                    <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-primary)" }}>
+                      {displayName}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: 2 }}>
+                      {user?.email || "Chưa có email"}
+                    </div>
+                    <span
+                      className="pms-badge pms-badge-success"
+                      style={{ marginTop: 6, display: "inline-block", fontSize: "10px" }}
+                    >
+                      {displayRole}
+                    </span>
+                  </div>
+
+                  <div style={{ padding: "4px 0" }}>
+                    <NavLink
+                      to="/profile"
+                      onClick={() => setShowUserDropdown(false)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "8px 16px",
+                        fontSize: "13px",
+                        color: "var(--text-primary)",
+                        textDecoration: "none",
+                        transition: "background 0.15s",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                      <span>Hồ sơ cá nhân</span>
+                    </NavLink>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        setShowPasswordModal(true);
+                      }}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "8px 16px",
+                        fontSize: "13px",
+                        color: "var(--text-primary)",
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        textAlign: "left",
+                        transition: "background 0.15s",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                      <span>Đổi mật khẩu</span>
+                    </button>
+                  </div>
+
+                  <div style={{ height: "1px", background: "#f1f5f9", margin: "4px 0" }} />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUserDropdown(false);
+                      setShowLogoutModal(true);
+                    }}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "8px 16px",
+                      fontSize: "13px",
+                      color: "#ef4444",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      transition: "background 0.15s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "#fef2f2")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    <span style={{ fontWeight: 600 }}>Đăng xuất</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -342,6 +599,120 @@ export default function MainLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* ── Change Password Modal ── */}
+      <ChangePasswordModal
+        show={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        onSuccess={(msg) => {
+          setToastMsg(msg);
+          setTimeout(() => setToastMsg(""), 4000);
+        }}
+      />
+
+      {/* ── Logout Confirmation Modal ── */}
+      {showLogoutModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "20px",
+          }}
+          onClick={() => !isLoggingOut && setShowLogoutModal(false)}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              maxWidth: "400px",
+              width: "100%",
+              padding: "24px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
+              animation: "fadeIn 0.2s ease-out",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Icon & Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px" }}>
+              <div
+                style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "12px",
+                  background: "#fef2f2",
+                  color: "#ef4444",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700, color: "#0f172a" }}>
+                  Xác nhận đăng xuất
+                </h3>
+                <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#64748b" }}>
+                  Pharmacy Chain Management System
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <p style={{ fontSize: "14px", color: "#475569", margin: "0 0 24px 0", lineHeight: 1.5 }}>
+              Bạn có chắc chắn muốn kết thúc phiên làm việc? Mọi thông tin chưa lưu trên màn hình có thể bị mất.
+            </p>
+
+            {/* Modal Actions */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(false)}
+                disabled={isLoggingOut}
+                className="btn-pms btn-pms-secondary"
+                style={{ minWidth: "90px" }}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmLogout}
+                disabled={isLoggingOut}
+                className="btn-pms btn-pms-danger"
+                style={{ minWidth: "110px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+              >
+                {isLoggingOut ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"
+                      style={{ width: "14px", height: "14px" }}
+                    />
+                    <span>Đang thoát...</span>
+                  </>
+                ) : (
+                  <span>Đăng xuất</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

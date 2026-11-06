@@ -27,7 +27,7 @@ public class Shift {
     private Store store;
 
     @NotNull
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
@@ -50,12 +50,12 @@ public class Shift {
     private BigDecimal expectedCash;
 
     @ColumnDefault("[closing_cash]-[expected_cash]")
-    @Column(name = "difference", precision = 19, scale = 2)
+    @Column(name = "difference", precision = 19, scale = 2, insertable = false, updatable = false)
     private BigDecimal difference;
 
     @ColumnDefault("1")
     @Column(name = "status", columnDefinition = "tinyint not null")
-    private Short status;
+    private Short status; // 1 = OPEN, 2 = CLOSED, 3 = RECONCILED
 
     @Size(max = 1000)
     @Nationalized

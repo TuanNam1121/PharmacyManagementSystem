@@ -15,5 +15,5 @@ public interface SupplierService {
     Page<SupplierResponse> viewSupplierList(String keyword, SupplierStatus status ,Pageable pageable);
     SupplierResponse viewSupplierDetail(Long id);
     SupplierResponse updateSupplierInformation(Long id, UpdateSupplierRequest request);
-    SupplierResponse deleteSupplier(Long id); 
+    SupplierResponse deleteSupplier(Long id, String reason); 
 }

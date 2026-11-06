@@ -8,6 +8,7 @@ export default function SupplierTable({
   onView,
   onEdit,
   onDelete,
+  onSendRfq,
 }) {
   if (loading) {
     return (
@@ -185,16 +186,25 @@ export default function SupplierTable({
                         </svg>
                       </button>
 
+                      {/* Send RFQ */}
+                      <button
+                        className="btn-pms btn-pms-ghost btn-pms-sm"
+                        style={{ color: 'var(--brand-primary)' }}
+                        title="Send RFQ Email"
+                        onClick={() => onSendRfq && onSendRfq(row)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                          <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                      </button>
+
                       {/* Deactivate / Delete Supplier */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
                         style={{ color: 'var(--status-danger)' }}
                         title="Deactivate Supplier"
-                        onClick={() => {
-                          if (window.confirm(`Are you sure you want to deactivate supplier "${row.name}"?`)) {
-                            onDelete && onDelete(row.id);
-                          }
-                        }}
+                        onClick={() => onDelete && onDelete(row)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <polyline points="3 6 5 6 21 6"/>
