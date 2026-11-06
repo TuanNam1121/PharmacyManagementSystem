@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   useRfq,
   useRfqDetail,
@@ -8,6 +9,7 @@ import RfqFilters from '../../component/rfq/RfqFilters';
 import RfqTable from '../../component/rfq/RfqTable';
 import RfqDetailModal from '../../component/rfq/RfqDetailModal';
 import QuotationCompareModal from '../../component/rfq/QuotationCompareModal';
+import RecordQuotationModal from '../../component/rfq/RecordQuotationModal';
 import SendRfqModal from '../../component/supplier/SendRfqModal';
 
 function Pagination({ total, page, size, onPage }) {
@@ -26,6 +28,9 @@ function Pagination({ total, page, size, onPage }) {
 }
 
 export default function RfqPage() {
+  const [searchParams] = useSearchParams();
+  const urlProposalId = searchParams.get('proposalId');
+  const [preselectedProposalId, setPreselectedProposalId] = useState(urlProposalId ? Number(urlProposalId) : null);
   const [page, setPage] = useState(0);
   const [size] = useState(10);
   const [search, setSearch] = useState('');
@@ -36,8 +41,22 @@ export default function RfqPage() {
   const [uiError, setUiError] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [compareModalOpen, setCompareModalOpen] = useState(false);
+  const [recordModalOpen, setRecordModalOpen] = useState(false);
+  const [selectedRfqForRecord, setSelectedRfqForRecord] = useState(null);
   const [detailRfqId, setDetailRfqId] = useState(null);
   const [sendModalOpen, setSendModalOpen] = useState(false);
+
+  const handleRecordQuote = (rfq) => {
+    setSelectedRfqForRecord(rfq);
+    setRecordModalOpen(true);
+  };
+
+  useEffect(() => {
+    if (urlProposalId) {
+      setPreselectedProposalId(Number(urlProposalId));
+      setSendModalOpen(true);
+    }
+  }, [urlProposalId]);
 
   const {
     data,
@@ -143,6 +162,7 @@ export default function RfqPage() {
         size={size}
         onViewDetail={handleViewDetail}
         onCompare={handleCompareRfq}
+        onRecordQuote={handleRecordQuote}
       />
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
@@ -154,6 +174,7 @@ export default function RfqPage() {
         onHide={() => { setDetailModalOpen(false); setDetailRfqId(null); }}
         detail={detailData}
         loading={detailLoading}
+        onRecordQuote={handleRecordQuote}
         onCompare={() => {
           if (detailData) {
             const proposalId = detailData.purchaseProposal?.id || detailData.purchaseProposalId;
@@ -178,10 +199,18 @@ export default function RfqPage() {
         loading={compareLoading}
       />
 
+      <RecordQuotationModal
+        show={recordModalOpen}
+        onHide={() => { setRecordModalOpen(false); setSelectedRfqForRecord(null); }}
+        rfq={selectedRfqForRecord}
+        onSuccess={(msg) => { fetchRfqs(); setSuccessMsg(msg); }}
+      />
+
       <SendRfqModal
         show={sendModalOpen}
         onHide={() => setSendModalOpen(false)}
         supplierSelectMode
+        preselectedProposalId={preselectedProposalId}
         onSuccess={() => { fetchRfqs(); setSuccessMsg('Gửi yêu cầu báo giá thành công!'); }}
       />
     </div>

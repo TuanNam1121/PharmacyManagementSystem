@@ -50,6 +50,10 @@ public class Rfq {
     private PurchaseProposal purchaseProposal;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private Account createdBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sent_by")
     private Account sentBy;
 

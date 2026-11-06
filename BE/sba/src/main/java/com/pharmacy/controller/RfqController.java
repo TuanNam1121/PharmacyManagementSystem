@@ -98,6 +98,16 @@ public class RfqController {
         return ResponseEntity.ok(
                 ApiResponse.success("RFQ quotation details retrieved successfully", data));
     }
+
+    @Operation(summary = "Record supplier quotation for an RFQ")
+    @PostMapping("/{id}/record-quotation")
+    public ResponseEntity<ApiResponse<RfqQuotationResponse>> recordQuotation(
+            @PathVariable Long id,
+            @Valid @RequestBody com.pharmacy.dto.rfq.RecordQuotationRequest request) {
+        RfqQuotationResponse data = rfqService.recordQuotation(id, request);
+        return ResponseEntity.ok(
+                ApiResponse.success("Supplier quotation recorded successfully", data));
+    }
     
     @Operation(summary = "Compare multiple RFQs")
     @GetMapping("/compare")

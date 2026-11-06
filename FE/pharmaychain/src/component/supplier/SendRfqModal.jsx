@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSendRfq } from '../../hooks/rfq/useRfq';
 
-export default function SendRfqModal({ show, onHide, supplier, supplierSelectMode = false, onSuccess }) {
+export default function SendRfqModal({ show, onHide, supplier, supplierSelectMode = false, preselectedProposalId = null, onSuccess }) {
   const {
     proposals,
     loading,
@@ -21,13 +21,16 @@ export default function SendRfqModal({ show, onHide, supplier, supplierSelectMod
     fetchSuppliers,
     handleSubmit,
     resetForm,
-  } = useSendRfq(supplier);
+  } = useSendRfq(supplier, preselectedProposalId);
 
   useEffect(() => {
     if (!show) return;
     fetchProposals();
     if (supplierSelectMode) {
       fetchSuppliers();
+    }
+    if (preselectedProposalId) {
+      setSelectedProposalId(String(preselectedProposalId));
     }
     // Pre-fill subject with default
     setSubject(`Yêu cầu báo giá dược phẩm${supplier?.name ? ` - ${supplier.name}` : ''}`);

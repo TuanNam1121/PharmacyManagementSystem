@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -305,7 +308,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         Store warehouse = storeRepository.findFirstByType(StoreType.CENTRAL_WAREHOUSE.getCode())
                 .orElseGet(() -> storeRepository.findAll().stream().findFirst().orElseThrow());
 
-        Account creator = creatorId != null ? accountRepository.findById(creatorId).orElse(null) : null;
+        Account creator = resolveAccount(creatorId);
 
         BigDecimal total = BigDecimal.ZERO;
         for (CreatePurchaseReceiptRequest.CreatePurchaseReceiptItem item : request.getItems()) {
@@ -470,11 +473,14 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
     @Override
     @Transactional
     public PurchaseRequestResponse createPurchaseRequest(CreatePurchaseRequest request, Long creatorId) {
-        Account creator = creatorId != null ? accountRepository.findById(creatorId).orElse(null) : null;
+        Account creator = resolveAccount(creatorId);
+        Store warehouse = storeRepository.findFirstByType(StoreType.CENTRAL_WAREHOUSE.getCode())
+                .orElseGet(() -> storeRepository.findAll().stream().findFirst().orElse(null));
         String code = "PRQ-" + System.currentTimeMillis() % 1000000;
 
         PurchaseRequest pr = PurchaseRequest.builder()
                 .code(code)
+                .store(warehouse)
                 .createdBy(creator)
                 .status(PurchaseRequestStatus.SUBMITTED.getCode()) // Submitted
                 .reason(request.getReason())
@@ -823,5 +829,30 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                         p.getCostPrice()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    private Account resolveAccount(Long accountId) {
+        if (accountId != null) {
+            Optional<Account> acc = accountRepository.findById(accountId);
+            if (acc.isPresent()) {
+                return acc.get();
+            }
+        }
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getName() != null && !"anonymousUser".equals(auth.getName())) {
+                Optional<Account> acc = accountRepository.findByUsername(auth.getName());
+                if (acc.isPresent()) {
+                    return acc.get();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return accountRepository.findByUsername("warehouse01")
+                .or(() -> accountRepository.findByUsername("nhuthuy"))
+                .or(() -> accountRepository.findByUsername("wh_manager01"))
+                .or(() -> accountRepository.findByUsername("admin"))
+                .or(() -> accountRepository.findAll().stream().findFirst())
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy tài khoản người dùng hợp lệ để thực hiện thao tác."));
     }
 }

@@ -4,10 +4,15 @@ import lombok.Getter;
 
 @Getter
 public enum PurchaseProposalStatus {
-    PENDING((short) 0, "Đã lập đề xuất"),
-    APPROVED((short) 1, "Sẵn sàng tạo RFQ"),
-    REJECTED((short) 2, "Đã từ chối"),
-    COMPLETED((short) 3, "Hoàn tất");
+    DRAFT((short) 0, "Đã lập đề xuất"),
+    PENDING_APPROVAL((short) 1, "Chờ phê duyệt"),
+    APPROVED((short) 2, "Đã phê duyệt"),
+    REJECTED((short) 3, "Đã từ chối"),
+    PARTIALLY_RECEIVED((short) 4, "Nhập một phần"),
+    COMPLETED((short) 5, "Hoàn tất"),
+    CANCELLED((short) 6, "Đã hủy");
+
+    public static final PurchaseProposalStatus PENDING = DRAFT;
 
     private final Short code;
     private final String label;
@@ -30,11 +35,18 @@ public enum PurchaseProposalStatus {
     }
 
     public static String resolveText(Short status) {
-        return switch (status != null ? status.intValue() : 0) {
-            case 1 -> APPROVED.label;
-            case 2 -> REJECTED.label;
-            case 3 -> COMPLETED.label;
-            default -> PENDING.label;
+        if (status == null) {
+            return DRAFT.label;
+        }
+        return switch (status.intValue()) {
+            case 0 -> DRAFT.label;
+            case 1 -> PENDING_APPROVAL.label;
+            case 2 -> APPROVED.label;
+            case 3 -> REJECTED.label;
+            case 4 -> PARTIALLY_RECEIVED.label;
+            case 5 -> COMPLETED.label;
+            case 6 -> CANCELLED.label;
+            default -> "Trạng thái " + status;
         };
     }
 
