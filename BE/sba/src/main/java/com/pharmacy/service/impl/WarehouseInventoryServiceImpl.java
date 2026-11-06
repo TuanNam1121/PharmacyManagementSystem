@@ -552,9 +552,8 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         StockRequisition sr = stockRequisitionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Requisition not found with ID: " + id));
 
-        if (sr.getStatus() != null && !sr.getStatus().equals(StockRequisitionStatus.PENDING.getCode())
-                && !sr.getStatus().equals(StockRequisitionStatus.DRAFT.getCode())) {
-            throw new IllegalStateException("Requisition cannot be approved from current state");
+        if (sr.getStatus() == null || !sr.getStatus().equals(StockRequisitionStatus.PENDING.getCode())) {
+            throw new IllegalStateException("Chỉ có thể phê duyệt yêu cầu khi đang ở trạng thái Chờ xét duyệt");
         }
 
         Account approver = approverId != null ? accountRepository.findById(approverId).orElse(null) : null;
@@ -580,6 +579,10 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         StockRequisition sr = stockRequisitionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Requisition not found with ID: " + id));
 
+        if (sr.getStatus() == null || !sr.getStatus().equals(StockRequisitionStatus.PENDING.getCode())) {
+            throw new IllegalStateException("Chỉ có thể từ chối yêu cầu khi đang ở trạng thái Chờ xét duyệt");
+        }
+
         Account approver = approverId != null ? accountRepository.findById(approverId).orElse(null) : null;
         sr.setStatus(StockRequisitionStatus.REJECTED.getCode()); // Rejected
         sr.setApprovedBy(approver);
@@ -596,8 +599,8 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         StockRequisition sr = stockRequisitionRepository.findById(requisitionId)
                 .orElseThrow(() -> new EntityNotFoundException("Requisition not found with ID: " + requisitionId));
 
-        if (sr.getStatus() != null && !sr.getStatus().equals(StockRequisitionStatus.APPROVED.getCode())) {
-            throw new IllegalStateException("Requisition must be Approved before dispatching goods");
+        if (sr.getStatus() == null || !sr.getStatus().equals(StockRequisitionStatus.APPROVED.getCode())) {
+            throw new IllegalStateException("Chỉ có thể xuất kho khi yêu cầu đã được phê duyệt");
         }
 
         Store warehouse = storeRepository.findFirstByType(StoreType.CENTRAL_WAREHOUSE.getCode())

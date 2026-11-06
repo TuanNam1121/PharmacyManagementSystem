@@ -71,7 +71,7 @@ public class InventoryAdjustment {
     private Integer quantityAfter;
 
     @ColumnDefault("[quantity_after]-[quantity_before]")
-    @Column(name = "difference")
+    @Column(name = "difference", insertable = false, updatable = false)
     private Integer difference;
 
     @Column(name = "value_impact", precision = 18, scale = 2)

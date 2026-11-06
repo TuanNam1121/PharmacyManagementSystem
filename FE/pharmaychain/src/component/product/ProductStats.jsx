@@ -5,9 +5,9 @@ export default function ProductStats({ total = 0, products = [] }) {
 
   const stats = [
     {
-      label: 'Total Products',
+      label: 'Tổng Mặt Hàng Thuốc',
       value: total,
-      sub: 'items in catalog',
+      sub: 'dược phẩm trong danh mục',
       iconColor: 'emerald',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -17,9 +17,9 @@ export default function ProductStats({ total = 0, products = [] }) {
       ),
     },
     {
-      label: 'Active Products',
+      label: 'Đang Kinh Doanh',
       value: activeCount,
-      sub: 'available for sale',
+      sub: 'sẵn sàng bán lẻ & cấp phát',
       iconColor: 'blue',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -28,9 +28,9 @@ export default function ProductStats({ total = 0, products = [] }) {
       ),
     },
     {
-      label: 'Prescription (Rx)',
+      label: 'Thuốc Kê Đơn (Rx)',
       value: prescriptionCount,
-      sub: 'require prescription',
+      sub: 'bắt buộc có đơn bác sĩ',
       iconColor: 'amber',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -40,9 +40,9 @@ export default function ProductStats({ total = 0, products = [] }) {
       ),
     },
     {
-      label: 'Inactive Products',
+      label: 'Ngừng Kinh Doanh',
       value: inactiveCount,
-      sub: 'delisted or paused',
+      sub: 'tạm ngưng lưu hành',
       iconColor: 'red',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

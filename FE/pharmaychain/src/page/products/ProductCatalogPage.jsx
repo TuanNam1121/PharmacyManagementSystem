@@ -21,7 +21,7 @@ export default function ProductCatalogPage() {
       const data = await getWarehouseProducts();
       setProducts(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err?.message || 'Failed to load product catalog');
+      setError(err?.message || 'Không thể tải danh mục dược phẩm');
     } finally {
       setLoading(false);
     }
@@ -74,20 +74,20 @@ export default function ProductCatalogPage() {
       <div className="pms-page-header" style={{ marginBottom: 16 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <h1 className="pms-page-title" style={{ margin: 0 }}>Product Catalog</h1>
-            <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Master Data</span>
+            <h1 className="pms-page-title" style={{ margin: 0 }}>Danh Mục Dược Phẩm Cốt Lõi</h1>
+            <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>Dữ Liệu Gốc</span>
           </div>
           <p className="pms-page-sub">
-            Browse registered pharmaceutical products, dispensing units, barcodes, and standard purchase prices.
+            Tra cứu thông tin thuốc đăng ký, đơn vị quy cách, mã vạch và giá nhập mua tiêu chuẩn.
           </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button type="button" className="btn-pms btn-pms-secondary" onClick={fetchProducts} title="Refresh catalog">
+          <button type="button" className="btn-pms btn-pms-secondary" onClick={fetchProducts} title="Làm mới danh mục">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
             </svg>
-            Refresh
+            Làm mới
           </button>
           <button
             type="button"
@@ -100,7 +100,7 @@ export default function ProductCatalogPage() {
               <line x1="12" y1="18" x2="12" y2="12" />
               <line x1="9" y1="15" x2="15" y2="15" />
             </svg>
-            New Purchase Request
+            Tạo Yêu Cầu Mua Hàng
           </button>
         </div>
       </div>
@@ -120,27 +120,61 @@ export default function ProductCatalogPage() {
         </div>
       )}
 
-      {/* ── Stats Grid ── */}
-      <div className="pms-stat-grid" style={{ marginBottom: 20 }}>
+      {/* ── Stats Grid (Standardized) ── */}
+      <div className="pms-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', width: '100%', marginBottom: 20 }}>
         <div className="pms-stat-card">
-          <div className="pms-stat-label">Total Registered Products</div>
-          <div className="pms-stat-val">{totalItems}</div>
-          <div className="pms-stat-sub">Active pharmaceutical items</div>
+          <div className="pms-stat-icon emerald">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+          </div>
+          <div>
+            <div className="pms-stat-label">Tổng Mặt Hàng Đăng Ký</div>
+            <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>{totalItems}</div>
+            <div className="pms-stat-sub">Mặt hàng dược phẩm hoạt động</div>
+          </div>
         </div>
         <div className="pms-stat-card">
-          <div className="pms-stat-label">Barcoded Medicines</div>
-          <div className="pms-stat-val" style={{ color: 'var(--brand-primary)' }}>{withBarcode}</div>
-          <div className="pms-stat-sub">Ready for POS & barcode scanner</div>
+          <div className="pms-stat-icon blue">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+              <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+            </svg>
+          </div>
+          <div>
+            <div className="pms-stat-label">Thuốc Có Mã Vạch</div>
+            <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>{withBarcode}</div>
+            <div className="pms-stat-sub">Sẵn sàng quét bán POS</div>
+          </div>
         </div>
         <div className="pms-stat-card">
-          <div className="pms-stat-label">Packaging Units</div>
-          <div className="pms-stat-val">{units.length}</div>
-          <div className="pms-stat-sub">Standard dispensing measures</div>
+          <div className="pms-stat-icon violet">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+          </div>
+          <div>
+            <div className="pms-stat-label">Đơn Vị Quy Cách</div>
+            <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>{units.length}</div>
+            <div className="pms-stat-sub">Quy cách đóng gói chuẩn</div>
+          </div>
         </div>
         <div className="pms-stat-card">
-          <div className="pms-stat-label">Average Purchase Cost</div>
-          <div className="pms-stat-val" style={{ fontSize: 20 }}>{money(avgPrice)}</div>
-          <div className="pms-stat-sub">Standard reference price</div>
+          <div className="pms-stat-icon amber">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </div>
+          <div>
+            <div className="pms-stat-label">Giá Nhập Bình Quân</div>
+            <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>{money(avgPrice)}</div>
+            <div className="pms-stat-sub">Giá tham chiếu nhập kho</div>
+          </div>
         </div>
       </div>
 
@@ -154,7 +188,7 @@ export default function ProductCatalogPage() {
                 <input
                   type="text"
                   className="pms-input pms-input-bare"
-                  placeholder="Search by name or barcode..."
+                  placeholder="Tìm theo tên thuốc hoặc mã vạch..."
                   value={search}
                   onChange={(e) => {
                     setSearch(e.target.value);
@@ -186,7 +220,7 @@ export default function ProductCatalogPage() {
                 }}
                 style={{ minWidth: 160 }}
               >
-                <option value="">All Units ({units.length})</option>
+                <option value="">Tất cả đơn vị ({units.length})</option>
                 {units.map((u) => (
                   <option key={u} value={u}>
                     {u}
@@ -205,13 +239,13 @@ export default function ProductCatalogPage() {
                   }}
                   style={{ fontSize: 12 }}
                 >
-                  Clear Filters
+                  Xóa bộ lọc
                 </button>
               )}
             </div>
 
             <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-              Showing <strong>{filteredProducts.length}</strong> products
+              Hiển thị <strong>{filteredProducts.length}</strong> sản phẩm
             </div>
           </div>
         </div>
@@ -222,22 +256,22 @@ export default function ProductCatalogPage() {
         <div className="pms-card-body" style={{ padding: 0 }}>
           {loading ? (
             <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-secondary)' }}>
-              Loading product catalog...
+              Đang tải danh mục dược phẩm...
             </div>
           ) : pagedList.length === 0 ? (
             <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>
-              No products found matching your search criteria.
+              Không tìm thấy sản phẩm nào phù hợp với bộ lọc tìm kiếm.
             </div>
           ) : (
             <table className="pms-table">
               <thead>
                 <tr>
                   <th style={{ width: 60 }}>#</th>
-                  <th>Product Name</th>
-                  <th>Barcode</th>
-                  <th>Dispensing Unit</th>
-                  <th style={{ textAlign: 'right' }}>Standard Purchase Price</th>
-                  <th style={{ textAlign: 'center', width: 100 }}>Actions</th>
+                  <th>Tên Thuốc / Dược Phẩm</th>
+                  <th>Mã Vạch</th>
+                  <th>Đơn Vị Quy Cách</th>
+                  <th style={{ textAlign: 'right' }}>Giá Mua Chuẩn</th>
+                  <th style={{ textAlign: 'center', width: 100 }}>Thao Tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -251,7 +285,7 @@ export default function ProductCatalogPage() {
                         {item.name}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                        ID #{item.id}
+                        Mã #{item.id}
                       </div>
                     </td>
                     <td>
@@ -265,7 +299,7 @@ export default function ProductCatalogPage() {
                     </td>
                     <td>
                       <span className="pms-badge pms-badge-info" style={{ fontWeight: 600 }}>
-                        {item.unit || 'Unit'}
+                        {item.unit || 'Đơn vị'}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--brand-primary)' }}>
@@ -278,7 +312,7 @@ export default function ProductCatalogPage() {
                         style={{ padding: '4px 10px', fontSize: 12 }}
                         onClick={() => setSelectedProduct(item)}
                       >
-                        Details
+                        Chi tiết
                       </button>
                     </td>
                   </tr>
@@ -327,8 +361,8 @@ export default function ProductCatalogPage() {
           <div className="pms-modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
             <div className="pms-modal-header">
               <div>
-                <h3 className="pms-modal-title">Product Details</h3>
-                <div className="pms-modal-sub">Master medicine catalog specification</div>
+                <h3 className="pms-modal-title">Thông Tin Chi Tiết Dược Phẩm</h3>
+                <div className="pms-modal-sub">Quy cách và đặc tính thuốc gốc</div>
               </div>
               <button
                 type="button"
@@ -341,29 +375,29 @@ export default function ProductCatalogPage() {
             <div className="pms-modal-body">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Product Name</label>
+                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Tên Thuốc / Sản Phẩm</label>
                   <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
                     {selectedProduct.name}
                   </div>
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Product ID</label>
+                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Mã Định Danh</label>
                   <div style={{ fontWeight: 600 }}>#{selectedProduct.id}</div>
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Dispensing Unit</label>
+                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Đơn Vị Quy Cách</label>
                   <div>
                     <span className="pms-badge pms-badge-info">{selectedProduct.unit}</span>
                   </div>
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Barcode</label>
+                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Mã Vạch</label>
                   <div className="mono" style={{ fontWeight: 600 }}>
                     {selectedProduct.barcode || '—'}
                   </div>
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Purchase Price</label>
+                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Giá Mua Chuẩn</label>
                   <div style={{ fontWeight: 800, color: 'var(--brand-primary)', fontSize: 15 }}>
                     {money(selectedProduct.purchasePrice || 0)}
                   </div>
@@ -381,7 +415,7 @@ export default function ProductCatalogPage() {
                   color: 'var(--text-secondary)',
                 }}
               >
-                💡 <strong>Inventory Quick Action:</strong> You can view stock levels across Central Warehouse or branch stores, or initiate a new procurement demand directly.
+                <strong>Gợi ý tác vụ:</strong> Bạn có thể theo dõi lượng tồn kho thực tế tại Kho Tổng hoặc Chi nhánh, hoặc trực tiếp lập yêu cầu mua sắm bổ sung thuốc này.
               </div>
             </div>
             <div className="pms-modal-footer">
@@ -390,7 +424,7 @@ export default function ProductCatalogPage() {
                 className="btn-pms btn-pms-secondary"
                 onClick={() => setSelectedProduct(null)}
               >
-                Close
+                Đóng
               </button>
               <button
                 type="button"
@@ -400,7 +434,7 @@ export default function ProductCatalogPage() {
                   navigate('/warehouse/inventory');
                 }}
               >
-                Check Warehouse Stock
+                Kiểm Tra Tồn Kho
               </button>
             </div>
           </div>

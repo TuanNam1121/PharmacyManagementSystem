@@ -5,6 +5,7 @@ import com.pharmacy.entity.Account;
 import com.pharmacy.entity.AuditLog;
 import com.pharmacy.entity.EmailLog;
 import com.pharmacy.entity.PasswordResetToken;
+import com.pharmacy.entity.enums.AccountStatus;
 import com.pharmacy.exception.AccountLockedException;
 import com.pharmacy.exception.BadCredentialsException;
 import com.pharmacy.exception.InvalidTokenException;
@@ -52,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
                 });
 
         // 2. Kiểm tra trạng thái tài khoản (status = 1: Active)
-        if (account.getStatus() == null || account.getStatus() != 1) {
+        if (account.getStatus() == null || account.getStatus() != AccountStatus.ACTIVE) {
             log.warn("Login failed: account '{}' is locked/inactive (status={})", keyword, account.getStatus());
             recordAuditLog(account, (short) 1, "AUTH", account.getId(), null, "LOGIN_BLOCKED_ACCOUNT_INACTIVE",
                     ipAddress);
@@ -64,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
             int failed = account.getFailedLoginCount() != null ? account.getFailedLoginCount() + 1 : 1;
             account.setFailedLoginCount(failed);
             if (failed >= 5) {
-                account.setStatus((short) 0); // Khóa tài khoản sau 5 lần thất bại liên tiếp
+                account.setStatus(AccountStatus.LOCKED); // Khóa tài khoản sau 5 lần thất bại liên tiếp
                 log.warn("Account '{}' locked due to 5 consecutive failed login attempts", keyword);
             }
             accountRepository.save(account);
@@ -124,7 +125,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         Account account = accountOpt.get();
-        if (account.getStatus() == null || account.getStatus() != 1) {
+        if (account.getStatus() == null || account.getStatus() != AccountStatus.ACTIVE) {
             log.warn("Forgot password requested for inactive account '{}' from IP {}", email, clientIp);
             return;
         }
@@ -219,6 +220,13 @@ public class AuthServiceImpl implements AuthService {
             avatarUrl = account.getAccountInformation().getAvatarUrl();
         }
 
+        Long storeId = null;
+        String storeName = null;
+        if (account.getStore() != null) {
+            storeId = account.getStore().getId();
+            storeName = account.getStore().getName();
+        }
+
         UserSummaryDto userSummary = UserSummaryDto.builder()
                 .accountId(account.getId())
                 .username(account.getUsername())
@@ -227,8 +235,8 @@ public class AuthServiceImpl implements AuthService {
                 .role(roleCode)
                 .roleName(roleName)
                 .avatarUrl(avatarUrl)
-                .storeId(null)
-                .storeName(null)
+                .storeId(storeId)
+                .storeName(storeName)
                 .build();
 
         return LoginResponse.builder()

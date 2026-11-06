@@ -138,7 +138,8 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             detail.setBatch(batch);
             detail.setQuantity(item.getQuantity());
             detail.setUnitPrice(item.getUnitPrice());
-            detail.setUnitCost(BigDecimal.ZERO);
+            BigDecimal costPrice = product.getCostPrice() != null ? product.getCostPrice() : BigDecimal.ZERO;
+            detail.setUnitCost(costPrice);
             detail.setDosageInstruction(item.getDosageInstruction());
 
             SalesInvoiceDetail saved = salesInvoiceDetailRepository.save(detail);

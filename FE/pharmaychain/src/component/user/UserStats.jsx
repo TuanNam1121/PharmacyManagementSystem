@@ -1,12 +1,12 @@
 export default function UserStats({ total = 0, accounts = [], rolesCount = 0 }) {
   const activeCount = accounts.filter((u) => Number(u.status) === 1).length;
-  const inactiveCount = accounts.filter((u) => Number(u.status) === 0).length;
+  const inactiveCount = accounts.filter((u) => Number(u.status) === 0 || Number(u.status) === 2).length;
 
   const stats = [
     {
-      label: 'Total Registered Users',
+      label: 'Tổng Số Tài Khoản',
       value: total,
-      sub: 'system accounts',
+      sub: 'nhân viên trong hệ thống',
       iconColor: 'emerald',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -18,9 +18,9 @@ export default function UserStats({ total = 0, accounts = [], rolesCount = 0 }) 
       ),
     },
     {
-      label: 'Active Accounts',
+      label: 'Đang Hoạt Động',
       value: activeCount,
-      sub: 'operational & unlocked',
+      sub: 'có quyền truy cập & bán hàng',
       iconColor: 'blue',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -30,9 +30,9 @@ export default function UserStats({ total = 0, accounts = [], rolesCount = 0 }) 
       ),
     },
     {
-      label: 'Inactive / Locked',
+      label: 'Tạm Khóa / Vô Hiệu',
       value: inactiveCount,
-      sub: 'suspended access',
+      sub: 'tạm ngưng quyền đăng nhập',
       iconColor: 'red',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -42,9 +42,9 @@ export default function UserStats({ total = 0, accounts = [], rolesCount = 0 }) 
       ),
     },
     {
-      label: 'System Roles (RBAC)',
+      label: 'Vai Trò Hệ Thống (RBAC)',
       value: rolesCount,
-      sub: 'defined permission sets',
+      sub: 'nhóm quyền chức năng đã lập',
       iconColor: 'purple',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

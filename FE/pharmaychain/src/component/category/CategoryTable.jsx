@@ -13,7 +13,7 @@ export default function CategoryTable({
       <div className="pms-card">
         <div className="pms-spinner-wrap">
           <div className="pms-spinner" />
-          <span className="pms-spinner-text">Loading categories…</span>
+          <span className="pms-spinner-text">Đang tải danh mục dược phẩm…</span>
         </div>
       </div>
     );
@@ -31,8 +31,8 @@ export default function CategoryTable({
               <rect x="14" y="14" width="7" height="7" rx="1" />
             </svg>
           </div>
-          <div className="pms-empty-title">No categories found</div>
-          <div className="pms-empty-sub">No category records matched your search or status filter.</div>
+          <div className="pms-empty-title">Không tìm thấy nhóm danh mục nào</div>
+          <div className="pms-empty-sub">Không có bản ghi danh mục nào phù hợp với từ khóa tìm kiếm hoặc bộ lọc trạng thái.</div>
         </div>
       </div>
     );
@@ -44,13 +44,13 @@ export default function CategoryTable({
         <table className="pms-table">
           <thead>
             <tr>
-              <th style={{ width: 44 }}>#</th>
-              <th>Category Name</th>
-              <th>Description</th>
-              <th>Status</th>
-              <th>Created By</th>
-              <th>Created Date</th>
-              <th className="text-right" style={{ width: 140 }}>Actions</th>
+              <th style={{ width: 44 }}>STT</th>
+              <th>Tên Nhóm Danh Mục</th>
+              <th>Mô Tả Nghiệp Vụ</th>
+              <th>Trạng Thái</th>
+              <th>Người Tạo</th>
+              <th>Ngày Tạo</th>
+              <th style={{ width: 140, textAlign: 'center' }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -111,14 +111,14 @@ export default function CategoryTable({
                         <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
                           <circle cx="12" cy="12" r="10" />
                         </svg>
-                        Active
+                        Đang hoạt động
                       </span>
                     ) : (
                       <span className="pms-badge pms-badge-danger">
                         <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
                           <circle cx="12" cy="12" r="10" />
                         </svg>
-                        Inactive
+                        Ngừng hoạt động
                       </span>
                     )}
                   </td>
@@ -128,12 +128,12 @@ export default function CategoryTable({
                   <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                     {formatDate(row.createdAt)}
                   </td>
-                  <td className="text-right">
-                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                       {/* Edit Category */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
-                        title="Edit Category"
+                        title="Chỉnh sửa danh mục"
                         onClick={() => onEdit(row)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -142,13 +142,13 @@ export default function CategoryTable({
                         </svg>
                       </button>
 
-                      {/* Toggle Inactive / Active (UC20) */}
+                      {/* Toggle Inactive / Active */}
                       <button
                         className={`btn-pms btn-pms-sm ${isActive ? 'btn-pms-ghost' : 'btn-pms-outline'}`}
                         style={{
                           color: isActive ? 'var(--status-danger)' : 'var(--brand-primary)',
                         }}
-                        title={isActive ? 'Inactive category' : 'Active category'}
+                        title={isActive ? 'Ngừng hoạt động danh mục' : 'Kích hoạt lại danh mục'}
                         onClick={() => onToggleStatus && onToggleStatus(row)}
                       >
                         {isActive ? (

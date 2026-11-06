@@ -81,8 +81,8 @@ export default function CategoryPage() {
   const handleFormSuccess = async () => {
     setSuccessMsg(
       formMode === 'create'
-        ? 'Category created successfully!'
-        : 'Category updated successfully!'
+        ? 'Đã tạo mới nhóm danh mục thành công!'
+        : 'Đã cập nhật thông tin nhóm danh mục thành công!'
     );
     await fetchList();
   };
@@ -93,12 +93,11 @@ export default function CategoryPage() {
   };
 
   const handleConfirmStatusChange = async (categoryId, targetStatus) => {
-    // If targetStatus is 0, old status was 1 (Active)
     await handleToggleStatus(categoryId, targetStatus === 0 ? 1 : 0);
     setSuccessMsg(
       targetStatus === 0
-        ? 'Đã vô hiệu hóa danh mục thành công!'
-        : 'Đã kích hoạt danh mục thành công!'
+        ? 'Đã ngừng hoạt động nhóm danh mục thành công!'
+        : 'Đã kích hoạt lại nhóm danh mục thành công!'
     );
     await fetchList();
   };
@@ -108,9 +107,9 @@ export default function CategoryPage() {
       {/* ── Page Header ── */}
       <div className="pms-page-header">
         <div>
-          <h1 className="pms-page-title">Product Categories</h1>
+          <h1 className="pms-page-title">Nhóm Danh Mục Dược Phẩm</h1>
           <p className="pms-page-sub">
-            Manage product category taxonomy for your pharmaceutical catalog.
+            Quản lý cấu trúc phân loại danh mục thuốc và vật tư y tế trong chuỗi nhà thuốc
           </p>
         </div>
       </div>
@@ -157,7 +156,7 @@ export default function CategoryPage() {
         total={data.length}
       />
 
-      {/* ── Table (UC20) ── */}
+      {/* ── Table ── */}
       <CategoryTable
         data={data}
         loading={loading}
@@ -184,7 +183,7 @@ export default function CategoryPage() {
         category={selectedCategory}
       />
 
-      {/* ── Status Change Confirmation Modal (UC20) ── */}
+      {/* ── Status Toggle Modal ── */}
       <CategoryStatusModal
         show={statusModalOpen}
         onHide={() => { setStatusModalOpen(false); setStatusCategory(null); }}

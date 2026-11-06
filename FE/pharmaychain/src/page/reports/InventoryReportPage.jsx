@@ -1,14 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getInventoryReport, exportInventoryReportExcel } from '../../api/InventoryReportAPI';
 import { formatDate } from '../../utils/format';
+import { useAuth } from '../../hooks/useAuth';
+import { getAuthorizedStores } from '../../api/StoreAPI';
 
 export default function InventoryReportPage() {
+    const { user } = useAuth();
     // Filter states
     const [storeId, setStoreId] = useState('');
+    const [stores, setStores] = useState([]);
+    const [isSingleBranch, setIsSingleBranch] = useState(false);
     const [stockStatus, setStockStatus] = useState('ALL');
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState('items'); // 'items' | 'stores' | 'movements'
     const [exporting, setExporting] = useState(false);
+
+    // Fetch authorized stores for RBAC
+    useEffect(() => {
+        getAuthorizedStores().then((data) => {
+            if (data && data.length > 0) {
+                setStores(data);
+                if (data.length === 1) {
+                    setIsSingleBranch(true);
+                    setStoreId(String(data[0].id));
+                } else {
+                    setIsSingleBranch(false);
+                }
+            }
+        });
+    }, []);
 
     // Async states
     const [loading, setLoading] = useState(false);
@@ -27,7 +47,7 @@ export default function InventoryReportPage() {
             });
             setReport(data);
         } catch (err) {
-            setErrorMsg(err?.message || 'Failed to load inventory valuation report.');
+            setErrorMsg(err?.message || 'Không thể tải báo cáo định giá tồn kho.');
         } finally {
             setLoading(false);
         }
@@ -46,9 +66,9 @@ export default function InventoryReportPage() {
                 storeId: storeId ? Number(storeId) : undefined,
                 stockStatus,
             });
-            setSuccessMsg('Executive Inventory Excel report exported successfully! Audit log committed.');
+            setSuccessMsg('Xuất báo cáo tồn kho & định giá Excel thành công!');
         } catch (err) {
-            setErrorMsg(err?.message || 'Failed to export inventory Excel report.');
+            setErrorMsg(err?.message || 'Lỗi khi xuất tệp báo cáo tồn kho Excel.');
         } finally {
             setExporting(false);
         }
@@ -56,7 +76,9 @@ export default function InventoryReportPage() {
 
     // Alternative Flow AT02: Reset filters
     const handleReset = () => {
-        setStoreId('');
+        if (!isSingleBranch) {
+            setStoreId('');
+        }
         setStockStatus('ALL');
         setSearchTerm('');
         setErrorMsg(null);
@@ -76,11 +98,11 @@ export default function InventoryReportPage() {
             <div className="pms-page-header">
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <h1 className="pms-page-title">Executive Inventory & Stock Valuation Report</h1>
-                        <span className="pms-badge pms-badge-info">General Manager</span>
+                        <h1 className="pms-page-title">Báo Cáo Tồn Kho & Định Giá Dược Phẩm</h1>
+                        <span className="pms-badge pms-badge-info">Ban Giám Đốc</span>
                     </div>
                     <p className="pms-page-sub">
-                        Monitor chain-wide inventory valuation, safety stock alerts, batch expiry risks, and stock movement trails.
+                        Giám sát giá trị định giá tồn kho toàn chuỗi, cảnh báo ngưỡng an toàn, nguy cơ cận hạn lô thuốc và lịch sử biến động thẻ kho.
                     </p>
                 </div>
 
@@ -92,8 +114,12 @@ export default function InventoryReportPage() {
                         disabled={exporting || loading}
                         style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                     >
-                        <span>📊</span>
-                        <span>{exporting ? 'Generating Excel…' : 'Export Executive Excel'}</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        <span>{exporting ? 'Đang tạo Excel…' : 'Xuất Báo Cáo Excel'}</span>
                     </button>
                 </div>
             </div>
@@ -107,7 +133,10 @@ export default function InventoryReportPage() {
             )}
             {errorMsg && (
                 <div className="pms-alert pms-alert-danger" style={{ marginBottom: 16 }}>
-                    <span>⚠️ {errorMsg}</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <span>{errorMsg}</span>
                     <button style={{ background: 'none', border: 'none', cursor: 'pointer', float: 'right' }} onClick={() => setErrorMsg(null)}>✕</button>
                 </div>
             )}
@@ -119,33 +148,59 @@ export default function InventoryReportPage() {
                         {/* Branch & Status Selection */}
                         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <label style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>Branch:</label>
-                                <select
-                                    className="pms-select"
-                                    value={storeId}
-                                    onChange={(e) => setStoreId(e.target.value)}
-                                    style={{ minWidth: 220, padding: '5px 10px' }}
-                                >
-                                    <option value="">All Branches (Chain-wide)</option>
-                                    <option value="1">Store #1 — Central Pharmacy</option>
-                                    <option value="2">Store #2 — Cau Giay Pharmacy</option>
-                                    <option value="3">Store #3 — Dong Da Pharmacy</option>
-                                </select>
+                                <label style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>Chi nhánh:</label>
+                                {isSingleBranch ? (
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                            padding: '5px 12px',
+                                            background: 'rgba(16, 185, 129, 0.08)',
+                                            border: '1px solid rgba(16, 185, 129, 0.25)',
+                                            borderRadius: '6px',
+                                            fontSize: '12px',
+                                            color: '#059669',
+                                            fontWeight: 600,
+                                        }}
+                                        title="Chi nhánh được phân công quản lý"
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                            <circle cx="12" cy="10" r="3" />
+                                        </svg>
+                                        <span>{stores[0]?.code} — {stores[0]?.name}</span>
+                                    </div>
+                                ) : (
+                                    <select
+                                        className="pms-select"
+                                        value={storeId}
+                                        onChange={(e) => setStoreId(e.target.value)}
+                                        style={{ minWidth: 240, padding: '5px 10px' }}
+                                    >
+                                        <option value="">Toàn hệ thống (Tất cả chi nhánh)</option>
+                                        {stores.map((s) => (
+                                            <option key={s.id} value={s.id}>
+                                                {s.code} — {s.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
                             </div>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <label style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>Stock Status:</label>
+                                <label style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>Tình trạng kho:</label>
                                 <select
                                     className="pms-select"
                                     value={stockStatus}
                                     onChange={(e) => setStockStatus(e.target.value)}
-                                    style={{ minWidth: 180, padding: '5px 10px' }}
+                                    style={{ minWidth: 200, padding: '5px 10px' }}
                                 >
-                                    <option value="ALL">All Stock Conditions</option>
-                                    <option value="IN_STOCK">Healthy Stock</option>
-                                    <option value="LOW_STOCK">⚠️ Low Stock Warning</option>
-                                    <option value="OUT_OF_STOCK">🚨 Out of Stock (Zero)</option>
-                                    <option value="EXPIRING_SOON">⏰ Expiring Soon (&lt; 90 Days)</option>
+                                    <option value="ALL">Tất cả tình trạng kho</option>
+                                    <option value="IN_STOCK">Tồn kho an toàn (Đạt chuẩn)</option>
+                                    <option value="LOW_STOCK">Cảnh báo tồn dưới mức an toàn</option>
+                                    <option value="OUT_OF_STOCK">Đã hết hàng trong kho (0)</option>
+                                    <option value="EXPIRING_SOON">Thuốc cận hạn dùng (&lt; 90 ngày)</option>
                                 </select>
                             </div>
 
@@ -153,9 +208,9 @@ export default function InventoryReportPage() {
                                 type="button"
                                 className="btn-pms btn-pms-secondary"
                                 onClick={handleReset}
-                                title="Reset filters to default (AT02)"
+                                title="Đặt lại bộ lọc về mặc định"
                             >
-                                Reset
+                                Đặt lại
                             </button>
                         </div>
 
@@ -164,7 +219,7 @@ export default function InventoryReportPage() {
                             <input
                                 type="text"
                                 className="pms-input"
-                                placeholder="Search medicine, barcode, batch..."
+                                placeholder="Tìm tên thuốc, mã vạch, số lô..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 style={{ width: 280, fontSize: 13 }}
@@ -174,117 +229,150 @@ export default function InventoryReportPage() {
                 </div>
             </div>
 
-            {/* ── KPI Metric Cards ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 20 }}>
+            {/* ── KPI Metric Cards (Standardized) ── */}
+            <div className="pms-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', width: '100%', marginBottom: 20 }}>
                 {/* 1. Valuation at Cost */}
-                <div className="pms-card" style={{ padding: '18px 20px', borderLeft: '4px solid #0284c7' }}>
-                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Total Inventory Value (Cost)
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon emerald">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="12" y1="1" x2="12" y2="23" />
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
                     </div>
-                    <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', marginTop: 6 }}>
-                        {Number(report?.totalValuationCost || 0).toLocaleString('vi-VN')} ₫
-                    </div>
-                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-                        Procurement capital invested
+                    <div>
+                        <div className="pms-stat-label">Tổng Giá Trị Tồn Kho (Giá Vốn)</div>
+                        <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>
+                            {Number(report?.totalValuationCost || 0).toLocaleString('vi-VN')} ₫
+                        </div>
+                        <div className="pms-stat-sub">Vốn đầu tư nhập kho</div>
                     </div>
                 </div>
 
                 {/* 2. Valuation at Retail */}
-                <div className="pms-card" style={{ padding: '18px 20px', borderLeft: '4px solid #10b981' }}>
-                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Potential Retail Value
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+                            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+                        </svg>
                     </div>
-                    <div style={{ fontSize: 24, fontWeight: 800, color: '#059669', marginTop: 6 }}>
-                        {Number(report?.totalValuationRetail || 0).toLocaleString('vi-VN')} ₫
-                    </div>
-                    <div style={{ fontSize: 12, color: '#059669', fontWeight: 600, marginTop: 4 }}>
-                        Potential Margin: {report?.potentialMarginPercentage || 0}%
+                    <div>
+                        <div className="pms-stat-label">Giá Trị Bán Lẻ Ước Tính</div>
+                        <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>
+                            {Number(report?.totalValuationRetail || 0).toLocaleString('vi-VN')} ₫
+                        </div>
+                        <div className="pms-stat-sub">Biên LN tiềm năng: {report?.potentialMarginPercentage || 0}%</div>
                     </div>
                 </div>
 
                 {/* 3. Total Physical Units */}
-                <div className="pms-card" style={{ padding: '18px 20px', borderLeft: '4px solid #6366f1' }}>
-                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Total Physical Volume
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon violet">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="2" y="7" width="20" height="14" rx="2" />
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                            <path d="M2 7l10-5 10 5" />
+                        </svg>
                     </div>
-                    <div style={{ fontSize: 24, fontWeight: 800, color: '#4338ca', marginTop: 6 }}>
-                        {Number(report?.totalUnitsInStock || 0).toLocaleString('vi-VN')}
-                    </div>
-                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-                        Across <strong>{report?.totalSkus || 0}</strong> active medicines
+                    <div>
+                        <div className="pms-stat-label">Tổng Số Lượng Tồn Thực Tế</div>
+                        <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>
+                            {Number(report?.totalUnitsInStock || 0).toLocaleString('vi-VN')}
+                        </div>
+                        <div className="pms-stat-sub">Trên {report?.totalSkus || 0} mặt hàng thuốc</div>
                     </div>
                 </div>
 
                 {/* 4. Risk & Safety Alerts */}
-                <div className="pms-card" style={{ padding: '18px 20px', borderLeft: '4px solid #ef4444' }}>
-                    <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Inventory Risk Alerts
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon red">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
                     </div>
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 8 }}>
-                        <span className="pms-badge pms-badge-warning" style={{ fontSize: 12 }}>
-                            {report?.lowStockCount || 0} Low Stock
-                        </span>
-                        <span className="pms-badge pms-badge-danger" style={{ fontSize: 12 }}>
-                            {report?.expiringSoonCount || 0} Expiring
-                        </span>
-                    </div>
-                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
-                        Out of stock: {report?.outOfStockCount || 0} items
+                    <div>
+                        <div className="pms-stat-label">Cảnh Báo Rủi Ro Tồn Kho</div>
+                        <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>
+                            {(report?.lowStockCount || 0) + (report?.expiringSoonCount || 0) + (report?.outOfStockCount || 0)}
+                        </div>
+                        <div className="pms-stat-sub">
+                            {report?.lowStockCount || 0} dưới ngưỡng · {report?.expiringSoonCount || 0} cận hạn · {report?.outOfStockCount || 0} hết hàng
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* ── Navigation Tabs ── */}
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color, #e2e8f0)', marginBottom: 20 }}>
+            {/* ── Navigation Tabs (Enterprise Standard) ── */}
+            <div className="pms-tabs" style={{ marginBottom: 20 }}>
                 <button
                     type="button"
-                    style={{
-                        padding: '10px 20px',
-                        fontWeight: 600,
-                        fontSize: 14,
-                        border: 'none',
-                        background: 'none',
-                        cursor: 'pointer',
-                        color: activeTab === 'items' ? '#0284c7' : '#64748b',
-                        borderBottom: activeTab === 'items' ? '3px solid #0284c7' : '3px solid transparent',
-                    }}
+                    className={`pms-tab ${activeTab === 'items' ? 'active' : ''}`}
                     onClick={() => setActiveTab('items')}
                 >
-                    📦 Stock Levels & Valuation ({report?.items?.length || 0})
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                    <span>Mức Tồn & Định Giá Lô Thuốc</span>
+                    <span style={{
+                        fontSize: 11,
+                        padding: '1px 6px',
+                        borderRadius: 10,
+                        background: activeTab === 'items' ? 'rgba(5, 150, 105, 0.12)' : 'var(--bg-card)',
+                        color: activeTab === 'items' ? 'var(--brand-primary)' : 'var(--text-muted)',
+                        fontWeight: 600,
+                    }}>
+                        {report?.items?.length || 0}
+                    </span>
                 </button>
+
+                {!isSingleBranch && (
+                    <button
+                        type="button"
+                        className={`pms-tab ${activeTab === 'stores' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('stores')}
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <polyline points="9 22 9 12 15 12 15 22" />
+                        </svg>
+                        <span>So Sánh Định Giá Theo Chi Nhánh</span>
+                        <span style={{
+                            fontSize: 11,
+                            padding: '1px 6px',
+                            borderRadius: 10,
+                            background: activeTab === 'stores' ? 'rgba(5, 150, 105, 0.12)' : 'var(--bg-card)',
+                            color: activeTab === 'stores' ? 'var(--brand-primary)' : 'var(--text-muted)',
+                            fontWeight: 600,
+                        }}>
+                            {report?.storeBreakdown?.length || 0}
+                        </span>
+                    </button>
+                )}
 
                 <button
                     type="button"
-                    style={{
-                        padding: '10px 20px',
-                        fontWeight: 600,
-                        fontSize: 14,
-                        border: 'none',
-                        background: 'none',
-                        cursor: 'pointer',
-                        color: activeTab === 'stores' ? '#0284c7' : '#64748b',
-                        borderBottom: activeTab === 'stores' ? '3px solid #0284c7' : '3px solid transparent',
-                    }}
-                    onClick={() => setActiveTab('stores')}
-                >
-                    🏪 Branch Valuation Comparison ({report?.storeBreakdown?.length || 0})
-                </button>
-
-                <button
-                    type="button"
-                    style={{
-                        padding: '10px 20px',
-                        fontWeight: 600,
-                        fontSize: 14,
-                        border: 'none',
-                        background: 'none',
-                        cursor: 'pointer',
-                        color: activeTab === 'movements' ? '#0284c7' : '#64748b',
-                        borderBottom: activeTab === 'movements' ? '3px solid #0284c7' : '3px solid transparent',
-                    }}
+                    className={`pms-tab ${activeTab === 'movements' ? 'active' : ''}`}
                     onClick={() => setActiveTab('movements')}
                 >
-                    🔄 Stock Movements & Audit Trail ({report?.movements?.length || 0})
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="23 4 23 10 17 10" />
+                        <polyline points="1 20 1 14 7 14" />
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                    </svg>
+                    <span>Biến Động Thẻ Kho & Nhật Ký</span>
+                    <span style={{
+                        fontSize: 11,
+                        padding: '1px 6px',
+                        borderRadius: 10,
+                        background: activeTab === 'movements' ? 'rgba(5, 150, 105, 0.12)' : 'var(--bg-card)',
+                        color: activeTab === 'movements' ? 'var(--brand-primary)' : 'var(--text-muted)',
+                        fontWeight: 600,
+                    }}>
+                        {report?.movements?.length || 0}
+                    </span>
                 </button>
             </div>
 
@@ -296,15 +384,15 @@ export default function InventoryReportPage() {
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Product / Medicine</th>
-                                    <th>Barcode</th>
-                                    <th>Batch No</th>
-                                    <th>Expiry Date</th>
-                                    <th>Branch</th>
-                                    <th style={{ textAlign: 'right' }}>Stock Qty</th>
-                                    <th style={{ textAlign: 'right' }}>Cost Price (₫)</th>
-                                    <th style={{ textAlign: 'right' }}>Valuation (Cost)</th>
-                                    <th style={{ textAlign: 'center' }}>Stock Status</th>
+                                    <th>Tên Thuốc / Dược Phẩm</th>
+                                    <th>Mã Vạch</th>
+                                    <th>Số Lô (Batch)</th>
+                                    <th>Hạn Dùng (EXP)</th>
+                                    <th>Chi Nhánh / Kho</th>
+                                    <th style={{ textAlign: 'right' }}>Số Lượng Tồn</th>
+                                    <th style={{ textAlign: 'right' }}>Đơn Giá Vốn (₫)</th>
+                                    <th style={{ textAlign: 'right' }}>Định Giá (Vốn)</th>
+                                    <th style={{ textAlign: 'center' }}>Tình Trạng Kho</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -313,14 +401,14 @@ export default function InventoryReportPage() {
                                         <td colSpan={10} style={{ textAlign: 'center', padding: '40px' }}>
                                             <div className="pms-spinner" />
                                             <span style={{ display: 'block', marginTop: 10, color: '#64748b' }}>
-                                                Computing stock levels and valuations…
+                                                Đang tính toán số lượng tồn và định giá…
                                             </span>
                                         </td>
                                     </tr>
                                 ) : filteredItems.length === 0 ? (
                                     <tr>
                                         <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                                            No inventory items matching your selected criteria.
+                                            Không tìm thấy mặt hàng nào phù hợp với bộ lọc.
                                         </td>
                                     </tr>
                                 ) : (
@@ -339,7 +427,7 @@ export default function InventoryReportPage() {
                                                     <span style={{ color: isExpiring ? '#dc2626' : 'inherit', fontWeight: isExpiring ? 700 : 400 }}>
                                                         {item.expiryDate ? formatDate(item.expiryDate) : '—'}
                                                     </span>
-                                                    {isExpiring && <span style={{ fontSize: 11, display: 'block', color: '#dc2626' }}>({item.daysUntilExpiry}d left)</span>}
+                                                    {isExpiring && <span style={{ fontSize: 11, display: 'block', color: '#dc2626' }}>(Còn {item.daysUntilExpiry} ngày)</span>}
                                                 </td>
                                                 <td>{item.storeName}</td>
                                                 <td style={{ textAlign: 'right', fontWeight: 700, color: isOut ? '#dc2626' : isLow ? '#d97706' : '#0f172a' }}>
@@ -351,7 +439,7 @@ export default function InventoryReportPage() {
                                                 </td>
                                                 <td style={{ textAlign: 'center' }}>
                                                     <span className={`pms-badge ${isOut ? 'pms-badge-danger' : isLow ? 'pms-badge-warning' : 'pms-badge-success'}`}>
-                                                        {isOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'Healthy'}
+                                                        {isOut ? 'Hết hàng' : isLow ? 'Sắp hết' : 'Đạt chuẩn'}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -368,22 +456,22 @@ export default function InventoryReportPage() {
             {activeTab === 'stores' && (
                 <div className="pms-card" style={{ padding: 0 }}>
                     <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-color, #e2e8f0)' }}>
-                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Store Branch Inventory Valuation Breakdown</h3>
-                        <span style={{ fontSize: 12, color: '#64748b' }}>Comparison of capital held in stock across all chain branches</span>
+                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Phân Bổ Định Giá Tồn Kho Giữa Các Chi Nhánh</h3>
+                        <span style={{ fontSize: 12, color: '#64748b' }}>So sánh nguồn vốn tồn kho đang lưu trữ tại các chi nhánh và kho trung tâm</span>
                     </div>
 
                     <div className="pms-table-container">
                         <table className="pms-table">
                             <thead>
                                 <tr>
-                                    <th>Store Code</th>
-                                    <th>Store Branch Name</th>
-                                    <th style={{ textAlign: 'right' }}>Active SKUs</th>
-                                    <th style={{ textAlign: 'right' }}>Total Units</th>
-                                    <th style={{ textAlign: 'right' }}>Valuation at Cost (₫)</th>
-                                    <th style={{ textAlign: 'right' }}>Retail Value (₫)</th>
-                                    <th style={{ textAlign: 'right' }}>Potential Profit (₫)</th>
-                                    <th style={{ textAlign: 'center' }}>Potential Margin</th>
+                                    <th>Mã Chi Nhánh</th>
+                                    <th>Tên Chi Nhánh / Kho</th>
+                                    <th style={{ textAlign: 'right' }}>Số Mặt Hàng</th>
+                                    <th style={{ textAlign: 'right' }}>Tổng Đơn Vị</th>
+                                    <th style={{ textAlign: 'right' }}>Định Giá Theo Vốn (₫)</th>
+                                    <th style={{ textAlign: 'right' }}>Giá Trị Bán Lẻ (₫)</th>
+                                    <th style={{ textAlign: 'right' }}>Lợi Nhuận Tiềm Năng (₫)</th>
+                                    <th style={{ textAlign: 'center' }}>Biên LN Tiềm Năng</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -396,7 +484,7 @@ export default function InventoryReportPage() {
                                 ) : (report?.storeBreakdown || []).length === 0 ? (
                                     <tr>
                                         <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                                            No branch valuation data available.
+                                            Không có dữ liệu định giá của chi nhánh.
                                         </td>
                                     </tr>
                                 ) : (
@@ -429,22 +517,22 @@ export default function InventoryReportPage() {
             {activeTab === 'movements' && (
                 <div className="pms-card" style={{ padding: 0 }}>
                     <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-color, #e2e8f0)' }}>
-                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Chain Stock Movements Audit Log</h3>
-                        <span style={{ fontSize: 12, color: '#64748b' }}>Real-time audit log of stock inflows, sales deductions, transfers, and adjustments</span>
+                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Nhật Ký Biến Động Thẻ Kho Toàn Chuỗi</h3>
+                        <span style={{ fontSize: 12, color: '#64748b' }}>Theo dõi theo thời gian thực các giao dịch nhập kho, bán hàng, điều chuyển và kiểm kê</span>
                     </div>
 
                     <div className="pms-table-container">
                         <table className="pms-table">
                             <thead>
                                 <tr>
-                                    <th>Date & Time</th>
-                                    <th>Branch</th>
-                                    <th>Product Name</th>
-                                    <th>Batch No</th>
-                                    <th>Movement Type</th>
-                                    <th style={{ textAlign: 'right' }}>Qty Change</th>
-                                    <th style={{ textAlign: 'right' }}>Ending Stock</th>
-                                    <th>Reference</th>
+                                    <th>Thời Gian</th>
+                                    <th>Chi Nhánh / Kho</th>
+                                    <th>Tên Thuốc</th>
+                                    <th>Số Lô</th>
+                                    <th>Loại Biến Động</th>
+                                    <th style={{ textAlign: 'right' }}>Biến Động (Qty)</th>
+                                    <th style={{ textAlign: 'right' }}>Tồn Sau Động</th>
+                                    <th>Chứng Từ Tham Chiếu</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -457,7 +545,7 @@ export default function InventoryReportPage() {
                                 ) : (report?.movements || []).length === 0 ? (
                                     <tr>
                                         <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                                            No stock movement logs recorded in this period.
+                                            Không có bản ghi biến động kho trong khoảng thời gian này.
                                         </td>
                                     </tr>
                                 ) : (

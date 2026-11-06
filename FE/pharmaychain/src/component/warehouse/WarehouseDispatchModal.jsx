@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 export default function WarehouseDispatchModal({ show, onHide, requisition, onConfirm, loading }) {
-  const [carrier, setCarrier] = useState('Central Warehouse Fleet');
+  const [carrier, setCarrier] = useState('Đội xe chuyên dụng Kho Tổng');
   const [note, setNote] = useState('');
 
   if (!show || !requisition) return null;
@@ -19,12 +19,12 @@ export default function WarehouseDispatchModal({ show, onHide, requisition, onCo
       <div className="pms-modal pms-modal-md">
         <div className="pms-modal-header">
           <div>
-            <div className="pms-modal-title">Confirm Goods Dispatch (Issue Stock)</div>
+            <div className="pms-modal-title">Xác Nhận Xuất Kho Điều Phối (Xuất Hàng)</div>
             <div className="pms-modal-sub">
-              Requisition {requisition.code} → Destination: {requisition.storeName}
+              Phiếu điều phối {requisition.code} → Nơi nhận: {requisition.storeName}
             </div>
           </div>
-          <button className="pms-modal-close" onClick={onHide}>
+          <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -38,13 +38,13 @@ export default function WarehouseDispatchModal({ show, onHide, requisition, onCo
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
               </svg>
               <span>
-                Confirming dispatch will allocate inventory batches by <strong>FEFO (First Expired First Out)</strong> and deduct central warehouse stock immediately.
+                Xác nhận xuất kho sẽ phân bổ các lô thuốc theo quy tắc <strong>FEFO (Hạn dùng gần nhất xuất trước)</strong> và trừ tồn kho trực tiếp tại Kho Tổng.
               </span>
             </div>
 
             <div className="pms-form-group" style={{ marginBottom: 16 }}>
               <label className="pms-form-label">
-                Carrier / Transport Method <span className="pms-required">*</span>
+                Đơn Vị / Phương Thức Vận Chuyển <span className="pms-required">*</span>
               </label>
               <select
                 className="pms-select"
@@ -52,19 +52,19 @@ export default function WarehouseDispatchModal({ show, onHide, requisition, onCo
                 onChange={(e) => setCarrier(e.target.value)}
                 required
               >
-                <option value="Central Warehouse Fleet">Central Warehouse Dedicated Fleet</option>
-                <option value="Cold Chain Logistics Partner">Cold Chain Pharma Logistics (Refrigerated)</option>
-                <option value="Standard Express Delivery">Standard Express Pharma Courier</option>
-                <option value="Branch Store Pickup">Branch Store Self-Pickup</option>
+                <option value="Đội xe chuyên dụng Kho Tổng">Đội xe vận tải chuyên dụng Kho Tổng</option>
+                <option value="Logistics Dược phẩm Chuỗi Lạnh">Vận tải chuỗi lạnh dược phẩm (Xe bảo quản lạnh GSP)</option>
+                <option value="Chuyển phát nhanh tiêu chuẩn">Chuyển phát nhanh dược phẩm tiêu chuẩn</option>
+                <option value="Chi nhánh tự điều phối nhận hàng">Chi nhánh nhà thuốc tự đến nhận hàng tại kho</option>
               </select>
             </div>
 
             <div className="pms-form-group">
-              <label className="pms-form-label">Dispatch Notes / Consignment Details</label>
+              <label className="pms-form-label">Ghi Chú Xuất Kho / Thông Tin Chuyến Xe</label>
               <textarea
                 className="pms-input"
                 rows={3}
-                placeholder="Driver name, vehicle license plate, seal number, delivery instructions..."
+                placeholder="Tên lái xe, số điện thoại, biển số xe, mã niêm phong (seal), nhiệt độ bảo quản..."
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />
@@ -73,7 +73,7 @@ export default function WarehouseDispatchModal({ show, onHide, requisition, onCo
 
           <div className="pms-modal-footer">
             <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={loading}>
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
@@ -90,7 +90,7 @@ export default function WarehouseDispatchModal({ show, onHide, requisition, onCo
                 <circle cx="5.5" cy="18.5" r="2.5"/>
                 <circle cx="18.5" cy="18.5" r="2.5"/>
               </svg>
-              {loading ? 'Dispatching…' : 'Confirm Dispatch & Deduct Stock'}
+              {loading ? 'Đang xuất kho…' : 'Xác Nhận Xuất Kho & Trừ Tồn'}
             </button>
           </div>
         </form>

@@ -4,10 +4,10 @@ import lombok.Getter;
 
 @Getter
 public enum RfqStatus {
-    SENT((short) 0, "Sent"),
-    RESPONDED((short) 1, "Responded"),
-    EXPIRED((short) 2, "Expired"),
-    CANCELLED((short) 3, "Cancelled");
+    SENT((short) 0, "Đã gửi"),
+    RESPONDED((short) 1, "Đã nhận báo giá"),
+    EXPIRED((short) 2, "Hết hạn"),
+    CANCELLED((short) 3, "Đã hủy");
 
     private final Short code;
     private final String label;

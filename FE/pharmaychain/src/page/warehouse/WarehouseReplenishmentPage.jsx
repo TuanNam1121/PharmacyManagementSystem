@@ -44,7 +44,7 @@ export default function WarehouseReplenishmentPage() {
       setList(res?.content || []);
       setTotal(res?.totalElements ?? 0);
     } catch (err) {
-      setError(err?.message || 'Failed to load store replenishment requests');
+      setError(err?.message || 'Không thể tải danh sách yêu cầu điều chuyển từ chi nhánh');
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export default function WarehouseReplenishmentPage() {
       const res = await getReplenishmentRequestDetail(id);
       setSelectedDetail(res);
     } catch (err) {
-      setError(err?.message || 'Failed to load request details');
+      setError(err?.message || 'Không thể tải chi tiết yêu cầu');
     } finally {
       setDetailLoading(false);
     }
@@ -74,11 +74,11 @@ export default function WarehouseReplenishmentPage() {
     setError(null);
     try {
       const res = await approveReplenishmentRequest(id);
-      setSuccessMsg(`Replenishment request ${res?.code || ''} approved successfully!`);
+      setSuccessMsg(`Đã phê duyệt yêu cầu điều phối ${res?.code || ''} thành công!`);
       setSelectedDetail(res);
       await fetchList();
     } catch (err) {
-      setError(err?.message || 'Failed to approve replenishment request');
+      setError(err?.message || 'Lỗi khi phê duyệt yêu cầu điều phối');
     } finally {
       setActionLoading(false);
     }
@@ -90,11 +90,11 @@ export default function WarehouseReplenishmentPage() {
     setError(null);
     try {
       const res = await rejectReplenishmentRequest(id, reason);
-      setSuccessMsg(`Replenishment request ${res?.code || ''} rejected.`);
+      setSuccessMsg(`Đã từ chối yêu cầu điều phối ${res?.code || ''}.`);
       setSelectedDetail(res);
       await fetchList();
     } catch (err) {
-      setError(err?.message || 'Failed to reject replenishment request');
+      setError(err?.message || 'Lỗi khi từ chối yêu cầu điều phối');
     } finally {
       setActionLoading(false);
     }
@@ -111,7 +111,7 @@ export default function WarehouseReplenishmentPage() {
     setError(null);
     try {
       const issue = await confirmGoodsDispatch(id, payload);
-      setSuccessMsg(`Goods Issue #${issue?.code || ''} created successfully! Stock deducted and dispatched.`);
+      setSuccessMsg(`Đã tạo phiếu xuất kho #${issue?.code || ''} thành công! Kho đã trừ tồn và bắt đầu giao vận.`);
       setDispatchModalOpen(false);
       setSelectedForDispatch(null);
       await fetchList();
@@ -119,7 +119,7 @@ export default function WarehouseReplenishmentPage() {
         setDetailModalOpen(false);
       }
     } catch (err) {
-      setError(err?.message || 'Failed to dispatch goods');
+      setError(err?.message || 'Lỗi khi xuất kho điều chuyển');
     } finally {
       setDispatchLoading(false);
     }
@@ -132,9 +132,9 @@ export default function WarehouseReplenishmentPage() {
       {/* Page Header */}
       <div className="pms-page-header">
         <div>
-          <h1 className="pms-page-title">Store Replenishment & Goods Issue</h1>
+          <h1 className="pms-page-title">Điều Phối Bổ Sung & Xuất Kho Chi Nhánh</h1>
           <p className="pms-page-sub">
-            Review stock requisitions from retail branches, approve quantities, and dispatch goods via FEFO picking
+            Tiếp nhận phiếu đề xuất lĩnh thuốc từ các nhà thuốc chi nhánh, phê duyệt số lượng và xuất kho giao hàng theo chuẩn FEFO
           </p>
         </div>
       </div>
@@ -170,7 +170,7 @@ export default function WarehouseReplenishmentPage() {
           <input
             className="pms-input"
             type="text"
-            placeholder="Search by request code or store name…"
+            placeholder="Tìm theo mã yêu cầu hoặc tên chi nhánh…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -178,20 +178,21 @@ export default function WarehouseReplenishmentPage() {
 
         <select
           className="pms-select"
-          style={{ width: 190 }}
+          style={{ width: 220 }}
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
-          <option value="">All Statuses</option>
-          <option value="1">Submitted (Pending Review)</option>
-          <option value="2">Approved (Ready for Dispatch)</option>
-          <option value="3">Rejected</option>
-          <option value="4">Dispatched (In Transit)</option>
-          <option value="5">Completed / Received</option>
+          <option value="">Tất cả trạng thái</option>
+          <option value="1">Chờ xét duyệt</option>
+          <option value="2">Đã phê duyệt (Sẵn sàng xuất kho)</option>
+          <option value="3">Đã từ chối</option>
+          <option value="4">Đã xuất kho / Đang giao</option>
+          <option value="5">Đã nhận hàng (Hoàn tất)</option>
+          <option value="0">Bản nháp</option>
         </select>
 
         <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
-          <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> store requests
+          <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> yêu cầu chi nhánh
         </span>
       </div>
 
@@ -200,7 +201,7 @@ export default function WarehouseReplenishmentPage() {
         <div className="pms-card">
           <div className="pms-spinner-wrap">
             <div className="pms-spinner" />
-            <span className="pms-spinner-text">Loading replenishment requests…</span>
+            <span className="pms-spinner-text">Đang tải danh sách yêu cầu bổ sung hàng…</span>
           </div>
         </div>
       ) : list.length === 0 ? (
@@ -214,8 +215,8 @@ export default function WarehouseReplenishmentPage() {
                 <circle cx="18.5" cy="18.5" r="2.5"/>
               </svg>
             </div>
-            <div className="pms-empty-title">No replenishment requests found</div>
-            <div className="pms-empty-sub">Branch stores have not submitted any stock requisitions matching your filter.</div>
+            <div className="pms-empty-title">Không tìm thấy yêu cầu điều chuyển nào</div>
+            <div className="pms-empty-sub">Các chi nhánh chưa gửi yêu cầu xin bổ sung tồn kho phù hợp với bộ lọc.</div>
           </div>
         </div>
       ) : (
@@ -225,20 +226,21 @@ export default function WarehouseReplenishmentPage() {
               <thead>
                 <tr>
                   <th style={{ width: 40 }}>#</th>
-                  <th>Requisition Code</th>
-                  <th>Branch Store</th>
-                  <th>Requested Date</th>
-                  <th>Requested By</th>
-                  <th>Status</th>
-                  <th className="text-right" style={{ width: 220 }}>Actions</th>
+                  <th>Mã Đề Xuất</th>
+                  <th>Chi Nhánh Yêu Cầu</th>
+                  <th>Ngày Yêu Cầu</th>
+                  <th>Người Yêu Cầu</th>
+                  <th>Trạng Thái</th>
+                  <th style={{ width: 140, textAlign: 'center' }}>Thao Tác</th>
                 </tr>
               </thead>
               <tbody>
                 {list.map((row, i) => {
-                  const isPending = row.status === 1 || row.status === 0 || row.statusText === 'Submitted';
-                  const isApproved = row.status === 2 || row.statusText === 'Approved';
-                  const isRejected = row.status === 3 || row.statusText === 'Rejected';
-                  const isDispatched = row.status === 4 || row.statusText === 'Dispatched';
+                  const isPending = row.status === 1 || row.status === 0 || row.statusText === 'Chờ xét duyệt' || row.statusText === 'Bản nháp' || row.statusText === 'Submitted';
+                  const isApproved = row.status === 2 || row.statusText === 'Đã phê duyệt' || row.statusText === 'Approved';
+                  const isRejected = row.status === 3 || row.statusText === 'Đã từ chối' || row.statusText === 'Rejected';
+                  const isDispatched = row.status === 4 || row.statusText === 'Đã xuất kho / Đang giao' || row.statusText === 'Dispatched';
+                  const isReceived = row.status === 5 || row.statusText === 'Đã nhận hàng';
 
                   return (
                     <tr key={row.id || i}>
@@ -247,21 +249,21 @@ export default function WarehouseReplenishmentPage() {
                         <span className="mono fw-700" style={{ fontSize: 13 }}>{row.code}</span>
                       </td>
                       <td>
-                        <div className="fw-600" style={{ fontSize: 13 }}>{row.storeName || 'Branch Store'}</div>
+                        <div className="fw-600" style={{ fontSize: 13 }}>{row.storeName || 'Chi nhánh'}</div>
                       </td>
                       <td className="text-sm text-muted-color">{formatDate(row.createdAt)}</td>
                       <td className="text-sm text-muted-color">{row.createdByUsername || '—'}</td>
                       <td>
-                        <span className={`pms-badge ${isApproved ? 'pms-badge-success' : isRejected ? 'pms-badge-danger' : isDispatched ? 'pms-badge-info' : 'pms-badge-warning'}`}>
-                          {row.statusText || 'Pending Review'}
+                        <span className={`pms-badge ${isApproved ? 'pms-badge-success' : isRejected ? 'pms-badge-danger' : isDispatched ? 'pms-badge-info' : isReceived ? 'pms-badge-neutral' : 'pms-badge-warning'}`}>
+                          {row.status === 2 ? 'Đã phê duyệt' : row.status === 3 ? 'Đã từ chối' : row.status === 4 ? 'Đã xuất kho / Đang giao' : row.status === 5 ? 'Đã nhận hàng' : 'Chờ xét duyệt'}
                         </span>
                       </td>
-                      <td className="text-right">
-                        <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'flex-end' }}>
+                      <td style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                           {isPending && (
                             <button
                               className="btn-pms btn-pms-sm btn-pms-primary"
-                              title="Approve Requisition"
+                              title="Phê duyệt đề xuất"
                               onClick={() => handleApprove(row.id)}
                               disabled={actionLoading}
                               style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--color-success)', borderColor: 'var(--color-success)' }}
@@ -269,34 +271,34 @@ export default function WarehouseReplenishmentPage() {
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <polyline points="20 6 9 17 4 12"/>
                               </svg>
-                              Approve
+                              Duyệt
                             </button>
                           )}
 
                           {isApproved && (
                             <button
                               className="btn-pms btn-pms-sm btn-pms-primary"
-                              title="Dispatch Goods (Goods Issue)"
+                              title="Xuất kho hàng (Tạo phiếu xuất)"
                               onClick={() => handleOpenDispatch(row)}
                               style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                             >
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
                               </svg>
-                              Dispatch
+                              Xuất kho
                             </button>
                           )}
 
                           <button
                             className="btn-pms btn-pms-sm btn-pms-secondary"
-                            title="View full requisition detail"
+                            title="Xem chi tiết phiếu yêu cầu"
                             onClick={() => handleOpenDetail(row.id)}
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                           >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                             </svg>
-                            Details
+                            Chi tiết
                           </button>
                         </div>
                       </td>

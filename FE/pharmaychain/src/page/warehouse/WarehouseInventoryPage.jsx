@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useWarehouseInventory } from '../../hooks/warehouse/useWarehouseInventory';
 import WarehouseStats from '../../component/warehouse/WarehouseStats';
 import WarehouseFilters from '../../component/warehouse/WarehouseFilters';
@@ -12,7 +14,7 @@ import WarehouseAdjustmentListTable from '../../component/warehouse/WarehouseAdj
 const TABS = [
   {
     key: 'inventory',
-    label: 'Inventory & Bin Locations',
+    label: 'Tồn kho tổng FEFO',
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
@@ -22,7 +24,7 @@ const TABS = [
   },
   {
     key: 'history',
-    label: 'Purchase History',
+    label: 'Lịch sử phiếu nhập kho',
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -32,7 +34,7 @@ const TABS = [
   },
   {
     key: 'adjustments',
-    label: 'Inventory Adjustments',
+    label: 'Điều chỉnh tồn kho',
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
@@ -83,6 +85,30 @@ export default function WarehouseInventoryPage({
     error, setError, successMsg, setSuccessMsg,
   } = useWarehouseInventory({ initialTab: defaultTab, initialExpiryFilter: defaultExpiryFilter });
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname === '/warehouse/receipts') {
+      setActiveTab('history');
+    } else if (location.pathname === '/warehouse/adjustments') {
+      setActiveTab('adjustments');
+    } else if (location.pathname === '/warehouse/inventory') {
+      setActiveTab('inventory');
+    }
+  }, [location.pathname, setActiveTab]);
+
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+    if (key === 'inventory' && location.pathname !== '/warehouse/inventory') {
+      navigate('/warehouse/inventory');
+    } else if (key === 'history' && location.pathname !== '/warehouse/receipts') {
+      navigate('/warehouse/receipts');
+    } else if (key === 'adjustments' && location.pathname !== '/warehouse/adjustments') {
+      navigate('/warehouse/adjustments');
+    }
+  };
+
   const openLocationModal = (row) => { setSelectedInventory(row); setLocationModalOpen(true); };
   const openAdjustmentModal = (row) => { setSelectedForAdj(row); setAdjModalOpen(true); };
 
@@ -91,25 +117,25 @@ export default function WarehouseInventoryPage({
     if (pageTitle) return { title: pageTitle, sub: pageSub };
     if (activeTab === 'adjustments') {
       return {
-        title: 'Warehouse Stock Adjustments',
-        sub: 'Audit physical stock counts, log damages/loss or variance, and update batch quantities.',
+        title: 'Điều chỉnh tồn kho kiểm kê',
+        sub: 'Ghi nhận kiểm kê thực tế, xử lý hao hụt / chênh lệch và cập nhật số lượng tồn kho theo lô.',
       };
     }
     if (activeTab === 'history') {
       return {
-        title: 'Purchase Receipts & Goods Inward',
-        sub: 'Track vendor purchase receipts, incoming lots, receiving inspectors, and item breakdown.',
+        title: 'Phiếu nhập kho & Tiếp nhận hàng từ NCC',
+        sub: 'Theo dõi chứng từ mua hàng, tiếp nhận lô thuốc, người kiểm định và phân bổ ô kệ.',
       };
     }
     if (expiryFilter === 'EXPIRING_SOON' || expiryFilter === 'EXPIRED') {
       return {
-        title: 'Expiry & Critical Stock Alerts',
-        sub: 'Proactively monitor near-expiry medicine batches (≤90 days) and expired lots across all bins.',
+        title: 'Cảnh báo hạn dùng & Tồn kho tối thiểu',
+        sub: 'Chủ động giám sát các lô thuốc cận hạn (≤ 90 ngày) và đã hết hạn trên toàn bộ ô kệ kho tổng.',
       };
     }
     return {
-      title: 'Central Warehouse Inventory',
-      sub: 'FEFO batch tracking, shelf/bin location assignment, purchase history, and stock adjustments.',
+      title: 'Quản lý tồn kho Kho Tổng',
+      sub: 'Theo dõi lô thuốc theo FEFO, định vị ô kệ, lịch sử nhập hàng và điều chỉnh tồn kho.',
     };
   };
 
@@ -162,7 +188,7 @@ export default function WarehouseInventoryPage({
           <button
             key={tab.key}
             className={`pms-tab ${activeTab === tab.key ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => handleTabChange(tab.key)}
           >
             {tab.icon}
             {tab.label}
@@ -200,7 +226,7 @@ export default function WarehouseInventoryPage({
               <input
                 className="pms-input"
                 type="text"
-                placeholder="Search by receipt code or notes…"
+                placeholder="Tìm theo mã phiếu nhập hoặc ghi chú…"
                 value={histSearch}
                 onChange={(e) => setHistSearch(e.target.value)}
               />
@@ -214,11 +240,11 @@ export default function WarehouseInventoryPage({
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
-              New Purchase Receipt
+              Tạo phiếu nhập mua mới
             </button>
 
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              <strong style={{ color: 'var(--text-primary)' }}>{histTotal}</strong> receipts
+              <strong style={{ color: 'var(--text-primary)' }}>{histTotal}</strong> phiếu nhập
             </span>
           </div>
           <WarehousePurchaseHistoryTable
@@ -236,9 +262,9 @@ export default function WarehouseInventoryPage({
       {activeTab === 'adjustments' && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Inventory Adjustment Log</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Nhật ký phiếu điều chỉnh tồn kho</div>
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              <strong style={{ color: 'var(--text-primary)' }}>{adjTotal}</strong> records
+              <strong style={{ color: 'var(--text-primary)' }}>{adjTotal}</strong> bản ghi
             </span>
           </div>
           <WarehouseAdjustmentListTable

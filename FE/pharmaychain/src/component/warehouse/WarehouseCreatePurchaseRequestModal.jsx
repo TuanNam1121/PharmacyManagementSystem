@@ -45,23 +45,23 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
     setFormError(null);
 
     if (!reason || !reason.trim()) {
-      setFormError('Please enter a business justification/reason for the purchase request');
+      setFormError('Vui lòng nhập lý do / giải trình nhu cầu mua hàng');
       return;
     }
 
     if (items.length === 0) {
-      setFormError('Please add at least one medicine item');
+      setFormError('Vui lòng thêm ít nhất một mặt hàng thuốc');
       return;
     }
 
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       if (!it.productId) {
-        setFormError(`Row #${i + 1}: Please select a medicine`);
+        setFormError(`Dòng #${i + 1}: Vui lòng chọn thuốc`);
         return;
       }
       if (Number(it.requestedQuantity) <= 0) {
-        setFormError(`Row #${i + 1}: Requested quantity must be greater than 0`);
+        setFormError(`Dòng #${i + 1}: Số lượng yêu cầu phải lớn hơn 0`);
         return;
       }
     }
@@ -83,10 +83,10 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
       <div className="pms-modal pms-modal-lg">
         <div className="pms-modal-header">
           <div>
-            <div className="pms-modal-title">New Purchase Request</div>
-            <div className="pms-modal-sub">Submit inventory replenishment request to procurement department</div>
+            <div className="pms-modal-title">Tạo Phiếu Yêu Cầu Mua Hàng Mới</div>
+            <div className="pms-modal-sub">Gửi đề xuất bổ sung hàng hóa tồn kho tới phòng Mua hàng / Cung ứng</div>
           </div>
-          <button className="pms-modal-close" onClick={onHide}>
+          <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -106,12 +106,12 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
 
             <div className="pms-form-group" style={{ marginBottom: 20 }}>
               <label className="pms-form-label">
-                Business Justification / Reason <span className="pms-required">*</span>
+                Lý Do / Giải Trình Nhu Cầu Mua Hàng <span className="pms-required">*</span>
               </label>
               <textarea
                 className="pms-input"
                 rows={2}
-                placeholder="e.g. Low stock alert for chronic disease medicines, safety stock replenishment..."
+                placeholder="VD: Cảnh báo tồn kho dưới ngưỡng an toàn, chuẩn bị nguồn hàng cho mùa dịch..."
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 required
@@ -120,7 +120,7 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-                Requested Medicines ({items.length})
+                Danh Sách Thuốc Cần Mua ({items.length})
               </div>
               <button
                 type="button"
@@ -131,7 +131,7 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
-                Add Medicine
+                Thêm Dược Phẩm
               </button>
             </div>
 
@@ -141,9 +141,9 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
                   <thead>
                     <tr>
                       <th style={{ width: 40 }}>#</th>
-                      <th>Medicine / Product *</th>
-                      <th style={{ width: 140 }} className="text-right">Req. Quantity *</th>
-                      <th>Note</th>
+                      <th>Tên Thuốc / Sản Phẩm *</th>
+                      <th style={{ width: 140 }} className="text-right">SL Yêu Cầu *</th>
+                      <th>Ghi Chú</th>
                       <th style={{ width: 40 }}></th>
                     </tr>
                   </thead>
@@ -159,7 +159,7 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
                             onChange={(e) => handleItemChange(idx, 'productId', e.target.value)}
                             required
                           >
-                            <option value="">— Select Medicine —</option>
+                            <option value="">— Chọn Dược Phẩm —</option>
                             {products.map((p) => (
                               <option key={p.id} value={p.id}>
                                 {p.name} ({p.barcode || p.unit})
@@ -183,7 +183,7 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
                             type="text"
                             className="pms-input"
                             style={{ fontSize: 12, padding: '4px 8px' }}
-                            placeholder="Optional notes..."
+                            placeholder="Ghi chú thêm..."
                             value={it.note}
                             onChange={(e) => handleItemChange(idx, 'note', e.target.value)}
                           />
@@ -195,7 +195,7 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
                               className="btn-pms btn-pms-sm"
                               style={{ padding: '3px 6px', color: 'var(--color-danger)' }}
                               onClick={() => removeItemRow(idx)}
-                              title="Remove item"
+                              title="Xóa mặt hàng này"
                             >
                               ✕
                             </button>
@@ -211,10 +211,10 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
 
           <div className="pms-modal-footer">
             <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={loading}>
-              Cancel
+              Hủy
             </button>
             <button type="submit" className="btn-pms btn-pms-primary" disabled={loading}>
-              {loading ? 'Submitting…' : 'Submit Purchase Request'}
+              {loading ? 'Đang gửi…' : 'Gửi Phiếu Yêu Cầu Mua Hàng'}
             </button>
           </div>
         </form>

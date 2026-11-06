@@ -4,9 +4,9 @@ import lombok.Getter;
 
 @Getter
 public enum InventoryAdjustmentStatus {
-    PENDING((short) 0, "Pending Review"),
-    APPROVED((short) 1, "Approved"),
-    REJECTED((short) 2, "Rejected");
+    PENDING((short) 0, "Chờ xét duyệt"),
+    APPROVED((short) 1, "Đã duyệt"),
+    REJECTED((short) 2, "Đã từ chối");
 
     private final Short code;
     private final String label;

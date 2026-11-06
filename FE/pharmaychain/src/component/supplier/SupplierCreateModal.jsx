@@ -54,14 +54,14 @@ export default function SupplierCreateModal({
 
   const validate = () => {
     const e = {};
-    if (!isEdit && !form.code.trim()) e.code = 'Supplier code is required';
-    if (!form.name.trim()) e.name = 'Supplier name is required';
-    if (!form.phone.trim()) e.phone = 'Phone number is required';
+    if (!isEdit && !form.code.trim()) e.code = 'Mã nhà cung cấp là bắt buộc';
+    if (!form.name.trim()) e.name = 'Tên nhà cung cấp là bắt buộc';
+    if (!form.phone.trim()) e.phone = 'Số điện thoại là bắt buộc';
     if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      e.email = 'Please provide a valid email address';
+      e.email = 'Vui lòng nhập địa chỉ email hợp lệ';
     }
     if (form.taxCode.trim() && !/^[0-9]{10}(-[0-9]{3})?$/.test(form.taxCode.trim())) {
-      e.taxCode = 'Tax ID must be 10 or 13 digits (e.g. 0101234567)';
+      e.taxCode = 'Mã số thuế phải gồm 10 hoặc 13 chữ số (ví dụ: 0101234567)';
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -103,7 +103,7 @@ export default function SupplierCreateModal({
       if (onSuccess) await onSuccess();
       onHide();
     } catch (err) {
-      setServerError(err?.message || (isEdit ? 'Failed to update supplier' : 'Failed to create supplier'));
+      setServerError(err?.message || (isEdit ? 'Không thể cập nhật nhà cung cấp' : 'Không thể tạo nhà cung cấp'));
     } finally {
       setSubmitting(false);
     }
@@ -116,15 +116,15 @@ export default function SupplierCreateModal({
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">
-              {isEdit ? 'Edit Supplier Partner' : 'Register New Supplier'}
+              {isEdit ? 'Chỉnh Sửa Thông Tin Nhà Cung Cấp' : 'Đăng Ký Nhà Cung Cấp Mới'}
             </div>
             <div className="pms-modal-sub">
               {isEdit
-                ? `Update procurement and legal credentials for ${supplier?.name || supplier?.code}`
-                : 'Add a new pharmaceutical or medical equipment vendor to the network'}
+                ? `Cập nhật thông tin đối tác và pháp lý cho ${supplier?.name || supplier?.code}`
+                : 'Thêm nhà cung ứng dược phẩm hoặc thiết bị y tế mới vào mạng lưới hệ thống'}
             </div>
           </div>
-          <button className="pms-modal-close" onClick={handleClose} aria-label="Close">
+          <button className="pms-modal-close" onClick={handleClose} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -151,17 +151,17 @@ export default function SupplierCreateModal({
             {/* Section 1: Identification */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
-                1. Supplier Identification & Tax
+                1. Thông Tin Định Danh & Thuế
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 14 }}>
                 <div className="pms-form-group">
-                  <label className="pms-label">Supplier Code *</label>
+                  <label className="pms-label">Mã Nhà Cung Cấp *</label>
                   <input
                     type="text"
                     className="pms-input pms-input-bare"
                     value={form.code}
                     onChange={(e) => setField('code', e.target.value)}
-                    placeholder="e.g. NCC001"
+                    placeholder="VD: NCC001"
                     disabled={isEdit}
                     required
                   />
@@ -169,13 +169,13 @@ export default function SupplierCreateModal({
                 </div>
 
                 <div className="pms-form-group">
-                  <label className="pms-label">Company / Supplier Name *</label>
+                  <label className="pms-label">Tên Doanh Nghiệp / Nhà Cung Cấp *</label>
                   <input
                     type="text"
                     className="pms-input pms-input-bare"
                     value={form.name}
                     onChange={(e) => setField('name', e.target.value)}
-                    placeholder="e.g. Pharma Global Corporation"
+                    placeholder="VD: Công ty Cổ phần Dược phẩm Hậu Giang"
                     required
                   />
                   {errors.name && <div style={{ color: 'var(--status-danger)', fontSize: 11.5, marginTop: 4 }}>{errors.name}</div>}
@@ -184,25 +184,25 @@ export default function SupplierCreateModal({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 12 }}>
                 <div className="pms-form-group">
-                  <label className="pms-label">Tax Code (MST)</label>
+                  <label className="pms-label">Mã Số Thuế (MST)</label>
                   <input
                     type="text"
                     className="pms-input pms-input-bare"
                     value={form.taxCode}
                     onChange={(e) => setField('taxCode', e.target.value)}
-                    placeholder="10 or 13 digits (e.g. 0101234567)"
+                    placeholder="10 hoặc 13 chữ số (VD: 0101234567)"
                   />
                   {errors.taxCode && <div style={{ color: 'var(--status-danger)', fontSize: 11.5, marginTop: 4 }}>{errors.taxCode}</div>}
                 </div>
 
                 <div className="pms-form-group">
-                  <label className="pms-label">Contact Person</label>
+                  <label className="pms-label">Người Đại Diện / Liên Hệ</label>
                   <input
                     type="text"
                     className="pms-input pms-input-bare"
                     value={form.contactPerson}
                     onChange={(e) => setField('contactPerson', e.target.value)}
-                    placeholder="e.g. David Nguyen"
+                    placeholder="VD: Nguyễn Văn An"
                   />
                 </div>
               </div>
@@ -211,55 +211,55 @@ export default function SupplierCreateModal({
             {/* Section 2: Contact Information */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
-                2. Contact & Headquarters Address
+                2. Thông Tin Liên Hệ & Địa Chỉ Trụ Sở
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 12 }}>
                 <div className="pms-form-group">
-                  <label className="pms-label">Phone Number *</label>
+                  <label className="pms-label">Số Điện Thoại *</label>
                   <input
                     type="text"
                     className="pms-input pms-input-bare"
                     value={form.phone}
                     onChange={(e) => setField('phone', e.target.value)}
-                    placeholder="e.g. +84 901 234 567"
+                    placeholder="VD: 024 3822 1234"
                     required
                   />
                   {errors.phone && <div style={{ color: 'var(--status-danger)', fontSize: 11.5, marginTop: 4 }}>{errors.phone}</div>}
                 </div>
 
                 <div className="pms-form-group">
-                  <label className="pms-label">Email Address</label>
+                  <label className="pms-label">Địa Chỉ Email</label>
                   <input
                     type="email"
                     className="pms-input pms-input-bare"
                     value={form.email}
                     onChange={(e) => setField('email', e.target.value)}
-                    placeholder="e.g. orders@supplier.com"
+                    placeholder="VD: orders@duocpham.vn"
                   />
                   {errors.email && <div style={{ color: 'var(--status-danger)', fontSize: 11.5, marginTop: 4 }}>{errors.email}</div>}
                 </div>
               </div>
 
               <div className="pms-form-group" style={{ marginBottom: 12 }}>
-                <label className="pms-label">Business Address</label>
+                <label className="pms-label">Địa Chỉ Trụ Sở / Kho Hàng</label>
                 <input
                   type="text"
                   className="pms-input pms-input-bare"
                   value={form.address}
                   onChange={(e) => setField('address', e.target.value)}
-                  placeholder="e.g. 123 Nguyen Trai, District 1, Ho Chi Minh City"
+                  placeholder="VD: Số 298 Kim Mã, Ba Đình, Hà Nội"
                 />
               </div>
 
               <div className="pms-form-group">
-                <label className="pms-label">Internal Procurement Notes</label>
+                <label className="pms-label">Ghi Chú Mua Hàng & Công Nợ</label>
                 <textarea
                   className="pms-input pms-input-bare"
                   rows={3}
                   value={form.note}
                   onChange={(e) => setField('note', e.target.value)}
-                  placeholder="Special pricing terms, payment terms (e.g. Net 30), delivery lead times…"
+                  placeholder="Điều khoản thanh toán, chiết khấu thương mại, thời gian giao hàng cam kết…"
                   style={{ resize: 'vertical' }}
                 />
               </div>
@@ -269,10 +269,10 @@ export default function SupplierCreateModal({
           {/* Modal Footer */}
           <div className="pms-modal-footer">
             <button type="button" className="btn-pms btn-pms-secondary" onClick={handleClose} disabled={submitting}>
-              Cancel
+              Hủy
             </button>
             <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting}>
-              {submitting ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Supplier'}
+              {submitting ? 'Đang lưu…' : isEdit ? 'Lưu Thay Đổi' : 'Thêm Nhà Cung Cấp'}
             </button>
           </div>
         </form>

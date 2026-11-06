@@ -37,13 +37,13 @@ export default function RfqDetailModal({
   const getStatusBadge = (status) => {
     switch (status) {
       case "SENT":
-        return <span className="pms-badge pms-badge-info">Sent</span>;
+        return <span className="pms-badge pms-badge-info">Đã gửi</span>;
       case "RESPONDED":
-        return <span className="pms-badge pms-badge-success">Responded</span>;
+        return <span className="pms-badge pms-badge-success">Đã phản hồi</span>;
       case "EXPIRED":
-        return <span className="pms-badge pms-badge-warning">Expired</span>;
+        return <span className="pms-badge pms-badge-warning">Đã hết hạn</span>;
       default:
-        return <span className="pms-badge">Unknown</span>;
+        return <span className="pms-badge">Không xác định</span>;
     }
   };
 
@@ -63,16 +63,15 @@ export default function RfqDetailModal({
       <div className="pms-modal pms-modal-lg">
         <div className="pms-modal-header">
           <div>
-            <div className="pms-modal-title">RFQ Details</div>
+            <div className="pms-modal-title">Chi Tiết Yêu Cầu Báo Giá (RFQ)</div>
             <div className="pms-modal-sub">
-              View quotation summary, supplier information, and purchase request
-              details
+              Xem thông tin báo giá, nhà cung cấp và danh mục dược phẩm đề xuất mua
             </div>
           </div>
           <button
             className="pms-modal-close"
             onClick={onHide}
-            aria-label="Close"
+            aria-label="Đóng"
           >
             <svg
               width="16"
@@ -91,7 +90,7 @@ export default function RfqDetailModal({
         {loading && (
           <div className="pms-spinner-wrap" style={{ padding: "40px 0" }}>
             <div className="pms-spinner" />
-            <span className="pms-spinner-text">Loading RFQ details…</span>
+            <span className="pms-spinner-text">Đang tải chi tiết RFQ…</span>
           </div>
         )}
 
@@ -102,25 +101,25 @@ export default function RfqDetailModal({
               <div style={{ display: "flex", gap: 32, marginBottom: 20 }}>
                 {/* Cột trái: RFQ */}
                 <div style={{ flex: 1 }}>
-                  <h4 style={sectionTitleStyle}>RFQ Information</h4>
+                  <h4 style={sectionTitleStyle}>Thông Tin RFQ</h4>
                   <div className="pms-info-row">
-                    <div className="pms-info-label">RFQ Code:</div>
+                    <div className="pms-info-label">Mã RFQ:</div>
                     <div className="pms-info-value">{detail.rfqCode}</div>
                   </div>
                   <div className="pms-info-row">
-                    <div className="pms-info-label">Status:</div>
+                    <div className="pms-info-label">Trạng Thái:</div>
                     <div className="pms-info-value">
                       {getStatusBadge(detail.status)}
                     </div>
                   </div>
                   <div className="pms-info-row">
-                    <div className="pms-info-label">Sent Date:</div>
+                    <div className="pms-info-label">Ngày Gửi:</div>
                     <div className="pms-info-value">
                       {formatDate(detail?.purchaseProposal?.createdAt)}
                     </div>
                   </div>
                   <div className="pms-info-row">
-                    <div className="pms-info-label">Deadline:</div>
+                    <div className="pms-info-label">Hạn Chót Báo Giá:</div>
                     <div className="pms-info-value">
                       {formatDate(detail?.quotation?.validUntil)}
                     </div>
@@ -129,15 +128,15 @@ export default function RfqDetailModal({
 
                 {/* Cột phải: Supplier */}
                 <div style={{ flex: 1 }}>
-                  <h4 style={sectionTitleStyle}>Supplier Information</h4>
+                  <h4 style={sectionTitleStyle}>Nhà Cung Cấp</h4>
                   <div className="pms-info-row">
-                    <div className="pms-info-label">Supplier:</div>
+                    <div className="pms-info-label">Tên Nhà Cung Cấp:</div>
                     <div className="pms-info-value">
                       {detail.supplier?.name || "-"}
                     </div>
                   </div>
                   <div className="pms-info-row">
-                    <div className="pms-info-label">Contact:</div>
+                    <div className="pms-info-label">Người Liên Hệ:</div>
                     <div className="pms-info-value">
                       {detail.supplier?.contactPerson || "-"}
                     </div>
@@ -152,7 +151,7 @@ export default function RfqDetailModal({
                   )}
                   {detail.supplier?.phone && (
                     <div className="pms-info-row">
-                      <div className="pms-info-label">Phone:</div>
+                      <div className="pms-info-label">Điện Thoại:</div>
                       <div className="pms-info-value">
                         {detail.supplier.phone}
                       </div>
@@ -169,15 +168,15 @@ export default function RfqDetailModal({
                   borderTop: "1px solid var(--border-color, #e5e7eb)",
                 }}
               >
-                <h4 style={sectionTitleStyle}>Purchase Proposal</h4>
+                <h4 style={sectionTitleStyle}>Đề Xuất Mua Hàng Gốc</h4>
                 <div className="pms-info-row">
-                  <div className="pms-info-label">Proposal Code:</div>
+                  <div className="pms-info-label">Mã Đề Xuất:</div>
                   <div className="pms-info-value">
                     {detail.purchaseProposal?.code || "-"}
                   </div>
                 </div>
                 <div className="pms-info-row">
-                  <div className="pms-info-label">Purchase Requests:</div>
+                  <div className="pms-info-label">Phiếu Yêu Cầu Mua Hàng:</div>
                   <div className="pms-info-value" style={{ flex: 1 }}>
                     {detail.purchaseProposal?.purchaseRequests && detail.purchaseProposal.purchaseRequests.length > 0
                       ? detail.purchaseProposal.purchaseRequests.map((r) => r.code).join(", ")
@@ -198,17 +197,17 @@ export default function RfqDetailModal({
                     }}
                   >
                     <h4 style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                      Quotation Summary:
+                      Tổng Quan Báo Giá:
                     </h4>
                     <div style={{ display: "flex", gap: 16 }}>
                       <div className="pms-info-row">
-                        <div className="pms-info-label">Quotation Date:</div>
+                        <div className="pms-info-label">Ngày Báo Giá:</div>
                         <div className="pms-info-value">
                           {formatDate(detail.quotation.quotationDate)}
                         </div>
                       </div>
                       <div className="pms-info-row">
-                        <div className="pms-info-label">Total:</div>
+                        <div className="pms-info-label">Tổng Giá Trị:</div>
                         <div
                           className="pms-info-value"
                           style={{
@@ -236,13 +235,13 @@ export default function RfqDetailModal({
                       }}
                     >
                       <div>
-                        <strong>{detail.items?.length || 0} item(s)</strong>
+                        <strong>{detail.items?.length || 0} mặt hàng</strong>
                       </div>
                       <button
                         className="btn-pms btn-pms-ghost"
                         onClick={() => setShowItems((v) => !v)}
                       >
-                        {showItems ? "Hide Items" : "View Full Items"}
+                        {showItems ? "Thu gọn danh sách" : "Xem chi tiết từng mặt hàng"}
                       </button>
                     </div>
 
@@ -252,12 +251,12 @@ export default function RfqDetailModal({
                           <thead>
                             <tr>
                               <th style={{ width: 40 }}>#</th>
-                              <th>Medicine / Product</th>
-                              <th>Code</th>
-                              <th>Unit</th>
-                              <th className="text-right">Requested Qty</th>
-                              <th className="text-right">Unit Price</th>
-                              <th className="text-right">Subtotal</th>
+                              <th>Tên Thuốc / Sản Phẩm</th>
+                              <th>Mã Thuốc</th>
+                              <th>Đơn Vị Tính</th>
+                              <th className="text-right">Số Lượng Yêu Cầu</th>
+                              <th className="text-right">Đơn Giá</th>
+                              <th className="text-right">Thành Tiền</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -289,7 +288,7 @@ export default function RfqDetailModal({
                                   colSpan={7}
                                   style={{ textAlign: "center", padding: 24, color: "var(--text-muted)" }}
                                 >
-                                  No items in this quotation.
+                                  Không có mặt hàng nào trong báo giá này.
                                 </td>
                               </tr>
                             )}
@@ -316,7 +315,7 @@ export default function RfqDetailModal({
                       className="btn-pms btn-pms-primary"
                       onClick={onCompare}
                     >
-                      Compare with other RFQs
+                      So sánh với các báo giá khác
                     </button>
                   )}
                 </div>
@@ -325,7 +324,7 @@ export default function RfqDetailModal({
                     className="btn-pms btn-pms-secondary"
                     onClick={onHide}
                   >
-                    Close
+                    Đóng
                   </button>
                 </div>
               </div>

@@ -16,7 +16,7 @@ export default function ApproveRequestModal({ show, audit, onHide, onConfirm, su
             });
             onHide();
         } catch (err) {
-            setError(err?.message || 'Failed to review request.');
+            setError(err?.message || 'Không thể xét duyệt yêu cầu kiểm kê.');
         }
     };
 
@@ -25,9 +25,9 @@ export default function ApproveRequestModal({ show, audit, onHide, onConfirm, su
             <div className="pms-modal" style={{ maxWidth: 500 }}>
                 <div className="pms-modal-header">
                     <div>
-                        <h3 className="pms-modal-title">Review Audit Request</h3>
+                        <h3 className="pms-modal-title">Xét Duyệt Yêu Cầu Kiểm Kê Kho</h3>
                         <p className="pms-modal-sub" style={{ fontSize: 12, margin: 0, color: 'var(--text-secondary)' }}>
-                            Role: <strong>Store Manager</strong>
+                            Vai trò: <strong>Quản lý Cửa Hàng (Store Manager)</strong>
                         </p>
                     </div>
                     <button type="button" className="pms-modal-close" onClick={onHide} disabled={submitting}>
@@ -45,18 +45,18 @@ export default function ApproveRequestModal({ show, audit, onHide, onConfirm, su
                     )}
 
                     <div style={{ background: 'var(--surface-sunken)', padding: 14, borderRadius: 8, marginBottom: 16 }}>
-                        <div style={{ marginBottom: 6 }}><strong>Audit Code:</strong> {audit.code}</div>
-                        <div style={{ marginBottom: 6 }}><strong>Requested By:</strong> {audit.requestedByUsername || 'Pharmacist'}</div>
-                        <div style={{ marginBottom: 6 }}><strong>Audit Date:</strong> {audit.auditDate || '—'}</div>
-                        <div><strong>Reason / Note:</strong> {audit.reviewNote || 'Standard periodic inventory count'}</div>
+                        <div style={{ marginBottom: 6 }}><strong>Mã kiểm kê:</strong> {audit.code}</div>
+                        <div style={{ marginBottom: 6 }}><strong>Người đề xuất:</strong> {audit.requestedByUsername || 'Dược sĩ phụ trách'}</div>
+                        <div style={{ marginBottom: 6 }}><strong>Ngày kiểm kê:</strong> {audit.auditDate || '—'}</div>
+                        <div><strong>Lý do / Ghi chú:</strong> {audit.reviewNote || 'Kiểm kê kho định kỳ tiêu chuẩn'}</div>
                     </div>
 
                     <div className="pms-form-group">
-                        <label className="pms-label" style={{ fontWeight: 600 }}>Manager Instructions / Note (Optional)</label>
+                        <label className="pms-label" style={{ fontWeight: 600 }}>Ý kiến chỉ đạo / Ghi chú của Quản lý (Tùy chọn)</label>
                         <textarea
                             rows={3}
                             className="pms-input"
-                            placeholder="Enter notes or specific instructions for counting team..."
+                            placeholder="Nhập ghi chú hoặc yêu cầu chỉ đạo cho tổ kiểm đếm..."
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
                             disabled={submitting}
@@ -67,7 +67,7 @@ export default function ApproveRequestModal({ show, audit, onHide, onConfirm, su
 
                 <div className="pms-modal-footer">
                     <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-                        Cancel
+                        Hủy bỏ
                     </button>
                     <button
                         type="button"
@@ -75,7 +75,7 @@ export default function ApproveRequestModal({ show, audit, onHide, onConfirm, su
                         onClick={() => handleAction(4)}
                         disabled={submitting}
                     >
-                        Reject Request
+                        Từ Chối Yêu Cầu
                     </button>
                     <button
                         type="button"
@@ -83,7 +83,7 @@ export default function ApproveRequestModal({ show, audit, onHide, onConfirm, su
                         onClick={() => handleAction(1)}
                         disabled={submitting}
                     >
-                        {submitting ? 'Approving...' : 'Approve & Permit Counting'}
+                        {submitting ? 'Đang duyệt...' : 'Duyệt & Mở Đợt Kiểm Đếm'}
                     </button>
                 </div>
             </div>

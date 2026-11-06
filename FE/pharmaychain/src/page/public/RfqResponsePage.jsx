@@ -23,7 +23,7 @@ export default function RfqResponsePage() {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="pms-spinner-wrap">
           <div className="pms-spinner" />
-          <span className="pms-spinner-text">Loading RFQ details...</span>
+          <span className="pms-spinner-text">Đang tải thông tin yêu cầu báo giá...</span>
         </div>
       </div>
     );
@@ -40,20 +40,21 @@ export default function RfqResponsePage() {
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             <div>
-              <strong>Unable to load RFQ</strong>
+              <strong>Không thể tải yêu cầu báo giá</strong>
               <div style={{ marginTop: 8 }}>{error}</div>
             </div>
           </div>
           <div style={{ textAlign: 'center', marginTop: 16 }}>
             <p style={{ color: 'var(--text-secondary)' }}>
-              Please contact the purchasing department for a valid link.
+              Vui lòng liên hệ bộ phận mua hàng PharmaChain để nhận liên kết hợp lệ.
             </p>
           </div>
         </div>
       </div>
     );
   }
-if (success) {
+
+  if (success) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="pms-card" style={{ maxWidth: 500, textAlign: 'center' }}>
@@ -62,12 +63,12 @@ if (success) {
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <h2 style={{ marginBottom: 8 }}>Quotation Submitted Successfully!</h2>
+          <h2 style={{ marginBottom: 8 }}>Gửi Báo Giá Thành Công!</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>
-            Thank you for submitting your quotation. Our purchasing team will review it and contact you soon.
+            Cảm ơn quý nhà cung ứng đã gửi báo giá. Bộ phận thu mua PharmaChain sẽ đối chiếu và liên hệ sớm nhất.
           </p>
           <div className="pms-form-hint">
-            RFQ Code: <strong>{rfqData?.rfqCode}</strong>
+            Mã yêu cầu RFQ: <strong>{rfqData?.rfqCode}</strong>
           </div>
         </div>
       </div>
@@ -81,17 +82,17 @@ if (success) {
         <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: 20, marginBottom: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <h1 style={{ marginBottom: 8 }}>{rfqData?.subject || 'Request for Quotation'}</h1>
+              <h1 style={{ marginBottom: 8 }}>{rfqData?.subject || 'Yêu Cầu Báo Giá Cung Ứng Dược Phẩm'}</h1>
               <div style={{ color: 'var(--text-secondary)' }}>
-                RFQ Code: <strong>{rfqData?.rfqCode}</strong> • 
-                Purchase Proposal: <strong>{rfqData?.purchaseProposalCode}</strong> • 
-                Expires: <strong>{formatDate(rfqData?.expiredAt)}</strong>
+                Mã RFQ: <strong>{rfqData?.rfqCode}</strong> • 
+                Đề xuất mua: <strong>{rfqData?.purchaseProposalCode}</strong> • 
+                Hạn chót báo giá: <strong>{formatDate(rfqData?.expiredAt)}</strong>
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontWeight: 600 }}>{rfqData?.supplierName}</div>
               <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                {rfqData?.contactPerson && <div>Contact: {rfqData.contactPerson}</div>}
+                {rfqData?.contactPerson && <div>Người liên hệ: {rfqData.contactPerson}</div>}
               </div>
             </div>
           </div>
@@ -102,7 +103,8 @@ if (success) {
             </div>
           )}
         </div>
-{error && (
+
+        {error && (
           <div className="pms-alert pms-alert-danger" style={{ marginBottom: 20 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
@@ -119,12 +121,12 @@ if (success) {
             <table className="pms-table">
               <thead>
                 <tr>
-                  <th>Product</th>
-                  <th>Code</th>
-                  <th>Unit</th>
-                  <th>Requested Quantity</th>
-                  <th style={{ width: 150 }}>Unit Price *</th>
-                  <th>Note</th>
+                  <th>Tên Thuốc / Dược Phẩm</th>
+                  <th>Mã Thuốc</th>
+                  <th>Đơn Vị</th>
+                  <th style={{ textAlign: 'center' }}>Số Lượng Yêu Cầu</th>
+                  <th style={{ width: 170 }}>Đơn Giá Báo (₫) *</th>
+                  <th>Ghi Chú NCC</th>
                 </tr>
               </thead>
               <tbody>
@@ -143,14 +145,14 @@ if (success) {
                     <td style={{ textAlign: 'center' }}>{item.requestedQuantity}</td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <span style={{ marginRight: 4 }}>VND</span>
+                        <span style={{ marginRight: 6, fontSize: 12, color: 'var(--text-muted)' }}>₫</span>
                         <input
                           type="text"
                           className="pms-form-input"
                           value={item.unitPrice}
                           onChange={(e) => handlePriceChange(index, e.target.value)}
                           style={{ textAlign: 'right' }}
-                          placeholder="0.00"
+                          placeholder="0"
                           required
                         />
                       </div>
@@ -161,7 +163,7 @@ if (success) {
                         className="pms-form-input"
                         value={item.supplierNote}
                         onChange={(e) => handleNoteChange(index, e.target.value)}
-                        placeholder="Optional note"
+                        placeholder="Ghi chú thêm nếu có..."
                       />
                     </td>
                   </tr>
@@ -172,7 +174,7 @@ if (success) {
 
           <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-color)' }}>
             <div className="pms-form-hint" style={{ marginBottom: 16 }}>
-              * Please enter unit price in VND. All fields are required.
+              * Vui lòng nhập đơn giá báo theo VND cho từng mặt hàng dược phẩm.
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
               <button
@@ -183,9 +185,9 @@ if (success) {
                 {submitting ? (
                   <>
                     <div className="pms-spinner" style={{ width: 14, height: 14, marginRight: 8 }} />
-                    Submitting...
+                    Đang gửi báo giá...
                   </>
-                ) : 'Submit Quotation'}
+                ) : 'Xác Nhận Gửi Báo Giá'}
               </button>
             </div>
           </div>

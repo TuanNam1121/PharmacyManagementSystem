@@ -17,10 +17,10 @@ export default function SupplierDetailModal({
         {/* Header */}
         <div className="pms-modal-header">
           <div>
-            <div className="pms-modal-title">Supplier Partner Profile</div>
-            <div className="pms-modal-sub">View business details, tax records, and contact credentials</div>
+            <div className="pms-modal-title">Hồ Sơ Chi Tiết Nhà Cung Cấp</div>
+            <div className="pms-modal-sub">Xem thông tin doanh nghiệp, mã số thuế và thông tin liên hệ đối tác</div>
           </div>
-          <button className="pms-modal-close" onClick={onHide} aria-label="Close">
+          <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -32,11 +32,11 @@ export default function SupplierDetailModal({
           {loading ? (
             <div className="pms-spinner-wrap" style={{ padding: '40px 0' }}>
               <div className="pms-spinner" />
-              <span className="pms-spinner-text">Loading supplier details…</span>
+              <span className="pms-spinner-text">Đang tải chi tiết nhà cung cấp…</span>
             </div>
           ) : !detail ? (
             <div className="pms-empty">
-              <div className="pms-empty-title">Supplier information not available</div>
+              <div className="pms-empty-title">Không tìm thấy thông tin nhà cung cấp</div>
             </div>
           ) : (
             <div>
@@ -82,7 +82,7 @@ export default function SupplierDetailModal({
                         return (
                           <span className="pms-badge pms-badge-success">
                             <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                            Active
+                            Hoạt động
                           </span>
                         );
                       }
@@ -90,21 +90,21 @@ export default function SupplierDetailModal({
                         return (
                           <span className="pms-badge pms-badge-warning">
                             <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                            Pending
+                            Chờ duyệt
                           </span>
                         );
                       }
                       return (
                         <span className="pms-badge pms-badge-danger">
                           <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                          Inactive
+                          Ngừng hoạt động
                         </span>
                       );
                     })()}
                   </div>
                   <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 4, display: 'flex', gap: 10 }}>
-                    <span>Supplier Code: <strong className="mono" style={{ color: 'var(--text-primary)' }}>{detail.code}</strong></span>
-                    {detail.taxCode && <span>Tax ID: <strong className="mono" style={{ color: 'var(--text-primary)' }}>{detail.taxCode}</strong></span>}
+                    <span>Mã NCC: <strong className="mono" style={{ color: 'var(--text-primary)' }}>{detail.code}</strong></span>
+                    {detail.taxCode && <span>MST: <strong className="mono" style={{ color: 'var(--text-primary)' }}>{detail.taxCode}</strong></span>}
                   </div>
                 </div>
               </div>
@@ -120,19 +120,19 @@ export default function SupplierDetailModal({
                   }}
                 >
                   <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
-                    Contact Details
+                    Thông Tin Liên Hệ
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Representative:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Đại diện / Liên hệ:</span>{' '}
                       <strong style={{ color: 'var(--text-primary)' }}>{detail.contactPerson || '—'}</strong>
                     </div>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Phone Number:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Số điện thoại:</span>{' '}
                       <strong style={{ color: 'var(--text-primary)' }}>{detail.phone || '—'}</strong>
                     </div>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Email Address:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Địa chỉ email:</span>{' '}
                       <strong style={{ color: 'var(--text-primary)' }}>{detail.email || '—'}</strong>
                     </div>
                   </div>
@@ -147,19 +147,19 @@ export default function SupplierDetailModal({
                   }}
                 >
                   <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
-                    Business & Compliance
+                    Thông Tin Pháp Lý
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Tax Code:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Mã số thuế:</span>{' '}
                       <span className="mono" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{detail.taxCode || '—'}</span>
                     </div>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Registered On:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Ngày tạo hồ sơ:</span>{' '}
                       <strong style={{ color: 'var(--text-primary)' }}>{formatDate(detail.createdAt)}</strong>
                     </div>
                     <div>
-                      <span style={{ color: 'var(--text-muted)' }}>Last Updated:</span>{' '}
+                      <span style={{ color: 'var(--text-muted)' }}>Cập nhật lần cuối:</span>{' '}
                       <strong style={{ color: 'var(--text-primary)' }}>{formatDate(detail.updatedAt) || '—'}</strong>
                     </div>
                   </div>
@@ -179,17 +179,17 @@ export default function SupplierDetailModal({
               >
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
-                    Business Address
+                    Địa Chỉ Trụ Sở / Kho Hàng
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--text-primary)' }}>
-                    {detail.address || 'No address registered.'}
+                    {detail.address || 'Chưa cập nhật địa chỉ trụ sở.'}
                   </div>
                 </div>
 
                 {detail.note && (
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
-                      Internal Procurement Notes
+                      Ghi Chú Mua Hàng Nội Bộ
                     </div>
                     <div style={{ fontSize: 13, color: 'var(--text-secondary)', background: 'var(--bg-canvas)', padding: '10px 12px', borderRadius: 6 }}>
                       {detail.note}
@@ -200,7 +200,7 @@ export default function SupplierDetailModal({
                 {detail.deleteReason && (
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-danger)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
-                      Deactivation Reason
+                      Lý Do Ngừng Hoạt Động
                     </div>
                     <div style={{ fontSize: 13, color: 'var(--text-secondary)', background: '#fdf3f3', border: '1px solid #ffe5e5', padding: '10px 12px', borderRadius: 6 }}>
                       {detail.deleteReason}
@@ -214,7 +214,7 @@ export default function SupplierDetailModal({
 
         {/* Footer */}
         <div className="pms-modal-footer">
-          <button className="btn-pms btn-pms-secondary" onClick={onHide}>Close</button>
+          <button className="btn-pms btn-pms-secondary" onClick={onHide}>Đóng</button>
           {detail && onEdit && (
             <button
               className="btn-pms btn-pms-primary"
@@ -227,7 +227,7 @@ export default function SupplierDetailModal({
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
-              Edit Supplier
+              Chỉnh Sửa Nhà Cung Cấp
             </button>
           )}
         </div>

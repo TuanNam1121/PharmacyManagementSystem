@@ -2,12 +2,9 @@ package com.pharmacy.service.impl;
 
 import com.pharmacy.dto.report.ProfitReportRequest;
 import com.pharmacy.dto.report.ProfitReportResponse;
-import com.pharmacy.entity.AuditLog;
-import com.pharmacy.entity.SalesInvoice;
 import com.pharmacy.entity.SalesInvoiceDetail;
 import com.pharmacy.entity.Store;
 import com.pharmacy.entity.enums.SalesInvoiceStatus;
-import com.pharmacy.repository.AuditLogRepository;
 import com.pharmacy.repository.SalesInvoiceDetailRepository;
 import com.pharmacy.repository.StoreRepository;
 import com.pharmacy.service.ProfitExcelExportService;
@@ -71,7 +68,10 @@ public class ProfitReportServiceImpl implements ProfitReportService {
 
             BigDecimal itemRevenue = d.getSubTotal() != null ? d.getSubTotal()
                     : d.getUnitPrice().multiply(BigDecimal.valueOf(d.getQuantity()));
-            BigDecimal itemCost = d.getUnitCost().multiply(BigDecimal.valueOf(d.getQuantity()));
+            BigDecimal unitCost = (d.getUnitCost() != null && d.getUnitCost().compareTo(BigDecimal.ZERO) > 0)
+                    ? d.getUnitCost()
+                    : (d.getProduct() != null && d.getProduct().getCostPrice() != null ? d.getProduct().getCostPrice() : BigDecimal.ZERO);
+            BigDecimal itemCost = unitCost.multiply(BigDecimal.valueOf(d.getQuantity()));
 
             totalRevenue = totalRevenue.add(itemRevenue);
             totalCost = totalCost.add(itemCost);
@@ -99,7 +99,12 @@ public class ProfitReportServiceImpl implements ProfitReportService {
                             : d.getUnitPrice().multiply(BigDecimal.valueOf(d.getQuantity())))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal prodCost = prodDetails.stream()
-                    .map(d -> d.getUnitCost().multiply(BigDecimal.valueOf(d.getQuantity())))
+                    .map(d -> {
+                        BigDecimal uCost = (d.getUnitCost() != null && d.getUnitCost().compareTo(BigDecimal.ZERO) > 0)
+                                ? d.getUnitCost()
+                                : (d.getProduct() != null && d.getProduct().getCostPrice() != null ? d.getProduct().getCostPrice() : BigDecimal.ZERO);
+                        return uCost.multiply(BigDecimal.valueOf(d.getQuantity()));
+                    })
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal prodProfit = prodRev.subtract(prodCost);
             BigDecimal prodMargin = prodRev.compareTo(BigDecimal.ZERO) > 0

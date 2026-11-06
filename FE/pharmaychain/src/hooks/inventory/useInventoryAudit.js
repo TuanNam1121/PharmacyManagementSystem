@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
     getAuditList,
     getAuditDetail,
@@ -9,14 +10,35 @@ import {
 } from '../../api/InventoryAuditAPI';
 
 export const useInventoryAudit = () => {
+    const [searchParams] = useSearchParams();
+    const initialStoreId = searchParams.get('storeId') || localStorage.getItem('pms_selected_store_id') || 3;
+
     // ── List state ──────────────────────────────────────────────────────────────
     const [auditList, setAuditList] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(0);
     const [size] = useState(10);
     const [search, setSearch] = useState('');
+    const [storeId, setStoreId] = useState(initialStoreId);
     const [statusFilter, setStatusFilter] = useState(''); // '' | 0 | 1 | 2 | 3 | 4
     const [listLoading, setListLoading] = useState(false);
+
+    useEffect(() => {
+        const urlStoreId = searchParams.get('storeId');
+        if (urlStoreId && String(urlStoreId) !== String(storeId)) {
+            setStoreId(urlStoreId);
+        }
+    }, [searchParams, storeId]);
+
+    useEffect(() => {
+        const handleStoreChange = (e) => {
+            if (e?.detail?.storeId && String(e.detail.storeId) !== String(storeId)) {
+                setStoreId(e.detail.storeId);
+            }
+        };
+        window.addEventListener('pms:store-changed', handleStoreChange);
+        return () => window.removeEventListener('pms:store-changed', handleStoreChange);
+    }, [storeId]);
 
     // ── Modal states ────────────────────────────────────────────────────────────
     const [selectedAudit, setSelectedAudit] = useState(null);
@@ -38,7 +60,7 @@ export const useInventoryAudit = () => {
         setListLoading(true);
         setError(null);
         try {
-            const data = await getAuditList({ status: statusFilter, search, page, size });
+            const data = await getAuditList({ storeId, status: statusFilter, search, page, size });
             setAuditList(data?.content ?? []);
             setTotal(data?.totalElements ?? 0);
         } catch (e) {
@@ -46,7 +68,7 @@ export const useInventoryAudit = () => {
         } finally {
             setListLoading(false);
         }
-    }, [statusFilter, search, page, size]);
+    }, [storeId, statusFilter, search, page, size]);
 
     useEffect(() => { fetchList(); }, [fetchList]);
 

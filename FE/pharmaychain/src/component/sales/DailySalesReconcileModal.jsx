@@ -34,12 +34,12 @@ export default function DailySalesReconcileModal({
     const validate = () => {
         const e = {};
         if (actualCash === '' || actualCash == null) {
-            e.actualCash = 'Please enter the physical cash counted in drawers';
+            e.actualCash = 'Vui lòng nhập số tiền mặt thực tế kiểm đếm trong két';
         } else if (isNaN(numActual) || numActual < 0) {
-            e.actualCash = 'Physical cash amount cannot be negative';
+            e.actualCash = 'Số tiền mặt thực tế không được là số âm';
         }
         if (note && note.length > 1000) {
-            e.note = 'Reconciliation note must not exceed 1000 characters';
+            e.note = 'Ghi chú đối soát không được vượt quá 1000 ký tự';
         }
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -52,7 +52,7 @@ export default function DailySalesReconcileModal({
         try {
             await onConfirm({ actualCash: numActual, note });
         } catch (err) {
-            setServerError(err?.message || 'An error occurred while reconciling daily sales.');
+            setServerError(err?.message || 'Có lỗi xảy ra khi thực hiện đối soát doanh thu ngày.');
         }
     };
 
@@ -62,12 +62,12 @@ export default function DailySalesReconcileModal({
                 {/* Header */}
                 <div className="pms-modal-header">
                     <div>
-                        <div className="pms-modal-title">Confirm Daily Sales Reconciliation & Closing</div>
+                        <div className="pms-modal-title">Xác Nhận Đối Soát & Chốt Sổ Doanh Thu Ngày</div>
                         <div className="pms-modal-sub">
-                            Branch: <strong>{overview?.storeName || 'Store Branch'}</strong> — Date: <strong>{date}</strong>
+                            Chi nhánh: <strong>{overview?.storeName || 'Chi nhánh nhà thuốc'}</strong> — Ngày: <strong>{date}</strong>
                         </div>
                     </div>
-                    <button type="button" className="pms-modal-close" onClick={onHide} disabled={submitting} aria-label="Close">
+                    <button type="button" className="pms-modal-close" onClick={onHide} disabled={submitting} aria-label="Đóng">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                         </svg>
@@ -89,19 +89,19 @@ export default function DailySalesReconcileModal({
                         {/* System Recorded Figures */}
                         <div style={{ background: 'var(--bg-canvas)', padding: 14, borderRadius: 10, marginBottom: 16, border: '1px solid var(--border-color)' }}>
                             <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.5px' }}>
-                                System Recorded Figures
+                                Số Liệu Ghi Nhận Trên Hệ Thống
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13 }}>
-                                <div>System Cash:</div>
+                                <div>Doanh thu tiền mặt hệ thống:</div>
                                 <div style={{ textAlign: 'right', fontWeight: 700, color: 'var(--brand-primary)' }}>{money(systemCash)}</div>
 
-                                <div>Bank Transfer:</div>
+                                <div>Chuyển khoản / Thẻ:</div>
                                 <div style={{ textAlign: 'right', fontWeight: 600 }}>{money(overview?.systemBank || 0)}</div>
 
-                                <div>VNPay E-Wallet:</div>
+                                <div>Ví điện tử VietQR:</div>
                                 <div style={{ textAlign: 'right', fontWeight: 600 }}>{money(overview?.systemVnpay || 0)}</div>
 
-                                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 6, fontWeight: 700 }}>Total Revenue:</div>
+                                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 6, fontWeight: 700 }}>Tổng doanh thu ngày:</div>
                                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 6, textAlign: 'right', fontWeight: 800, color: 'var(--brand-primary-dark)' }}>
                                     {money(overview?.systemTotal || 0)}
                                 </div>
@@ -110,7 +110,7 @@ export default function DailySalesReconcileModal({
 
                         {/* Input Physical Cash */}
                         <div className="pms-form-group">
-                            <label className="pms-label">Actual Physical Cash Counted in Safe / Drawers (VND) *</label>
+                            <label className="pms-label">Tiền mặt thực tế kiểm đếm trong két (VNĐ) *</label>
                             <input
                                 type="number"
                                 min="0"
@@ -118,7 +118,7 @@ export default function DailySalesReconcileModal({
                                 className="pms-input pms-input-bare"
                                 value={actualCash}
                                 onChange={(e) => setActualCash(e.target.value)}
-                                placeholder="Enter physical cash amount counted..."
+                                placeholder="Nhập tổng số tiền mặt đếm được trong két..."
                                 required
                                 disabled={submitting}
                             />
@@ -141,26 +141,26 @@ export default function DailySalesReconcileModal({
                             alignItems: 'center',
                         }}>
                             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                                Cash Variance (Actual - System):
+                                Chênh lệch tiền mặt (Thực tế - Sổ sách):
                             </span>
                             <span style={{
                                 fontSize: 14,
                                 fontWeight: 800,
                                 color: difference === 0 ? 'var(--color-success-text)' : difference > 0 ? 'var(--color-info-text)' : 'var(--color-danger-text)',
                             }}>
-                                {difference === 0 ? '100% Balanced (0 ₫)' : (difference > 0 ? `+${money(difference)}` : money(difference))}
+                                {difference === 0 ? 'Cân bằng khớp 100% (0 ₫)' : (difference > 0 ? `+${money(difference)}` : money(difference))}
                             </span>
                         </div>
 
                         {/* Notes & Explanation */}
                         <div className="pms-form-group" style={{ marginBottom: 4 }}>
-                            <label className="pms-label">Reconciliation Notes & Explanation (Required if discrepancy)</label>
+                            <label className="pms-label">Ghi chú & Giải trình đối soát (Bắt buộc nếu có chênh lệch)</label>
                             <textarea
                                 rows={3}
                                 className="pms-input pms-input-bare"
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
-                                placeholder="e.g., Safe drawer counted, cash matches shift handover, transferred to bank drop..."
+                                placeholder="Ví dụ: Đã kiểm két các ca, tiền mặt khớp ca bàn giao, đã niêm phong nộp ngân hàng..."
                                 disabled={submitting}
                             />
                             {errors.note && (
@@ -169,7 +169,7 @@ export default function DailySalesReconcileModal({
                                 </div>
                             )}
                             <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>
-                                * This closing action will be irrevocably logged in the system Audit Log.
+                                * Hành động chốt sổ đối soát này sẽ được ghi nhận vĩnh viễn vào Nhật ký kiểm toán.
                             </div>
                         </div>
                     </div>
@@ -177,10 +177,10 @@ export default function DailySalesReconcileModal({
                     {/* Modal Footer */}
                     <div className="pms-modal-footer">
                         <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-                            Cancel
+                            Hủy bỏ
                         </button>
                         <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting}>
-                            {submitting ? 'Closing Ledger...' : 'Confirm & Close Sales'}
+                            {submitting ? 'Đang chốt sổ...' : 'Xác Nhận & Chốt Sổ Doanh Thu'}
                         </button>
                     </div>
                 </form>

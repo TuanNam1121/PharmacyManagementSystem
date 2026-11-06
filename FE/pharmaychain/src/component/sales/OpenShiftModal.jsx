@@ -9,7 +9,8 @@ export default function OpenShiftModal({
     submitting,
     error,
 }) {
-    const [storeId, setStoreId] = useState('1');
+    const activeBranchId = localStorage.getItem('pms_selected_store_id') || '3';
+    const [storeId, setStoreId] = useState(activeBranchId);
     const [openingCash, setOpeningCash] = useState('0');
     const [note, setNote] = useState('');
     const [valError, setValError] = useState('');
@@ -47,8 +48,8 @@ export default function OpenShiftModal({
                 if (e.target === e.currentTarget && !submitting) onClose();
             }}
         >
-            <div className="pms-modal" style={{ maxWidth: 520, width: '100%' }}>
-                <div className="pms-modal-header" style={{ background: 'var(--brand-primary-light, #ecfdf5)' }}>
+            <div className="pms-modal" style={{ maxWidth: 520, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div className="pms-modal-header" style={{ background: 'var(--brand-primary-light, #ecfdf5)', flexShrink: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{
                             width: 40, height: 40, borderRadius: 10,
@@ -76,13 +77,14 @@ export default function OpenShiftModal({
                         className="pms-modal-close"
                         onClick={onClose}
                         disabled={submitting}
+                        aria-label="Đóng"
                     >
                         ✕
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="pms-modal-body" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                    <div className="pms-modal-body" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto', flex: 1 }}>
                         {(error || valError) && (
                             <div className="pms-alert pms-alert-danger" style={{ padding: '10px 14px', fontSize: 13 }}>
                                 {valError || error}
@@ -102,15 +104,24 @@ export default function OpenShiftModal({
 
                         <div className="pms-form-group">
                             <label className="pms-label">Chi nhánh làm việc</label>
-                            <select
-                                className="pms-select"
-                                value={storeId}
-                                onChange={(e) => setStoreId(e.target.value)}
-                            >
-                                <option value="1">Chi nhánh 1 — Nhà thuốc Trung tâm (Hà Nội)</option>
-                                <option value="2">Chi nhánh 2 — Nhà thuốc Cầu Giấy</option>
-                                <option value="3">Chi nhánh 3 — Nhà thuốc Đống Đa</option>
-                            </select>
+                            <div style={{
+                                padding: '10px 14px',
+                                background: '#f8fafc',
+                                borderRadius: 8,
+                                border: '1px solid #e2e8f0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                fontSize: 13,
+                                fontWeight: 600,
+                                color: '#0f172a'
+                            }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--brand-primary)' }}>
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                </svg>
+                                <span>{String(storeId) === '4' ? 'Nhà Thuốc Chi Nhánh 02 — Đống Đa (ST02)' : 'Nhà Thuốc Chi Nhánh 01 — Cầu Giấy (ST01)'}</span>
+                            </div>
                         </div>
 
                         <div className="pms-form-group">
@@ -165,7 +176,7 @@ export default function OpenShiftModal({
                         </div>
                     </div>
 
-                    <div className="pms-modal-footer" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                    <div className="pms-modal-footer" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', gap: 10, flexShrink: 0, borderTop: '1px solid #e2e8f0', background: '#fff' }}>
                         <button
                             type="button"
                             className="btn-pms btn-pms-secondary"

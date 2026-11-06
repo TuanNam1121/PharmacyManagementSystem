@@ -21,7 +21,7 @@ public class StockRequisitionDto {
     private String approvedByUsername;
 
     /**
-     * 0 = PENDING, 1 = APPROVED, 2 = DISPATCHED, 3 = RECEIVED, 4 = REJECTED
+     * 0 = DRAFT, 1 = PENDING, 2 = APPROVED, 3 = REJECTED, 4 = DISPATCHED, 5 = RECEIVED, 6 = CANCELLED
      */
     private Short status;
     private String statusLabel;

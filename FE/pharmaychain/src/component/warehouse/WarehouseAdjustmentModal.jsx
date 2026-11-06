@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { money } from '../../utils/format';
 
 const ADJUSTMENT_TYPES = [
-  { value: '3', label: 'Cycle Count — Inventory Discrepancy' },
-  { value: '1', label: 'Damaged / Broken / Quality Degraded' },
-  { value: '2', label: 'Expired — Disposal Required' },
-  { value: '4', label: 'Other Reason' },
+  { value: '3', label: 'Kiểm kê định kỳ — Chênh lệch tồn kho' },
+  { value: '1', label: 'Hư hỏng / Đổ vỡ / Suy giảm phẩm chất' },
+  { value: '2', label: 'Hết hạn sử dụng — Đề nghị tiêu hủy' },
+  { value: '4', label: 'Lý do nghiệp vụ khác' },
 ];
 
 export default function WarehouseAdjustmentModal({ show, onHide, inventory, onSubmit, loading }) {
@@ -32,8 +32,8 @@ export default function WarehouseAdjustmentModal({ show, onHide, inventory, onSu
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validAfter) { setErrorMsg('Please enter a valid actual quantity (≥ 0).'); return; }
-    if (!reason.trim()) { setErrorMsg('Please provide a reason for the adjustment.'); return; }
+    if (!validAfter) { setErrorMsg('Vui lòng nhập số lượng kiểm kê thực tế hợp lệ (≥ 0).'); return; }
+    if (!reason.trim()) { setErrorMsg('Vui lòng nêu rõ lý do điều chỉnh tồn kho.'); return; }
     setErrorMsg(null);
     try {
       await onSubmit({
@@ -44,7 +44,7 @@ export default function WarehouseAdjustmentModal({ show, onHide, inventory, onSu
         reason: reason.trim(),
       });
     } catch (err) {
-      setErrorMsg(err?.message || 'Failed to create adjustment record.');
+      setErrorMsg(err?.message || 'Không thể tạo bản ghi điều chỉnh tồn kho.');
     }
   };
 
@@ -58,8 +58,8 @@ export default function WarehouseAdjustmentModal({ show, onHide, inventory, onSu
         {/* Header */}
         <div className="pms-modal-header">
           <div>
-            <div className="pms-modal-title">Create Inventory Adjustment</div>
-            <div className="pms-modal-sub">Record count discrepancies, damaged stock, or disposal</div>
+            <div className="pms-modal-title">Tạo Phiếu Điều Chỉnh Tồn Kho</div>
+            <div className="pms-modal-sub">Ghi nhận chênh lệch kiểm kê thực tế, thuốc hỏng hoặc đề xuất hủy</div>
           </div>
           <button className="pms-modal-close" onClick={onHide}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -91,14 +91,14 @@ export default function WarehouseAdjustmentModal({ show, onHide, inventory, onSu
             }}>
               <div className="pms-detail-grid">
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Product</div>
+                  <div className="pms-detail-label">Thuốc / Sản Phẩm</div>
                   <div className="pms-detail-value">{inventory.productName}</div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{inventory.productCode || '—'}</div>
                 </div>
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Batch / Expiry</div>
+                  <div className="pms-detail-label">Số Lô / Hạn Dùng</div>
                   <div className="pms-detail-value mono">{inventory.batchNumber}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Exp: {inventory.expiryDate || '—'}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>HSD: {inventory.expiryDate || '—'}</div>
                 </div>
               </div>
             </div>
@@ -106,12 +106,12 @@ export default function WarehouseAdjustmentModal({ show, onHide, inventory, onSu
             {/* Quantity inputs */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
               <div className="pms-form-group" style={{ margin: 0 }}>
-                <label className="pms-label">System Quantity</label>
+                <label className="pms-label">SL Sổ Sách Hệ Thống</label>
                 <input className="pms-input pms-input-bare" value={currentQty} readOnly disabled
                   style={{ background: 'var(--bg-canvas)', cursor: 'not-allowed', color: 'var(--text-muted)' }} />
               </div>
               <div className="pms-form-group" style={{ margin: 0 }}>
-                <label className="pms-label">Actual Count *</label>
+                <label className="pms-label">SL Kiểm Kê Thực Tế *</label>
                 <input
                   className="pms-input pms-input-bare"
                   type="number" min="0"
@@ -121,7 +121,7 @@ export default function WarehouseAdjustmentModal({ show, onHide, inventory, onSu
                 />
               </div>
               <div className="pms-form-group" style={{ margin: 0 }}>
-                <label className="pms-label">Difference</label>
+                <label className="pms-label">Chênh Lệch</label>
                 <div style={{
                   padding: '9px 14px', border: '1px solid var(--border-color)',
                   borderRadius: 'var(--border-radius-sm)', fontWeight: 700,
@@ -138,14 +138,14 @@ export default function WarehouseAdjustmentModal({ show, onHide, inventory, onSu
               padding: '12px 16px', border: '1px solid var(--border-color)',
               borderRadius: 'var(--border-radius-md)', marginBottom: 20, background: 'var(--bg-card)',
             }}>
-              <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Estimated Financial Impact:</span>
+              <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Ước Tính Chênh Lệch Giá Trị Tài Chính:</span>
               <span style={{ fontWeight: 700, fontSize: 15, color: diffColor }}>{money(valueImpact)}</span>
             </div>
 
             {/* Type & Reason */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16 }}>
               <div className="pms-form-group" style={{ margin: 0 }}>
-                <label className="pms-label">Adjustment Type *</label>
+                <label className="pms-label">Phân Loại Điều Chỉnh *</label>
                 <select className="pms-select" style={{ width: '100%' }} value={type} onChange={(e) => setType(e.target.value)}>
                   {ADJUSTMENT_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -153,11 +153,11 @@ export default function WarehouseAdjustmentModal({ show, onHide, inventory, onSu
                 </select>
               </div>
               <div className="pms-form-group" style={{ margin: 0 }}>
-                <label className="pms-label">Reason / Details *</label>
+                <label className="pms-label">Lý Do / Biên Bản Chi Tiết *</label>
                 <textarea
                   className="pms-input pms-input-bare"
                   rows="2"
-                  placeholder="Describe the cause of discrepancy or damage details…"
+                  placeholder="Mô tả nguyên nhân thừa/thiếu, số biên bản kiểm kê hoặc tình trạng hàng hư hỏng…"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   required
@@ -167,9 +167,9 @@ export default function WarehouseAdjustmentModal({ show, onHide, inventory, onSu
           </div>
 
           <div className="pms-modal-footer">
-            <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={loading}>Cancel</button>
+            <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={loading}>Hủy</button>
             <button type="submit" className="btn-pms btn-pms-primary" disabled={loading}>
-              {loading ? 'Submitting…' : 'Submit Adjustment'}
+              {loading ? 'Đang gửi…' : 'Xác Nhận Điều Chỉnh'}
             </button>
           </div>
         </form>

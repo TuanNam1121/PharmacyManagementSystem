@@ -13,7 +13,7 @@ export default function WarehouseFilters({
         <input
           className="pms-input"
           type="text"
-          placeholder="Search by product name, batch number, active ingredient…"
+          placeholder="Tìm kiếm theo tên thuốc, số lô, hoạt chất…"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
         />
@@ -25,15 +25,15 @@ export default function WarehouseFilters({
         value={expiryFilter}
         onChange={(e) => onExpiryFilter(e.target.value)}
       >
-        <option value="">All Expiry Statuses</option>
-        <option value="GOOD">Good — Safe</option>
-        <option value="EXPIRING_SOON">Expiring Soon (≤90 days)</option>
-        <option value="EXPIRED">Expired</option>
+        <option value="">Tất cả trạng thái hạn dùng</option>
+        <option value="GOOD">Hạn tốt — Đảm bảo</option>
+        <option value="EXPIRING_SOON">Cận hạn (≤90 ngày)</option>
+        <option value="EXPIRED">Đã hết hạn</option>
       </select>
 
       {/* Results count */}
       <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-        <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> batches found
+        Tìm thấy <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> lô thuốc
       </span>
     </div>
   );

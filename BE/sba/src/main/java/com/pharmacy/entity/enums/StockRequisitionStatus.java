@@ -4,14 +4,14 @@ import lombok.Getter;
 
 @Getter
 public enum StockRequisitionStatus {
-    DRAFT((short) 0, "Draft"),
-    PENDING((short) 1, "Pending Review"),
-    APPROVED((short) 2, "Approved"),
-    REJECTED((short) 3, "Rejected"),
-    DISPATCHED((short) 4, "Dispatched"),
-    RECEIVED((short) 5, "Received"),
-    CANCELLED((short) 6, "Cancelled"),
-    PARTIALLY_RECEIVED((short) 7, "Partially Received");
+    DRAFT((short) 0, "Bản nháp"),
+    PENDING((short) 1, "Chờ xét duyệt"),
+    APPROVED((short) 2, "Đã phê duyệt"),
+    REJECTED((short) 3, "Đã từ chối"),
+    DISPATCHED((short) 4, "Đã xuất kho / Đang giao"),
+    RECEIVED((short) 5, "Đã nhận hàng"),
+    CANCELLED((short) 6, "Đã hủy"),
+    PARTIALLY_RECEIVED((short) 7, "Nhận một phần");
 
     private final Short code;
     private final String label;
@@ -38,15 +38,18 @@ public enum StockRequisitionStatus {
      */
     public static String resolveBranchLabel(Short status) {
         if (status == null) {
-            return "Unknown";
+            return "Không xác định";
         }
         return switch (status.intValue()) {
-            case 0 -> "Pending Review";
-            case 1 -> "Approved";
-            case 2 -> "Dispatched";
-            case 3 -> "Received";
-            case 4 -> "Rejected";
-            default -> "Unknown";
+            case 0 -> "Bản nháp";
+            case 1 -> "Chờ xét duyệt";
+            case 2 -> "Đã phê duyệt";
+            case 3 -> "Đã từ chối";
+            case 4 -> "Đã xuất kho / Đang giao";
+            case 5 -> "Đã nhận hàng";
+            case 6 -> "Đã hủy";
+            case 7 -> "Nhận một phần";
+            default -> "Không xác định";
         };
     }
 
@@ -54,18 +57,7 @@ public enum StockRequisitionStatus {
      * Resolves status text for Central Warehouse Replenishment module.
      */
     public static String resolveWarehouseText(Short status) {
-        if (status == null) {
-            return "Draft";
-        }
-        return switch (status.intValue()) {
-            case 1 -> "Pending Review";
-            case 2 -> "Approved";
-            case 3 -> "Rejected";
-            case 4 -> "Dispatched";
-            case 5 -> "Received";
-            case 6 -> "Cancelled";
-            default -> "Draft";
-        };
+        return resolveBranchLabel(status);
     }
 
     public static String resolveLabel(Short status) {

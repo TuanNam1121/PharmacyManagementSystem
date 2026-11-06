@@ -15,15 +15,15 @@ export default function WarehouseLocationModal({
   if (!show || !inventory) return null;
 
   const handleSave = async () => {
-    if (!selectedLocationId) { setErrorMsg('Please select a shelf/bin location.'); return; }
+    if (!selectedLocationId) { setErrorMsg('Vui lòng chọn một vị trí ô kệ lưu trữ.'); return; }
     setErrorMsg(null);
     try { await onAssign(inventory.id, selectedLocationId); }
-    catch (err) { setErrorMsg(err?.message || 'Failed to assign location.'); }
+    catch (err) { setErrorMsg(err?.message || 'Không thể gán vị trí lưu kho.'); }
   };
 
   const handleCreateNewLocation = async (e) => {
     e.preventDefault();
-    if (!newCode.trim()) { setErrorMsg('Location code is required.'); return; }
+    if (!newCode.trim()) { setErrorMsg('Mã vị trí ô kệ là bắt buộc.'); return; }
     setCreating(true); setErrorMsg(null);
     try {
       const created = await onCreateLocation({
@@ -33,7 +33,7 @@ export default function WarehouseLocationModal({
       setShowCreateForm(false);
       setNewCode(''); setNewAisle(''); setNewShelf(''); setNewBin('');
     } catch (err) {
-      setErrorMsg(err?.message || 'Failed to create location.');
+      setErrorMsg(err?.message || 'Không thể tạo vị trí ô kệ mới.');
     } finally { setCreating(false); }
   };
 
@@ -43,10 +43,10 @@ export default function WarehouseLocationModal({
         {/* Header */}
         <div className="pms-modal-header">
           <div>
-            <div className="pms-modal-title">Assign Shelf / Bin Location</div>
-            <div className="pms-modal-sub">Set storage coordinates for this inventory batch</div>
+            <div className="pms-modal-title">Gán Vị Trí Ô Kệ Kho Tổng</div>
+            <div className="pms-modal-sub">Thiết lập tọa độ lưu trữ cho lô dược phẩm này</div>
           </div>
-          <button className="pms-modal-close" onClick={onHide} aria-label="Close">
+          <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -76,26 +76,26 @@ export default function WarehouseLocationModal({
           }}>
             <div className="fw-600" style={{ fontSize: 14 }}>{inventory.productName}</div>
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4, display: 'flex', gap: 12 }}>
-              <span>Code: <strong>{inventory.productCode || '—'}</strong></span>
-              <span>Batch: <span className="pms-badge pms-badge-neutral mono">{inventory.batchNumber}</span></span>
-              <span>Stock: <strong>{inventory.quantity} {inventory.unit}</strong></span>
+              <span>Mã thuốc: <strong>{inventory.productCode || '—'}</strong></span>
+              <span>Lô: <span className="pms-badge pms-badge-neutral mono">{inventory.batchNumber}</span></span>
+              <span>Tồn: <strong>{inventory.quantity} {inventory.unit}</strong></span>
             </div>
           </div>
 
           {/* Select existing or create */}
           {!showCreateForm ? (
             <div>
-              <label className="pms-label">Select Existing Location</label>
+              <label className="pms-label">Chọn Vị Trí Ô Kệ Hiện Có</label>
               <select
                 className="pms-select"
                 style={{ width: '100%', marginBottom: 12 }}
                 value={selectedLocationId}
                 onChange={(e) => setSelectedLocationId(e.target.value)}
               >
-                <option value="">— Choose a storage location —</option>
+                <option value="">— Chọn vị trí ô kệ lưu trữ —</option>
                 {locations.map((loc) => (
                   <option key={loc.id} value={loc.id}>
-                    {loc.code} (Aisle: {loc.aisle || '—'}, Shelf: {loc.shelf || '—'}, Bin: {loc.bin || '—'})
+                    {loc.code} (Dãy: {loc.aisle || '—'}, Kệ: {loc.shelf || '—'}, Hộc: {loc.bin || '—'})
                   </option>
                 ))}
               </select>
@@ -106,7 +106,7 @@ export default function WarehouseLocationModal({
                 style={{ fontSize: 12, color: 'var(--brand-primary)', padding: '4px 0' }}
                 onClick={() => setShowCreateForm(true)}
               >
-                + Add a new location to warehouse
+                + Thêm ô kệ mới vào kho tổng
               </button>
             </div>
           ) : (
@@ -114,31 +114,31 @@ export default function WarehouseLocationModal({
               border: '1px solid var(--border-color)', borderRadius: 'var(--border-radius-md)', padding: 16,
             }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Create New Location
+                Thêm Mới Vị Trí Ô Kệ
               </div>
               <div className="pms-form-group">
-                <label className="pms-label">Location Code *</label>
-                <input className="pms-input pms-input-bare" placeholder="e.g. A01-S02-B03" value={newCode}
+                <label className="pms-label">Mã Vị Trí Ô Kệ *</label>
+                <input className="pms-input pms-input-bare" placeholder="VD: A01-S02-B03" value={newCode}
                   onChange={(e) => setNewCode(e.target.value)} required />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
                 <div>
-                  <label className="pms-label">Aisle</label>
-                  <input className="pms-input pms-input-bare" placeholder="e.g. A" value={newAisle} onChange={(e) => setNewAisle(e.target.value)} />
+                  <label className="pms-label">Dãy (Aisle)</label>
+                  <input className="pms-input pms-input-bare" placeholder="VD: A" value={newAisle} onChange={(e) => setNewAisle(e.target.value)} />
                 </div>
                 <div>
-                  <label className="pms-label">Shelf</label>
-                  <input className="pms-input pms-input-bare" placeholder="e.g. 02" value={newShelf} onChange={(e) => setNewShelf(e.target.value)} />
+                  <label className="pms-label">Kệ (Shelf)</label>
+                  <input className="pms-input pms-input-bare" placeholder="VD: 02" value={newShelf} onChange={(e) => setNewShelf(e.target.value)} />
                 </div>
                 <div>
-                  <label className="pms-label">Bin</label>
-                  <input className="pms-input pms-input-bare" placeholder="e.g. 03" value={newBin} onChange={(e) => setNewBin(e.target.value)} />
+                  <label className="pms-label">Hộc (Bin)</label>
+                  <input className="pms-input pms-input-bare" placeholder="VD: 03" value={newBin} onChange={(e) => setNewBin(e.target.value)} />
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                <button type="button" className="btn-pms btn-pms-secondary" onClick={() => setShowCreateForm(false)}>Cancel</button>
+                <button type="button" className="btn-pms btn-pms-secondary" onClick={() => setShowCreateForm(false)}>Hủy</button>
                 <button type="submit" className="btn-pms btn-pms-primary" disabled={creating}>
-                  {creating ? 'Saving…' : 'Save Location'}
+                  {creating ? 'Đang lưu…' : 'Lưu Vị Trí'}
                 </button>
               </div>
             </form>
@@ -147,9 +147,9 @@ export default function WarehouseLocationModal({
 
         {/* Footer */}
         <div className="pms-modal-footer">
-          <button className="btn-pms btn-pms-secondary" onClick={onHide} disabled={loading}>Cancel</button>
+          <button className="btn-pms btn-pms-secondary" onClick={onHide} disabled={loading}>Hủy</button>
           <button className="btn-pms btn-pms-primary" onClick={handleSave} disabled={loading || showCreateForm}>
-            {loading ? 'Saving…' : 'Confirm Assignment'}
+            {loading ? 'Đang lưu…' : 'Xác Nhận Gán Vị Trí'}
           </button>
         </div>
       </div>

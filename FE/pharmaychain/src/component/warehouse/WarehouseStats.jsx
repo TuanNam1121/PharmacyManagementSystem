@@ -6,10 +6,10 @@ export default function WarehouseStats({ inventoryList, total }) {
 
   const stats = [
     {
-      label: 'Total Batches (SKUs)',
+      label: 'Tổng Lô Thuốc (SKU)',
       value: total,
       iconColor: 'emerald',
-      sub: 'across all shelves',
+      sub: 'trên toàn bộ ô kệ kho',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
@@ -18,10 +18,10 @@ export default function WarehouseStats({ inventoryList, total }) {
       ),
     },
     {
-      label: 'Total Units in Stock',
-      value: totalUnits.toLocaleString('en-US'),
+      label: 'Tổng Đơn Vị Tồn Kho',
+      value: totalUnits.toLocaleString('vi-VN'),
       iconColor: 'blue',
-      sub: 'units available',
+      sub: 'đơn vị sẵn sàng xuất',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
@@ -30,10 +30,10 @@ export default function WarehouseStats({ inventoryList, total }) {
       ),
     },
     {
-      label: 'Expiring Soon (≤90d)',
+      label: 'Lô Cận Hạn (≤90 ngày)',
       value: expiringSoonCount,
       iconColor: 'amber',
-      sub: 'batches need attention',
+      sub: 'cần ưu tiên xuất FEFO',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
@@ -43,10 +43,10 @@ export default function WarehouseStats({ inventoryList, total }) {
       ),
     },
     {
-      label: 'Expired Batches',
+      label: 'Lô Đã Hết Hạn',
       value: expiredCount,
       iconColor: 'red',
-      sub: 'require immediate action',
+      sub: 'cần cách ly xử lý ngay',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="12" r="10"/>

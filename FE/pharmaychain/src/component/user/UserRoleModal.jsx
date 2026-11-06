@@ -48,7 +48,6 @@ export default function UserRoleModal({
     } else if (currentRole && currentRole.permissions && currentRole.permissions.length > 0) {
       setPermissions(currentRole.permissions);
     } else {
-      // Fetch permissions from API if not preloaded
       let active = true;
       setLoadingPerms(true);
       fetchRolePermissions(selectedRoleId)
@@ -72,7 +71,7 @@ export default function UserRoleModal({
 
   if (!show || !user) return null;
 
-  const displayName = user.fullName || user.username || 'User';
+  const displayName = user.fullName || user.username || 'Nhân viên';
 
   const handleRoleChange = (e) => {
     setSelectedRoleId(e.target.value);
@@ -84,7 +83,7 @@ export default function UserRoleModal({
     setErrorMsg(null);
 
     if (!selectedRoleId) {
-      setErrorMsg('Please select a role to assign.');
+      setErrorMsg('Vui lòng chọn vai trò cần phân quyền.');
       return;
     }
 
@@ -93,7 +92,7 @@ export default function UserRoleModal({
       await onConfirm(user.id, Number(selectedRoleId), displayName);
       onHide();
     } catch (err) {
-      setErrorMsg(err?.message || 'Failed to assign role to user.');
+      setErrorMsg(err?.message || 'Phân quyền vai trò cho nhân viên thất bại.');
     } finally {
       setSubmitting(false);
     }
@@ -108,13 +107,13 @@ export default function UserRoleModal({
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">
-              Assign Role - {displayName}
+              Phân Quyền Vai Trò - {displayName}
             </div>
             <div className="pms-modal-sub">
-              Assign an access role and review granted system permissions
+              Gán vai trò hệ thống và kiểm tra danh mục quyền hạn được cấp
             </div>
           </div>
-          <button className="pms-modal-close" onClick={onHide} aria-label="Close">
+          <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -138,7 +137,7 @@ export default function UserRoleModal({
               </div>
             )}
 
-            {/* Target User Info (Read-only Context Banner) */}
+            {/* Target User Info */}
             <div
               style={{
                 display: 'flex',
@@ -160,7 +159,7 @@ export default function UserRoleModal({
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Current Role</span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Vai Trò Hiện Tại</span>
                 <span
                   style={{
                     fontSize: 11.5,
@@ -168,7 +167,7 @@ export default function UserRoleModal({
                     color: user.roleName || user.roleCode ? 'var(--brand-primary)' : 'var(--text-muted)',
                   }}
                 >
-                  {user.roleName || user.roleCode || 'Unassigned'}
+                  {user.roleName || user.roleCode || 'Chưa phân vai trò'}
                 </span>
               </div>
             </div>
@@ -176,7 +175,7 @@ export default function UserRoleModal({
             {/* Role Selector */}
             <div className="pms-form-group" style={{ marginBottom: 18 }}>
               <label className="pms-label">
-                Select Role *
+                Chọn Vai Trò Mới *
               </label>
               <select
                 className="pms-select"
@@ -185,7 +184,7 @@ export default function UserRoleModal({
                 onChange={handleRoleChange}
                 required
               >
-                <option value="">-- Select a Role --</option>
+                <option value="">-- Chọn một vai trò hệ thống --</option>
                 {roles.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name || r.code} ({r.code})
@@ -217,11 +216,11 @@ export default function UserRoleModal({
                 }}
               >
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Permissions Summary
+                  Danh Mục Quyền Hạn Được Cấp
                 </div>
                 {selectedRoleId && (
                   <span className="pms-badge pms-badge-neutral" style={{ fontSize: 11 }}>
-                    {permissions.length} {permissions.length === 1 ? 'permission' : 'permissions'}
+                    {permissions.length} quyền thao tác
                   </span>
                 )}
               </div>
@@ -229,10 +228,9 @@ export default function UserRoleModal({
               {loadingPerms ? (
                 <div className="pms-spinner-wrap" style={{ padding: '20px 0' }}>
                   <div className="pms-spinner" style={{ width: 20, height: 20 }} />
-                  <span className="pms-spinner-text" style={{ fontSize: 12 }}>Loading permissions…</span>
+                  <span className="pms-spinner-text" style={{ fontSize: 12 }}>Đang tải danh mục quyền…</span>
                 </div>
               ) : !selectedRoleId ? (
-                /* Empty state */
                 <div
                   style={{
                     padding: '24px 12px',
@@ -253,7 +251,7 @@ export default function UserRoleModal({
                   >
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                   </svg>
-                  Please select a role to view its associated permissions.
+                  Vui lòng chọn một vai trò để xem danh sách quyền hạn chi tiết.
                 </div>
               ) : permissions.length === 0 ? (
                 <div
@@ -264,7 +262,7 @@ export default function UserRoleModal({
                     fontSize: 12.5,
                   }}
                 >
-                  No specific granular permissions mapped to this role yet.
+                  Chưa có quyền hạn cụ thể nào được cấu hình cho vai trò này.
                 </div>
               ) : (
                 <div
@@ -335,14 +333,14 @@ export default function UserRoleModal({
               onClick={onHide}
               disabled={submitting}
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
               className="btn-pms btn-pms-primary"
               disabled={submitting || !selectedRoleId}
             >
-              {submitting ? 'Saving Role…' : 'Save Changes'}
+              {submitting ? 'Đang lưu vai trò…' : 'Lưu Thay Đổi'}
             </button>
           </div>
         </form>

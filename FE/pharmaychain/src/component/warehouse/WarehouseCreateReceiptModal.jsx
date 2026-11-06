@@ -96,31 +96,31 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
     setFormError(null);
 
     if (!supplierId) {
-      setFormError('Please select a supplier');
+      setFormError('Vui lòng chọn nhà cung cấp');
       return;
     }
 
     if (items.length === 0) {
-      setFormError('Receipt must contain at least one item');
+      setFormError('Phiếu nhập kho phải chứa ít nhất một mặt hàng');
       return;
     }
 
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       if (!it.productId) {
-        setFormError(`Row #${i + 1}: Please select a medicine/product`);
+        setFormError(`Dòng #${i + 1}: Vui lòng chọn thuốc / sản phẩm`);
         return;
       }
       if (!it.batchNumber || !it.batchNumber.trim()) {
-        setFormError(`Row #${i + 1}: Batch number is required`);
+        setFormError(`Dòng #${i + 1}: Số lô thuốc là bắt buộc`);
         return;
       }
       if (!it.expiryDate) {
-        setFormError(`Row #${i + 1}: Expiry date is required`);
+        setFormError(`Dòng #${i + 1}: Hạn sử dụng là bắt buộc`);
         return;
       }
       if (Number(it.quantity) <= 0) {
-        setFormError(`Row #${i + 1}: Quantity must be greater than 0`);
+        setFormError(`Dòng #${i + 1}: Số lượng nhập phải lớn hơn 0`);
         return;
       }
     }
@@ -148,10 +148,10 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
       <div className="pms-modal pms-modal-xl">
         <div className="pms-modal-header">
           <div>
-            <div className="pms-modal-title">Create Purchase Receipt (Goods Inward)</div>
-            <div className="pms-modal-sub">Log incoming shipment from supplier with lot numbers and quantities</div>
+            <div className="pms-modal-title">Tạo Phiếu Nhập Kho (Nhập Hàng Mua)</div>
+            <div className="pms-modal-sub">Ghi nhận lô hàng nhập từ nhà cung cấp với số lô, hạn dùng và định vị ô kệ</div>
           </div>
-          <button className="pms-modal-close" onClick={onHide}>
+          <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -173,7 +173,7 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
             <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 2fr', gap: 16, marginBottom: 20 }}>
               <div className="pms-form-group">
                 <label className="pms-form-label">
-                  Supplier <span className="pms-required">*</span>
+                  Nhà Cung Cấp <span className="pms-required">*</span>
                 </label>
                 <select
                   className="pms-select"
@@ -181,7 +181,7 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                   onChange={(e) => setSupplierId(e.target.value)}
                   required
                 >
-                  <option value="">— Select Supplier —</option>
+                  <option value="">— Chọn Nhà Cung Cấp —</option>
                   {suppliers.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name} ({s.code})
@@ -191,23 +191,23 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
               </div>
 
               <div className="pms-form-group">
-                <label className="pms-form-label">Delivery Type</label>
+                <label className="pms-form-label">Hình Thức Giao Nhận</label>
                 <select
                   className="pms-select"
                   value={deliveryType}
                   onChange={(e) => setDeliveryType(e.target.value)}
                 >
-                  <option value="1">Full Shipment</option>
-                  <option value="2">Partial Shipment</option>
+                  <option value="1">Giao Đủ Toàn Bộ</option>
+                  <option value="2">Giao Một Phần</option>
                 </select>
               </div>
 
               <div className="pms-form-group">
-                <label className="pms-form-label">Receiving Notes / Bill of Lading</label>
+                <label className="pms-form-label">Ghi Chú Nhập Kho / Số Vận Đơn / Hóa Đơn</label>
                 <input
                   type="text"
                   className="pms-input"
-                  placeholder="e.g. Invoice #INV-8891, driver info..."
+                  placeholder="VD: Hóa đơn đỏ số #HD-8891, ghi chú kiểm phẩm..."
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                 />
@@ -217,7 +217,7 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
             {/* Line items table */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-                Shipment Line Items ({items.length})
+                Danh Mục Hàng Hóa Nhập Kho ({items.length})
               </div>
               <button
                 type="button"
@@ -228,7 +228,7 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
-                Add Item Row
+                Thêm Mặt Hàng
               </button>
             </div>
 
@@ -238,14 +238,14 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                   <thead>
                     <tr>
                       <th style={{ width: 30 }}>#</th>
-                      <th style={{ minWidth: 200 }}>Medicine / Product *</th>
-                      <th style={{ width: 130 }}>Batch No. *</th>
-                      <th style={{ width: 130 }}>Mfg Date</th>
-                      <th style={{ width: 130 }}>Expiry Date *</th>
-                      <th style={{ width: 90 }} className="text-right">Qty *</th>
-                      <th style={{ width: 120 }} className="text-right">Unit Cost</th>
-                      <th style={{ width: 130 }}>Shelf / Bin</th>
-                      <th style={{ width: 110 }} className="text-right">Subtotal</th>
+                      <th style={{ minWidth: 200 }}>Tên Thuốc / Sản Phẩm *</th>
+                      <th style={{ width: 130 }}>Số Lô (Batch) *</th>
+                      <th style={{ width: 130 }}>Ngày SX (Mfg)</th>
+                      <th style={{ width: 130 }}>Hạn Dùng (Exp) *</th>
+                      <th style={{ width: 90 }} className="text-right">SL Nhập *</th>
+                      <th style={{ width: 120 }} className="text-right">Đơn Giá Nhập</th>
+                      <th style={{ width: 130 }}>Vị Trí Ô Kệ</th>
+                      <th style={{ width: 110 }} className="text-right">Thành Tiền</th>
                       <th style={{ width: 40 }}></th>
                     </tr>
                   </thead>
@@ -263,7 +263,7 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                               onChange={(e) => handleItemChange(idx, 'productId', e.target.value)}
                               required
                             >
-                              <option value="">— Select Product —</option>
+                              <option value="">— Chọn Dược Phẩm —</option>
                               {products.map((p) => (
                                 <option key={p.id} value={p.id}>
                                   {p.name} ({p.barcode || p.unit})
@@ -331,7 +331,7 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                               value={it.locationId}
                               onChange={(e) => handleItemChange(idx, 'locationId', e.target.value)}
                             >
-                              <option value="">— Unassigned —</option>
+                              <option value="">— Chưa gán vị trí —</option>
                               {locations.map((loc) => (
                                 <option key={loc.id} value={loc.id}>
                                   {loc.code} ({loc.aisle || ''}-{loc.shelf || ''})
@@ -348,7 +348,7 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                                 type="button"
                                 className="btn-pms btn-pms-sm"
                                 style={{ padding: '3px 6px', color: 'var(--color-danger)' }}
-                                title="Remove row"
+                                title="Xóa dòng này"
                                 onClick={() => removeItemRow(idx)}
                               >
                                 ✕
@@ -371,7 +371,7 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
               border: '1px solid var(--border-color)',
             }}>
               <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                Total Receipt Shipment Value:
+                Tổng Giá Trị Đơn Hàng Nhập Kho:
               </span>
               <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--brand-primary)' }}>
                 {money(calculateTotal())}
@@ -381,10 +381,10 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
 
           <div className="pms-modal-footer">
             <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={loading}>
-              Cancel
+              Hủy
             </button>
             <button type="submit" className="btn-pms btn-pms-primary" disabled={loading}>
-              {loading ? 'Creating Receipt…' : 'Create Purchase Receipt'}
+              {loading ? 'Đang tạo phiếu…' : 'Xác Nhận Tạo Phiếu Nhập'}
             </button>
           </div>
         </form>

@@ -44,7 +44,7 @@ public class InventoryAuditDetail {
     private Integer countedQuantity;
 
     @ColumnDefault("[counted_quantity]-[system_quantity]")
-    @Column(name = "variance")
+    @Column(name = "variance", insertable = false, updatable = false)
     private Integer variance;
 
     @Size(max = 500)

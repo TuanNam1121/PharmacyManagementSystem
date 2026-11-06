@@ -1,4 +1,4 @@
-import { money, formatDate } from '../../utils/format';
+import { money, formatDateTime, formatPaymentMethod } from '../../utils/format';
 
 function Pagination({ total, page, size, onPage }) {
     if (total <= size) return null;
@@ -26,55 +26,46 @@ function Pagination({ total, page, size, onPage }) {
 }
 
 export default function DailySalesInvoicesTable({ invoices, loading, total, page, size, onPage }) {
-    const formatTime = (iso) => {
-        if (!iso) return '-';
-        try {
-            const d = new Date(iso);
-            return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ' ' + formatDate(iso);
-        } catch {
-            return iso;
-        }
-    };
 
     return (
         <div className="pms-card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
-                        Daily Sales Invoices
+                        Hóa Đơn Bán Lẻ Trong Ngày
                     </div>
                     <div style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
-                        All transactions completed during the store's business day
+                        Toàn bộ giao dịch bán lẻ phát sinh trong ngày làm việc của nhà thuốc
                     </div>
                 </div>
-                <span className="pms-badge pms-badge-neutral">{total} invoices</span>
+                <span className="pms-badge pms-badge-neutral">{total} hóa đơn</span>
             </div>
 
             <div style={{ overflowX: 'auto' }}>
                 <table className="pms-table">
                     <thead>
                         <tr>
-                            <th>Invoice Code</th>
-                            <th>Prescription</th>
-                            <th>Time</th>
-                            <th>Payment Method</th>
-                            <th style={{ textAlign: 'right' }}>Subtotal</th>
-                            <th style={{ textAlign: 'right' }}>Discount</th>
-                            <th style={{ textAlign: 'right' }}>Final Amount</th>
-                            <th style={{ textAlign: 'center' }}>Status</th>
+                            <th>Mã Hóa Đơn</th>
+                            <th>Mã Đơn Thuốc</th>
+                            <th>Thời Gian</th>
+                            <th>Hình Thức TT</th>
+                            <th style={{ textAlign: 'right' }}>Tiền Hàng</th>
+                            <th style={{ textAlign: 'right' }}>Giảm Giá</th>
+                            <th style={{ textAlign: 'right' }}>Khách Phải Trả</th>
+                            <th style={{ textAlign: 'center' }}>Trạng Thái</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
                                 <td colSpan={8} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)' }}>
-                                    Loading invoices...
+                                    Đang tải danh sách hóa đơn...
                                 </td>
                             </tr>
                         ) : !invoices || invoices.length === 0 ? (
                             <tr>
                                 <td colSpan={8} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)' }}>
-                                    No sales invoices found for the selected date
+                                    Không có hóa đơn bán lẻ nào phát sinh trong ngày đã chọn
                                 </td>
                             </tr>
                         ) : (
@@ -90,12 +81,21 @@ export default function DailySalesInvoicesTable({ invoices, loading, total, page
                                             <span style={{ color: 'var(--text-muted)' }}>-</span>
                                         )}
                                     </td>
-                                    <td style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
-                                        {formatTime(inv.paidAt || inv.createdAt)}
+                                    <td style={{ fontSize: 12.5, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                                        {formatDateTime(inv.paidAt || inv.createdAt)}
                                     </td>
                                     <td>
-                                        <span className="pms-badge pms-badge-info" style={{ fontSize: 11.5 }}>
-                                            {inv.paymentMethod || 'Cash'}
+                                        <span
+                                            className={`pms-badge ${
+                                                formatPaymentMethod(inv.paymentMethod) === 'Tiền mặt'
+                                                    ? 'pms-badge-success'
+                                                    : formatPaymentMethod(inv.paymentMethod) === 'Ví VietQR'
+                                                    ? 'pms-badge-violet'
+                                                    : 'pms-badge-info'
+                                            }`}
+                                            style={{ fontSize: 11.5 }}
+                                        >
+                                            {formatPaymentMethod(inv.paymentMethod)}
                                         </span>
                                     </td>
                                     <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>
@@ -108,8 +108,8 @@ export default function DailySalesInvoicesTable({ invoices, loading, total, page
                                         {money(inv.finalAmount)}
                                     </td>
                                     <td style={{ textAlign: 'center' }}>
-                                        <span className={`pms-badge ${inv.status === 1 ? 'pms-badge-success' : 'pms-badge-danger'}`}>
-                                            {inv.status === 1 ? 'Paid' : 'Cancelled'}
+                                        <span className={`pms-badge ${inv.status === 1 ? 'pms-badge-success' : (inv.status === 2 ? 'pms-badge-danger' : 'pms-badge-warning')}`}>
+                                            {inv.status === 1 ? 'Đã thanh toán' : (inv.status === 2 ? 'Đã hủy' : (inv.status === 3 ? 'Trả một phần' : (inv.status === 4 ? 'Đã hoàn trả' : 'Đang xử lý')))}
                                         </span>
                                     </td>
                                 </tr>

@@ -21,7 +21,7 @@ export default function ProductFilters({
         <input
           className="pms-input"
           type="text"
-          placeholder="Search by name, barcode, manufacturer…"
+          placeholder="Tìm theo tên thuốc, mã vạch, nhà sản xuất…"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
         />
@@ -33,7 +33,7 @@ export default function ProductFilters({
         value={categoryFilter}
         onChange={(e) => onCategory(e.target.value)}
       >
-        <option value="">All Categories</option>
+        <option value="">Tất cả danh mục</option>
         {categories.map((cat) => (
           <option key={cat.id} value={String(cat.id)}>
             {cat.name}
@@ -47,14 +47,14 @@ export default function ProductFilters({
         value={statusFilter}
         onChange={(e) => onStatus(e.target.value)}
       >
-        <option value="">All Statuses</option>
-        <option value="1">Active</option>
-        <option value="0">Inactive</option>
+        <option value="">Tất cả trạng thái</option>
+        <option value="1">Đang kinh doanh</option>
+        <option value="0">Ngừng kinh doanh</option>
       </select>
 
       {/* Results Count */}
       <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-        Found <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> products
+        Tìm thấy <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> sản phẩm thuốc
       </span>
 
       {/* Add Product Button */}
@@ -62,7 +62,7 @@ export default function ProductFilters({
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
-        New Product
+        Thêm Thuốc Mới
       </button>
     </div>
   );

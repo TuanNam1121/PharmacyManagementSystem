@@ -4,8 +4,8 @@ import lombok.Getter;
 
 @Getter
 public enum CustomerStatus {
-    INACTIVE((short) 0, "Inactive"),
-    ACTIVE((short) 1, "Active");
+    INACTIVE((short) 0, "Đã khóa"),
+    ACTIVE((short) 1, "Đang hoạt động");
 
     private final Short code;
     private final String label;

@@ -70,11 +70,11 @@ export default function ProductPage() {
   const [formMode, setFormMode] = useState('create'); // 'create' | 'edit'
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // Price Update modal state (Task 1 fix)
+  // Price Update modal state
   const [priceModalOpen, setPriceModalOpen] = useState(false);
   const [priceProduct, setPriceProduct] = useState(null);
 
-  // Status Toggle modal state (Task 1 fix)
+  // Status Toggle modal state
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [statusProduct, setStatusProduct] = useState(null);
 
@@ -110,24 +110,24 @@ export default function ProductPage() {
   const handleFormSuccess = async () => {
     setSuccessMsg(
       formMode === 'create'
-        ? 'Product added to catalog successfully!'
-        : 'Product information updated successfully!'
+        ? 'Đã thêm thuốc mới vào danh mục thành công!'
+        : 'Đã cập nhật thông tin thuốc thành công!'
     );
     await fetchList();
   };
 
-  // Price Update handler (Task 1 fix)
+  // Price Update handler
   const handleUpdatePrice = (product) => {
     setPriceProduct(product);
     setPriceModalOpen(true);
   };
 
   const handlePriceSuccess = async () => {
-    setSuccessMsg('Product price updated successfully!');
+    setSuccessMsg('Đã cập nhật giá bán niêm yết thành công!');
     await fetchList();
   };
 
-  // Toggle Status handler (Task 1 fix)
+  // Toggle Status handler
   const handleToggleProductStatus = (product) => {
     setStatusProduct(product);
     setStatusModalOpen(true);
@@ -138,9 +138,9 @@ export default function ProductPage() {
       {/* ── Page Header ── */}
       <div className="pms-page-header">
         <div>
-          <h1 className="pms-page-title">Product Catalog</h1>
+          <h1 className="pms-page-title">Danh Mục Thuốc &amp; Dược Phẩm</h1>
           <p className="pms-page-sub">
-            Manage your pharmaceutical products, pricing, and catalog metadata.
+            Quản lý danh mục dược phẩm toàn chuỗi, thiết lập giá niêm yết và thông số tiêu chuẩn GSP
           </p>
         </div>
       </div>
@@ -229,7 +229,7 @@ export default function ProductPage() {
         categories={categories}
       />
 
-      {/* ── Price Update Modal (Task 1 fix) ── */}
+      {/* ── Price Update Modal ── */}
       <ProductPriceModal
         show={priceModalOpen}
         onHide={() => { setPriceModalOpen(false); setPriceProduct(null); }}
@@ -237,18 +237,16 @@ export default function ProductPage() {
         onSuccess={handlePriceSuccess}
       />
 
-      {/* ── Status Toggle Modal (Task 1 fix) ── */}
+      {/* ── Status Toggle Modal ── */}
       <ProductStatusModal
         show={statusModalOpen}
         onHide={() => { setStatusModalOpen(false); setStatusProduct(null); }}
         product={statusProduct}
         onConfirm={async (id, targetStatus) => {
-          // useProducts.handleToggleStatus takes (id, currentStatus) and derives targetStatus internally
-          // ProductStatusModal passes the already-computed targetStatus, so we pass the current status of the product
           await handleToggleStatus(id, Number(statusProduct?.status ?? 1));
           setSuccessMsg(
             targetStatus === 0
-              ? 'Đã vô hiệu hóa sản phẩm thành công!'
+              ? 'Đã tạm ngừng kinh doanh sản phẩm thành công!'
               : 'Đã kích hoạt lại sản phẩm thành công!'
           );
           setStatusModalOpen(false);

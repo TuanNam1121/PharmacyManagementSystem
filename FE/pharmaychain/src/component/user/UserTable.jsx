@@ -24,7 +24,7 @@ export default function UserTable({
       <div className="pms-card">
         <div className="pms-spinner-wrap">
           <div className="pms-spinner" />
-          <span className="pms-spinner-text">Loading user accounts…</span>
+          <span className="pms-spinner-text">Đang tải danh sách tài khoản nhân viên…</span>
         </div>
       </div>
     );
@@ -42,8 +42,8 @@ export default function UserTable({
               <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
           </div>
-          <div className="pms-empty-title">No user accounts found</div>
-          <div className="pms-empty-sub">No user records matched your search or filter criteria.</div>
+          <div className="pms-empty-title">Không tìm thấy tài khoản nào</div>
+          <div className="pms-empty-sub">Không có bản ghi nhân viên nào phù hợp với bộ lọc tìm kiếm.</div>
         </div>
       </div>
     );
@@ -57,7 +57,7 @@ export default function UserTable({
           <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="12" cy="12" r="10" />
           </svg>
-          Active
+          Đang hoạt động
         </span>
       );
     }
@@ -67,7 +67,7 @@ export default function UserTable({
           <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="12" cy="12" r="10" />
           </svg>
-          Locked
+          Đã khóa
         </span>
       );
     }
@@ -76,7 +76,7 @@ export default function UserTable({
         <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
           <circle cx="12" cy="12" r="10" />
         </svg>
-        Disabled
+        Vô hiệu hóa
       </span>
     );
   };
@@ -87,13 +87,13 @@ export default function UserTable({
         <table className="pms-table">
           <thead>
             <tr>
-              <th style={{ width: 44 }}>#</th>
-              <th>User / Account</th>
-              <th>Role</th>
-              <th>Contact Info</th>
-              <th>Status</th>
-              <th>Registered At</th>
-              <th className="text-right" style={{ width: 175 }}>Actions</th>
+              <th style={{ width: 44 }}>STT</th>
+              <th>Nhân Viên / Tài Khoản</th>
+              <th>Vai Trò Hệ Thống</th>
+              <th>Thông Tin Liên Hệ</th>
+              <th>Trạng Thái</th>
+              <th>Ngày Tạo</th>
+              <th style={{ width: 160, textAlign: 'center' }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -164,7 +164,7 @@ export default function UserTable({
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
                         <circle cx="12" cy="12" r="6" />
                       </svg>
-                      {u.roleName || u.roleCode || 'Unassigned'}
+                      {u.roleName || u.roleCode || 'Chưa phân vai trò'}
                     </span>
                   </td>
                   <td>
@@ -183,12 +183,12 @@ export default function UserTable({
                   <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                     {formatDate(u.createdAt)}
                   </td>
-                  <td className="text-right">
-                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                       {/* View Detail */}
                       <button
-                        className="btn-pms btn-pms-ghost btn-pms-sm"
-                        title="View Account Details"
+                        className="pms-icon-btn view"
+                        title="Xem chi tiết tài khoản"
                         onClick={() => onView(u.id)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -197,10 +197,10 @@ export default function UserTable({
                         </svg>
                       </button>
 
-                      {/* Edit (UC08) */}
+                      {/* Edit */}
                       <button
-                        className="btn-pms btn-pms-ghost btn-pms-sm"
-                        title="Edit User Profile"
+                        className="pms-icon-btn edit"
+                        title="Chỉnh sửa thông tin"
                         onClick={() => onEdit(u)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -209,11 +209,11 @@ export default function UserTable({
                         </svg>
                       </button>
 
-                      {/* Assign Role (Dedicated Action) */}
+                      {/* Assign Role */}
                       <button
-                        className="btn-pms btn-pms-ghost btn-pms-sm"
+                        className="pms-icon-btn"
                         style={{ color: 'var(--brand-primary)' }}
-                        title="Assign Role"
+                        title="Phân quyền & vai trò"
                         onClick={() => onAssignRole && onAssignRole(u)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -221,27 +221,43 @@ export default function UserTable({
                         </svg>
                       </button>
 
-                      {/* Lock / Unlock (UC10) */}
-                      <button
-                        className={`btn-pms btn-pms-sm ${isActive ? 'btn-pms-ghost' : 'btn-pms-outline'}`}
-                        style={{
-                          color: isActive ? 'var(--status-danger)' : 'var(--brand-primary)',
-                        }}
-                        title={isActive ? 'Lock or Inactive Account' : 'Active Account'}
-                        onClick={() => onLockUnlock(u)}
-                      >
-                        {isActive ? (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                          </svg>
-                        ) : (
+                      {/* Lock / Unlock / Reactivate */}
+                      {Number(u.status) === 1 ? (
+                        <button
+                          className="pms-icon-btn"
+                          title="Khóa hoặc vô hiệu hóa tài khoản"
+                          onClick={() => onLockUnlock(u)}
+                        >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                             <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
                           </svg>
-                        )}
-                      </button>
+                        </button>
+                      ) : Number(u.status) === 2 ? (
+                        <button
+                          className="pms-icon-btn danger"
+                          style={{ color: '#ef4444' }}
+                          title="Tài khoản đang bị khóa (Bấm để mở khóa)"
+                          onClick={() => onLockUnlock(u)}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                          </svg>
+                        </button>
+                      ) : (
+                        <button
+                          className="pms-icon-btn"
+                          style={{ color: '#64748b' }}
+                          title="Tài khoản đang bị vô hiệu hóa (Bấm để kích hoạt lại)"
+                          onClick={() => onLockUnlock(u)}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

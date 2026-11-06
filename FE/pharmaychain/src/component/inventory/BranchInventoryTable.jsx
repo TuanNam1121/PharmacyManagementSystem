@@ -42,26 +42,26 @@ export default function BranchInventoryTable({
 }) {
     const renderStockBadge = (item) => {
         if (item.stockStatus === 'OUT_OF_STOCK') {
-            return <span className="pms-badge pms-badge-danger">Out of Stock</span>;
+            return <span className="pms-badge pms-badge-danger">Hết hàng</span>;
         }
         if (item.stockStatus === 'LOW_STOCK') {
-            return <span className="pms-badge pms-badge-warning">Low Stock ({item.quantity}/{item.minQuantity})</span>;
+            return <span className="pms-badge pms-badge-warning">Sắp hết ({item.quantity}/{item.minQuantity})</span>;
         }
-        return <span className="pms-badge pms-badge-success">In Stock</span>;
+        return <span className="pms-badge pms-badge-success">Đủ hàng</span>;
     };
 
     const renderExpiryBadge = (item) => {
         if (item.expiryStatus === 'EXPIRED') {
             return (
-                <span className="pms-badge pms-badge-danger" title={`Expired ${Math.abs(item.daysToExpiry || 0)} days ago`}>
-                    Expired ({formatDate(item.expiryDate)})
+                <span className="pms-badge pms-badge-danger" title={`Đã hết hạn ${Math.abs(item.daysToExpiry || 0)} ngày trước`}>
+                    Hết hạn ({formatDate(item.expiryDate)})
                 </span>
             );
         }
         if (item.expiryStatus === 'EXPIRING_SOON') {
             return (
-                <span className="pms-badge pms-badge-warning" title={`${item.daysToExpiry} days remaining`}>
-                    Expiring Soon ({item.daysToExpiry}d)
+                <span className="pms-badge pms-badge-warning" title={`Còn ${item.daysToExpiry} ngày sử dụng`}>
+                    Cận hạn ({item.daysToExpiry} ngày)
                 </span>
             );
         }
@@ -76,40 +76,40 @@ export default function BranchInventoryTable({
         <div className="pms-card" style={{ padding: 0, overflow: 'hidden' }}>
             <div className="pms-card-header">
                 <div>
-                    <div className="pms-card-title">Branch Drug Catalog & Batches</div>
+                    <div className="pms-card-title">Danh Mục Thuốc & Lô Hàng Tại Chi Nhánh</div>
                     <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-                        Displays real-time stock levels, batch numbers, expiry dates, and risk indicators
+                        Theo dõi tồn kho quầy thực tế theo thời gian thực, số lô, hạn dùng và cảnh báo FEFO
                     </div>
                 </div>
-                <span className="pms-badge pms-badge-neutral">{total} batches</span>
+                <span className="pms-badge pms-badge-neutral">{total} lô thuốc</span>
             </div>
 
             <div className="pms-table-wrap">
                 <table className="pms-table">
                     <thead>
                         <tr>
-                            <th>Barcode</th>
-                            <th>Drug Name & Active Ingredient</th>
-                            <th>Batch No.</th>
-                            <th>Expiry & Alerts</th>
-                            <th style={{ textAlign: 'right' }}>Stock / Min Threshold</th>
-                            <th style={{ textAlign: 'right' }}>Unit Selling Price</th>
-                            <th style={{ textAlign: 'right' }}>Total Value</th>
-                            <th style={{ textAlign: 'center' }}>Location</th>
-                            <th style={{ textAlign: 'center' }}>Actions</th>
+                            <th>Mã Vạch</th>
+                            <th>Tên Thuốc & Hoạt Chất</th>
+                            <th>Số Lô</th>
+                            <th>Hạn Dùng & Cảnh Báo</th>
+                            <th style={{ textAlign: 'right' }}>Tồn Quầy / Ngưỡng</th>
+                            <th style={{ textAlign: 'right' }}>Giá Bán</th>
+                            <th style={{ textAlign: 'right' }}>Tổng Giá Trị</th>
+                            <th style={{ textAlign: 'center' }}>Vị Trí</th>
+                            <th style={{ textAlign: 'center' }}>Thao Tác</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
                                 <td colSpan={9} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)' }}>
-                                    Loading branch inventory data...
+                                    Đang tải dữ liệu tồn kho chi nhánh...
                                 </td>
                             </tr>
                         ) : !items || items.length === 0 ? (
                             <tr>
                                 <td colSpan={9} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)' }}>
-                                    No matching inventory items found
+                                    Không tìm thấy mặt hàng tồn kho nào phù hợp
                                 </td>
                             </tr>
                         ) : (
@@ -123,8 +123,8 @@ export default function BranchInventoryTable({
                                     <td>
                                         <div style={{ fontWeight: 600, color: 'var(--brand-primary-dark)' }}>{row.productName}</div>
                                         <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>
-                                            {row.activeIngredient ? `AI: ${row.activeIngredient}` : ''} ({row.unit})
-                                            {row.isPrescription && <span style={{ color: 'var(--color-danger)', marginLeft: 6, fontWeight: 700 }}>[Rx]</span>}
+                                            {row.activeIngredient ? `HC: ${row.activeIngredient}` : ''} ({row.unit})
+                                            {row.isPrescription && <span style={{ color: 'var(--color-danger)', marginLeft: 6, fontWeight: 700 }}>[Rx - Thuốc Kê Đơn]</span>}
                                         </div>
                                     </td>
                                     <td>
@@ -149,7 +149,7 @@ export default function BranchInventoryTable({
                                     </td>
                                     <td style={{ textAlign: 'center' }}>
                                         <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                                            {row.locationCode || 'Front Counter'}
+                                            {row.locationCode || 'Quầy Thuốc Chính'}
                                         </span>
                                     </td>
                                     <td style={{ textAlign: 'center' }}>
@@ -157,18 +157,18 @@ export default function BranchInventoryTable({
                                             <button
                                                 type="button"
                                                 className="btn-pms btn-pms-secondary btn-pms-sm"
-                                                title="View details"
+                                                title="Xem chi tiết lô thuốc"
                                                 onClick={() => onViewDetail(row)}
                                             >
-                                                Details
+                                                Chi tiết
                                             </button>
                                             <button
                                                 type="button"
                                                 className="btn-pms btn-pms-ghost btn-pms-sm"
-                                                title="Update minimum stock warning threshold"
+                                                title="Cài đặt ngưỡng cảnh báo tồn tối thiểu"
                                                 onClick={() => onEditThreshold(row)}
                                             >
-                                                Edit Min
+                                                Ngưỡng
                                             </button>
                                         </div>
                                     </td>

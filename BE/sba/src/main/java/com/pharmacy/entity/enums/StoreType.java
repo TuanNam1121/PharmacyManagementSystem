@@ -4,9 +4,9 @@ import lombok.Getter;
 
 @Getter
 public enum StoreType {
-    HEAD_OFFICE((short) 0, "Head Office"),
-    RETAIL_STORE((short) 1, "Retail Store"),
-    CENTRAL_WAREHOUSE((short) 2, "Central Warehouse");
+    HEAD_OFFICE((short) 0, "Trụ sở chính"),
+    RETAIL_STORE((short) 1, "Nhà thuốc chi nhánh"),
+    CENTRAL_WAREHOUSE((short) 2, "Kho tổng");
 
     private final Short code;
     private final String label;

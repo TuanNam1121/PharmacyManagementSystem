@@ -53,8 +53,8 @@ export default function CloseShiftModal({
                 if (e.target === e.currentTarget && !submitting) onClose();
             }}
         >
-            <div className="pms-modal" style={{ maxWidth: 580, width: '100%' }}>
-                <div className="pms-modal-header" style={{ background: '#fef2f2' }}>
+            <div className="pms-modal" style={{ maxWidth: 580, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div className="pms-modal-header" style={{ background: '#fef2f2', flexShrink: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{
                             width: 40, height: 40, borderRadius: 10,
@@ -82,13 +82,14 @@ export default function CloseShiftModal({
                         className="pms-modal-close"
                         onClick={onClose}
                         disabled={submitting}
+                        aria-label="Đóng"
                     >
                         ✕
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="pms-modal-body" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                    <div className="pms-modal-body" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto', flex: 1 }}>
                         {(error || valError) && (
                             <div className="pms-alert pms-alert-danger" style={{ padding: '10px 14px', fontSize: 13 }}>
                                 {valError || error}
@@ -222,7 +223,7 @@ export default function CloseShiftModal({
                         </div>
                     </div>
 
-                    <div className="pms-modal-footer" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                    <div className="pms-modal-footer" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', gap: 10, flexShrink: 0, borderTop: '1px solid #e2e8f0', background: '#fff' }}>
                         <button
                             type="button"
                             className="btn-pms btn-pms-secondary"

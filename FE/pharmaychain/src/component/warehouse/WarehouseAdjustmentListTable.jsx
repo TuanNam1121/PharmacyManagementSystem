@@ -1,11 +1,20 @@
 import { useState } from 'react';
 import { formatDate, money } from '../../utils/format';
 
-const TYPE_LABELS = {
-  1: 'Damaged / Broken',
-  2: 'Expired — Disposal',
-  3: 'Cycle Count',
-  4: 'Other',
+const formatAdjustmentType = (type, label) => {
+  if (type === 1 || label === 'Count Variance') return 'Chênh lệch kiểm kê';
+  if (type === 2 || label === 'Damage / Spoilage' || label === 'Damaged / Broken') return 'Hư hỏng / Hao hụt';
+  if (type === 3 || label === 'Breakage') return 'Vỡ nứt';
+  if (type === 4 || label === 'Expired Write-Off' || label === 'Expired — Disposal') return 'Hết hạn — Tiêu hủy';
+  if (label === 'Cycle Count') return 'Kiểm kê định kỳ';
+  if (label === 'Other Discrepancy' || label === 'Other') return 'Khác';
+  return label || 'Kiểm kê định kỳ';
+};
+
+const formatAdjustmentStatus = (isApproved, isRejected, label) => {
+  if (isApproved || label === 'Approved' || label === 'Đã duyệt') return 'Đã duyệt';
+  if (isRejected || label === 'Rejected' || label === 'Đã từ chối') return 'Đã từ chối';
+  return 'Chờ phê duyệt';
 };
 
 export default function WarehouseAdjustmentListTable({ data, loading, onApprove, onReject, actionLoading }) {
@@ -14,7 +23,7 @@ export default function WarehouseAdjustmentListTable({ data, loading, onApprove,
 
   const confirmReject = (id) => {
     if (!rejectReason.trim()) {
-      alert('Please enter a reason for rejecting the adjustment');
+      alert('Vui lòng nhập lý do từ chối phiếu điều chỉnh');
       return;
     }
     if (onReject) {
@@ -29,7 +38,7 @@ export default function WarehouseAdjustmentListTable({ data, loading, onApprove,
       <div className="pms-card">
         <div className="pms-spinner-wrap">
           <div className="pms-spinner" />
-          <span className="pms-spinner-text">Loading adjustment records…</span>
+          <span className="pms-spinner-text">Đang tải danh sách điều chỉnh tồn kho…</span>
         </div>
       </div>
     );
@@ -46,8 +55,8 @@ export default function WarehouseAdjustmentListTable({ data, loading, onApprove,
               <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
             </svg>
           </div>
-          <div className="pms-empty-title">No adjustment records found</div>
-          <div className="pms-empty-sub">No inventory adjustments have been submitted yet.</div>
+          <div className="pms-empty-title">Không tìm thấy phiếu điều chỉnh tồn kho</div>
+          <div className="pms-empty-sub">Chưa có phiếu điều chỉnh tồn kho nào được tạo trên hệ thống.</div>
         </div>
       </div>
     );
@@ -59,31 +68,31 @@ export default function WarehouseAdjustmentListTable({ data, loading, onApprove,
         <table className="pms-table">
           <thead>
             <tr>
-              <th style={{ width: 40 }}>#</th>
-              <th>Product</th>
-              <th>Batch No.</th>
-              <th>Type</th>
-              <th className="text-right">Qty Before</th>
-              <th className="text-right">Qty After</th>
-              <th className="text-right">Difference</th>
-              <th className="text-right">Value Impact</th>
-              <th>Reason</th>
-              <th>Created By</th>
-              <th>Status</th>
-              <th className="text-right" style={{ width: 150 }}>Actions</th>
+              <th style={{ width: 40, textAlign: 'center' }}>#</th>
+              <th>Thuốc / Sản Phẩm</th>
+              <th>Số Lô</th>
+              <th>Loại Điều Chỉnh</th>
+              <th className="text-right">Tồn Trước</th>
+              <th className="text-right">Tồn Sau</th>
+              <th className="text-right">Chênh Lệch</th>
+              <th className="text-right">Giá Trị Ảnh Hưởng</th>
+              <th>Lý Do</th>
+              <th>Người Lập</th>
+              <th>Trạng Thái</th>
+              <th style={{ width: 140, textAlign: 'center' }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
             {data.map((row, i) => {
               const diff = row.difference || 0;
               const diffColor = diff < 0 ? 'var(--color-danger)' : diff > 0 ? 'var(--color-success)' : 'var(--text-muted)';
-              const isPending = row.status === 0 || row.status === 'PENDING' || row.statusLabel === 'Pending Approval';
-              const isApproved = row.status === 1 || row.status === 'APPROVED' || row.statusLabel === 'Approved';
-              const isRejected = row.status === 2 || row.status === 'REJECTED' || row.statusLabel === 'Rejected';
+              const isPending = row.status === 0 || row.status === 'PENDING' || row.statusLabel === 'Pending Approval' || row.statusLabel === 'Pending Review' || row.statusLabel === 'Chờ phê duyệt' || row.statusLabel === 'Chờ xét duyệt';
+              const isApproved = row.status === 1 || row.status === 'APPROVED' || row.statusLabel === 'Approved' || row.statusLabel === 'Đã duyệt';
+              const isRejected = row.status === 2 || row.status === 'REJECTED' || row.statusLabel === 'Rejected' || row.statusLabel === 'Đã từ chối';
 
               return (
                 <tr key={row.id || i}>
-                  <td className="text-xs text-muted-color">{i + 1}</td>
+                  <td className="text-xs text-muted-color" style={{ textAlign: 'center' }}>{i + 1}</td>
                   <td>
                     <div className="fw-600" style={{ fontSize: 13 }}>{row.productName}</div>
                     <div className="text-xs text-muted-color mono">{row.productCode || '—'}</div>
@@ -93,7 +102,7 @@ export default function WarehouseAdjustmentListTable({ data, loading, onApprove,
                   </td>
                   <td>
                     <span className="pms-badge pms-badge-neutral" style={{ fontSize: 11 }}>
-                      {TYPE_LABELS[row.type] || row.typeLabel || 'Cycle Count'}
+                      {formatAdjustmentType(row.type, row.typeLabel)}
                     </span>
                   </td>
                   <td className="text-right text-muted-color">{row.quantityBefore}</td>
@@ -114,10 +123,10 @@ export default function WarehouseAdjustmentListTable({ data, loading, onApprove,
                   <td className="text-sm text-muted-color">{row.createdByName || '—'}</td>
                   <td>
                     <span className={`pms-badge ${isApproved ? 'pms-badge-success' : isRejected ? 'pms-badge-danger' : 'pms-badge-warning'}`}>
-                      {row.statusLabel || (isApproved ? 'Approved' : isRejected ? 'Rejected' : 'Pending Approval')}
+                      {formatAdjustmentStatus(isApproved, isRejected, row.statusLabel)}
                     </span>
                   </td>
-                  <td className="text-right">
+                  <td style={{ textAlign: 'center' }}>
                     {isPending ? (
                       rejectingId === row.id ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 160 }}>
@@ -125,60 +134,60 @@ export default function WarehouseAdjustmentListTable({ data, loading, onApprove,
                             type="text"
                             className="pms-input"
                             style={{ fontSize: 11, padding: '3px 6px' }}
-                            placeholder="Rejection reason..."
+                            placeholder="Nhập lý do từ chối..."
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
                             autoFocus
                           />
-                          <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                          <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
                             <button
                               className="btn-pms btn-pms-sm btn-pms-danger"
                               style={{ fontSize: 11, padding: '2px 6px' }}
                               onClick={() => confirmReject(row.id)}
                               disabled={actionLoading}
                             >
-                              Confirm
+                              Xác nhận
                             </button>
                             <button
                               className="btn-pms btn-pms-sm btn-pms-secondary"
                               style={{ fontSize: 11, padding: '2px 6px' }}
                               onClick={() => { setRejectingId(null); setRejectReason(''); }}
                             >
-                              Cancel
+                              Hủy
                             </button>
                           </div>
                         </div>
                       ) : (
-                        <div style={{ display: 'inline-flex', gap: 6 }}>
+                        <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center' }}>
                           <button
                             className="btn-pms btn-pms-sm btn-pms-primary"
-                            title="Approve adjustment and commit inventory"
+                            title="Duyệt điều chỉnh và cập nhật tồn kho"
                             onClick={() => onApprove && onApprove(row.id)}
                             disabled={actionLoading}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--color-success)', borderColor: 'var(--color-success)' }}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--color-success)', borderColor: 'var(--color-success)', fontSize: 12 }}
                           >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                               <polyline points="20 6 9 17 4 12"/>
                             </svg>
-                            Approve
+                            Duyệt
                           </button>
                           <button
                             className="btn-pms btn-pms-sm btn-pms-secondary"
-                            title="Reject adjustment"
+                            title="Từ chối điều chỉnh tồn kho"
                             onClick={() => { setRejectingId(row.id); setRejectReason(''); }}
                             disabled={actionLoading}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-danger)' }}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-danger)', fontSize: 12 }}
                           >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                             </svg>
-                            Reject
+                            Từ chối
                           </button>
                         </div>
                       )
                     ) : (
                       <span className="text-xs text-muted-color">
-                        {row.approvedByName ? `By ${row.approvedByName}` : '—'}
+                        {row.approvedByName ? `Bởi ${row.approvedByName}` : '—'}
                       </span>
                     )}
                   </td>

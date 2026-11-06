@@ -7,8 +7,8 @@ export default function CustomerStats({ total = 0, customers = [] }) {
 
   const stats = [
     {
-      label: 'Tổng số khách hàng',
-      value: total,
+      label: 'Tổng Số Khách Hàng',
+      value: total.toLocaleString('vi-VN'),
       sub: 'hồ sơ khách hàng',
       iconColor: 'emerald',
       icon: (
@@ -21,8 +21,8 @@ export default function CustomerStats({ total = 0, customers = [] }) {
       ),
     },
     {
-      label: 'Đang hoạt động',
-      value: activeCount,
+      label: 'Đang Hoạt Động',
+      value: activeCount.toLocaleString('vi-VN'),
       sub: 'tài khoản giao dịch',
       iconColor: 'blue',
       icon: (
@@ -34,9 +34,9 @@ export default function CustomerStats({ total = 0, customers = [] }) {
     },
     {
       label: 'Hạng VIP (Gold & Diamond)',
-      value: goldOrDiamond,
+      value: goldOrDiamond.toLocaleString('vi-VN'),
       sub: 'thành viên thân thiết',
-      iconColor: 'purple',
+      iconColor: 'violet',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -44,8 +44,8 @@ export default function CustomerStats({ total = 0, customers = [] }) {
       ),
     },
     {
-      label: 'Cảnh báo dị ứng thuốc',
-      value: allergyCount,
+      label: 'Cảnh Báo Dị Ứng Thuốc',
+      value: allergyCount.toLocaleString('vi-VN'),
       sub: 'cần lưu ý khi kê đơn',
       iconColor: 'amber',
       icon: (
@@ -59,15 +59,15 @@ export default function CustomerStats({ total = 0, customers = [] }) {
   ];
 
   return (
-    <div className="pms-stats-grid">
-      {stats.map((s, idx) => (
-        <div key={idx} className="pms-stat-card">
-          <div className="pms-stat-header">
-            <span className="pms-stat-label">{s.label}</span>
-            <div className={`pms-stat-icon pms-stat-icon-${s.iconColor}`}>{s.icon}</div>
+    <div className="pms-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', width: '100%', marginBottom: 20 }}>
+      {stats.map((s) => (
+        <div className="pms-stat-card" key={s.label}>
+          <div className={`pms-stat-icon ${s.iconColor}`}>{s.icon}</div>
+          <div>
+            <div className="pms-stat-label">{s.label}</div>
+            <div className="pms-stat-value" style={{ whiteSpace: 'nowrap' }}>{s.value}</div>
+            <div className="pms-stat-sub">{s.sub}</div>
           </div>
-          <div className="pms-stat-value">{s.value.toLocaleString('vi-VN')}</div>
-          <div className="pms-stat-sub">{s.sub}</div>
         </div>
       ))}
     </div>

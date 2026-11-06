@@ -12,11 +12,11 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">
-              Purchase Receipt Detail {detail?.code ? `— ${detail.code}` : ''}
+              Chi Tiết Phiếu Nhập Kho {detail?.code ? `— ${detail.code}` : ''}
             </div>
-            <div className="pms-modal-sub">Itemized list of received products, batch numbers, and costs</div>
+            <div className="pms-modal-sub">Danh mục chi tiết dược phẩm tiếp nhận, số lô, hạn dùng và giá trị nhập</div>
           </div>
-          <button className="pms-modal-close" onClick={onHide}>
+          <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -28,7 +28,7 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
           {loading ? (
             <div className="pms-spinner-wrap">
               <div className="pms-spinner" />
-              <span className="pms-spinner-text">Loading receipt details…</span>
+              <span className="pms-spinner-text">Đang tải chi tiết phiếu nhập…</span>
             </div>
           ) : detail ? (
             <div>
@@ -39,21 +39,21 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
                 borderRadius: 'var(--border-radius-md)', padding: '16px 20px', marginBottom: 20,
               }}>
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Receipt Code</div>
+                  <div className="pms-detail-label">Mã Phiếu Nhập</div>
                   <div className="pms-detail-value mono fw-700">{detail.code}</div>
                 </div>
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Total Value</div>
+                  <div className="pms-detail-label">Tổng Giá Trị</div>
                   <div className="pms-detail-value fw-700" style={{ color: 'var(--brand-primary)' }}>{money(detail.totalAmount)}</div>
                 </div>
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Created Date</div>
+                  <div className="pms-detail-label">Ngày Lập Phiếu</div>
                   <div className="pms-detail-value">{formatDate(detail.createdAt)}</div>
                 </div>
                 <div className="pms-detail-row">
-                  <div className="pms-detail-label">Status</div>
+                  <div className="pms-detail-label">Trạng Thái</div>
                   <div style={{ marginTop: 2 }}>
-                    <span className="pms-badge pms-badge-success">{detail.statusLabel || 'Confirmed'}</span>
+                    <span className="pms-badge pms-badge-success">{detail.statusLabel || 'Đã xác nhận'}</span>
                   </div>
                 </div>
               </div>
@@ -65,14 +65,14 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
                     <thead>
                       <tr>
                         <th style={{ width: 40 }}>#</th>
-                        <th>Product / Medicine</th>
-                        <th>Batch No.</th>
-                        <th>Expiry Date</th>
-                        <th className="text-right">Ordered</th>
-                        <th className="text-right">Received</th>
-                        <th className="text-right">Unit Cost</th>
-                        <th className="text-right">Subtotal</th>
-                        <th>Bin Location</th>
+                        <th>Tên Thuốc / Sản Phẩm</th>
+                        <th>Số Lô (Batch)</th>
+                        <th>Hạn Dùng</th>
+                        <th className="text-right">SL Đặt</th>
+                        <th className="text-right">SL Nhận</th>
+                        <th className="text-right">Đơn Giá</th>
+                        <th className="text-right">Thành Tiền</th>
+                        <th>Vị Trí Ô Kệ</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -90,7 +90,7 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
                             <td>
                               {item.locationCode
                                 ? <span className="pms-badge pms-badge-info">{item.locationCode}</span>
-                                : <span className="pms-badge pms-badge-neutral" style={{ opacity: 0.7 }}>Not assigned</span>
+                                : <span className="pms-badge pms-badge-neutral" style={{ opacity: 0.7 }}>Chưa gán</span>
                               }
                             </td>
                           </tr>
@@ -98,7 +98,7 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
                       ) : (
                         <tr>
                           <td colSpan="9" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                            No items found in this receipt.
+                            Không tìm thấy danh mục hàng trong phiếu nhập này.
                           </td>
                         </tr>
                       )}
@@ -109,7 +109,7 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
             </div>
           ) : (
             <div className="pms-empty">
-              <div className="pms-empty-title">No data available</div>
+              <div className="pms-empty-title">Không có dữ liệu chi tiết</div>
             </div>
           )}
         </div>
@@ -119,12 +119,12 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
           <div>
             {!isConfirmed && (
               <span className="text-xs text-muted-color">
-                Inspect items before accepting into warehouse inventory.
+                Kiểm tra kỹ ngoại quan và hạn dùng của hàng hóa trước khi xác nhận nhập kho.
               </span>
             )}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn-pms btn-pms-secondary" onClick={onHide}>Close</button>
+            <button className="btn-pms btn-pms-secondary" onClick={onHide}>Đóng</button>
             {!isConfirmed && onConfirm && detail && (
               <button
                 className="btn-pms btn-pms-primary"
@@ -138,7 +138,7 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
-                {confirmLoading ? 'Confirming…' : 'Confirm Receipt & Accept Stock'}
+                {confirmLoading ? 'Đang xác nhận…' : 'Xác Nhận Nhập Kho & Tăng Tồn'}
               </button>
             )}
           </div>

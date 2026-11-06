@@ -4,9 +4,12 @@ import com.pharmacy.entity.Store;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface StoreRepository extends JpaRepository<Store, Long> {
     Optional<Store> findFirstByType(Short type);
+    Optional<Store> findByCode(String code);
+    List<Store> findByTypeAndStatus(Short type, Short status);
 }

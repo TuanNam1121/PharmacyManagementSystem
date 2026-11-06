@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../../utils/format';
 import {
   createPurchaseProposal,
@@ -27,6 +28,7 @@ function Pagination({ total, page, size, onPage }) {
 }
 
 export default function PurchaseProposalsPage() {
+  const navigate = useNavigate();
   const [list, setList] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -57,7 +59,7 @@ export default function PurchaseProposalsPage() {
       setList(res?.content || []);
       setTotal(res?.totalElements ?? 0);
     } catch (err) {
-      setError(err?.message || 'Failed to load purchase proposals');
+      setError(err?.message || 'Không thể tải danh sách đề xuất mua hàng');
     } finally {
       setLoading(false);
     }
@@ -72,11 +74,11 @@ export default function PurchaseProposalsPage() {
     setError(null);
     try {
       const res = await createPurchaseProposal(payload);
-      setSuccessMsg(`Purchase proposal ${res?.code || ''} created successfully!`);
+      setSuccessMsg(`Đề xuất mua hàng ${res?.code || ''} đã được tạo thành công!`);
       setCreateModalOpen(false);
       await fetchList();
     } catch (err) {
-      setError(err?.message || 'Failed to create purchase proposal');
+      setError(err?.message || 'Tạo đề xuất mua hàng thất bại');
     } finally {
       setCreateLoading(false);
     }
@@ -89,7 +91,7 @@ export default function PurchaseProposalsPage() {
       const res = await getPurchaseProposalDetail(id);
       setSelectedDetail(res);
     } catch (err) {
-      setError(err?.message || 'Failed to load purchase proposal details');
+      setError(err?.message || 'Không thể tải chi tiết đề xuất mua hàng');
     } finally {
       setDetailLoading(false);
     }
@@ -100,10 +102,10 @@ export default function PurchaseProposalsPage() {
     setError(null);
     try {
       await approvePurchaseProposal(row.id);
-      setSuccessMsg(`Purchase proposal ${row.code || ''} approved successfully!`);
+      setSuccessMsg(`Đề xuất mua hàng ${row.code || ''} đã được phê duyệt!`);
       await fetchList();
     } catch (err) {
-      setError(err?.message || 'Failed to approve purchase proposal');
+      setError(err?.message || 'Phê duyệt đề xuất mua hàng thất bại');
     } finally {
       setActionLoadingId(null);
     }
@@ -121,37 +123,47 @@ export default function PurchaseProposalsPage() {
     setError(null);
     try {
       await rejectPurchaseProposal(rejectTarget.id, rejectReason);
-      setSuccessMsg(`Purchase proposal ${rejectTarget.code || ''} rejected.`);
+      setSuccessMsg(`Đã từ chối đề xuất mua hàng ${rejectTarget.code || ''}.`);
       setRejectTarget(null);
       setRejectReason('');
       await fetchList();
     } catch (err) {
-      setError(err?.message || 'Failed to reject purchase proposal');
+      setError(err?.message || 'Từ chối đề xuất mua hàng thất bại');
     } finally {
       setRejectSubmitting(false);
     }
   };
 
   const statusOptions = [
-    { value: '', label: 'All Statuses' },
-    { value: '0', label: 'Pending' },
-    { value: '1', label: 'Approved' },
-    { value: '2', label: 'Rejected' },
-    { value: '3', label: 'Completed' },
+    { value: '', label: 'Tất cả trạng thái' },
+    { value: '0', label: 'Đã lập đề xuất' },
+    { value: '1', label: 'Sẵn sàng tạo RFQ' },
+    { value: '3', label: 'Hoàn tất' },
   ];
+
+  const getStatusBadge = (statusCode) => {
+    const s = Number(statusCode);
+    if (s === 1) return <span className="pms-badge pms-badge-success">Sẵn sàng tạo RFQ</span>;
+    if (s === 2) return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
+    if (s === 3) return <span className="pms-badge pms-badge-neutral">Hoàn tất</span>;
+    return <span className="pms-badge pms-badge-info">Đã lập đề xuất</span>;
+  };
 
   return (
     <div className="pms-page">
       <div className="pms-page-header">
         <div>
-          <h1 className="pms-page-title">Purchase Proposals</h1>
-          <p className="pms-page-sub">Manage purchase proposals created from supplier quotations</p>
+          <h1 className="pms-page-title">Đề Xuất Mua Hàng</h1>
+          <p className="pms-page-sub">Tổng hợp yêu cầu mua hàng từ kho thành phương án mua và sẵn sàng chào giá RFQ</p>
         </div>
         <button
           className="btn-pms btn-pms-primary"
           onClick={() => setCreateModalOpen(true)}
         >
-          + Create Purchase Proposal
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Tạo Đề Xuất Mua Hàng
         </button>
       </div>
 
@@ -180,7 +192,7 @@ export default function PurchaseProposalsPage() {
           <input
             className="pms-input"
             type="text"
-            placeholder="Search by proposal code or PR code…"
+            placeholder="Tìm theo mã đề xuất hoặc mã yêu cầu mua…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
           />
@@ -198,7 +210,7 @@ export default function PurchaseProposalsPage() {
         </select>
 
         <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
-          <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> proposals
+          Tổng cộng: <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> đề xuất
         </span>
       </div>
 
@@ -208,19 +220,25 @@ export default function PurchaseProposalsPage() {
             <table className="pms-table">
               <thead>
                 <tr>
-                  <th style={{ width: 50 }}>#</th>
-                  <th>Proposal Code</th>
-                  <th>Purchase Requests</th>
-                  <th>Status</th>
-                  <th>Created Date</th>
-                  <th className="text-right" style={{ width: 160 }}>Actions</th>
+                  <th style={{ width: 50 }}>STT</th>
+                  <th>Mã Đề Xuất</th>
+                  <th>Yêu Cầu Mua Hàng Liên Kết</th>
+                  <th>Trạng Thái</th>
+                  <th>Ngày Lập</th>
+                  <th style={{ width: 130, textAlign: 'center' }}>Thao Tác</th>
                 </tr>
               </thead>
               <tbody>
-                {list.length === 0 ? (
+                {loading ? (
                   <tr>
                     <td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                      No purchase proposals found.
+                      Đang tải danh sách đề xuất...
+                    </td>
+                  </tr>
+                ) : list.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                      Không tìm thấy đề xuất mua hàng nào.
                     </td>
                   </tr>
                 ) : (
@@ -232,43 +250,30 @@ export default function PurchaseProposalsPage() {
                         ? row.purchaseRequests.map((r) => r.code).join(', ')
                         : '—'}</td>
                       <td>
-                        <span className={`pms-badge ${row.status === 1 ? 'pms-badge-success' : row.status === 2 ? 'pms-badge-danger' : 'pms-badge-info'}`}>
-                          {row.statusText || 'Pending'}
-                        </span>
+                        {getStatusBadge(row.status)}
                       </td>
                       <td className="text-sm text-muted-color">{formatDate(row.createdAt)}</td>
-                      <td className="text-right">
-                        <div style={{ display: 'inline-flex', gap: 4, justifyContent: 'flex-end' }}>
-                          {row.status === 0 && (
-                            <>
-                              <button
-                                className="btn-pms btn-pms-ghost btn-pms-sm"
-                                style={{ color: 'var(--color-success)' }}
-                                onClick={() => handleApprove(row)}
-                                disabled={actionLoadingId === row.id}
-                                title="Accept (Approve)"
-                              >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                  <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                              </button>
-                              <button
-                                className="btn-pms btn-pms-ghost btn-pms-sm"
-                                style={{ color: 'var(--color-danger)' }}
-                                onClick={() => handleOpenReject(row)}
-                                disabled={actionLoadingId === row.id}
-                                title="Reject"
-                              >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                              </button>
-                            </>
+                      <td style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                          {(Number(row.status) === 0 || Number(row.status) === 1) && (
+                            <button
+                              className="pms-icon-btn edit"
+                              style={{ color: 'var(--brand-primary)' }}
+                              onClick={() => navigate(`/procurement/rfq?proposalId=${row.id}`)}
+                              title="Tạo yêu cầu báo giá RFQ gửi nhà cung cấp"
+                              aria-label="Tạo RFQ báo giá"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                              </svg>
+                            </button>
                           )}
                           <button
-                            className="btn-pms btn-pms-ghost btn-pms-sm"
+                            className="pms-icon-btn view"
                             onClick={() => handleOpenDetail(row.id)}
-                            title="View details"
+                            title="Xem chi tiết đề xuất"
+                            aria-label="Xem chi tiết"
                           >
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
@@ -300,15 +305,6 @@ export default function PurchaseProposalsPage() {
         onHide={() => { setDetailModalOpen(false); setSelectedDetail(null); }}
         detail={selectedDetail}
         loading={detailLoading}
-      />
-      <PurchaseProposalRejectModal
-        show={!!rejectTarget}
-        onHide={() => { setRejectTarget(null); setRejectReason(''); }}
-        code={rejectTarget?.code}
-        reason={rejectReason}
-        onReasonChange={setRejectReason}
-        onSubmit={handleConfirmReject}
-        submitting={rejectSubmitting}
       />
     </div>
   );

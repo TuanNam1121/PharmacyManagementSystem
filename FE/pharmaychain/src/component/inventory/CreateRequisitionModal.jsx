@@ -113,19 +113,19 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
         setFormError(null);
 
         if (!storeId) {
-            setFormError('Please select a requesting branch.');
+            setFormError('Vui lòng chọn chi nhánh nhận thuốc.');
             return;
         }
 
         if (selectedItems.length === 0) {
-            setFormError('Please search and add at least one product item to the requisition.');
+            setFormError('Vui lòng tìm kiếm và thêm ít nhất một sản phẩm thuốc vào phiếu yêu cầu.');
             return;
         }
 
         for (const item of selectedItems) {
             const qty = Number(item.requestedQty);
             if (isNaN(qty) || qty <= 0) {
-                setFormError(`Requested quantity for product "${item.productName}" must be greater than 0.`);
+                setFormError(`Số lượng yêu cầu của sản phẩm "${item.productName}" phải lớn hơn 0.`);
                 return;
             }
         }
@@ -142,7 +142,7 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
         try {
             await onConfirm(payload);
         } catch (err) {
-            setFormError(err.message || 'An error occurred while submitting the stock requisition.');
+            setFormError(err.message || 'Có lỗi xảy ra khi tạo phiếu yêu cầu cấp phát thuốc.');
         }
     };
 
@@ -157,8 +157,8 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                     {/* Header */}
                     <div className="pms-modal-header" style={{ flexShrink: 0 }}>
                         <div>
-                            <h3 className="pms-modal-title">Create Stock Requisition</h3>
-                            <div className="pms-modal-sub">Submit a request to transfer pharmaceuticals from Main Warehouse to Branch</div>
+                            <h3 className="pms-modal-title">Tạo Phiếu Yêu Cầu Cấp Phát Thuốc</h3>
+                            <div className="pms-modal-sub">Gửi yêu cầu điều chuyển dược phẩm từ Kho tổng trung tâm về chi nhánh tiếp nhận</div>
                         </div>
                         <button type="button" className="pms-modal-close" onClick={onHide} disabled={submitting}>✕</button>
                     </div>
@@ -179,7 +179,7 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                             {/* Branch Picker */}
                             <div className="pms-form-group" style={{ margin: 0 }}>
                                 <label className="pms-label" style={{ fontWeight: 600, fontSize: 13 }}>
-                                    Receiving Branch *
+                                    Chi nhánh tiếp nhận *
                                 </label>
                                 <select
                                     className="pms-select"
@@ -189,23 +189,22 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                     disabled={submitting}
                                     required
                                 >
-                                    <option value="1">Store #1 — Central Pharmacy</option>
-                                    <option value="2">Store #2 — Cau Giay Pharmacy</option>
-                                    <option value="3">Store #3 — Dong Da Pharmacy</option>
+                                    <option value="3">Chi nhánh 01 — Cầu Giấy (ST01)</option>
+                                    <option value="4">Chi nhánh 02 — Đống Đa (ST02)</option>
                                 </select>
                             </div>
 
                             {/* Server Search Autocomplete Box */}
                             <div className="pms-form-group" style={{ margin: 0, position: 'relative' }} ref={searchRef}>
                                 <label className="pms-label" style={{ fontWeight: 600, fontSize: 13 }}>
-                                    Search system products (Type to search from DB) *
+                                    Tìm kiếm dược phẩm (Tra cứu trực tiếp CSDL) *
                                 </label>
                                 <div style={{ position: 'relative' }}>
                                     <input
                                         type="text"
                                         className="pms-input"
                                         style={{ width: '100%', paddingLeft: 34, paddingRight: 36 }}
-                                        placeholder="Enter product name, active ingredient, barcode to search..."
+                                        placeholder="Nhập tên thuốc, hoạt chất, mã vạch để tìm kiếm..."
                                         value={searchTerm}
                                         onFocus={() => setIsDropdownOpen(true)}
                                         onChange={e => {
@@ -260,11 +259,11 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                     }}>
                                         {loadingProducts ? (
                                             <div style={{ padding: '16px', color: 'var(--text-muted)', fontSize: 13, textAlign: 'center' }}>
-                                                Searching products in database...
+                                                Đang tìm kiếm dược phẩm trong hệ thống...
                                             </div>
                                         ) : products.length === 0 ? (
                                             <div style={{ padding: '16px', color: 'var(--text-muted)', fontSize: 13, textAlign: 'center' }}>
-                                                No products found matching "{searchTerm}"
+                                                Không tìm thấy dược phẩm nào khớp với "{searchTerm}"
                                             </div>
                                         ) : (
                                             products.map(p => {
@@ -290,18 +289,18 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                                                 {p.name}
                                                             </div>
                                                             <div style={{ fontSize: 11.5, color: 'var(--text-secondary)', marginTop: 2, display: 'flex', gap: 10 }}>
-                                                                <span>Unit: <strong>{p.unit || 'Unit'}</strong></span>
-                                                                {p.barcode && <span>Barcode: <code style={{ fontSize: 11 }}>{p.barcode}</code></span>}
+                                                                <span>ĐVT: <strong>{p.unit || 'Đơn vị'}</strong></span>
+                                                                {p.barcode && <span>Mã vạch: <code style={{ fontSize: 11 }}>{p.barcode}</code></span>}
                                                             </div>
                                                         </div>
                                                         <div>
                                                             {isAdded ? (
                                                                 <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>
-                                                                    + Add (+10)
+                                                                    + Thêm (+10)
                                                                 </span>
                                                             ) : (
                                                                 <span className="pms-badge pms-badge-neutral" style={{ fontSize: 11 }}>
-                                                                    + Select
+                                                                    + Chọn
                                                                 </span>
                                                             )}
                                                         </div>
@@ -317,7 +316,7 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                         {/* Selected Medicines Table */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>
-                                SELECTED PRODUCTS LIST ({selectedItems.length} items)
+                                DANH SÁCH THUỐC ĐÃ CHỌN ({selectedItems.length} mặt hàng)
                             </span>
                             {selectedItems.length > 0 && (
                                 <button
@@ -326,7 +325,7 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                     onClick={() => setSelectedItems([])}
                                     style={{ fontSize: 11.5 }}
                                 >
-                                    Clear all
+                                    Xóa tất cả
                                 </button>
                             )}
                         </div>
@@ -336,19 +335,19 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                 <thead>
                                     <tr>
                                         <th style={{ width: 40, textAlign: 'center' }}>#</th>
-                                        <th>Brand Name & Specification</th>
-                                        <th style={{ width: 140 }}>Barcode</th>
-                                        <th style={{ width: 90, textAlign: 'center' }}>Unit</th>
-                                        <th style={{ width: 180, textAlign: 'center' }}>Requested Qty</th>
-                                        <th style={{ width: 50, textAlign: 'center' }}>Remove</th>
+                                        <th>Tên biệt dược & Quy cách</th>
+                                        <th style={{ width: 140 }}>Mã vạch</th>
+                                        <th style={{ width: 90, textAlign: 'center' }}>ĐVT</th>
+                                        <th style={{ width: 180, textAlign: 'center' }}>Số lượng yêu cầu</th>
+                                        <th style={{ width: 50, textAlign: 'center' }}>Xóa</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {selectedItems.length === 0 ? (
                                         <tr>
                                             <td colSpan={6} style={{ textAlign: 'center', padding: '36px 0', color: 'var(--text-muted)' }}>
-                                                <div style={{ fontSize: 13, marginBottom: 4 }}>No items added to the requisition yet.</div>
-                                                <div style={{ fontSize: 12 }}>Type product name in the search box above to find from system and add to requisition.</div>
+                                                <div style={{ fontSize: 13, marginBottom: 4 }}>Chưa có dược phẩm nào được thêm vào phiếu yêu cầu.</div>
+                                                <div style={{ fontSize: 12 }}>Nhập tên thuốc tại ô tìm kiếm phía trên để tra cứu và thêm vào phiếu.</div>
                                             </td>
                                         </tr>
                                     ) : (
@@ -372,7 +371,7 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                                             type="button"
                                                             onClick={() => handleStepQty(row.productId, -10)}
                                                             style={{ border: 'none', background: '#f8fafc', padding: '4px 8px', cursor: 'pointer', fontWeight: 700 }}
-                                                            title="Decrease 10"
+                                                            title="Giảm 10"
                                                         >
                                                             -
                                                         </button>
@@ -390,7 +389,7 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                                             type="button"
                                                             onClick={() => handleStepQty(row.productId, 10)}
                                                             style={{ border: 'none', background: '#f8fafc', padding: '4px 8px', cursor: 'pointer', fontWeight: 700 }}
-                                                            title="Increase 10"
+                                                            title="Tăng 10"
                                                         >
                                                             +
                                                         </button>
@@ -402,7 +401,7 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                                         className="btn-pms btn-pms-secondary btn-pms-sm"
                                                         onClick={() => handleRemoveItem(row.productId)}
                                                         disabled={submitting}
-                                                        title="Remove this item"
+                                                        title="Xóa thuốc này"
                                                         style={{ color: 'var(--color-danger, #ef4444)', padding: '4px 8px' }}
                                                     >
                                                         ✕
@@ -418,8 +417,8 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                         {/* Summary Bar */}
                         {selectedItems.length > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 24, marginTop: 12, padding: '10px 14px', background: 'var(--bg-canvas, #f8fafc)', borderRadius: 6, fontSize: 13 }}>
-                                <div>Total item types: <strong>{selectedItems.length}</strong></div>
-                                <div>Total requested quantity: <strong style={{ color: 'var(--brand-primary)' }}>{totalUnits.toLocaleString()} units</strong></div>
+                                <div>Số mặt hàng: <strong>{selectedItems.length}</strong></div>
+                                <div>Tổng số lượng yêu cầu: <strong style={{ color: 'var(--brand-primary)' }}>{totalUnits.toLocaleString()} đơn vị</strong></div>
                             </div>
                         )}
                     </div>
@@ -427,10 +426,10 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                     {/* Footer */}
                     <div className="pms-modal-footer" style={{ flexShrink: 0 }}>
                         <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={submitting}>
-                            Cancel
+                            Hủy bỏ
                         </button>
                         <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting || selectedItems.length === 0}>
-                            {submitting ? 'Submitting request...' : `Submit Stock Requisition (${selectedItems.length})`}
+                            {submitting ? 'Đang gửi yêu cầu...' : `Gửi phiếu yêu cầu cấp phát (${selectedItems.length})`}
                         </button>
                     </div>
                 </form>

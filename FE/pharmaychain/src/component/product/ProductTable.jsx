@@ -15,7 +15,7 @@ export default function ProductTable({
       <div className="pms-card">
         <div className="pms-spinner-wrap">
           <div className="pms-spinner" />
-          <span className="pms-spinner-text">Loading catalog products…</span>
+          <span className="pms-spinner-text">Đang tải danh mục sản phẩm thuốc…</span>
         </div>
       </div>
     );
@@ -32,8 +32,8 @@ export default function ProductTable({
               <line x1="12" y1="22.08" x2="12" y2="12"/>
             </svg>
           </div>
-          <div className="pms-empty-title">No products found</div>
-          <div className="pms-empty-sub">No products matched your search or filter criteria.</div>
+          <div className="pms-empty-title">Không tìm thấy sản phẩm nào</div>
+          <div className="pms-empty-sub">Không có dược phẩm nào khớp với từ khóa tìm kiếm hoặc bộ lọc.</div>
         </div>
       </div>
     );
@@ -47,7 +47,7 @@ export default function ProductTable({
           <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="12" cy="12" r="10" />
           </svg>
-          Active
+          Đang kinh doanh
         </span>
       );
     }
@@ -57,7 +57,7 @@ export default function ProductTable({
           <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="12" cy="12" r="10" />
           </svg>
-          Discontinued
+          Ngừng lưu hành
         </span>
       );
     }
@@ -66,7 +66,7 @@ export default function ProductTable({
         <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
           <circle cx="12" cy="12" r="10" />
         </svg>
-        Inactive
+        Ngừng kinh doanh
       </span>
     );
   };
@@ -78,15 +78,15 @@ export default function ProductTable({
           <thead>
             <tr>
               <th style={{ width: 44 }}>#</th>
-              <th style={{ width: 56 }}>Avatar</th>
-              <th>Product Info</th>
-              <th>Category</th>
-              <th>Unit</th>
-              <th>Pricing (Sell / Cost)</th>
-              <th>Type</th>
-              <th>Min Stock</th>
-              <th>Status</th>
-              <th className="text-right" style={{ width: 148 }}>Actions</th>
+              <th style={{ width: 56 }}>Ảnh</th>
+              <th>Thông Tin Dược Phẩm</th>
+              <th>Danh Mục</th>
+              <th>ĐVT</th>
+              <th>Giá (Bán lẻ / Giá vốn)</th>
+              <th>Phân Loại</th>
+              <th>Tồn Tối Thiểu</th>
+              <th>Trạng Thái</th>
+              <th style={{ width: 150, textAlign: 'center' }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -100,7 +100,7 @@ export default function ProductTable({
                     {page * size + i + 1}
                   </td>
 
-                  {/* Avatar / Thumbnail (UC15 / Req 5) */}
+                  {/* Avatar / Thumbnail */}
                   <td style={{ width: 56 }}>
                     <div
                       style={{
@@ -192,7 +192,7 @@ export default function ProductTable({
                     </div>
                     {row.costPrice != null && (
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>
-                        Cost: {money(row.costPrice)}
+                        Giá vốn: {money(row.costPrice)}
                       </div>
                     )}
                   </td>
@@ -200,7 +200,7 @@ export default function ProductTable({
                   {/* Prescription */}
                   <td>
                     {isRx ? (
-                      <span className="pms-badge pms-badge-warning">Rx</span>
+                      <span className="pms-badge pms-badge-warning">Rx (Kê đơn)</span>
                     ) : (
                       <span className="pms-badge pms-badge-neutral">OTC</span>
                     )}
@@ -219,12 +219,12 @@ export default function ProductTable({
                   </td>
 
                   {/* Actions */}
-                  <td className="text-right">
-                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                       {/* View */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
-                        title="View Product detail"
+                        title="Xem chi tiết thuốc"
                         onClick={() => onView(row.id)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -233,11 +233,11 @@ export default function ProductTable({
                         </svg>
                       </button>
 
-                      {/* Set / Update Price (Req 1) */}
+                      {/* Set / Update Price */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
                         style={{ color: 'var(--brand-primary)' }}
-                        title="Manage Product Price"
+                        title="Thiết lập & Điều chỉnh giá bán"
                         onClick={() => onUpdatePrice && onUpdatePrice(row)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -249,7 +249,7 @@ export default function ProductTable({
                       {/* Edit */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
-                        title="Edit Product"
+                        title="Chỉnh sửa thông tin thuốc"
                         onClick={() => onEdit(row)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -258,11 +258,11 @@ export default function ProductTable({
                         </svg>
                       </button>
 
-                      {/* Inactive / Activate Product (Req 3) */}
+                      {/* Inactive / Activate Product */}
                       <button
                         className={`btn-pms btn-pms-sm ${isActive ? 'btn-pms-ghost' : 'btn-pms-outline'}`}
                         style={{ color: isActive ? 'var(--status-danger)' : 'var(--brand-primary)' }}
-                        title={isActive ? 'Inactive Product' : 'Active Product'}
+                        title={isActive ? 'Ngừng kinh doanh' : 'Kích hoạt kinh doanh'}
                         onClick={() => onToggleStatus && onToggleStatus(row)}
                       >
                         {isActive ? (

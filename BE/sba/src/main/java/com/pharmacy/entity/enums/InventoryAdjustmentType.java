@@ -4,11 +4,11 @@ import lombok.Getter;
 
 @Getter
 public enum InventoryAdjustmentType {
-    COUNT_VARIANCE((short) 1, "Count Variance"),
-    DAMAGE_SPOILAGE((short) 2, "Damage / Spoilage"),
-    BREAKAGE((short) 3, "Breakage"),
-    EXPIRED_WRITEOFF((short) 4, "Expired Write-Off"),
-    OTHER((short) 5, "Other Discrepancy");
+    COUNT_VARIANCE((short) 1, "Chênh lệch kiểm kê"),
+    DAMAGE_SPOILAGE((short) 2, "Hư hỏng / Hao hụt"),
+    BREAKAGE((short) 3, "Vỡ nứt"),
+    EXPIRED_WRITEOFF((short) 4, "Hết hạn — Tiêu hủy"),
+    OTHER((short) 5, "Khác");
 
     private final Short code;
     private final String label;

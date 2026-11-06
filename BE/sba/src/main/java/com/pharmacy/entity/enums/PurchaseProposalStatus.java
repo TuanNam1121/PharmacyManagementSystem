@@ -4,10 +4,10 @@ import lombok.Getter;
 
 @Getter
 public enum PurchaseProposalStatus {
-    PENDING((short) 0, "Pending"),
-    APPROVED((short) 1, "Approved"),
-    REJECTED((short) 2, "Rejected"),
-    COMPLETED((short) 3, "Completed");
+    PENDING((short) 0, "Đã lập đề xuất"),
+    APPROVED((short) 1, "Sẵn sàng tạo RFQ"),
+    REJECTED((short) 2, "Đã từ chối"),
+    COMPLETED((short) 3, "Hoàn tất");
 
     private final Short code;
     private final String label;
