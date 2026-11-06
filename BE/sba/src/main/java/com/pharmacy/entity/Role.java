@@ -16,6 +16,7 @@ import org.hibernate.annotations.Nationalized;
 @Table(name = "roles")
 public class Role {
     @Id
+    @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
 
