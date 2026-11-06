@@ -53,7 +53,7 @@ export default function SupplierTable({
               <th>Mã Số Thuế</th>
               <th>Trạng Thái</th>
               <th>Ngày Tạo</th>
-              <th className="text-right" style={{ width: 110 }}>Thao Tác</th>
+              <th style={{ width: 120, textAlign: 'center' }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -160,8 +160,8 @@ export default function SupplierTable({
                   <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                     {formatDate(row.createdAt)}
                   </td>
-                  <td className="text-right">
-                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                       {/* View Details */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"

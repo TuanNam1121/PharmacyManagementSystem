@@ -4,9 +4,9 @@ import lombok.Getter;
 
 @Getter
 public enum StockWarningLevel {
-    NORMAL("NORMAL", "Normal"),
-    WARNING("WARNING", "Warning"),
-    DANGER("DANGER", "Danger");
+    NORMAL("NORMAL", "Bình thường"),
+    WARNING("WARNING", "Cảnh báo"),
+    DANGER("DANGER", "Nguy hiểm");
 
     private final String value;
     private final String label;

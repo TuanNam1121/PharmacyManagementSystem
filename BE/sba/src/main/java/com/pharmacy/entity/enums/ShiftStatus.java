@@ -4,9 +4,9 @@ import lombok.Getter;
 
 @Getter
 public enum ShiftStatus {
-    OPEN((short) 1, "Open"),
-    CLOSED((short) 2, "Closed"),
-    RECONCILED((short) 3, "Reconciled");
+    OPEN((short) 1, "Đang mở"),
+    CLOSED((short) 2, "Đã đóng"),
+    RECONCILED((short) 3, "Đã kết toán");
 
     private final Short code;
     private final String label;

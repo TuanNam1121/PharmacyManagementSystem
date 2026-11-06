@@ -58,4 +58,19 @@ public class GoodsReceiptController {
         GoodsReceiptDto result = goodsReceiptService.confirmGoodsReceipt(id, request, clientIp);
         return ResponseEntity.ok(ApiResponse.success("Goods receipt confirmed successfully", result));
     }
+
+    /**
+     * Reject goods receipt with reason
+     */
+    @RequestMapping(value = "/{id}/reject", method = {RequestMethod.PATCH, RequestMethod.POST})
+    public ResponseEntity<ApiResponse<GoodsReceiptDto>> rejectGoodsReceipt(
+            @PathVariable Long id,
+            @RequestBody(required = false) java.util.Map<String, String> body,
+            HttpServletRequest httpServletRequest) {
+
+        String reason = body != null ? body.get("reason") : "Từ chối nhận hàng";
+        String clientIp = httpServletRequest.getRemoteAddr();
+        GoodsReceiptDto result = goodsReceiptService.rejectGoodsReceipt(id, reason, clientIp);
+        return ResponseEntity.ok(ApiResponse.success("Đã từ chối nhận hàng thành công", result));
+    }
 }

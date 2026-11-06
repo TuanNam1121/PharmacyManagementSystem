@@ -133,12 +133,8 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
         GoodsIssue gi = goodsIssueRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Goods receipt not found with ID: " + id));
 
-        if (gi.getStatus() != null && (gi.getStatus().equals(GoodsIssueStatus.RECEIVED.getCode())
-                || gi.getStatus().equals(GoodsIssueStatus.RECEIVED_DISCREPANCY.getCode()))) {
-            throw new IllegalStateException("This receipt has already been confirmed!");
-        }
-        if (gi.getStatus() != null && gi.getStatus().equals(GoodsIssueStatus.CANCELLED.getCode())) {
-            throw new IllegalStateException("This receipt has been cancelled and cannot be confirmed!");
+        if (gi.getStatus() == null || !gi.getStatus().equals(GoodsIssueStatus.DISPATCHED.getCode())) {
+            throw new IllegalStateException("Chỉ có thể xác nhận nhận hàng khi phiếu xuất kho đang ở trạng thái Đang vận chuyển!");
         }
 
         List<GoodsIssueDetail> details = goodsIssueDetailRepository.findByGoodsIssueIdWithProductAndBatch(gi.getId());
@@ -231,6 +227,70 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
         log.setEntityId(gi.getId());
         log.setOldValue("status=1 (dispatched)");
         log.setNewValue("status=" + finalStatus + ", discrepancy=" + hasDiscrepancy + ", note=" + request.getNote());
+        log.setIpAddress(clientIp);
+        log.setCreatedAt(LocalDateTime.now());
+        auditLogRepository.save(log);
+
+        return mapGoodsReceipt(gi, true);
+    }
+
+    @Override
+    @Transactional
+    public GoodsReceiptDto rejectGoodsReceipt(Long id, String reason, String clientIp) {
+        GoodsIssue gi = goodsIssueRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Goods receipt not found with ID: " + id));
+
+        if (gi.getStatus() == null || !gi.getStatus().equals(GoodsIssueStatus.DISPATCHED.getCode())) {
+            throw new IllegalStateException("Chỉ có thể từ chối nhận hàng khi phiếu xuất kho đang ở trạng thái Đang vận chuyển!");
+        }
+
+        // Return stock back to source warehouse (fromStore)
+        List<GoodsIssueDetail> details = goodsIssueDetailRepository.findByGoodsIssueIdWithProductAndBatch(gi.getId());
+        Store fromStore = gi.getFromStore();
+        if (fromStore != null) {
+            for (GoodsIssueDetail d : details) {
+                if (d.getQuantity() != null && d.getQuantity() > 0 && d.getProduct() != null && d.getBatch() != null) {
+                    Inventory whInv = inventoryRepository.findByStoreIdAndProductIdAndBatchId(
+                            fromStore.getId(),
+                            d.getProduct().getId(),
+                            d.getBatch().getId()).orElse(null);
+                    if (whInv != null) {
+                        whInv.setQuantity(whInv.getQuantity() + d.getQuantity());
+                        whInv.setUpdatedAt(LocalDateTime.now());
+                        inventoryRepository.save(whInv);
+                    }
+                }
+            }
+        }
+
+        gi.setStatus(GoodsIssueStatus.CANCELLED.getCode()); // 4: CANCELLED / REJECTED
+        String noteMsg = (gi.getNote() != null && !gi.getNote().isBlank()) ? gi.getNote() + " | " : "";
+        gi.setNote(noteMsg + "Từ chối nhận hàng: " + (reason != null ? reason : "Lý do khác"));
+        gi.setReceivedAt(LocalDateTime.now());
+
+        Account receiver = accountRepository.findByUsername("manager").orElse(null);
+        if (receiver == null) {
+            receiver = accountRepository.findAll().stream().findFirst().orElse(null);
+        }
+        gi.setReceivedBy(receiver);
+        goodsIssueRepository.save(gi);
+
+        // Sync StockRequisition status -> CANCELLED
+        if (gi.getStockRequisition() != null) {
+            StockRequisition sr = gi.getStockRequisition();
+            sr.setStatus(StockRequisitionStatus.CANCELLED.getCode());
+            sr.setRejectReason("Từ chối nhận hàng: " + reason);
+            stockRequisitionRepository.save(sr);
+        }
+
+        // Immutable AuditLog
+        AuditLog log = new AuditLog();
+        log.setAccount(receiver);
+        log.setAction((short) 2); // 2: UPDATE / REJECT
+        log.setEntityName("GoodsIssue_Receipt_Reject");
+        log.setEntityId(gi.getId());
+        log.setOldValue("status=1 (dispatched)");
+        log.setNewValue("status=4 (cancelled/rejected), reason=" + reason);
         log.setIpAddress(clientIp);
         log.setCreatedAt(LocalDateTime.now());
         auditLogRepository.save(log);

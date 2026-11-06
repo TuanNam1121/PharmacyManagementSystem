@@ -76,7 +76,7 @@ export default function WarehouseInventoryTable({ data, loading, onAssignLocatio
               <th>Vị Trí Ô Kệ</th>
               <th className="text-right">SL Tồn</th>
               <th className="text-right">Giá Trị Tồn</th>
-              <th className="text-right" style={{ width: 140 }}>Thao Tác</th>
+              <th style={{ width: 140, textAlign: 'center' }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -149,8 +149,8 @@ export default function WarehouseInventoryTable({ data, loading, onAssignLocatio
                   </td>
 
                   {/* Actions */}
-                  <td className="text-right">
-                    <div style={{ display: 'inline-flex', gap: 4 }}>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', gap: 4, justifyContent: 'center' }}>
                       <button
                         className="btn-pms btn-pms-sm btn-pms-secondary"
                         title="Gán vị trí ô kệ cho lô thuốc"

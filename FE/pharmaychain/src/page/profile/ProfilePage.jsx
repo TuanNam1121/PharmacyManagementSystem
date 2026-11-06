@@ -120,7 +120,9 @@ export default function ProfilePage() {
           } else {
             sessionStorage.setItem('pms_user', JSON.stringify(userObj));
           }
-        } catch {}
+        } catch (_ignored) {
+          // ignore localStorage JSON parse error
+        }
       }
 
       setTimeout(() => setSuccessToast(''), 4000);

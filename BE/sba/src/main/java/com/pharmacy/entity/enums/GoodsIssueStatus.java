@@ -4,11 +4,11 @@ import lombok.Getter;
 
 @Getter
 public enum GoodsIssueStatus {
-    PICKING((short) 0, "Picking"),
-    DISPATCHED((short) 1, "Dispatched / In Transit"),
-    RECEIVED((short) 2, "Received"),
-    RECEIVED_DISCREPANCY((short) 3, "Received with Discrepancy"),
-    CANCELLED((short) 4, "Cancelled");
+    PICKING((short) 0, "Đang soạn hàng"),
+    DISPATCHED((short) 1, "Đang vận chuyển"),
+    RECEIVED((short) 2, "Đã nhận hàng"),
+    RECEIVED_DISCREPANCY((short) 3, "Nhận có chênh lệch"),
+    CANCELLED((short) 4, "Đã hủy");
 
     private final Short code;
     private final String label;
@@ -32,7 +32,7 @@ public enum GoodsIssueStatus {
 
     public static String resolveLabel(Short code) {
         GoodsIssueStatus status = fromCode(code);
-        return status != null ? status.getLabel() : "Unknown";
+        return status != null ? status.getLabel() : "Không xác định";
     }
 
     public static String resolveText(Short code) {

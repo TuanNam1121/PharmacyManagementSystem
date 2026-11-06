@@ -109,8 +109,6 @@ export const useBranchInventory = () => {
             setSuccessMsg('Minimum stock threshold updated successfully!');
             setThresholdModalOpen(false);
             reloadAll();
-        } catch (err) {
-            throw err;
         } finally {
             setSubmitting(false);
         }
@@ -129,8 +127,6 @@ export const useBranchInventory = () => {
             setSuccessMsg('Stock audit check confirmed and recorded successfully!');
             setAuditModalOpen(false);
             reloadAll();
-        } catch (err) {
-            throw err;
         } finally {
             setSubmitting(false);
         }

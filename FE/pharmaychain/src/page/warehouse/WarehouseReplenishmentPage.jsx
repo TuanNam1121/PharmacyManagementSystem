@@ -183,11 +183,12 @@ export default function WarehouseReplenishmentPage() {
           onChange={(e) => setStatus(e.target.value)}
         >
           <option value="">Tất cả trạng thái</option>
-          <option value="1">Chờ duyệt (Mới tạo)</option>
-          <option value="2">Đã duyệt (Sẵn sàng xuất kho)</option>
+          <option value="1">Chờ xét duyệt</option>
+          <option value="2">Đã phê duyệt (Sẵn sàng xuất kho)</option>
           <option value="3">Đã từ chối</option>
-          <option value="4">Đang giao vận (Đã xuất kho)</option>
-          <option value="5">Đã hoàn thành / Đã nhận</option>
+          <option value="4">Đã xuất kho / Đang giao</option>
+          <option value="5">Đã nhận hàng (Hoàn tất)</option>
+          <option value="0">Bản nháp</option>
         </select>
 
         <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
@@ -230,15 +231,16 @@ export default function WarehouseReplenishmentPage() {
                   <th>Ngày Yêu Cầu</th>
                   <th>Người Yêu Cầu</th>
                   <th>Trạng Thái</th>
-                  <th className="text-right" style={{ width: 220 }}>Thao Tác</th>
+                  <th style={{ width: 140, textAlign: 'center' }}>Thao Tác</th>
                 </tr>
               </thead>
               <tbody>
                 {list.map((row, i) => {
-                  const isPending = row.status === 1 || row.status === 0 || row.statusText === 'Submitted';
-                  const isApproved = row.status === 2 || row.statusText === 'Approved';
-                  const isRejected = row.status === 3 || row.statusText === 'Rejected';
-                  const isDispatched = row.status === 4 || row.statusText === 'Dispatched';
+                  const isPending = row.status === 1 || row.status === 0 || row.statusText === 'Chờ xét duyệt' || row.statusText === 'Bản nháp' || row.statusText === 'Submitted';
+                  const isApproved = row.status === 2 || row.statusText === 'Đã phê duyệt' || row.statusText === 'Approved';
+                  const isRejected = row.status === 3 || row.statusText === 'Đã từ chối' || row.statusText === 'Rejected';
+                  const isDispatched = row.status === 4 || row.statusText === 'Đã xuất kho / Đang giao' || row.statusText === 'Dispatched';
+                  const isReceived = row.status === 5 || row.statusText === 'Đã nhận hàng';
 
                   return (
                     <tr key={row.id || i}>
@@ -252,12 +254,12 @@ export default function WarehouseReplenishmentPage() {
                       <td className="text-sm text-muted-color">{formatDate(row.createdAt)}</td>
                       <td className="text-sm text-muted-color">{row.createdByUsername || '—'}</td>
                       <td>
-                        <span className={`pms-badge ${isApproved ? 'pms-badge-success' : isRejected ? 'pms-badge-danger' : isDispatched ? 'pms-badge-info' : 'pms-badge-warning'}`}>
-                          {row.status === 2 ? 'Đã duyệt' : row.status === 3 ? 'Đã từ chối' : row.status === 4 ? 'Đang giao hàng' : row.status === 5 ? 'Đã hoàn thành' : 'Chờ phê duyệt'}
+                        <span className={`pms-badge ${isApproved ? 'pms-badge-success' : isRejected ? 'pms-badge-danger' : isDispatched ? 'pms-badge-info' : isReceived ? 'pms-badge-neutral' : 'pms-badge-warning'}`}>
+                          {row.status === 2 ? 'Đã phê duyệt' : row.status === 3 ? 'Đã từ chối' : row.status === 4 ? 'Đã xuất kho / Đang giao' : row.status === 5 ? 'Đã nhận hàng' : 'Chờ xét duyệt'}
                         </span>
                       </td>
-                      <td className="text-right">
-                        <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'flex-end' }}>
+                      <td style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                           {isPending && (
                             <button
                               className="btn-pms btn-pms-sm btn-pms-primary"

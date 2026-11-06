@@ -16,10 +16,11 @@ export default function WarehouseReplenishmentDetailModal({
 
   if (!show) return null;
 
-  const isPending = detail?.status === 1 || detail?.status === 0 || detail?.statusText === 'Submitted';
-  const isApproved = detail?.status === 2 || detail?.statusText === 'Approved';
-  const isRejected = detail?.status === 3 || detail?.statusText === 'Rejected';
-  const isDispatched = detail?.status === 4 || detail?.statusText === 'Dispatched';
+  const isPending = detail?.status === 1 || detail?.status === 0 || detail?.statusText === 'Chờ xét duyệt' || detail?.statusText === 'Bản nháp' || detail?.statusText === 'Submitted';
+  const isApproved = detail?.status === 2 || detail?.statusText === 'Đã phê duyệt' || detail?.statusText === 'Approved';
+  const isRejected = detail?.status === 3 || detail?.statusText === 'Đã từ chối' || detail?.statusText === 'Rejected';
+  const isDispatched = detail?.status === 4 || detail?.statusText === 'Đã xuất kho / Đang giao' || detail?.statusText === 'Dispatched';
+  const isReceived = detail?.status === 5 || detail?.statusText === 'Đã nhận hàng';
 
   const handleConfirmReject = () => {
     if (!rejectReason.trim()) {
@@ -79,8 +80,8 @@ export default function WarehouseReplenishmentDetailModal({
                 <div className="pms-detail-row">
                   <div className="pms-detail-label">Trạng Thái</div>
                   <div style={{ marginTop: 2 }}>
-                    <span className={`pms-badge ${isApproved ? 'pms-badge-success' : isRejected ? 'pms-badge-danger' : isDispatched ? 'pms-badge-info' : 'pms-badge-warning'}`}>
-                      {detail.statusText || 'Chờ xét duyệt'}
+                    <span className={`pms-badge ${isApproved ? 'pms-badge-success' : isRejected ? 'pms-badge-danger' : isDispatched ? 'pms-badge-info' : isReceived ? 'pms-badge-neutral' : 'pms-badge-warning'}`}>
+                      {isApproved ? 'Đã phê duyệt' : isRejected ? 'Đã từ chối' : isDispatched ? 'Đã xuất kho / Đang giao' : isReceived ? 'Đã nhận hàng' : (detail.statusText || 'Chờ xét duyệt')}
                     </span>
                   </div>
                 </div>

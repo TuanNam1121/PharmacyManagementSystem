@@ -8,18 +8,20 @@ export default function RfqTable({
   onToggleSelect,
 }) {
   const getStatusBadge = (status) => {
-    switch (status) {
-      case "SENT":
-        return <span className="pms-badge pms-badge-info">Đã gửi</span>;
-      case "RESPONDED":
-        return <span className="pms-badge pms-badge-success">Đã phản hồi</span>;
-      case "EXPIRED":
-        return <span className="pms-badge pms-badge-warning">Đã hết hạn</span>;
-      case "CANCELLED":
-        return <span className="pms-badge pms-badge-neutral">Đã hủy</span>;
-      default:
-        return <span className="pms-badge pms-badge-neutral">{status || "Đã hủy"}</span>;
+    const s = String(status || '').toUpperCase().trim();
+    if (s === 'SENT' || s === '0' || s === 'ĐÃ GỬI') {
+      return <span className="pms-badge pms-badge-info">Đã gửi</span>;
     }
+    if (s === 'RESPONDED' || s === '1' || s === 'ĐÃ NHẬN BÁO GIÁ' || s === 'ĐÃ PHẢN HỒI') {
+      return <span className="pms-badge pms-badge-success">Đã phản hồi</span>;
+    }
+    if (s === 'EXPIRED' || s === '2' || s === 'HẾT HẠN') {
+      return <span className="pms-badge pms-badge-warning">Đã hết hạn</span>;
+    }
+    if (s === 'CANCELLED' || s === '3' || s === 'ĐÃ HỦY') {
+      return <span className="pms-badge pms-badge-neutral">Đã hủy</span>;
+    }
+    return <span className="pms-badge pms-badge-neutral">Chờ phản hồi</span>;
   };
 
   const columns = [
@@ -147,14 +149,22 @@ export default function RfqTable({
               {/* Deadline (expiredAt) */}
               <td>
                 <div>{formatDate(rfq.expiredAt)}</div>
-                {rfq.status === "SENT" && rfq.expiredAt && !isNaN(new Date(rfq.expiredAt).getTime()) && (
+                {rfq.status === "SENT" && rfq.expiredAt && rfq.expiredAt !== 'Invalid Date' && (
                   <div
                     className="pms-table-cell-secondary"
                     style={{ fontSize: 11 }}
                   >
-                    {new Date(rfq.expiredAt) < new Date()
-                      ? "Quá hạn"
-                      : "Còn hiệu lực"}
+                    {(() => {
+                      let d = new Date(rfq.expiredAt);
+                      if (isNaN(d.getTime()) && typeof rfq.expiredAt === 'string') {
+                        const parts = rfq.expiredAt.split(/[/\s:]/);
+                        if (parts.length >= 3) {
+                          d = new Date(parts[2], parts[1] - 1, parts[0]);
+                        }
+                      }
+                      if (isNaN(d.getTime())) return null;
+                      return d < new Date() ? "Quá hạn" : "Còn hiệu lực";
+                    })()}
                   </div>
                 )}
               </td>

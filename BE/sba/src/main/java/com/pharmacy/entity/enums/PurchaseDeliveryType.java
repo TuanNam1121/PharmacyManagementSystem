@@ -4,8 +4,8 @@ import lombok.Getter;
 
 @Getter
 public enum PurchaseDeliveryType {
-    DIRECT((short) 1, "Direct Delivery"),
-    FREIGHT((short) 2, "Freight Transport");
+    DIRECT((short) 1, "Giao hàng trực tiếp"),
+    FREIGHT((short) 2, "Vận chuyển hàng hóa");
 
     private final Short code;
     private final String label;

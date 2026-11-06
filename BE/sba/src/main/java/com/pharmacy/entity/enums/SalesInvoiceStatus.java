@@ -4,11 +4,11 @@ import lombok.Getter;
 
 @Getter
 public enum SalesInvoiceStatus {
-    PENDING_PAYMENT((short) 0, "Pending Payment"),
-    PAID((short) 1, "Paid"),
-    CANCELLED((short) 2, "Cancelled"),
-    PARTIALLY_RETURNED((short) 3, "Partially Returned"),
-    FULLY_RETURNED((short) 4, "Fully Returned");
+    PENDING_PAYMENT((short) 0, "Chờ thanh toán"),
+    PAID((short) 1, "Hoàn thành"),
+    CANCELLED((short) 2, "Đã hủy"),
+    PARTIALLY_RETURNED((short) 3, "Trả một phần"),
+    FULLY_RETURNED((short) 4, "Đã trả toàn bộ");
 
     private final Short code;
     private final String label;

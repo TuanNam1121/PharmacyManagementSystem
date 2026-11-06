@@ -124,7 +124,7 @@ public class StockRequisitionServiceImpl implements StockRequisitionService {
                 .code(code)
                 .store(store)
                 .createdBy(creator)
-                .status((short) 0) // 0: Pending Review (Chờ duyệt)
+                .status(StockRequisitionStatus.PENDING.getCode()) // 1: Chờ xét duyệt (PENDING)
                 .createdAt(LocalDateTime.now())
                 .details(new ArrayList<>())
                 .build();

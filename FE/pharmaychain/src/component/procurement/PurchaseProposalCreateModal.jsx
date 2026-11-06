@@ -49,7 +49,7 @@ export default function PurchaseProposalCreateModal({ show, onHide, onSubmit, lo
         <div className="pms-modal-header" style={{ flexShrink: 0 }}>
           <div>
             <div className="pms-modal-title">Tạo Đề Xuất Mua Hàng</div>
-            <div className="pms-modal-sub">Tổng hợp các yêu cầu mua hàng từ kho thành đề xuất mua hàng gửi Ban Giám Đốc</div>
+            <div className="pms-modal-sub">Tổng hợp các yêu cầu mua hàng từ kho thành đề xuất mua hàng để tiến hành chào giá RFQ</div>
           </div>
           <button className="pms-modal-close" onClick={onHide} disabled={loading} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

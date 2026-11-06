@@ -1,7 +1,14 @@
 export const formatDate = (iso) => {
-  if (!iso) return '-';
+  if (!iso || iso === 'Invalid Date') return '-';
+  if (typeof iso === 'string') {
+    const trimmed = iso.trim();
+    if (!trimmed || trimmed === 'Invalid Date') return '-';
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(trimmed)) {
+      return trimmed.split(' ')[0];
+    }
+  }
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
+  if (isNaN(d.getTime())) return '-';
   const day = String(d.getDate()).padStart(2, '0');
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const year = d.getFullYear();

@@ -58,9 +58,9 @@ public class RfqServiceImpl implements RfqService {
 
     @Override
     public List<PurchaseProposalResponse> getEligiblePurchaseProposals() {
-        // Only approved proposals are ready to have RFQs sent
+        // Proposals created by purchasing staff are immediately eligible for RFQ
         return purchaseProposalRepository.findByStatusIn(
-                List.of(PurchaseProposalStatus.APPROVED.getCode()))
+                List.of(PurchaseProposalStatus.PENDING.getCode(), PurchaseProposalStatus.APPROVED.getCode()))
                 .stream()
                 .map(PurchaseProposalResponse::fromEntity)
                 .toList();

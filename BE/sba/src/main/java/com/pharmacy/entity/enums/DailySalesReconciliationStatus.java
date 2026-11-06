@@ -4,9 +4,9 @@ import lombok.Getter;
 
 @Getter
 public enum DailySalesReconciliationStatus {
-    OPEN((short) 0, "Open"),
-    RECONCILED((short) 1, "Reconciled"),
-    DISCREPANCY_NOTED((short) 2, "Discrepancy Noted");
+    OPEN((short) 0, "Đang mở"),
+    RECONCILED((short) 1, "Đã đối soát"),
+    DISCREPANCY_NOTED((short) 2, "Có chênh lệch");
 
     private final Short code;
     private final String label;

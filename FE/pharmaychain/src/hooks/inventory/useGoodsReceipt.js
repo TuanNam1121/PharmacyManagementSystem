@@ -168,8 +168,6 @@ export const useGoodsReceipt = () => {
         openRejectModal,
         handleConfirmReceipt,
         handleRejectReceipt,
-        storeId,
-        setStoreId,
         error,
         setError,
         successMsg,

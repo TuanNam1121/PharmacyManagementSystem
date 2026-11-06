@@ -5,10 +5,10 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
 
   const renderStatusBadge = (status) => {
     const s = Number(status);
-    if (s === 1) return <span className="pms-badge pms-badge-success">Đã phê duyệt</span>;
-    if (s === 2) return <span className="pms-badge pms-badge-danger">Đã từ chối</span>;
+    if (s === 1) return <span className="pms-badge pms-badge-success">Sẵn sàng tạo RFQ</span>;
+    if (s === 2) return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
     if (s === 3) return <span className="pms-badge pms-badge-neutral">Hoàn tất</span>;
-    return <span className="pms-badge pms-badge-info">Chờ phê duyệt</span>;
+    return <span className="pms-badge pms-badge-info">Đã lập đề xuất</span>;
   };
 
   return (
@@ -19,7 +19,7 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
             <div className="pms-modal-title">
               Chi Tiết Đề Xuất Mua Hàng {detail?.code ? `— ${detail.code}` : ''}
             </div>
-            <div className="pms-modal-sub">Tổng hợp các yêu cầu mua hàng từ bộ phận kho gửi Ban Giám Đốc</div>
+            <div className="pms-modal-sub">Tổng hợp các yêu cầu mua hàng từ bộ phận kho để chào giá RFQ</div>
           </div>
           <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -122,13 +122,7 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
                   <strong>Người Lập: </strong>{detail.createdByUsername || '—'}
                 </div>
                 <div>
-                  {detail.approvedAt ? (
-                    <>
-                      <strong>Ngày Phê Duyệt: </strong>{formatDate(detail.approvedAt)}
-                    </>
-                  ) : (
-                    <span>Chưa phê duyệt</span>
-                  )}
+                  <strong>Ngày Lập: </strong>{formatDate(detail.createdAt)}
                 </div>
               </div>
             </div>

@@ -717,7 +717,7 @@ body {
 .pms-input {
   width: 100%;
   height: 38px;
-  padding: 0 14px 0 38px;
+  padding: 0 14px;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);
   font-family: inherit;
@@ -727,6 +727,12 @@ body {
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   outline: none;
   box-sizing: border-box;
+}
+
+.pms-input-wrap:has(.pms-input-icon) .pms-input,
+.pms-input-icon ~ .pms-input,
+.pms-input-with-icon {
+  padding-left: 38px;
 }
 
 .pms-input:focus {

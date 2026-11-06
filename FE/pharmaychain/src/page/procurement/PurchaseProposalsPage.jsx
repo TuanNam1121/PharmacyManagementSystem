@@ -136,18 +136,17 @@ export default function PurchaseProposalsPage() {
 
   const statusOptions = [
     { value: '', label: 'Tất cả trạng thái' },
-    { value: '0', label: 'Chờ phê duyệt' },
-    { value: '1', label: 'Đã duyệt' },
-    { value: '2', label: 'Đã từ chối' },
+    { value: '0', label: 'Đã lập đề xuất' },
+    { value: '1', label: 'Sẵn sàng tạo RFQ' },
     { value: '3', label: 'Hoàn tất' },
   ];
 
   const getStatusBadge = (statusCode) => {
     const s = Number(statusCode);
-    if (s === 1) return <span className="pms-badge pms-badge-success">Đã phê duyệt</span>;
-    if (s === 2) return <span className="pms-badge pms-badge-danger">Đã từ chối</span>;
+    if (s === 1) return <span className="pms-badge pms-badge-success">Sẵn sàng tạo RFQ</span>;
+    if (s === 2) return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
     if (s === 3) return <span className="pms-badge pms-badge-neutral">Hoàn tất</span>;
-    return <span className="pms-badge pms-badge-info">Chờ phê duyệt</span>;
+    return <span className="pms-badge pms-badge-info">Đã lập đề xuất</span>;
   };
 
   return (
@@ -155,7 +154,7 @@ export default function PurchaseProposalsPage() {
       <div className="pms-page-header">
         <div>
           <h1 className="pms-page-title">Đề Xuất Mua Hàng</h1>
-          <p className="pms-page-sub">Quản lý tổng hợp yêu cầu và đề xuất mua hàng gửi Ban Giám Đốc</p>
+          <p className="pms-page-sub">Tổng hợp yêu cầu mua hàng từ kho thành phương án mua và sẵn sàng chào giá RFQ</p>
         </div>
         <button
           className="btn-pms btn-pms-primary"
@@ -256,35 +255,7 @@ export default function PurchaseProposalsPage() {
                       <td className="text-sm text-muted-color">{formatDate(row.createdAt)}</td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
-                          {Number(row.status) === 0 && (
-                            <>
-                              <button
-                                className="pms-icon-btn edit"
-                                style={{ color: 'var(--color-success)' }}
-                                onClick={() => handleApprove(row)}
-                                disabled={actionLoadingId === row.id}
-                                title="Phê duyệt đề xuất mua hàng"
-                                aria-label="Phê duyệt đề xuất"
-                              >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                  <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                              </button>
-                              <button
-                                className="pms-icon-btn danger"
-                                style={{ color: 'var(--color-danger)' }}
-                                onClick={() => handleOpenReject(row)}
-                                disabled={actionLoadingId === row.id}
-                                title="Từ chối đề xuất mua hàng"
-                                aria-label="Từ chối đề xuất"
-                              >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                              </button>
-                            </>
-                          )}
-                          {Number(row.status) === 1 && (
+                          {(Number(row.status) === 0 || Number(row.status) === 1) && (
                             <button
                               className="pms-icon-btn edit"
                               style={{ color: 'var(--brand-primary)' }}
@@ -334,15 +305,6 @@ export default function PurchaseProposalsPage() {
         onHide={() => { setDetailModalOpen(false); setSelectedDetail(null); }}
         detail={selectedDetail}
         loading={detailLoading}
-      />
-      <PurchaseProposalRejectModal
-        show={!!rejectTarget}
-        onHide={() => { setRejectTarget(null); setRejectReason(''); }}
-        code={rejectTarget?.code}
-        reason={rejectReason}
-        onReasonChange={setRejectReason}
-        onSubmit={handleConfirmReject}
-        submitting={rejectSubmitting}
       />
     </div>
   );

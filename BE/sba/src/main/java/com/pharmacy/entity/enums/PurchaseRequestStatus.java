@@ -4,12 +4,12 @@ import lombok.Getter;
 
 @Getter
 public enum PurchaseRequestStatus {
-    DRAFT((short) 0, "Draft"),
-    SUBMITTED((short) 1, "Submitted"),
-    RFQ_SENT((short) 2, "RFQ Sent"),
-    PROPOSAL_CREATED((short) 3, "Proposal Created"),
-    COMPLETED((short) 4, "Completed"),
-    CANCELLED((short) 5, "Cancelled");
+    DRAFT((short) 0, "Bản nháp"),
+    SUBMITTED((short) 1, "Đã gửi duyệt"),
+    RFQ_SENT((short) 2, "Đang chào giá RFQ"),
+    PROPOSAL_CREATED((short) 3, "Đã lập đề xuất"),
+    COMPLETED((short) 4, "Hoàn tất"),
+    CANCELLED((short) 5, "Đã hủy");
 
     private final Short code;
     private final String label;

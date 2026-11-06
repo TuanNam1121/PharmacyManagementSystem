@@ -18,4 +18,9 @@ public interface GoodsReceiptService {
      * Confirm goods receipt, update branch inventory and record AuditLog
      */
     GoodsReceiptDto confirmGoodsReceipt(Long id, ConfirmGoodsReceiptRequest request, String clientIp);
+
+    /**
+     * Reject goods receipt, restore central warehouse stock and record AuditLog
+     */
+    GoodsReceiptDto rejectGoodsReceipt(Long id, String reason, String clientIp);
 }

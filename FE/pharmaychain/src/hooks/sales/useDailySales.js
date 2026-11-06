@@ -115,8 +115,6 @@ export const useDailySales = ({ initialTab = 'overview' } = {}) => {
             setReconcileModalOpen(false);
             reloadAll();
             return result;
-        } catch (err) {
-            throw err;
         } finally {
             setReconciling(false);
         }

@@ -4,11 +4,11 @@ import lombok.Getter;
 
 @Getter
 public enum PaymentStatus {
-    PENDING((short) 0, "Pending"),
-    SUCCESS((short) 1, "Success"),
-    FAILED((short) 2, "Failed"),
-    REFUNDED((short) 3, "Refunded"),
-    EXPIRED((short) 4, "Expired");
+    PENDING((short) 0, "Chờ thanh toán"),
+    SUCCESS((short) 1, "Thành công"),
+    FAILED((short) 2, "Thất bại"),
+    REFUNDED((short) 3, "Đã hoàn tiền"),
+    EXPIRED((short) 4, "Hết hạn");
 
     private final Short code;
     private final String label;

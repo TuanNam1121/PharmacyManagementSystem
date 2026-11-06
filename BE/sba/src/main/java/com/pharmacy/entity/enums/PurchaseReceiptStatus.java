@@ -4,9 +4,9 @@ import lombok.Getter;
 
 @Getter
 public enum PurchaseReceiptStatus {
-    DRAFT((short) 0, "Pending Inspection"),
-    CONFIRMED((short) 1, "Received / In Stock"),
-    CANCELLED((short) 2, "Cancelled");
+    DRAFT((short) 0, "Chờ kiểm nhận"),
+    CONFIRMED((short) 1, "Đã nhập kho"),
+    CANCELLED((short) 2, "Đã hủy");
 
     private final Short code;
     private final String label;

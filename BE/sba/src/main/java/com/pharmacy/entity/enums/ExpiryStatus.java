@@ -4,10 +4,10 @@ import lombok.Getter;
 
 @Getter
 public enum ExpiryStatus {
-    SAFE("SAFE", "Safe"),
-    GOOD("GOOD", "Good"),
-    EXPIRING_SOON("EXPIRING_SOON", "Expiring Soon"),
-    EXPIRED("EXPIRED", "Expired");
+    SAFE("SAFE", "An toàn"),
+    GOOD("GOOD", "Tốt"),
+    EXPIRING_SOON("EXPIRING_SOON", "Sắp hết hạn"),
+    EXPIRED("EXPIRED", "Đã hết hạn");
 
     private final String value;
     private final String label;

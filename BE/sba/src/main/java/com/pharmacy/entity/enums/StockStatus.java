@@ -4,9 +4,9 @@ import lombok.Getter;
 
 @Getter
 public enum StockStatus {
-    IN_STOCK("IN_STOCK", "In Stock"),
-    LOW_STOCK("LOW_STOCK", "Low Stock"),
-    OUT_OF_STOCK("OUT_OF_STOCK", "Out of Stock");
+    IN_STOCK("IN_STOCK", "Còn hàng"),
+    LOW_STOCK("LOW_STOCK", "Sắp hết hàng"),
+    OUT_OF_STOCK("OUT_OF_STOCK", "Hết hàng");
 
     private final String value;
     private final String label;

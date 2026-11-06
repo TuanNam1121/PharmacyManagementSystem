@@ -2,17 +2,19 @@ import React from 'react';
 import { useStockRequisition } from '../../hooks/inventory/useStockRequisition';
 import CreateRequisitionModal from '../../component/inventory/CreateRequisitionModal';
 
-// ── Cấu hình trạng thái tiếng Việt ─────────────────────────────────────────────
+// ── Cấu hình trạng thái tiếng Việt chuẩn FSM ─────────────────────────────────────────────
 const STATUS_MAP = {
-    0: { label: 'Chờ phê duyệt', cls: 'pms-badge pms-badge-neutral' },
-    1: { label: 'Đã duyệt', cls: 'pms-badge pms-badge-info' },
-    2: { label: 'Đã xuất kho', cls: 'pms-badge pms-badge-warning' },
-    3: { label: 'Đã nhận đủ', cls: 'pms-badge pms-badge-success' },
-    4: { label: 'Đã từ chối', cls: 'pms-badge pms-badge-danger' },
+    0: { label: 'Bản nháp', cls: 'pms-badge pms-badge-neutral' },
+    1: { label: 'Chờ xét duyệt', cls: 'pms-badge pms-badge-warning' },
+    2: { label: 'Đã phê duyệt', cls: 'pms-badge pms-badge-info' },
+    3: { label: 'Đã từ chối', cls: 'pms-badge pms-badge-danger' },
+    4: { label: 'Đã xuất kho / Đang giao', cls: 'pms-badge pms-badge-info' },
+    5: { label: 'Đã nhận hàng', cls: 'pms-badge pms-badge-success' },
+    6: { label: 'Đã hủy', cls: 'pms-badge pms-badge-neutral' },
 };
 
 function StatusBadge({ status }) {
-    const s = STATUS_MAP[status] ?? STATUS_MAP[0];
+    const s = STATUS_MAP[status] ?? { label: 'Không xác định', cls: 'pms-badge pms-badge-neutral' };
     return <span className={s.cls}>{s.label}</span>;
 }
 
@@ -20,9 +22,9 @@ function StatusBadge({ status }) {
 function RequisitionTimeline({ item }) {
     const steps = [
         { label: 'Tạo yêu cầu', time: item.createdAt, done: true },
-        { label: 'Phê duyệt', time: item.approvedAt, done: item.status >= 1 && item.status !== 4 },
-        { label: 'Kho tổng xuất hàng', time: item.dispatchedAt, done: item.status >= 2 },
-        { label: 'Chi nhánh đã nhận', time: item.receivedAt, done: item.status === 3 },
+        { label: 'Phê duyệt', time: item.approvedAt, done: item.status >= 2 && item.status !== 3 && item.status !== 6 },
+        { label: 'Kho tổng xuất hàng', time: item.dispatchedAt, done: item.status === 4 || item.status === 5 },
+        { label: 'Chi nhánh đã nhận', time: item.receivedAt, done: item.status === 5 },
     ];
 
     const fmt = (dt) => dt ? new Date(dt).toLocaleString('vi-VN') : '—';
@@ -186,11 +188,12 @@ export default function StockRequisitionsPage() {
 
     const STATUS_TABS = [
         { value: '', label: 'Tất cả' },
-        { value: '0', label: 'Chờ duyệt' },
-        { value: '1', label: 'Đã duyệt' },
-        { value: '2', label: 'Đã xuất kho' },
-        { value: '3', label: 'Đã nhận' },
-        { value: '4', label: 'Từ chối' },
+        { value: '1', label: 'Chờ duyệt' },
+        { value: '2', label: 'Đã duyệt' },
+        { value: '4', label: 'Đang giao' },
+        { value: '5', label: 'Đã nhận' },
+        { value: '3', label: 'Từ chối' },
+        { value: '0', label: 'Bản nháp' },
     ];
 
     return (
@@ -239,22 +242,8 @@ export default function StockRequisitionsPage() {
                 </div>
             )}
 
-            {/* ── KPI Stats Cards — Chuẩn chung đồng bộ ── */}
+            {/* ── KPI Stats Cards — Chuẩn chung đồng bộ FSM ── */}
             <div className="pms-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 20 }}>
-                <div className="pms-stat-card">
-                    <div className="pms-stat-icon emerald">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                            <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                    </div>
-                    <div>
-                        <div className="pms-stat-label">TỔNG YÊU CẦU LĨNH THUỐC</div>
-                        <div className="pms-stat-value">{total}</div>
-                        <div className="pms-stat-sub">yêu cầu xin cấp phát gửi kho tổng</div>
-                    </div>
-                </div>
-
                 <div className="pms-stat-card">
                     <div className="pms-stat-icon blue">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -264,8 +253,22 @@ export default function StockRequisitionsPage() {
                     </div>
                     <div>
                         <div className="pms-stat-label">CHỜ BAN QUẢN LÝ DUYỆT</div>
-                        <div className="pms-stat-value">{list.filter(x => x.status === 0).length}</div>
-                        <div className="pms-stat-sub">đang chờ quản lý phê duyệt</div>
+                        <div className="pms-stat-value">{list.filter(x => x.status === 1).length}</div>
+                        <div className="pms-stat-sub">phiếu đang chờ kho tổng phê duyệt</div>
+                    </div>
+                </div>
+
+                <div className="pms-stat-card">
+                    <div className="pms-stat-icon emerald">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="pms-stat-label">KHO TỔNG ĐÃ PHÊ DUYỆT</div>
+                        <div className="pms-stat-value">{list.filter(x => x.status === 2).length}</div>
+                        <div className="pms-stat-sub">đã duyệt, sẵn sàng xuất kho</div>
                     </div>
                 </div>
 
@@ -278,9 +281,9 @@ export default function StockRequisitionsPage() {
                         </svg>
                     </div>
                     <div>
-                        <div className="pms-stat-label">KHO TỔNG ĐÃ XUẤT HÀNG</div>
-                        <div className="pms-stat-value">{list.filter(x => x.status === 2).length}</div>
-                        <div className="pms-stat-sub">đang trên đường vận chuyển</div>
+                        <div className="pms-stat-label">ĐÃ XUẤT KHO / ĐANG GIAO</div>
+                        <div className="pms-stat-value">{list.filter(x => x.status === 4).length}</div>
+                        <div className="pms-stat-sub">kho tổng đã xuất, đang vận chuyển</div>
                     </div>
                 </div>
 
@@ -292,8 +295,8 @@ export default function StockRequisitionsPage() {
                     </div>
                     <div>
                         <div className="pms-stat-label">ĐÃ NHẬP KHO CHI NHÁNH</div>
-                        <div className="pms-stat-value">{list.filter(x => x.status === 3).length}</div>
-                        <div className="pms-stat-sub">đã cập nhật vào tồn kho quầy</div>
+                        <div className="pms-stat-value">{list.filter(x => x.status === 5).length}</div>
+                        <div className="pms-stat-sub">chi nhánh đã kiểm nhận hoàn tất</div>
                     </div>
                 </div>
             </div>
