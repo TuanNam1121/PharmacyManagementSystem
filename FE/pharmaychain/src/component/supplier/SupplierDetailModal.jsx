@@ -196,6 +196,17 @@ export default function SupplierDetailModal({
                     </div>
                   </div>
                 )}
+
+                {detail.deleteReason && (
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-danger)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
+                      Deactivation Reason
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', background: '#fdf3f3', border: '1px solid #ffe5e5', padding: '10px 12px', borderRadius: 6 }}>
+                      {detail.deleteReason}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

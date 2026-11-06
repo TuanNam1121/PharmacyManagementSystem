@@ -147,6 +147,32 @@ export const getPurchaseRequestDetail = async (id) => {
   return unwrapApiResponse(json);
 };
 
+/**
+ * Purchasing Staff - View Purchase Request List
+ * Calls purchasing-service endpoint: GET /api/v1/purchase-requests
+ * Defaults to status=1 (approved) so Purchasing Staff sees approved requests.
+ */
+export const getPurchasingStaffPurchaseRequests = async ({ page = 0, size = 10, search = '', status = '' } = {}) => {
+  const params = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+  });
+  if (search) params.append('search', search);
+  if (status !== '' && status !== undefined && status !== null) params.append('status', status);
+
+  const json = await get(`http://localhost:8080/api/v1/purchase-requests?${params.toString()}`);
+  return unwrapApiResponse(json);
+};
+
+/**
+ * Purchasing Staff - View Purchase Request Detail
+ * Calls purchasing-service endpoint: GET /api/v1/purchase-requests/{id}
+ */
+export const getPurchasingStaffPurchaseRequestDetail = async (id) => {
+  const json = await get(`http://localhost:8080/api/v1/purchase-requests/${encodeURIComponent(id)}`);
+  return unwrapApiResponse(json);
+};
+
 export const createPurchaseRequest = async (payload, creatorId) => {
   const params = new URLSearchParams();
   if (creatorId) params.append('creatorId', creatorId);
@@ -223,6 +249,8 @@ export default {
   confirmPurchaseReceipt,
   getPurchaseRequests,
   getPurchaseRequestDetail,
+  getPurchasingStaffPurchaseRequests,
+  getPurchasingStaffPurchaseRequestDetail,
   createPurchaseRequest,
   getReplenishmentRequests,
   getReplenishmentRequestDetail,

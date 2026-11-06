@@ -22,11 +22,14 @@ export const updateSupplier = async (id, payload) => {
   return unwrapApiResponse(json);
 };
 
-export const deleteSupplier = async (id) => {
+export const deleteSupplier = async (id, reason = '') => {
   if (id === null || id === undefined || id === '') {
     throw new Error('Supplier ID is required');
   }
-  const json = await del(`${SUPPLIER_BASE_URL}/${encodeURIComponent(id)}`);
+  const params = new URLSearchParams();
+  if (reason) params.append('reason', reason);
+  const q = params.toString() ? `?${params.toString()}` : '';
+  const json = await del(`${SUPPLIER_BASE_URL}/${encodeURIComponent(id)}${q}`);
   return unwrapApiResponse(json);
 };
 

@@ -79,10 +79,10 @@ export const useSuppliers = () => {
     }
   }, [fetchList, detail, fetchDetail]);
 
-  const handleDelete = useCallback(async (id) => {
+  const handleDelete = useCallback(async (id, reason = '') => {
     try {
       setError(null);
-      await deleteSupplier(id);
+      await deleteSupplier(id, reason);
       setSuccessMsg('Supplier partner deactivated successfully!');
       await fetchList();
       return true;

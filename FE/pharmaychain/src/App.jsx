@@ -19,6 +19,9 @@ import InventoryAuditPage from './page/inventory/InventoryAuditPage';
 import StockRequisitionsPage from './page/inventory/StockRequisitionsPage';
 import GoodsReceiptsPage from './page/inventory/GoodsReceiptsPage';
 import CustomerDirectoryPage from './page/customers/CustomerDirectoryPage';
+import RfqResponsePage from './page/public/RfqResponsePage';
+import RfqPage from './page/rfq/RfqPage';
+import PurchaseProposalsPage from './page/procurement/PurchaseProposalsPage';
 
 /* ── Placeholder for unbuilt pages ── */
 function ComingSoon({ title, module }) {
@@ -53,6 +56,9 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
+      {/* Public RFQ Portal for suppliers */}
+      <Route path="/rfq-response" element={<RfqResponsePage />} />
+
       {/* Protected Application Routes */}
       <Route
         element={
@@ -62,7 +68,7 @@ function App() {
         }
       >
         <Route index element={<Navigate to="/home" replace />} />
-        
+
         {/* Home */}
         <Route path="/home" element={<HomePage />} />
 
@@ -102,8 +108,8 @@ function App() {
         {/* Procurement (LIVE: suppliers, purchase requests) */}
         <Route path="/supplier"               element={<SupplierPage />} />
         <Route path="/procurement/requests"   element={<WarehousePurchaseRequestsPage />} />
-        <Route path="/procurement/rfq"        element={<ComingSoon title="RFQ & Quotations" module="Procurement" />} />
-        <Route path="/procurement/proposals"  element={<ComingSoon title="Purchase Proposals" module="Procurement" />} />
+        <Route path="/procurement/rfq"        element={<RfqPage />} />
+        <Route path="/procurement/proposals"  element={<PurchaseProposalsPage />} />
         <Route path="/procurement/orders"     element={<ComingSoon title="Purchase Orders" module="Procurement" />} />
 
         {/* Reports */}
