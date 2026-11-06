@@ -6,7 +6,7 @@ import DailySalesStats from '../../component/sales/DailySalesStats';
 import DailySalesInvoicesTable from '../../component/sales/DailySalesInvoicesTable';
 import DailySalesShiftsTable from '../../component/sales/DailySalesShiftsTable';
 import DailySalesReconcileModal from '../../component/sales/DailySalesReconcileModal';
-import { money, formatDate, formatDateTime } from '../../utils/format';
+import { money, formatDate, formatDateTime, getLocalDateStr } from '../../utils/format';
 import { getAuthorizedStores } from '../../api/StoreAPI';
 
 export default function DailySalesPage({ defaultTab = 'overview' }) {
@@ -165,6 +165,15 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                                     value={date}
                                     onChange={(e) => setDate(e.target.value)}
                                 />
+                                <button
+                                    type="button"
+                                    className={`btn-pms ${date === getLocalDateStr() ? 'btn-pms-primary' : 'btn-pms-secondary'}`}
+                                    style={{ fontSize: 12, padding: '4px 10px', height: 36 }}
+                                    onClick={() => setDate(getLocalDateStr())}
+                                    title="Xem ngày hôm nay"
+                                >
+                                    Hôm nay
+                                </button>
                             </div>
                         </div>
 

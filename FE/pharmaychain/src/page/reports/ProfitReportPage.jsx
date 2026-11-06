@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getProfitReport, generateProfitReport, exportProfitReportExcel } from '../../api/ProfitReportAPI';
-import { formatDate } from '../../utils/format';
+import { formatDate, getLocalDateStr } from '../../utils/format';
 import { useAuth } from '../../hooks/useAuth';
 import { getAuthorizedStores } from '../../api/StoreAPI';
 
 export default function ProfitReportPage() {
     const { user } = useAuth();
     // ── Date presets helper ──
-    const getToday = () => new Date().toISOString().split('T')[0];
+    const getToday = () => getLocalDateStr();
     const getFirstDayOfMonth = () => {
         const now = new Date();
-        return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        return getLocalDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
     };
 
     // Filter states
@@ -102,20 +102,20 @@ export default function ProfitReportPage() {
         } else if (preset === '7days') {
             const d = new Date();
             d.setDate(d.getDate() - 7);
-            start = d.toISOString().split('T')[0];
+            start = getLocalDateStr(d);
         } else if (preset === 'thisMonth') {
             start = getFirstDayOfMonth();
         } else if (preset === 'lastMonth') {
             const firstOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const lastOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-            start = firstOfLastMonth.toISOString().split('T')[0];
-            setEndDate(lastOfLastMonth.toISOString().split('T')[0]);
+            start = getLocalDateStr(firstOfLastMonth);
+            setEndDate(getLocalDateStr(lastOfLastMonth));
             setStartDate(start);
             return;
         } else if (preset === 'quarter') {
             const currentQuarter = Math.floor(now.getMonth() / 3);
             const firstOfQuarter = new Date(now.getFullYear(), currentQuarter * 3, 1);
-            start = firstOfQuarter.toISOString().split('T')[0];
+            start = getLocalDateStr(firstOfQuarter);
         }
 
         setStartDate(start);
