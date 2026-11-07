@@ -1,4 +1,4 @@
-import { formatDate } from "../../utils/format";
+import { formatDate, isInactiveStatus } from "../../utils/format";
 
 export default function RfqTable({
   data,
@@ -7,6 +7,8 @@ export default function RfqTable({
   size = 10,
   onViewDetail,
   onCompare,
+  onSelectSupplier,
+  selectingRfqId,
 }) {
   const getStatusBadge = (status) => {
     const s = String(status || '').toUpperCase().trim();
@@ -39,7 +41,7 @@ export default function RfqTable({
                 <th>TRẠNG THÁI</th>
                 <th>NGÀY GỬI</th>
                 <th>HẠN CHÓT</th>
-                <th style={{ width: 120, textAlign: "center" }}>THAO TÁC</th>
+                <th style={{ width: 150, textAlign: "center" }}>THAO TÁC</th>
               </tr>
             </thead>
             <tbody>
@@ -67,6 +69,11 @@ export default function RfqTable({
                     rfq.status === 'RESPONDED' ||
                     rfq.status === '1' ||
                     String(rfq.status).toUpperCase() === 'ĐÃ PHẢN HỒI';
+
+                  const canSelectSupplier =
+                    Number(rfq.purchaseProposalStatus) === 0 &&
+                    !isInactiveStatus(rfq.supplierStatus) &&
+                    isResponded;
 
                   return (
                     <tr key={rfq.id}>
@@ -141,6 +148,27 @@ export default function RfqTable({
                                 strokeWidth="2"
                               >
                                 <path d="M18 20V10M12 20V4M6 20v-6" />
+                              </svg>
+                            </button>
+                          )}
+                          {canSelectSupplier && (
+                            <button
+                              className="pms-icon-btn edit"
+                              style={{ color: "var(--color-success)" }}
+                              onClick={() => onSelectSupplier && onSelectSupplier(rfq)}
+                              disabled={selectingRfqId === rfq.id}
+                              title="Chọn nhà cung cấp này"
+                              aria-label="Chọn nhà cung cấp"
+                            >
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                              >
+                                <polyline points="20 6 9 17 4 12" />
                               </svg>
                             </button>
                           )}

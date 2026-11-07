@@ -59,9 +59,9 @@ public class RfqServiceImpl implements RfqService {
 
     @Override
     public List<PurchaseProposalResponse> getEligiblePurchaseProposals() {
-        // Proposals created by purchasing staff or approved are eligible for RFQ
+        // Only proposals that have not yet chosen a supplier are eligible to send RFQ emails
         return purchaseProposalRepository.findByStatusIn(
-                List.of(PurchaseProposalStatus.DRAFT.getCode(), PurchaseProposalStatus.PENDING_APPROVAL.getCode(), PurchaseProposalStatus.APPROVED.getCode()))
+                List.of(PurchaseProposalStatus.DRAFT.getCode()))
                 .stream()
                 .map(PurchaseProposalResponse::fromEntity)
                 .toList();
@@ -85,17 +85,25 @@ public class RfqServiceImpl implements RfqService {
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Purchase proposal not found with ID: " + request.purchaseProposalId()));
 
-        // Proposal must be active (draft, pending approval, or approved) to send an RFQ
+        // Only proposals that have not yet chosen a supplier can send an RFQ
         Short proposalStatus = proposal.getStatus();
         if (proposalStatus == null
-                || (!proposalStatus.equals(PurchaseProposalStatus.DRAFT.getCode())
-                        && !proposalStatus.equals(PurchaseProposalStatus.PENDING_APPROVAL.getCode())
-                        && !proposalStatus.equals(PurchaseProposalStatus.APPROVED.getCode()))) {
-            throw new IllegalArgumentException("Purchase proposal must be active to send RFQ");
+                || !proposalStatus.equals(PurchaseProposalStatus.DRAFT.getCode())) {
+            throw new IllegalArgumentException(
+                    "Chỉ đề xuất chưa chọn nhà cung cấp mới được gửi RFQ");
         }
 
-        // Check if RFQ already sent for this supplier and purchase proposal
-        if (rfqRepository.existsBySupplierIdAndPurchaseProposalId(supplier.getId(), proposal.getId())) {
+        // Block sending only if an RFQ for this supplier + proposal is still active
+        // (already responded, or sent and not yet past its deadline). Expired or
+        // cancelled RFQs can be re-sent.
+        List<Rfq> existingRfqs = rfqRepository
+                .findBySupplierIdAndPurchaseProposalId(supplier.getId(), proposal.getId());
+        LocalDateTime now = LocalDateTime.now();
+        boolean hasActiveRfq = existingRfqs.stream().anyMatch(r ->
+                r.getStatus() == RfqStatus.RESPONDED
+                        || (r.getStatus() == RfqStatus.SENT
+                                && (r.getExpiredAt() == null || r.getExpiredAt().isAfter(now))));
+        if (hasActiveRfq) {
             throw new IllegalArgumentException(
                     "RFQ already sent to this supplier for the same purchase proposal");
         }
@@ -137,11 +145,8 @@ public class RfqServiceImpl implements RfqService {
         // Save RFQ
         Rfq savedRfq = rfqRepository.save(rfq);
 
-        // Update proposal status to PENDING_APPROVAL (1: Chờ phê duyệt / Đang chào giá RFQ)
-        if (PurchaseProposalStatus.DRAFT.getCode().equals(proposal.getStatus())) {
-            proposal.setStatus(PurchaseProposalStatus.PENDING_APPROVAL.getCode());
-            purchaseProposalRepository.save(proposal);
-        }
+        // NOTE: sending an RFQ no longer mutates the proposal status. The proposal only
+        // becomes PENDING_APPROVAL when a winning supplier is chosen (selectSupplier).
 
         // Move every aggregated purchase request to RFQ_SENT
         if (proposal.getRequests() != null) {

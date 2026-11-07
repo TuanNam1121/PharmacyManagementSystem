@@ -1,4 +1,4 @@
-export default function QuotationCompareModal({ show, onHide, data, loading, emptyMessage, error }) {
+export default function QuotationCompareModal({ show, onHide, data, loading, emptyMessage, error, onSelectSupplier, selectingRfqId }) {
   if (!show) return null;
   const showEmpty = !loading && (!!emptyMessage || !data);
   const emptyText =
@@ -104,6 +104,29 @@ export default function QuotationCompareModal({ show, onHide, data, loading, emp
                       ))}
                       <td style={{ borderLeft: '1px solid var(--border)' }}></td>
                     </tr>
+                    {Number(data.purchaseProposalStatus) === 0 && (
+                      <tr>
+                        <td colSpan="2"></td>
+                        {data.columns.map(col => {
+                          const hasQuotation = data.totals[col.rfqId] != null && Number(data.totals[col.rfqId]) > 0;
+                          return (
+                            <td key={col.rfqId} style={{ textAlign: 'center', borderLeft: '1px solid var(--border)', paddingTop: 10 }}>
+                              <button
+                                type="button"
+                                className="btn-pms btn-pms-primary"
+                                style={{ fontSize: 12, padding: '5px 12px' }}
+                                disabled={!hasQuotation || selectingRfqId === col.rfqId}
+                                title={hasQuotation ? 'Chọn nhà cung cấp này' : 'Nhà cung cấp chưa gửi báo giá'}
+                                onClick={() => onSelectSupplier && onSelectSupplier(col)}
+                              >
+                                {selectingRfqId === col.rfqId ? 'Đang chọn…' : 'Chọn NCC'}
+                              </button>
+                            </td>
+                          );
+                        })}
+                        <td style={{ borderLeft: '1px solid var(--border)' }}></td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

@@ -22,8 +22,7 @@ public class PurchaseRequestResponse {
     private Long id;
     private String code;
     private String createdByUsername;
-    private Short status; // 0 draft, 1 submitted, 2 RFQ sent, 3 proposal created, 4 completed, 5
-                          // cancelled
+    private Short status; // 1 submitted, 2 RFQ sent, 3 proposal created, 4 completed, 5 cancelled
     private String statusText;
     private String reason;
     private LocalDateTime createdAt;

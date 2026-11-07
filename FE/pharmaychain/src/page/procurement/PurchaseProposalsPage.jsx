@@ -264,7 +264,7 @@ export default function PurchaseProposalsPage() {
                       <td className="text-sm text-muted-color">{formatDate(row.createdAt)}</td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
-                          {(Number(row.status) === 0 || Number(row.status) === 1 || Number(row.status) === 2) && (
+                          {Number(row.status) === 0 && (
                             <button
                               className="pms-icon-btn edit"
                               style={{ color: 'var(--brand-primary)' }}

@@ -26,6 +26,7 @@ public class CompareResponse {
 
     private Long purchaseProposalId;
     private String purchaseProposalCode;
+    private Short purchaseProposalStatus;
     private List<RfqCompareColumn> columns;
     private List<ProductCompareRow> rows;
     private Map<Long, BigDecimal> totals;
@@ -48,6 +49,7 @@ public class CompareResponse {
         return CompareResponse.builder()
                 .purchaseProposalId(proposal.getId())
                 .purchaseProposalCode(proposal.getCode())
+                .purchaseProposalStatus(proposal.getStatus())
                 .columns(buildColumns(rfqs))
                 .rows(buildRows(proposal, rfqs, priceLookup, quantityByProductId))
                 .totals(buildTotals(rfqs, quotationByRfqId))

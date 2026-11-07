@@ -11,6 +11,7 @@ import RfqDetailModal from '../../component/rfq/RfqDetailModal';
 import QuotationCompareModal from '../../component/rfq/QuotationCompareModal';
 import SendRfqModal from '../../component/supplier/SendRfqModal';
 import { getRfqs } from '../../api/RfqAPI';
+import { selectProposalSupplier } from '../../api/PurchaseProposalAPI';
 
 function Pagination({ total, page, size, onPage }) {
   if (total <= size) return null;
@@ -44,6 +45,7 @@ export default function RfqPage() {
   const [compareEmptyMessage, setCompareEmptyMessage] = useState(null);
   const [detailRfqId, setDetailRfqId] = useState(null);
   const [sendModalOpen, setSendModalOpen] = useState(false);
+  const [selectingRfqId, setSelectingRfqId] = useState(null);
 
   useEffect(() => {
     if (urlProposalId) {
@@ -129,6 +131,44 @@ export default function RfqPage() {
   const handleCompareRfq = (rfq) =>
     openCompareForProposal(rfq.purchaseProposalId || rfq.purchaseProposal?.id);
 
+  const handleSelectSupplier = async (col) => {
+    const proposalId = compareData?.purchaseProposalId;
+    if (!proposalId || !col?.rfqId) return;
+    setSelectingRfqId(col.rfqId);
+    setUiError(null);
+    try {
+      await selectProposalSupplier(proposalId, col.rfqId);
+      setCompareModalOpen(false);
+      setCompareEmptyMessage(null);
+      setSuccessMsg(
+        `Đã chọn nhà cung cấp ${col.supplier?.name || ''}. Đề xuất chuyển sang trạng thái "Chờ phê duyệt" và không thể gửi email RFQ nữa.`
+      );
+      fetchRfqs();
+    } catch (err) {
+      setUiError(err?.message || 'Chọn nhà cung cấp thất bại');
+    } finally {
+      setSelectingRfqId(null);
+    }
+  };
+
+  const handleSelectSupplierRow = async (rfq) => {
+    const proposalId = rfq?.purchaseProposalId || rfq?.purchaseProposal?.id;
+    if (!proposalId || !rfq?.id) return;
+    setSelectingRfqId(rfq.id);
+    setUiError(null);
+    try {
+      await selectProposalSupplier(proposalId, rfq.id);
+      setSuccessMsg(
+        `Đã chọn nhà cung cấp ${rfq.supplierName || ''}. Đề xuất chuyển sang trạng thái "Chờ phê duyệt" và không thể gửi email RFQ nữa.`
+      );
+      fetchRfqs();
+    } catch (err) {
+      setUiError(err?.message || 'Chọn nhà cung cấp thất bại');
+    } finally {
+      setSelectingRfqId(null);
+    }
+  };
+
   return (
     <div className="pms-page">
       <div className="pms-page-header">
@@ -185,6 +225,8 @@ export default function RfqPage() {
         size={size}
         onViewDetail={handleViewDetail}
         onCompare={handleCompareRfq}
+        onSelectSupplier={handleSelectSupplierRow}
+        selectingRfqId={selectingRfqId}
       />
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
@@ -212,6 +254,8 @@ export default function RfqPage() {
         loading={compareLoading}
         emptyMessage={compareEmptyMessage}
         error={compareError}
+        onSelectSupplier={handleSelectSupplier}
+        selectingRfqId={selectingRfqId}
       />
 
       <SendRfqModal

@@ -2,8 +2,6 @@ import { formatDate } from '../../utils/format';
 
 const getPrStatusBadge = (status, statusText) => {
   switch (Number(status)) {
-    case 0:
-      return <span className="pms-badge pms-badge-neutral">Bản nháp</span>;
     case 1:
       return <span className="pms-badge pms-badge-warning">Chờ duyệt</span>;
     case 2:

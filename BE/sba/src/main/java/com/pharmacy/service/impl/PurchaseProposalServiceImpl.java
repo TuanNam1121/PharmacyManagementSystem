@@ -9,6 +9,7 @@ import com.pharmacy.entity.PurchaseProposalDetail;
 import com.pharmacy.entity.PurchaseProposalRequest;
 import com.pharmacy.entity.PurchaseRequest;
 import com.pharmacy.entity.PurchaseRequestDetail;
+import com.pharmacy.entity.SupplierQuotation;
 import com.pharmacy.entity.enums.PurchaseProposalStatus;
 import com.pharmacy.entity.enums.PurchaseRequestStatus;
 import com.pharmacy.repository.AccountRepository;
@@ -16,6 +17,7 @@ import com.pharmacy.repository.ProductRepository;
 import com.pharmacy.repository.PurchaseProposalRepository;
 import com.pharmacy.repository.PurchaseProposalRequestRepository;
 import com.pharmacy.repository.PurchaseRequestRepository;
+import com.pharmacy.repository.SupplierQuotationRepository;
 import com.pharmacy.service.PurchaseProposalService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +49,7 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final AccountRepository accountRepository;
     private final ProductRepository productRepository;
+    private final SupplierQuotationRepository supplierQuotationRepository;
 
     @Override
     @Transactional
@@ -231,6 +234,35 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
 
         pp.setStatus(PurchaseProposalStatus.REJECTED.getCode());
         pp.setRejectReason(reason != null && !reason.trim().isEmpty() ? reason.trim() : null);
+
+        return PurchaseProposalResponse.fromEntity(purchaseProposalRepository.save(pp));
+    }
+
+    @Override
+    @Transactional
+    public PurchaseProposalResponse selectSupplier(Long id, Long rfqId) {
+        PurchaseProposal pp = purchaseProposalRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Purchase proposal not found with ID: " + id));
+
+        // A supplier can only be chosen while the proposal is still awaiting one
+        if (!PurchaseProposalStatus.DRAFT.getCode().equals(pp.getStatus())) {
+            throw new IllegalStateException(
+                    "Only proposals awaiting supplier selection can choose a supplier. Current status: "
+                            + PurchaseProposalStatus.resolveText(pp.getStatus()));
+        }
+
+        SupplierQuotation quotation = supplierQuotationRepository.findByRfqId(rfqId)
+                .orElseThrow(() -> new EntityNotFoundException("Supplier quotation not found for RFQ ID: " + rfqId));
+
+        // The chosen RFQ must belong to this proposal
+        if (quotation.getRfq() == null
+                || quotation.getRfq().getPurchaseProposal() == null
+                || !quotation.getRfq().getPurchaseProposal().getId().equals(pp.getId())) {
+            throw new IllegalArgumentException("Quotation does not belong to this purchase proposal");
+        }
+
+        pp.setSupplierQuotation(quotation);
+        pp.setStatus(PurchaseProposalStatus.PENDING_APPROVAL.getCode());
 
         return PurchaseProposalResponse.fromEntity(purchaseProposalRepository.save(pp));
     }

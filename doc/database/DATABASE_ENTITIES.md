@@ -774,7 +774,7 @@ Yêu cầu mua hàng (header).
 | `id` | Long / BIGINT IDENTITY | ✗ | PK |
 | `code` | String / VARCHAR(30) | ✗ | `PR-...` |
 | `created_by` | Account / BIGINT (FK `accounts.id`) | ✓ | |
-| `status` | Short / TINYINT | ✗ | DEFAULT 0 — 0 Draft, 1 Submitted, 2 RFQ sent, 3 Proposal created, 4 Completed, 5 Cancelled |
+| `status` | Short / TINYINT | ✗ | DEFAULT 1 — 1 Submitted, 2 RFQ sent, 3 Proposal created, 4 Completed, 5 Cancelled |
 | `reason` | String / NVARCHAR(500) | ✓ | |
 | `created_at` | LocalDateTime | ✗ | DEFAULT `sysdatetime()` |
 | `updated_at` | LocalDateTime | ✓ | |
@@ -1194,7 +1194,7 @@ Ngoài FK vật lý, có 3 cột tham chiếu "mềm" (đa hình, không ràng b
 | `InventoryAdjustmentStatus` | 0 Chờ xét duyệt · 1 Đã duyệt · 2 Đã từ chối | `inventory_adjustments.status` |
 | `PurchaseDeliveryType` | 1 Giao hàng trực tiếp · 2 Vận chuyển hàng hóa | `purchase_receipts.delivery_type` |
 | `PurchaseReceiptStatus` | 0 Chờ kiểm nhận · 1 Đã nhập kho · 2 Đã hủy | `purchase_receipts.status` |
-| `PurchaseRequestStatus` | 0 Bản nháp · 1 Đã gửi duyệt · 2 Đang chào giá RFQ · 3 Đã lập đề xuất · 4 Hoàn tất · 5 Đã hủy | `purchase_requests.status` |
+| `PurchaseRequestStatus` | 1 Đã gửi duyệt · 2 Đang chào giá RFQ · 3 Đã lập đề xuất · 4 Hoàn tất · 5 Đã hủy | `purchase_requests.status` |
 | `PurchaseProposalStatus` | 0 Đã lập đề xuất · 1 Sẵn sàng tạo RFQ · 2 Đã từ chối · 3 Hoàn tất | `purchase_proposals.status` |
 | `StockRequisitionStatus` | 0 Bản nháp · 1 Chờ xét duyệt · 2 Đã phê duyệt · 3 Đã từ chối · 4 Đã xuất kho/đang giao · 5 Đã nhận · 6 Đã hủy · 7 Nhận một phần | `stock_requisitions.status` |
 | `GoodsIssueStatus` | 0 Đang soạn hàng · 1 Đang vận chuyển · 2 Đã nhận · 3 Nhận có chênh lệch · 4 Đã hủy | `goods_issues.status` |

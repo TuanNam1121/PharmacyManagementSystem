@@ -227,6 +227,25 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM sys.default_constraints WHERE parent_object_id = OBJECT_ID('dbo.purchase_requests') AND parent_column_id = COLUMNPROPERTY(OBJECT_ID('dbo.purchase_requests'), 'store_id', 'ColumnId'))
         ALTER TABLE dbo.purchase_requests ADD CONSTRAINT DF_purchase_requests_store_id DEFAULT 1 FOR store_id;
 END
+
+-- Default Constraint cho status trong purchase_requests (purchase request không có trạng thái nháp -> mặc định 1 = Đã gửi duyệt)
+IF OBJECT_ID('dbo.purchase_requests', 'U') IS NOT NULL
+BEGIN
+    DECLARE @pr_status_df SYSNAME;
+    SELECT @pr_status_df = dc.name
+    FROM sys.default_constraints dc
+    JOIN sys.columns c ON c.object_id = dc.parent_object_id AND c.column_id = dc.parent_column_id
+    WHERE dc.parent_object_id = OBJECT_ID('dbo.purchase_requests') AND c.name = 'status';
+
+    IF @pr_status_df IS NOT NULL
+        EXEC('ALTER TABLE dbo.purchase_requests DROP CONSTRAINT [' + @pr_status_df + ']');
+
+    IF NOT EXISTS (SELECT 1 FROM sys.default_constraints WHERE parent_object_id = OBJECT_ID('dbo.purchase_requests') AND name = 'DF_purchase_requests_status')
+        ALTER TABLE dbo.purchase_requests ADD CONSTRAINT DF_purchase_requests_status DEFAULT 1 FOR status;
+
+    -- Chuẩn hóa dữ liệu cũ: không còn trạng thái nháp (0)
+    UPDATE dbo.purchase_requests SET status = 1 WHERE status = 0;
+END
 GO
 
 /* =========================================================================================

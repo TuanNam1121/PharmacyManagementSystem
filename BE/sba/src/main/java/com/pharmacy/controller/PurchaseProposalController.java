@@ -82,6 +82,16 @@ public class PurchaseProposalController {
                 ApiResponse.success("Purchase proposal rejected successfully", data));
     }
 
+    @Operation(summary = "Select the winning supplier quotation for a purchase proposal (moves it to PENDING_APPROVAL)")
+    @PatchMapping("/{id}/select-supplier")
+    public ResponseEntity<ApiResponse<PurchaseProposalResponse>> selectSupplier(
+            @PathVariable Long id,
+            @RequestParam Long rfqId) {
+        PurchaseProposalResponse data = purchaseProposalService.selectSupplier(id, rfqId);
+        return ResponseEntity.ok(
+                ApiResponse.success("Supplier selected successfully", data));
+    }
+
     @Operation(summary = "Get eligible purchase requests (SUBMITTED and not yet aggregated) for creating proposals")
     @GetMapping("/eligible-requests")
     public ResponseEntity<ApiResponse<List<PurchaseRequestResponse>>> getEligiblePurchaseRequests() {
