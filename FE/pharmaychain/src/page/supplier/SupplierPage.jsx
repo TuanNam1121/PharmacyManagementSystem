@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSuppliers } from '../../hooks/supplier/useSuppliers';
+import { isInactiveStatus } from '../../utils/format';
 import SupplierStats from '../../component/supplier/SupplierStats';
 import SupplierFilters from '../../component/supplier/SupplierFilters';
 import SupplierTable from '../../component/supplier/SupplierTable';
@@ -7,6 +8,8 @@ import SupplierDetailModal from '../../component/supplier/SupplierDetailModal';
 import SupplierCreateModal from '../../component/supplier/SupplierCreateModal';
 import SupplierDeleteModal from '../../component/supplier/SupplierDeleteModal';
 import SendRfqModal from '../../component/supplier/SendRfqModal';
+
+const INACTIVE_ACTION_MESSAGE = 'Nhà cung cấp đã ngừng hoạt động, không thể thực hiện thao tác này.';
 
 function Pagination({ total, page, size, onPage }) {
   if (total <= size) return null;
@@ -92,12 +95,20 @@ export default function SupplierPage() {
   };
 
   const handleEdit = (supplier) => {
+    if (isInactiveStatus(supplier?.status)) {
+      setError(INACTIVE_ACTION_MESSAGE);
+      return;
+    }
     setFormMode('edit');
     setSelectedSupplier(supplier);
     setFormOpen(true);
   };
 
   const handleSendRfq = (supplier) => {
+    if (isInactiveStatus(supplier?.status)) {
+      setError(INACTIVE_ACTION_MESSAGE);
+      return;
+    }
     setRfqSupplier(supplier);
     setRfqModalOpen(true);
   };
@@ -112,6 +123,10 @@ export default function SupplierPage() {
   };
 
   const handleDeleteRequest = (row) => {
+    if (isInactiveStatus(row?.status)) {
+      setError(INACTIVE_ACTION_MESSAGE);
+      return;
+    }
     setDeleteTarget(row);
     setDeleteReason('');
   };

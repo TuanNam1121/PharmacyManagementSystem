@@ -26,6 +26,4 @@ public interface RfqService {
     RfqQuotationResponse getRfqWithQuotationDetails(Long rfqId);
     
     CompareResponse compareRfqs(List<Long> rfqIds);
-    
-    RfqQuotationResponse recordQuotation(Long rfqId, com.pharmacy.dto.rfq.RecordQuotationRequest request);
 }

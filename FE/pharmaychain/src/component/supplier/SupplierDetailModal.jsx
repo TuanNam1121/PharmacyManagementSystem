@@ -1,4 +1,4 @@
-import { formatDate, getInitials } from '../../utils/format';
+import { formatDate, getInitials, isInactiveStatus } from '../../utils/format';
 
 export default function SupplierDetailModal({
   show,
@@ -9,7 +9,7 @@ export default function SupplierDetailModal({
 }) {
   if (!show) return null;
 
-  const isActive = String(detail?.status) === '1';
+  const isInactive = isInactiveStatus(detail?.status);
 
   return (
     <div className="pms-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onHide(); }}>
@@ -215,7 +215,7 @@ export default function SupplierDetailModal({
         {/* Footer */}
         <div className="pms-modal-footer">
           <button className="btn-pms btn-pms-secondary" onClick={onHide}>Đóng</button>
-          {detail && onEdit && (
+          {detail && onEdit && !isInactive && (
             <button
               className="btn-pms btn-pms-primary"
               onClick={() => {

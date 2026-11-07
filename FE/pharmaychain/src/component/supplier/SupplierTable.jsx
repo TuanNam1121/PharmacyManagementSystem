@@ -1,4 +1,4 @@
-import { formatDate, getInitials } from '../../utils/format';
+import { formatDate, getInitials, isInactiveStatus } from '../../utils/format';
 
 export default function SupplierTable({
   data = [],
@@ -58,6 +58,7 @@ export default function SupplierTable({
           </thead>
           <tbody>
             {data.map((row, i) => {
+              const inactive = isInactiveStatus(row.status);
               return (
                 <tr key={row.id || i}>
                   <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>
@@ -174,6 +175,8 @@ export default function SupplierTable({
                         </svg>
                       </button>
 
+                      {/* Chỉnh sửa / Gửi RFQ / Ngừng hoạt động: chỉ hiển thị với NCC đang hoạt động */}
+                      {!inactive && (<>
                       {/* Edit Supplier */}
                       <button
                         className="btn-pms btn-pms-ghost btn-pms-sm"
@@ -213,6 +216,7 @@ export default function SupplierTable({
                           <line x1="14" y1="11" x2="14" y2="17"/>
                         </svg>
                       </button>
+                      </>)}
                     </div>
                   </td>
                 </tr>

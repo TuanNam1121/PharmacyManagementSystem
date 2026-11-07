@@ -79,6 +79,10 @@ public class SupplierServiceImpl implements SupplierService {
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Supplier not found with id: " + id));
+
+        if (SupplierStatus.INACTIVE.equals(supplier.getStatus())) {
+            throw new IllegalArgumentException("Supplier is inactive and cannot be updated");
+        }
         
         System.out.println("DEBUG - Updating supplier id=" + id + " with request: name=" + request.name() + ", phone=" + request.phone());
         System.out.println("DEBUG - Before update: name=" + supplier.getName() + ", phone=" + supplier.getPhone());
@@ -104,6 +108,9 @@ public class SupplierServiceImpl implements SupplierService {
             throw new IllegalArgumentException("Invalid request to delete supplier");
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Supplier not found with id: " + id));
+        if (SupplierStatus.INACTIVE.equals(supplier.getStatus())) {
+            throw new IllegalArgumentException("Supplier is already inactive");
+        }
         supplier.setStatus(SupplierStatus.INACTIVE);
         supplier.setDeleteReason(reason != null && !reason.trim().isEmpty() ? reason.trim() : null);
         Supplier savedSupplier = supplierRepository.save(supplier);

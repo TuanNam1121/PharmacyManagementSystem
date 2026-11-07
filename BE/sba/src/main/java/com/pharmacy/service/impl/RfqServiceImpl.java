@@ -12,6 +12,7 @@ import com.pharmacy.entity.Account;
 import com.pharmacy.entity.enums.PurchaseProposalStatus;
 import com.pharmacy.entity.enums.PurchaseRequestStatus;
 import com.pharmacy.entity.enums.RfqStatus;
+import com.pharmacy.entity.enums.SupplierStatus;
 import com.pharmacy.repository.RfqRepository;
 import com.pharmacy.repository.SupplierRepository;
 import com.pharmacy.repository.PurchaseRequestRepository;
@@ -33,18 +34,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import com.pharmacy.repository.ProductRepository;
-import com.pharmacy.repository.SupplierQuotationDetailRepository;
 import com.pharmacy.repository.SupplierQuotationRepository;
-import com.pharmacy.dto.rfq.RecordQuotationRequest;
 import com.pharmacy.dto.rfq.RfqQuotationResponse;
 import com.pharmacy.dto.rfq.CompareResponse;
-import com.pharmacy.entity.Product;
 import com.pharmacy.entity.SupplierQuotation;
-import com.pharmacy.entity.SupplierQuotationDetail;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Collections;
 
 @Slf4j
@@ -60,8 +53,6 @@ public class RfqServiceImpl implements RfqService {
     private final AccountRepository accountRepository;
     private final EmailService emailService;
     private final SupplierQuotationRepository supplierQuotationRepository;
-    private final SupplierQuotationDetailRepository supplierQuotationDetailRepository;
-    private final ProductRepository productRepository;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
@@ -82,6 +73,12 @@ public class RfqServiceImpl implements RfqService {
         // Validate supplier
         Supplier supplier = supplierRepository.findById(request.supplierId())
                 .orElseThrow(() -> new EntityNotFoundException("Supplier not found with ID: " + request.supplierId()));
+
+        // Inactive suppliers must not receive quotation requests
+        if (SupplierStatus.INACTIVE.equals(supplier.getStatus())) {
+            throw new IllegalArgumentException(
+                    "Cannot send RFQ to supplier '" + supplier.getCode() + "': supplier is inactive");
+        }
 
         // Validate the aggregated purchase proposal (source of the RFQ)
         PurchaseProposal proposal = purchaseProposalRepository.findById(request.purchaseProposalId())
@@ -236,91 +233,6 @@ public class RfqServiceImpl implements RfqService {
 
         // Build the comparison straight from the aggregated purchase proposal
         return CompareResponse.from(proposal, rfqs, quotations);
-    }
-
-    @Override
-    @Transactional
-    public RfqQuotationResponse recordQuotation(Long rfqId, RecordQuotationRequest request) {
-        Rfq rfq = rfqRepository.findById(rfqId)
-                .orElseThrow(() -> new EntityNotFoundException("RFQ not found with ID: " + rfqId));
-
-        PurchaseProposal proposal = rfq.getPurchaseProposal();
-        if (proposal == null) {
-            throw new IllegalStateException("RFQ is not linked to a purchase proposal");
-        }
-
-        SupplierQuotation existing = supplierQuotationRepository.findByRfqId(rfqId).orElse(null);
-        if (existing != null) {
-            supplierQuotationDetailRepository.deleteAll(existing.getDetails());
-            supplierQuotationRepository.delete(existing);
-            supplierQuotationRepository.flush();
-        }
-
-        String quoCode = (request.getQuotationCode() != null && !request.getQuotationCode().trim().isEmpty())
-                ? request.getQuotationCode().trim()
-                : "QUO-" + (rfq.getSupplier() != null ? rfq.getSupplier().getCode() : "SUP") + "-" + (System.currentTimeMillis() % 100000);
-
-        LocalDate validUntil = request.getValidUntil() != null
-                ? request.getValidUntil()
-                : LocalDate.now().plusDays(30);
-
-        SupplierQuotation quotation = SupplierQuotation.builder()
-                .code(quoCode)
-                .rfq(rfq)
-                .supplier(rfq.getSupplier())
-                .account(getCurrentAccount())
-                .quotationDate(LocalDate.now())
-                .validUntil(validUntil)
-                .status((short) 1) // 1 = Received / Valid
-                .totalAmount(BigDecimal.ZERO)
-                .createdAt(LocalDateTime.now())
-                .details(new ArrayList<>())
-                .build();
-
-        BigDecimal total = BigDecimal.ZERO;
-        List<SupplierQuotationDetail> details = new ArrayList<>();
-
-        if (request.getItems() != null) {
-            for (RecordQuotationRequest.ItemQuoteDto item : request.getItems()) {
-                Product p = productRepository.findById(item.getProductId())
-                        .orElseThrow(() -> new EntityNotFoundException("Product not found: " + item.getProductId()));
-                int qty = item.getQuantity() != null && item.getQuantity() > 0 ? item.getQuantity() : 1;
-                BigDecimal price = item.getUnitPrice() != null ? item.getUnitPrice() : BigDecimal.ZERO;
-                BigDecimal subtotal = price.multiply(BigDecimal.valueOf(qty));
-
-                SupplierQuotationDetail d = SupplierQuotationDetail.builder()
-                        .supplierQuotation(quotation)
-                        .product(p)
-                        .quantity(qty)
-                        .unitPrice(price)
-                        .taxRate(item.getTaxRate() != null ? item.getTaxRate() : BigDecimal.ZERO)
-                        .subtotal(subtotal)
-                        .build();
-                details.add(d);
-                total = total.add(subtotal);
-            }
-        }
-
-        quotation.setTotalAmount(total);
-        quotation.getDetails().addAll(details);
-        SupplierQuotation savedQuotation = supplierQuotationRepository.save(quotation);
-        supplierQuotationDetailRepository.saveAll(details);
-
-        // Update RFQ status to RESPONDED
-        rfq.setStatus(RfqStatus.RESPONDED);
-        rfq.setResponseAt(LocalDateTime.now());
-        if (request.getNote() != null) {
-            rfq.setResponseNote(request.getNote().trim());
-        }
-        rfqRepository.save(rfq);
-
-        // Link proposal to this quotation and update proposal total
-        proposal.setSupplierQuotation(savedQuotation);
-        proposal.setTotalAmount(total);
-        proposal.setStatus(PurchaseProposalStatus.PENDING_APPROVAL.getCode()); // 1 = Chờ phê duyệt PO
-        purchaseProposalRepository.save(proposal);
-
-        return getRfqWithQuotationDetails(rfqId);
     }
 
     private Account getCurrentAccount() {

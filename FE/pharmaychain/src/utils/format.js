@@ -35,6 +35,15 @@ export const formatStatus = (status) => {
   };
 };
 
+/**
+ * Kiểm tra trạng thái "Ngừng hoạt động" của nhà cung cấp.
+ * Backend trả về tên enum SupplierStatus (ACTIVE/INACTIVE/PENDING), hỗ trợ thêm dạng số (1/2/3).
+ */
+export const isInactiveStatus = (status) => {
+  const s = String(status ?? '').toUpperCase();
+  return s === 'INACTIVE' || s === '2';
+};
+
 export const formatPaymentMethod = (method) => {
   if (!method) return 'Tiền mặt';
   const m = String(method).toUpperCase().trim();

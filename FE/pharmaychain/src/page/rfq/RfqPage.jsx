@@ -9,8 +9,8 @@ import RfqFilters from '../../component/rfq/RfqFilters';
 import RfqTable from '../../component/rfq/RfqTable';
 import RfqDetailModal from '../../component/rfq/RfqDetailModal';
 import QuotationCompareModal from '../../component/rfq/QuotationCompareModal';
-import RecordQuotationModal from '../../component/rfq/RecordQuotationModal';
 import SendRfqModal from '../../component/supplier/SendRfqModal';
+import { getRfqs } from '../../api/RfqAPI';
 
 function Pagination({ total, page, size, onPage }) {
   if (total <= size) return null;
@@ -41,15 +41,9 @@ export default function RfqPage() {
   const [uiError, setUiError] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [compareModalOpen, setCompareModalOpen] = useState(false);
-  const [recordModalOpen, setRecordModalOpen] = useState(false);
-  const [selectedRfqForRecord, setSelectedRfqForRecord] = useState(null);
+  const [compareEmptyMessage, setCompareEmptyMessage] = useState(null);
   const [detailRfqId, setDetailRfqId] = useState(null);
   const [sendModalOpen, setSendModalOpen] = useState(false);
-
-  const handleRecordQuote = (rfq) => {
-    setSelectedRfqForRecord(rfq);
-    setRecordModalOpen(true);
-  };
 
   useEffect(() => {
     if (urlProposalId) {
@@ -76,7 +70,7 @@ export default function RfqPage() {
   const { detail: detailData, loading: detailLoading } =
     useRfqDetail(detailRfqId);
 
-  const { compareData, compareLoading, compare } =
+  const { compareData, compareLoading, error: compareError, compare } =
     useCompareRfqs();
 
   const handleViewDetail = (rfqId) => {
@@ -84,27 +78,56 @@ export default function RfqPage() {
     setDetailModalOpen(true);
   };
 
-  const handleCompareRfq = async (rfq) => {
-    const proposalId = rfq.purchaseProposalId || rfq.purchaseProposal?.id;
+  const isRespondedStatus = (status) =>
+    status === 'RESPONDED' || status === '1' || String(status).toUpperCase() === 'ĐÃ PHẢN HỒI';
+
+  const COMPARE_EMPTY_MESSAGE =
+    'Không có hoặc chưa có nhà cung cấp khác báo giá cho cùng đề xuất mua hàng.';
+
+  // Collect every responded RFQ that belongs to the same purchase proposal.
+  // The full set is fetched (not just the current page) so a supplier that
+  // responded on another page is not missed.
+  const fetchRespondedRfqIds = async (proposalId) => {
+    try {
+      const response = await getRfqs({
+        purchaseProposalId: proposalId,
+        status: 'RESPONDED',
+        page: 0,
+        size: 200,
+      });
+      return (response?.content || []).map((r) => r.id);
+    } catch {
+      // Fallback to what is already loaded on the current page
+      return (data || [])
+        .filter(
+          (r) =>
+            (r.purchaseProposalId === proposalId || r.purchaseProposal?.id === proposalId) &&
+            isRespondedStatus(r.status)
+        )
+        .map((r) => r.id);
+    }
+  };
+
+  const openCompareForProposal = async (proposalId) => {
     if (!proposalId) {
       setUiError('Yêu cầu báo giá này chưa liên kết với đề xuất mua hàng nào.');
       return;
     }
 
-    // Find responded RFQs for the same purchase proposal
-    const sameProposalRfqs = (data || []).filter(
-      (r) =>
-        (r.purchaseProposalId === proposalId || r.purchaseProposal?.id === proposalId) &&
-        (r.status === 'RESPONDED' || r.status === '1' || String(r.status).toUpperCase() === 'ĐÃ PHẢN HỒI')
-    );
-
-    const compareIds = sameProposalRfqs.length > 0
-      ? sameProposalRfqs.map((r) => r.id)
-      : [rfq.id];
-
+    const respondedIds = await fetchRespondedRfqIds(proposalId);
     setCompareModalOpen(true);
-    await compare(compareIds);
+
+    if (respondedIds.length < 2) {
+      setCompareEmptyMessage(COMPARE_EMPTY_MESSAGE);
+      return;
+    }
+
+    setCompareEmptyMessage(null);
+    await compare(respondedIds);
   };
+
+  const handleCompareRfq = (rfq) =>
+    openCompareForProposal(rfq.purchaseProposalId || rfq.purchaseProposal?.id);
 
   return (
     <div className="pms-page">
@@ -162,7 +185,6 @@ export default function RfqPage() {
         size={size}
         onViewDetail={handleViewDetail}
         onCompare={handleCompareRfq}
-        onRecordQuote={handleRecordQuote}
       />
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
@@ -174,36 +196,22 @@ export default function RfqPage() {
         onHide={() => { setDetailModalOpen(false); setDetailRfqId(null); }}
         detail={detailData}
         loading={detailLoading}
-        onRecordQuote={handleRecordQuote}
         onCompare={() => {
-          if (detailData) {
-            const proposalId = detailData.purchaseProposal?.id || detailData.purchaseProposalId;
-            const sameProposalRfqs = (data || []).filter(
-              (r) => (r.purchaseProposalId === proposalId || r.purchaseProposal?.id === proposalId)
-            );
-            const compareIds = sameProposalRfqs.length > 0
-              ? sameProposalRfqs.map((r) => r.id)
-              : [detailData.id];
-
-            setDetailModalOpen(false);
-            setCompareModalOpen(true);
-            compare(compareIds);
-          }
+          if (!detailData) return;
+          const proposalId = detailData.purchaseProposal?.id || detailData.purchaseProposalId;
+          setDetailModalOpen(false);
+          setDetailRfqId(null);
+          openCompareForProposal(proposalId);
         }}
       />
 
       <QuotationCompareModal
         show={compareModalOpen}
-        onHide={() => { setCompareModalOpen(false); }}
+        onHide={() => { setCompareModalOpen(false); setCompareEmptyMessage(null); }}
         data={compareData}
         loading={compareLoading}
-      />
-
-      <RecordQuotationModal
-        show={recordModalOpen}
-        onHide={() => { setRecordModalOpen(false); setSelectedRfqForRecord(null); }}
-        rfq={selectedRfqForRecord}
-        onSuccess={(msg) => { fetchRfqs(); setSuccessMsg(msg); }}
+        emptyMessage={compareEmptyMessage}
+        error={compareError}
       />
 
       <SendRfqModal

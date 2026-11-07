@@ -1,5 +1,8 @@
-export default function QuotationCompareModal({ show, onHide, data, loading }) {
+export default function QuotationCompareModal({ show, onHide, data, loading, emptyMessage, error }) {
   if (!show) return null;
+  const showEmpty = !loading && (!!emptyMessage || !data);
+  const emptyText =
+    emptyMessage || error || 'Không có dữ liệu báo giá để so sánh cho đề xuất mua hàng này.';
   const formatCurrency = (amount) => {
     if (!amount) return '-';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -27,7 +30,18 @@ export default function QuotationCompareModal({ show, onHide, data, loading }) {
             <span className="pms-spinner-text">Đang tổng hợp dữ liệu so sánh…</span>
           </div>
         )}
-        {!loading && data && (
+        {showEmpty && (
+          <div className="pms-modal-body">
+            <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>📄</div>
+              <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--text-secondary)' }}>
+                Không thể so sánh báo giá
+              </div>
+              <div>{emptyText}</div>
+            </div>
+          </div>
+        )}
+        {!loading && !emptyMessage && data && (
           <>
             <div className="pms-modal-body">
               <div style={{ marginBottom: 16 }}>

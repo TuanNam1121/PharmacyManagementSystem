@@ -64,11 +64,6 @@ export const compareRfqs = async (rfqIds) => {
   }
 };
 
-export const recordQuotation = async (rfqId, payload) => {
-  const json = await post(`${RFQ_BASE_URL}/${encodeURIComponent(rfqId)}/record-quotation`, payload);
-  return unwrapApiResponse(json);
-};
-
 export default {
   getEligibleProposals,
   sendRfq,
@@ -77,5 +72,4 @@ export default {
   getRfqs,
   getRfqQuotationDetails,
   compareRfqs,
-  recordQuotation,
 };

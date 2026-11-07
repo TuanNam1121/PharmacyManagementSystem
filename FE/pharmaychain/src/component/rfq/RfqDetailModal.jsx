@@ -6,7 +6,6 @@ export default function RfqDetailModal({
   detail,
   loading,
   onCompare,
-  onRecordQuote,
 }) {
   const [showItems, setShowItems] = useState(false);
 
@@ -311,17 +310,6 @@ export default function RfqDetailModal({
                 }}
               >
                 <div>
-                  {detail.status === "SENT" && onRecordQuote && (
-                    <button
-                      className="btn-pms btn-pms-primary"
-                      onClick={() => {
-                        onHide();
-                        onRecordQuote(detail);
-                      }}
-                    >
-                      Ghi nhận báo giá từ NCC
-                    </button>
-                  )}
                   {detail.status === "RESPONDED" && (
                     <button
                       className="btn-pms btn-pms-primary"
