@@ -28,7 +28,7 @@ public class DailySalesServiceImpl implements DailySalesService {
         private final ShiftRepository shiftRepository;
         private final AuditLogRepository auditLogRepository;
         private final StoreRepository storeRepository;
-        // private final AccountRepository accountRepository;
+        private final PaymentRepository paymentRepository;
 
         @Override
         @Transactional(readOnly = true)
@@ -98,18 +98,44 @@ public class DailySalesServiceImpl implements DailySalesService {
                 LocalDateTime endOfDay = businessDate.atTime(LocalTime.MAX);
 
                 return invoiceRepository.findInvoicesByDateRangePaged(storeId, startOfDay, endOfDay, pageable)
-                                .map(inv -> SalesInvoiceSummaryDto.builder()
-                                                .id(inv.getId())
-                                                .code(inv.getCode())
-                                                .prescriptionCode(inv.getPrescriptionCode())
-                                                .totalAmount(inv.getTotalAmount())
-                                                .discount(inv.getDiscount())
-                                                .finalAmount(inv.getFinalAmount())
-                                                .status(inv.getStatus())
-                                                .createdAt(inv.getCreatedAt())
-                                                .paidAt(inv.getPaidAt())
-                                                .paymentMethod("Cash") // Default cash or join Payment entity
-                                                .build());
+                                .map(inv -> {
+                                        String paymentMethod = "CASH";
+                                        if (inv.getPayments() != null && !inv.getPayments().isEmpty()) {
+                                                Short m = inv.getPayments().get(0).getMethod();
+                                                if (m != null) {
+                                                        paymentMethod = switch (m) {
+                                                                case 2 -> "BANK_TRANSFER";
+                                                                case 3 -> "VNPAY_QR";
+                                                                default -> "CASH";
+                                                        };
+                                                }
+                                        } else {
+                                                List<Payment> payments = paymentRepository.findBySalesInvoice_Id(inv.getId());
+                                                if (payments != null && !payments.isEmpty()) {
+                                                        Short m = payments.get(0).getMethod();
+                                                        if (m != null) {
+                                                                paymentMethod = switch (m) {
+                                                                        case 2 -> "BANK_TRANSFER";
+                                                                        case 3 -> "VNPAY_QR";
+                                                                        default -> "CASH";
+                                                                };
+                                                        }
+                                                }
+                                        }
+
+                                        return SalesInvoiceSummaryDto.builder()
+                                                        .id(inv.getId())
+                                                        .code(inv.getCode())
+                                                        .prescriptionCode(inv.getPrescriptionCode())
+                                                        .totalAmount(inv.getTotalAmount())
+                                                        .discount(inv.getDiscount())
+                                                        .finalAmount(inv.getFinalAmount())
+                                                        .status(inv.getStatus())
+                                                        .createdAt(inv.getCreatedAt())
+                                                        .paidAt(inv.getPaidAt())
+                                                        .paymentMethod(paymentMethod)
+                                                        .build();
+                                });
         }
 
         @Override

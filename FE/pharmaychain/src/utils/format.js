@@ -38,9 +38,9 @@ export const formatStatus = (status) => {
 export const formatPaymentMethod = (method) => {
   if (!method) return 'Tiền mặt';
   const m = String(method).toUpperCase().trim();
-  if (m === 'CASH') return 'Tiền mặt';
-  if (m === 'BANK_TRANSFER' || m === 'TRANSFER' || m === 'BANK') return 'Chuyển khoản / Thẻ';
-  if (m === 'VNPAY_QR' || m === 'VIETQR' || m === 'QR') return 'Ví VietQR';
+  if (m === 'CASH' || m === '1') return 'Tiền mặt';
+  if (m === 'BANK_TRANSFER' || m === 'TRANSFER' || m === 'BANK' || m === 'CARD' || m === '2') return 'Quẹt thẻ POS';
+  if (m === 'VNPAY_QR' || m === 'VIETQR' || m === 'QR' || m === 'MOMO' || m === 'VNPAY' || m === '3') return 'VietQR / MoMo';
   return method;
 };
 
