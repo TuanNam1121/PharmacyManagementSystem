@@ -244,7 +244,7 @@ BEGIN
         ALTER TABLE dbo.purchase_requests ADD CONSTRAINT DF_purchase_requests_status DEFAULT 1 FOR status;
 
     -- Chuẩn hóa dữ liệu cũ: không còn trạng thái nháp (0)
-    UPDATE dbo.purchase_requests SET status = 1 WHERE status = 0;
+    UPDATE dbo.purchase_requests SET status = 1, updated_at = SYSDATETIME() WHERE status = 0;
 END
 GO
 
@@ -275,9 +275,24 @@ END;
 
 IF OBJECT_ID('dbo.stores', 'U') IS NOT NULL
 BEGIN
+    -- Dọn dẹp ràng buộc dữ liệu liên quan đến HQ (nếu có) trước khi xóa
+    IF EXISTS (SELECT 1 FROM dbo.stores WHERE code = 'HQ')
+    BEGIN
+        DECLARE @OldHqId BIGINT = (SELECT id FROM dbo.stores WHERE code = 'HQ');
+        DECLARE @DefaultWhId BIGINT = (SELECT TOP 1 id FROM dbo.stores WHERE code = 'WH01');
+        DECLARE @DefaultSt01Id BIGINT = (SELECT TOP 1 id FROM dbo.stores WHERE code = 'ST01');
+
+        UPDATE dbo.accounts SET store_id = NULL WHERE store_id = @OldHqId;
+        IF @DefaultSt01Id IS NOT NULL UPDATE dbo.goods_issues SET to_store_id = @DefaultSt01Id WHERE to_store_id = @OldHqId;
+        IF @DefaultWhId IS NOT NULL UPDATE dbo.goods_issues SET from_store_id = @DefaultWhId WHERE from_store_id = @OldHqId;
+        IF @DefaultWhId IS NOT NULL UPDATE dbo.purchase_requests SET store_id = @DefaultWhId WHERE store_id = @OldHqId;
+        IF @DefaultSt01Id IS NOT NULL UPDATE dbo.stock_requisitions SET store_id = @DefaultSt01Id WHERE store_id = @OldHqId;
+        DELETE FROM dbo.inventories WHERE store_id = @OldHqId;
+        DELETE FROM dbo.stores WHERE id = @OldHqId;
+    END
+
     MERGE INTO dbo.stores AS target
     USING (VALUES
-        ('HQ',   N'Trụ Sở Chính - Ban Giám Đốc', 0, N'Tầng 10, Tòa nhà FPT, Phố Duy Tân, Cầu Giấy, Hà Nội', '02473008888', 1),
         ('WH01', N'Kho Tổng Trung Tâm Miền Bắc', 2, N'Lô B2, KCN Đài Tư, 386 Nguyễn Văn Linh, Long Biên, Hà Nội', '02438759999', 1),
         ('ST01', N'Nhà Thuốc Chi Nhánh 01 - Cầu Giấy', 1, N'123 Đường Cầu Giấy, P. Dịch Vọng, Q. Cầu Giấy, Hà Nội', '02438332211', 1),
         ('ST02', N'Nhà Thuốc Chi Nhánh 02 - Đống Đa', 1, N'45 Phố Chùa Bộc, P. Quang Trung, Q. Đống Đa, Hà Nội', '02438523344', 1)
@@ -491,7 +506,6 @@ DECLARE @WarehouseStaffRoleId INT = (SELECT id FROM dbo.roles WHERE code = 'WARE
 DECLARE @PurchasingRoleId   INT = (SELECT id FROM dbo.roles WHERE code = 'PURCHASING_STAFF');
 DECLARE @GmRoleId           INT = (SELECT id FROM dbo.roles WHERE code = 'GENERAL_MANAGER');
 
-DECLARE @HqId   BIGINT = (SELECT id FROM dbo.stores WHERE code = 'HQ');
 DECLARE @WhId   BIGINT = (SELECT id FROM dbo.stores WHERE code = 'WH01');
 DECLARE @St01Id BIGINT = (SELECT id FROM dbo.stores WHERE code = 'ST01');
 
@@ -510,14 +524,14 @@ DECLARE @AccountData TABLE (
 );
 
 INSERT INTO @AccountData VALUES
-('admin', 'admin@pharmacy.com', '0901234567', @AdminRoleId, @HqId, 1, N'Quản Trị Viên Hệ Thống', '1988-05-15', 1, N'Tầng 10, Tòa nhà FPT, Duy Tân, Cầu Giấy, Hà Nội', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'),
+('admin', 'admin@pharmacy.com', '0901234567', @AdminRoleId, NULL, 1, N'Quản Trị Viên Hệ Thống', '1988-05-15', 1, N'Tầng 10, Tòa nhà FPT, Duy Tân, Cầu Giấy, Hà Nội', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'),
 ('pharmacist_hn01', 'pharmacist1@pharmacy.com', '0912345678', @PharmacistRoleId, @St01Id, 1, N'Nguyễn Văn Dược', '1995-10-20', 1, N'Số 45 Ngõ 165 Cầu Giấy, P. Dịch Vọng, Hà Nội', 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=150'),
 ('pharmacist1', 'pharmacist_alt@pharmacy.com', '0912999888', @PharmacistRoleId, @St01Id, 1, N'Đỗ Minh Ngọc', '1998-03-12', 0, N'Số 12 Chùa Láng, Láng Thượng, Đống Đa, Hà Nội', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150'),
 ('manager_hn01', 'manager1@pharmacy.com', '0922345678', @StoreManagerRoleId, @St01Id, 1, N'Trần Thị Hương', '1990-08-25', 0, N'Tòa Landmark 72, Mễ Trì, Nam Từ Liêm, Hà Nội', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'),
 ('warehouse01', 'warehouse1@pharmacy.com', '0932345678', @WarehouseStaffRoleId, @WhId, 1, N'Lê Văn Kho', '1993-12-05', 1, N'Số 88 Sài Đồng, Long Biên, Hà Nội', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'),
 ('wh_manager01', 'wh_manager1@pharmacy.com', '0942345678', @WarehouseMgrRoleId, @WhId, 1, N'Phạm Đình Quân', '1987-04-18', 1, N'Số 22 Phúc Lợi, Long Biên, Hà Nội', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'),
-('purchasing01', 'purchasing1@pharmacy.com', '0952345678', @PurchasingRoleId, @HqId, 1, N'Vũ Hoàng Nam', '1992-07-22', 1, N'Số 18 Hoàng Quốc Việt, Cầu Giấy, Hà Nội', 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150'),
-('gm01', 'gm@pharmacy.com', '0962345678', @GmRoleId, @HqId, 1, N'Bùi Quang Huy', '1980-01-10', 1, N'Khu đô thị Ciputra, Tây Hồ, Hà Nội', 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150'),
+('purchasing01', 'purchasing1@pharmacy.com', '0952345678', @PurchasingRoleId, NULL, 1, N'Vũ Hoàng Nam', '1992-07-22', 1, N'Số 18 Hoàng Quốc Việt, Cầu Giấy, Hà Nội', 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150'),
+('gm01', 'gm@pharmacy.com', '0962345678', @GmRoleId, NULL, 1, N'Bùi Quang Huy', '1980-01-10', 1, N'Khu đô thị Ciputra, Tây Hồ, Hà Nội', 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150'),
 ('locked_user', 'locked@pharmacy.com', '0972345678', @PharmacistRoleId, @St01Id, 2, N'Tài Khoản Đã Bị Khóa', '1999-01-01', 1, N'Hà Nội', NULL),
 ('inactive_user', 'inactive@pharmacy.com', '0982345678', @PharmacistRoleId, @St01Id, 0, N'Tài Khoản Vô Hiệu Hóa', '1999-02-02', 0, N'Hà Nội', NULL);
 
@@ -630,6 +644,9 @@ WHEN MATCHED THEN
 WHEN NOT MATCHED THEN
     INSERT (name, description, status, created_by, created_at)
     VALUES (source.name, source.description, 1, @AdminId, SYSDATETIME());
+
+-- Dọn dẹp danh mục rác / trùng lặp lỗi font không có sản phẩm nào tham chiếu
+DELETE FROM dbo.categories WHERE id >= 17 AND id NOT IN (SELECT DISTINCT category_id FROM dbo.products WHERE category_id IS NOT NULL);
 
 -- Nạp 30+ sản phẩm y tế
 DECLARE @ProductData TABLE (
@@ -945,8 +962,8 @@ DECLARE @BuyerId BIGINT = (SELECT TOP 1 id FROM dbo.accounts WHERE username = 'p
 IF @BuyerId IS NULL SET @BuyerId = 1;
 DECLARE @GmId BIGINT = (SELECT TOP 1 id FROM dbo.accounts WHERE username = 'gm01');
 IF @GmId IS NULL SET @GmId = 1;
-DECLARE @HqStoreId BIGINT = (SELECT TOP 1 id FROM dbo.stores WHERE code = 'HQ');
-IF @HqStoreId IS NULL SET @HqStoreId = 1;
+DECLARE @WhStoreId BIGINT = (SELECT TOP 1 id FROM dbo.stores WHERE code = 'WH01');
+IF @WhStoreId IS NULL SET @WhStoreId = 2;
 
 DECLARE @P1 BIGINT = (SELECT TOP 1 id FROM dbo.products WHERE barcode = '8934567890123'); -- Panadol
 DECLARE @P2 BIGINT = (SELECT TOP 1 id FROM dbo.products WHERE barcode = '8934567890125'); -- Augmentin
@@ -957,7 +974,7 @@ DECLARE @Pr1Id BIGINT;
 IF NOT EXISTS (SELECT 1 FROM dbo.purchase_requests WHERE code = 'PR-20261101-0001')
 BEGIN
     INSERT INTO dbo.purchase_requests (code, store_id, created_by, status, reason, created_at, approved_at)
-    VALUES ('PR-20261101-0001', @HqStoreId, @BuyerId, 1, N'Bổ sung lượng dự trữ kho tổng chuẩn bị mùa đông', DATEADD(DAY, -5, SYSDATETIME()), DATEADD(DAY, -4, SYSDATETIME()));
+    VALUES ('PR-20261101-0001', @WhStoreId, @BuyerId, 1, N'Bổ sung lượng dự trữ kho tổng chuẩn bị mùa đông', DATEADD(DAY, -5, SYSDATETIME()), DATEADD(DAY, -4, SYSDATETIME()));
     SET @Pr1Id = SCOPE_IDENTITY();
 
     INSERT INTO dbo.purchase_request_details (purchase_request_id, product_id, requested_quantity, note)
@@ -1201,13 +1218,13 @@ PRINT N'========================================================================
 PRINT N'>>> HOÀN TẤT ĐỒNG BỘ CƠ SỞ DỮ LIỆU PMS THÀNH CÔNG!';
 PRINT N'-----------------------------------------------------------------------------------------';
 PRINT N'BẢNG THÔNG TIN TÀI KHOẢN MẪU (MẬT KHẨU CHUNG: Password@123):';
-PRINT N'1. Quản trị hệ thống:       Username: admin           | Role: ADMIN             | Store: HQ';
+PRINT N'1. Quản trị hệ thống:       Username: admin           | Role: ADMIN             | Store: Toàn chuỗi (Global)';
 PRINT N'2. Dược sĩ / Thu ngân:      Username: pharmacist_hn01 | Role: PHARMACIST        | Store: ST01';
 PRINT N'3. Cửa hàng trưởng:         Username: manager_hn01    | Role: STORE_MANAGER     | Store: ST01';
 PRINT N'4. Thủ kho trung tâm:       Username: warehouse01     | Role: WAREHOUSE_STAFF   | Store: WH01';
 PRINT N'5. Quản lý kho tổng:        Username: wh_manager01    | Role: WAREHOUSE_MANAGER | Store: WH01';
-PRINT N'6. Nhân viên thu mua:       Username: purchasing01    | Role: PURCHASING_STAFF  | Store: HQ';
-PRINT N'7. Ban Giám Đốc điều hành:  Username: gm01            | Role: GENERAL_MANAGER   | Store: HQ';
+PRINT N'6. Nhân viên thu mua:       Username: purchasing01    | Role: PURCHASING_STAFF  | Store: Toàn chuỗi (Global)';
+PRINT N'7. Ban Giám Đốc điều hành:  Username: gm01            | Role: GENERAL_MANAGER   | Store: Toàn chuỗi (Global)';
 PRINT N'8. Tài khoản bị khóa (Test):Username: locked_user     | Status: LOCKED (2)';
 PRINT N'=========================================================================================';
 GO
