@@ -38,18 +38,31 @@ replay_pid*
 # ------------------------------------------------------------------------------
 # VS Code
 .vscode/*
+**/.vscode/*
 !.vscode/extensions.json
+!**/.vscode/extensions.json
 !.vscode/settings.json
+!**/.vscode/settings.json
 
 # IntelliJ IDEA
 .idea/workspace.xml
+**/.idea/workspace.xml
 .idea/shelf/
+**/.idea/shelf/
 .idea/httpRequests/
+**/.idea/httpRequests/
 .idea/dataSources/
+**/.idea/dataSources/
 .idea/dataSources.local.xml
+**/.idea/dataSources.local.xml
 *.iws
+**/*.iws
 *.iml
+**/*.iml
 *.ipr
+**/*.ipr
+out/
+**/out/
 
 # Eclipse / Spring Tool Suite (STS)
 .apt_generated
