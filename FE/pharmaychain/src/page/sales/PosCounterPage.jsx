@@ -474,7 +474,7 @@ export default function PosCounterPage() {
                                         </div>
                                         <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2, display: 'flex', justifyContent: 'space-between' }}>
                                             <span>SĐT: <strong>{customer.phone}</strong></span>
-                                            <span>Điểm tích lũy: <strong style={{ color: 'var(--brand-primary)' }}>{customer.rewardPoints || 0} điểm</strong></span>
+                                            <span>Điểm tích lũy: <strong style={{ color: 'var(--brand-primary)' }}>{(customer.loyaltyPoints ?? customer.rewardPoints ?? customer.points ?? 0)} điểm</strong></span>
                                         </div>
                                         {customer.allergies && (
                                             <div style={{ fontSize: 11, color: '#dc2626', marginTop: 4, fontWeight: 600 }}>

@@ -140,7 +140,7 @@ export default function CustomerSelectModal({
 
                                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                                     <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--brand-primary, #059669)' }}>
-                                        {c.rewardPoints || 0} điểm
+                                        {(c.loyaltyPoints ?? c.rewardPoints ?? c.points ?? 0)} điểm
                                     </div>
                                     <button
                                         type="button"
