@@ -169,7 +169,7 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
                 : finalAmount;
         BigDecimal changeAmount = tenderedCash.subtract(finalAmount).max(BigDecimal.ZERO);
 
-        int earnedPoints = finalAmount.divide(BigDecimal.valueOf(100_000), 0, RoundingMode.DOWN).intValue();
+        int earnedPoints = finalAmount.divide(BigDecimal.valueOf(10_000), 0, RoundingMode.DOWN).intValue();
 
         return mapToSalesInvoiceResponse(savedInvoice, tenderedCash, changeAmount, earnedPoints);
     }

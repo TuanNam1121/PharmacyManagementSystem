@@ -209,7 +209,7 @@ export function usePosCart() {
     }, [subtotal, discountAmount]);
 
     const estimatedPoints = useMemo(() => {
-        return Math.floor(netAmount / 100000);
+        return Math.floor(netAmount / 10000);
     }, [netAmount]);
 
     return {

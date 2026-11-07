@@ -124,21 +124,109 @@ BEGIN
 END
 GO
 
--- 1.6 Nới lỏng NOT NULL cho luồng Procurement mới (cho phép Purchase Proposals gom N PRs)
-IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'purchase_request_id' AND Object_ID = Object_ID('dbo.purchase_proposals'))
+-- 1.6 shifts (có difference PERSISTED)
+IF OBJECT_ID('dbo.shifts', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.shifts (
+        id            BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_shifts PRIMARY KEY,
+        store_id      BIGINT       NOT NULL CONSTRAINT FK_shifts_stores REFERENCES dbo.stores(id),
+        account_id    BIGINT       NOT NULL CONSTRAINT FK_shifts_accounts REFERENCES dbo.accounts(id),
+        opened_at     DATETIME2(0) NOT NULL CONSTRAINT DF_shifts_opened_at DEFAULT SYSDATETIME(),
+        closed_at     DATETIME2(0) NULL,
+        opening_cash  DECIMAL(18,2) NOT NULL,
+        closing_cash  DECIMAL(18,2) NULL,
+        expected_cash DECIMAL(18,2) NULL,
+        difference    AS (closing_cash - expected_cash) PERSISTED,
+        status        TINYINT      NOT NULL CONSTRAINT DF_shifts_status DEFAULT 1,
+        note          NVARCHAR(1000) NULL,
+        reconciled_by BIGINT       NULL CONSTRAINT FK_shifts_reconciled REFERENCES dbo.accounts(id),
+        reconciled_at DATETIME2(0) NULL
+    );
+    PRINT N'   + Đã tạo bảng shifts (PERSISTED difference)';
+END
+GO
+
+-- 1.7 sales_invoice_details (có sub_total COMPUTED)
+IF OBJECT_ID('dbo.sales_invoice_details', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.sales_invoice_details (
+        id                  BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_sales_invoice_details PRIMARY KEY,
+        sales_invoice_id    BIGINT        NOT NULL CONSTRAINT FK_sid_sales_invoice REFERENCES dbo.sales_invoices(id) ON DELETE CASCADE,
+        product_id          BIGINT        NOT NULL CONSTRAINT FK_sid_product REFERENCES dbo.products(id),
+        batch_id            BIGINT        NULL CONSTRAINT FK_sid_batch REFERENCES dbo.product_batches(id),
+        quantity            INT           NOT NULL CONSTRAINT CK_sid_quantity CHECK (quantity > 0),
+        unit_price          DECIMAL(18,2) NOT NULL CONSTRAINT CK_sid_unit_price CHECK (unit_price >= 0),
+        unit_cost           DECIMAL(18,2) NOT NULL CONSTRAINT DF_sid_unit_cost DEFAULT 0,
+        sub_total           AS (CONVERT(DECIMAL(18,2), quantity * unit_price)),
+        dosage_instruction  NVARCHAR(300) NULL
+    );
+    PRINT N'   + Đã tạo bảng sales_invoice_details (COMPUTED sub_total)';
+END
+GO
+
+-- 1.8 purchase_receipt_details (có subtotal COMPUTED)
+IF OBJECT_ID('dbo.purchase_receipt_details', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.purchase_receipt_details (
+        id                  BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_prcd PRIMARY KEY,
+        purchase_receipt_id BIGINT        NOT NULL CONSTRAINT FK_prcd_receipt REFERENCES dbo.purchase_receipts(id) ON DELETE CASCADE,
+        product_id          BIGINT        NOT NULL CONSTRAINT FK_prcd_product REFERENCES dbo.products(id),
+        order_quantity      INT           NOT NULL CONSTRAINT DF_prcd_order_qty DEFAULT 0,
+        quantity            INT           NOT NULL,
+        unit_cost           DECIMAL(18,2) NOT NULL,
+        subtotal            AS (CONVERT(DECIMAL(18,2), quantity * unit_cost)),
+        batch_number        VARCHAR(50)   NOT NULL,
+        manufacture_date    DATE          NULL,
+        expiry_date         DATE          NOT NULL,
+        location_id         BIGINT        NULL CONSTRAINT FK_prcd_location REFERENCES dbo.warehouse_locations(id),
+        batch_id            BIGINT        NULL CONSTRAINT FK_prcd_batch REFERENCES dbo.product_batches(id)
+    );
+    PRINT N'   + Đã tạo bảng purchase_receipt_details (COMPUTED subtotal)';
+END
+GO
+
+-- 1.9 Cập nhật Schema & Index cho luồng Procurement mới
+IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'purchase_request_id' AND Object_ID = Object_ID('dbo.purchase_proposals') AND is_nullable = 0)
     ALTER TABLE dbo.purchase_proposals ALTER COLUMN purchase_request_id BIGINT NULL;
 
-IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'supplier_quotation_id' AND Object_ID = Object_ID('dbo.purchase_proposals'))
+IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'supplier_quotation_id' AND Object_ID = Object_ID('dbo.purchase_proposals') AND is_nullable = 0)
     ALTER TABLE dbo.purchase_proposals ALTER COLUMN supplier_quotation_id BIGINT NULL;
 
-IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'purchase_request_id' AND Object_ID = Object_ID('dbo.rfqs'))
+IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = 'UQ_rfq_pr_supplier')
+    ALTER TABLE dbo.rfqs DROP CONSTRAINT UQ_rfq_pr_supplier;
+
+IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'purchase_request_id' AND Object_ID = Object_ID('dbo.rfqs') AND is_nullable = 0)
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_rfq_pr_supplier_filtered' AND object_id = OBJECT_ID('dbo.rfqs'))
+        DROP INDEX UQ_rfq_pr_supplier_filtered ON dbo.rfqs;
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_rfq_pr_supplier' AND object_id = OBJECT_ID('dbo.rfqs'))
+        DROP INDEX UQ_rfq_pr_supplier ON dbo.rfqs;
+
     ALTER TABLE dbo.rfqs ALTER COLUMN purchase_request_id BIGINT NULL;
+END
 
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'purchase_proposal_id' AND Object_ID = Object_ID('dbo.rfqs'))
     ALTER TABLE dbo.rfqs ADD purchase_proposal_id BIGINT NULL;
 
-IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'purchase_proposal_id' AND Object_ID = Object_ID('dbo.purchase_receipts'))
+IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'created_by' AND Object_ID = Object_ID('dbo.rfqs') AND is_nullable = 0)
+    ALTER TABLE dbo.rfqs ALTER COLUMN created_by BIGINT NULL;
+
+IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'purchase_proposal_id' AND Object_ID = Object_ID('dbo.purchase_receipts') AND is_nullable = 0)
     ALTER TABLE dbo.purchase_receipts ALTER COLUMN purchase_proposal_id BIGINT NULL;
+
+-- Filtered Indexes cho RFQ
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name IN ('UQ_rfq_pr_supplier', 'UQ_rfq_pr_supplier_filtered') AND object_id = OBJECT_ID('dbo.rfqs'))
+    CREATE UNIQUE NONCLUSTERED INDEX UQ_rfq_pr_supplier ON dbo.rfqs(purchase_request_id, supplier_id) WHERE purchase_request_id IS NOT NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_rfq_proposal_supplier' AND object_id = OBJECT_ID('dbo.rfqs'))
+    CREATE UNIQUE NONCLUSTERED INDEX UQ_rfq_proposal_supplier ON dbo.rfqs(purchase_proposal_id, supplier_id) WHERE purchase_proposal_id IS NOT NULL;
+
+-- Default Constraint cho store_id trong purchase_requests
+IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'store_id' AND Object_ID = Object_ID('dbo.purchase_requests') AND is_nullable = 0)
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.default_constraints WHERE parent_object_id = OBJECT_ID('dbo.purchase_requests') AND parent_column_id = COLUMNPROPERTY(OBJECT_ID('dbo.purchase_requests'), 'store_id', 'ColumnId'))
+        ALTER TABLE dbo.purchase_requests ADD CONSTRAINT DF_purchase_requests_store_id DEFAULT 1 FOR store_id;
+END
 GO
 
 /* =========================================================================================
@@ -1054,6 +1142,39 @@ BEGIN
     VALUES 
     (@WhMgrAccId, @Wh01Id, 'WARNING', N'Cảnh báo lô thuốc cận hạn', N'Lô thuốc LOT-EXP-AUG-01 (Augmentin 1g) còn 45 ngày hết hạn. Vui lòng ưu tiên xuất FEFO.', 'BATCH', 1, 0, DATEADD(HOUR, -12, SYSDATETIME())),
     (@WhMgrAccId, @Wh01Id, 'INFO', N'Yêu cầu điều chuyển hàng mới', N'Nhà thuốc Cầu Giấy ST01 vừa gửi yêu cầu bổ sung 150 đơn vị thuốc.', 'REQUISITION', 1, 0, DATEADD(HOUR, -2, SYSDATETIME()));
+END
+
+-- 12.4 Nhật ký gửi Email (Email Logs)
+DECLARE @Rfq1Id BIGINT = (SELECT TOP 1 id FROM dbo.rfqs ORDER BY id ASC);
+IF NOT EXISTS (SELECT 1 FROM dbo.email_logs WHERE to_email = 'kinhdoanh@dhgpharma.com.vn')
+BEGIN
+    INSERT INTO dbo.email_logs (to_email, subject, body, ref_type, ref_id, status, error_message, created_at, sent_at)
+    VALUES 
+    ('kinhdoanh@dhgpharma.com.vn', N'Yêu cầu báo giá Panadol Extra và Augmentin 1g',
+     N'Kính gửi Quý nhà cung cấp Dược Hậu Giang, vui lòng xem chi tiết yêu cầu báo giá đính kèm.',
+     'RFQ', @Rfq1Id, 1, NULL, DATEADD(DAY, -5, SYSDATETIME()), DATEADD(DAY, -5, SYSDATETIME())),
+    ('pharmacist.duty@pharmacy.com', N'Đặt lại mật khẩu tài khoản hệ thống',
+     N'Mã đặt lại mật khẩu của bạn có hiệu lực trong 30 phút.',
+     'PASSWORD_RESET', NULL, 1, NULL, DATEADD(HOUR, -5, SYSDATETIME()), DATEADD(HOUR, -5, SYSDATETIME()));
+END
+
+-- 12.5 Nhật ký kiểm toán thao tác (Audit Logs)
+DECLARE @AdminAccId BIGINT = (SELECT TOP 1 id FROM dbo.accounts WHERE username = 'admin');
+DECLARE @Prod1Id BIGINT = (SELECT TOP 1 id FROM dbo.products WHERE barcode = '8934567010012');
+IF @AdminAccId IS NOT NULL AND @Prod1Id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM dbo.audit_logs WHERE entity_name = 'Product' AND entity_id = @Prod1Id)
+BEGIN
+    INSERT INTO dbo.audit_logs (account_id, [action], entity_name, entity_id, old_value, new_value, ip_address, created_at)
+    VALUES 
+    (@AdminAccId, 1, 'Product', @Prod1Id, NULL, N'{"barcode":"8934567010012","name":"Panadol Extra Đỏ 500mg","price":15000}', '192.168.1.10', DATEADD(DAY, -30, SYSDATETIME())),
+    (@MgrId, 2, 'SalesInvoice', 1, N'{"status":1}', N'{"status":3}', '192.168.1.24', DATEADD(HOUR, -20, SYSDATETIME()));
+END
+
+-- 12.6 Token đặt lại mật khẩu (Password Reset Tokens)
+DECLARE @PharmAccId BIGINT = (SELECT TOP 1 id FROM dbo.accounts WHERE username = 'pharmacist_hn01');
+IF @PharmAccId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM dbo.password_reset_tokens WHERE account_id = @PharmAccId)
+BEGIN
+    INSERT INTO dbo.password_reset_tokens (account_id, token_hash, expires_at, used_at, created_at)
+    VALUES (@PharmAccId, 'f4c7a1d9e2b58c03a6d9f2b5c8e1a4d7b0c3f6a9', DATEADD(MINUTE, 30, SYSDATETIME()), NULL, DATEADD(MINUTE, -5, SYSDATETIME()));
 END
 GO
 
