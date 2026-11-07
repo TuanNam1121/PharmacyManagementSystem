@@ -1,7 +1,7 @@
 import { NavLink, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { getAuthorizedStores, DEFAULT_RETAIL_STORES } from "../api/StoreAPI";
+import { getAuthorizedStores } from "../api/StoreAPI";
 import ChangePasswordModal from "../component/auth/ChangePasswordModal";
 
 // 5 Business domains structured strictly according to Backlog scope
@@ -45,8 +45,8 @@ const NAV_MODULES = [
         title: "KHO CHI NHÁNH",
         isBranchSection: true,
         items: [
-          { to: "/store/inventory", label: "Tồn kho cửa hàng", roles: ["ADMIN", "STORE_MANAGER", "PHARMACIST", "GENERAL_MANAGER"] },
-          { to: "/store/audit", label: "Kiểm kê kho cửa hàng", roles: ["ADMIN", "STORE_MANAGER"] },
+          { to: "/store/inventory", label: "Tồn kho cửa hàng", roles: ["ADMIN", "STORE_MANAGER", "GENERAL_MANAGER"] },
+          { to: "/store/audit", label: "Kiểm kê kho cửa hàng", roles: ["ADMIN", "STORE_MANAGER", "PHARMACIST"] },
           { to: "/store/requisitions", label: "Yêu cầu lĩnh thuốc", roles: ["ADMIN", "STORE_MANAGER"] },
           { to: "/store/receipts", label: "Phiếu nhận hàng", roles: ["ADMIN", "STORE_MANAGER"] },
         ],
@@ -105,8 +105,8 @@ const NAV_MODULES = [
         key: "admin-reports",
         title: "BÁO CÁO",
         items: [
-          { to: "/reports/profit", label: "Báo cáo lợi nhuận", roles: ["ADMIN", "GENERAL_MANAGER", "STORE_MANAGER"] },
-          { to: "/reports/inventory", label: "Báo cáo tồn kho", roles: ["ADMIN", "GENERAL_MANAGER", "WAREHOUSE_MANAGER", "STORE_MANAGER"] },
+          { to: "/reports/profit", label: "Báo cáo lợi nhuận", roles: ["ADMIN", "GENERAL_MANAGER"] },
+          { to: "/reports/inventory", label: "Báo cáo tồn kho", roles: ["ADMIN", "GENERAL_MANAGER", "WAREHOUSE_MANAGER"] },
         ],
       },
     ],
@@ -159,9 +159,9 @@ export default function MainLayout() {
 
   const dropdownRef = useRef(null);
 
-  const [stores, setStores] = useState(DEFAULT_RETAIL_STORES);
+  const [stores, setStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState(() => {
-    return localStorage.getItem("pms_selected_store_id") || "3";
+    return localStorage.getItem("pms_selected_store_id");
   });
 
   const crumbs = BREADCRUMB_MAP[location.pathname] || [];

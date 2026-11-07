@@ -3,6 +3,8 @@ import { useInventoryAudit } from '../../hooks/inventory/useInventoryAudit';
 import RequestAuditModal from '../../component/inventory/RequestAuditModal';
 import ApproveRequestModal from '../../component/inventory/ApproveRequestModal';
 import AuditCountingModal from '../../component/inventory/AuditCountingModal';
+import ReviewAuditModal from '../../component/inventory/ReviewAuditModal';
+import { useAuth } from '../../hooks/useAuth';
 
 // ── Cấu hình trạng thái kiểm kê ─────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -134,6 +136,12 @@ export default function InventoryAuditPage() {
         { value: '3', label: 'Đã hoàn tất' },
         { value: '4', label: 'Từ chối' },
     ];
+
+    const { user } = useAuth();
+    const rawRole = (user?.role || '').toUpperCase().replace(/^ROLE_/, '').trim();
+
+    // Chỉ Admin và Quản lý cửa hàng mới được duyệt / đối soát
+    const canApprove = ['ADMIN', 'STORE_MANAGER'].includes(rawRole);
 
     return (
         <div>
@@ -349,7 +357,7 @@ export default function InventoryAuditPage() {
                                                     </button>
 
                                                     {/* STEP 2: Store Manager approves opening request */}
-                                                    {item.status === 0 && (
+                                                    {canApprove && item.status === 0 && (
                                                         <button
                                                             type="button"
                                                             className="btn-pms btn-pms-warning btn-pms-sm"
@@ -373,7 +381,7 @@ export default function InventoryAuditPage() {
                                                     )}
 
                                                     {/* STEP 4: Store Manager final confirmation & variance check */}
-                                                    {item.status === 2 && (
+                                                    {canApprove && item.status === 2 && (
                                                         <button
                                                             type="button"
                                                             className="btn-pms btn-pms-success btn-pms-sm"
@@ -424,6 +432,15 @@ export default function InventoryAuditPage() {
                 audit={selectedAudit}
                 loading={detailLoading}
                 onHide={() => setDetailModalOpen(false)}
+            />
+
+            <ReviewAuditModal
+                show={reviewModalOpen}
+                audit={selectedAudit}
+                loading={detailLoading}
+                onHide={() => setReviewModalOpen(false)}
+                onConfirm={handleFinalReview}
+                submitting={submitting}
             />
         </div>
     );

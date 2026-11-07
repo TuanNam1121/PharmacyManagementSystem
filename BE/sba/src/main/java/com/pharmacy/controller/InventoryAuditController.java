@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -50,9 +52,9 @@ public class InventoryAuditController {
     @PostMapping("/request")
     public ResponseEntity<ApiResponse<InventoryAuditDto>> requestAuditSession(
             @Valid @RequestBody CreateAuditRequest request,
-            HttpServletRequest servletRequest) {
+            HttpServletRequest servletRequest, Authentication authentication) {
 
-        String username = "pharmacist_duty";
+        String username = authentication.getName();
         String clientIp = servletRequest.getRemoteAddr();
         InventoryAuditDto result = inventoryAuditService.requestAuditSession(request, username, clientIp);
         return ResponseEntity.ok(ApiResponse.success(
@@ -63,11 +65,12 @@ public class InventoryAuditController {
      * STEP 2 (Store Manager): Approve or reject audit opening request
      */
     @PatchMapping("/approve-request")
+    @PreAuthorize("hasRole('STORE_MANAGER')")
     public ResponseEntity<ApiResponse<InventoryAuditDto>> approveAuditRequest(
             @Valid @RequestBody ApproveAuditRequest request,
-            HttpServletRequest servletRequest) {
+            HttpServletRequest servletRequest, Authentication authentication) {
 
-        String username = "store_manager";
+        String username = authentication.getName();
         String clientIp = servletRequest.getRemoteAddr();
         InventoryAuditDto result = inventoryAuditService.approveAuditRequest(request, username, clientIp);
         return ResponseEntity.ok(ApiResponse.success("Audit request reviewed successfully", result));
@@ -79,9 +82,9 @@ public class InventoryAuditController {
     @PutMapping("/submit-count")
     public ResponseEntity<ApiResponse<InventoryAuditDto>> submitAuditCount(
             @Valid @RequestBody SubmitAuditCountRequest request,
-            HttpServletRequest servletRequest) {
+            HttpServletRequest servletRequest, Authentication authentication) {
 
-        String username = "pharmacist_duty";
+        String username = authentication.getName();
         String clientIp = servletRequest.getRemoteAddr();
         InventoryAuditDto result = inventoryAuditService.submitAuditCount(request, username, clientIp);
         return ResponseEntity
@@ -92,11 +95,12 @@ public class InventoryAuditController {
      * STEP 4 (Store Manager): Final confirm/reconcile or reject (recount)
      */
     @PatchMapping("/review")
+    @PreAuthorize("hasRole('STORE_MANAGER')")
     public ResponseEntity<ApiResponse<InventoryAuditDto>> reviewAudit(
             @Valid @RequestBody InventoryAuditReviewRequest request,
-            HttpServletRequest servletRequest) {
+            HttpServletRequest servletRequest, Authentication authentication) {
 
-        String username = "store_manager";
+        String username = authentication.getName();
         String clientIp = servletRequest.getRemoteAddr();
         InventoryAuditDto result = inventoryAuditService.reviewAudit(request, username, clientIp);
         return ResponseEntity.ok(ApiResponse.success("Inventory audit final review completed successfully", result));

@@ -17,7 +17,7 @@ public class InventoryAuditReviewRequest {
      */
     @NotNull(message = "Review decision is required")
     @Min(value = 1, message = "Invalid decision value")
-    @Max(value = 2, message = "Invalid decision value")
+    @Max(value = 4, message = "Invalid decision value")
     private Short decision;
 
     @Size(max = 500, message = "Review note cannot exceed 500 characters")

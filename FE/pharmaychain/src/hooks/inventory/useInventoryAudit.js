@@ -180,6 +180,7 @@ export const useInventoryAudit = () => {
             fetchList();
         } catch (e) {
             setError(e.message || 'Final review failed');
+            throw e;   // thêm dòng này
         } finally {
             setSubmitting(false);
         }

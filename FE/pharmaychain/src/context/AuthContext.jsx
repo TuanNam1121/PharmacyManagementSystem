@@ -58,6 +58,8 @@ export function AuthProvider({ children }) {
       }
 
       setToken(accessToken);
+      
+
       setUser(userData);
       return { success: true, data };
     } catch (err) {
@@ -76,6 +78,8 @@ export function AuthProvider({ children }) {
       localStorage.removeItem(USER_KEY);
       sessionStorage.removeItem(TOKEN_KEY);
       sessionStorage.removeItem(USER_KEY);
+      // trong logout(), khối finally, cạnh các removeItem khác:
+      localStorage.removeItem('pms_selected_store_id');
       setToken(null);
       setUser(null);
       setIsLoading(false);

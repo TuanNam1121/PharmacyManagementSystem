@@ -4,6 +4,8 @@ import com.pharmacy.dto.PageResponse;
 import com.pharmacy.dto.inventory.*;
 import com.pharmacy.entity.*;
 import com.pharmacy.entity.enums.InventoryAuditStatus;
+import com.pharmacy.exception.InvalidOperationException;
+import com.pharmacy.exception.ResourceNotFoundException;
 import com.pharmacy.repository.*;
 import com.pharmacy.service.InventoryAuditService;
 import lombok.RequiredArgsConstructor;
@@ -38,11 +40,8 @@ public class InventoryAuditServiceImpl implements InventoryAuditService {
     }
 
     private Account resolveAccount(String username) {
-        if (username == null || username.trim().isEmpty()) {
-            return accountRepository.findAll().stream().findFirst().orElse(null);
-        }
         return accountRepository.findByUsername(username.trim())
-                .orElseGet(() -> accountRepository.findAll().stream().findFirst().orElse(null));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
     }
 
     private InventoryAuditDto.InventoryAuditDetailDto mapDetail(InventoryAuditDetail d) {
@@ -106,6 +105,12 @@ public class InventoryAuditServiceImpl implements InventoryAuditService {
             throw new IllegalStateException("User account not found");
         }
 
+        if (requester != null) {
+            if (requester.getStore().getId() != store.getId()) {
+                throw new InvalidOperationException("You don't have permission to access this resource");
+            }
+        }
+
         // Snapshot current branch inventory
         List<Inventory> currentInventories = inventoryRepository.findByStoreId(store.getId());
         if (currentInventories.isEmpty()) {
@@ -158,6 +163,11 @@ public class InventoryAuditServiceImpl implements InventoryAuditService {
         }
 
         Account reviewer = resolveAccount(username);
+        if (reviewer != null) {
+            if (reviewer.getStore().getId() != audit.getStore().getId()) {
+                throw new InvalidOperationException("You don't have permission to access this resource");
+            }
+        }
         audit.setReviewedBy(reviewer);
 
         Short decision = request.getDecision();
@@ -198,6 +208,11 @@ public class InventoryAuditServiceImpl implements InventoryAuditService {
         }
 
         Account counter = resolveAccount(username);
+        if (counter != null) {
+            if (counter.getStore().getId() != audit.getStore().getId()) {
+                throw new InvalidOperationException("You don't have permission to access this resource");
+            }
+        }
         audit.setCountedBy(counter);
 
         // Update counted quantities and calculate variance
@@ -238,11 +253,41 @@ public class InventoryAuditServiceImpl implements InventoryAuditService {
                             + audit.getStatus());
         }
 
+        Short decision = request.getDecision();
+
         Account reviewer = resolveAccount(username);
+        if (reviewer != null) {
+            if (reviewer.getStore().getId() != audit.getStore().getId()) {
+                throw new InvalidOperationException("You don't have permission to access this resource");
+            }
+        }
         audit.setReviewedBy(reviewer);
         audit.setStatus(request.getDecision()); // 3=Confirmed/Reconciled, 4=Rejected/Recount
         audit.setReviewNote(request.getReviewNote());
         audit.setReviewedAt(LocalDateTime.now());
+
+        // === Đồng bộ tồn kho khi xác nhận ===
+        if (decision.equals(InventoryAuditStatus.CONFIRMED.getCode())) {
+            List<InventoryAuditDetail> details = detailRepository.findByInventoryAuditId(audit.getId());
+            for (InventoryAuditDetail d : details) {
+                if (d.getCountedQuantity() == null) {
+                    throw new IllegalStateException(
+                            "Cannot confirm: product " + d.getProduct().getName() + " has not been counted.");
+                }
+                if (d.getVariance() == null || d.getVariance() == 0) {
+                    continue; // không lệch thì bỏ qua
+                }
+                Inventory inv = inventoryRepository.findByStoreIdAndProductIdAndBatchId(
+                        audit.getStore().getId(),
+                        d.getProduct().getId(),
+                        d.getBatch().getId()
+                ).orElseThrow(() -> new ResourceNotFoundException("Inventory record not found for product " + d.getProduct().getName()));
+                inv.setQuantity(d.getCountedQuantity());
+                inventoryRepository.save(inv);
+                ;
+            }
+        }
+
         audit = auditRepository.save(audit);
 
         recordAuditLog("FINAL_REVIEW", audit.getId(), "status=SUBMITTED_FOR_REVIEW",

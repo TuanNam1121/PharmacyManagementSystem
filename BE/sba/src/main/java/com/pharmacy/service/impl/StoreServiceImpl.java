@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,6 +29,10 @@ public class StoreServiceImpl implements StoreService {
         // Only retail stores: type = 1 (STORE), status = 1 (ACTIVE)
         // Excludes HQ (type = 0) and Central Warehouse (type = 2)
         List<Store> allRetailStores = storeRepository.findByTypeAndStatus((short) 1, (short) 1);
+
+        for (Store store : allRetailStores) {
+            System.out.println("Store Main:" + store.getId());
+        }
 
         if (allRetailStores == null || allRetailStores.isEmpty()) {
             return Collections.emptyList();
@@ -51,6 +56,7 @@ public class StoreServiceImpl implements StoreService {
         if (account.getRole() != null && account.getRole().getCode() != null) {
             roleCode = account.getRole().getCode().toUpperCase().replace("ROLE_", "").trim();
         }
+        System.out.println("StoreService" + roleCode);
 
         // General Manager and Admin have chain-wide visibility across all active retail branches
         if ("GENERAL_MANAGER".equals(roleCode) || "ADMIN".equals(roleCode) || roleCode.isEmpty()) {
@@ -63,11 +69,22 @@ public class StoreServiceImpl implements StoreService {
         if ("STORE_MANAGER".equals(roleCode) || "PHARMACIST".equals(roleCode)) {
             if (account.getStore() != null && account.getStore().getId() != null) {
                 Long assignedStoreId = account.getStore().getId();
-                List<StoreResponse> matched = allRetailStores.stream()
-                        .filter(s -> s.getId().equals(assignedStoreId))
-                        .map(this::mapToResponse)
-                        .collect(Collectors.toList());
-                if (!matched.isEmpty()) {
+                System.out.println("StoreService" + assignedStoreId);
+//                List<StoreResponse> matched = allRetailStores.stream()
+//                        .filter(s -> s.getId().equals(assignedStoreId))
+//                        .map(this::mapToResponse)
+//                        .collect(Collectors.toList());
+                List<StoreResponse> matched = new ArrayList<>();
+                for (Store store : allRetailStores) {
+                    if (store.getId() == assignedStoreId) {
+                        System.out.println("StoreService 1: " + store.getId());
+                        System.out.println("StoreService 2: " + assignedStoreId);
+                        StoreResponse storeResponse = mapToResponse(store);
+                        matched.add(storeResponse);
+                    }
+                }
+
+                if (matched != null) {
                     return matched;
                 }
             }

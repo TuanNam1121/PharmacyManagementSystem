@@ -27,6 +27,8 @@ public class StoreController {
     @Operation(summary = "Get authorized active retail branches for authenticated user")
     public ResponseEntity<ApiResponse<List<StoreResponse>>> getAuthorizedRetailStores(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        System.out.println("StoreController" + userDetails.getUsername());
         List<StoreResponse> stores = storeService.getAuthorizedRetailStores(userDetails);
         return ResponseEntity.ok(ApiResponse.success("Stores retrieved successfully", stores));
     }
