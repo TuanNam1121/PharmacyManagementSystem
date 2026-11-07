@@ -3,6 +3,7 @@ package com.pharmacy.service.impl;
 import com.pharmacy.dto.sales.*;
 import com.pharmacy.entity.*;
 import com.pharmacy.entity.enums.DailySalesReconciliationStatus;
+import com.pharmacy.entity.enums.PaymentMethod;
 import com.pharmacy.entity.enums.SalesInvoiceStatus;
 import com.pharmacy.exception.InvalidOperationException;
 import com.pharmacy.exception.ResourceNotFoundException;
@@ -18,7 +19,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -37,7 +40,7 @@ public class DailySalesServiceImpl implements DailySalesService {
     @Transactional(readOnly = true)
     public DailySalesOverviewDto getDailySalesOverview(Long storeId, LocalDate businessDate) {
         Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                         "Store not found with ID: " + storeId));
 
         LocalDateTime startOfDay = businessDate.atStartOfDay();
@@ -48,16 +51,26 @@ public class DailySalesServiceImpl implements DailySalesService {
         List<Shift> shifts = shiftRepository.findShiftsByStoreAndDateRange(storeId, startOfDay, endOfDay);
 
         // Calculate revenue by payment method (system)
-        BigDecimal systemTotal = invoices.stream()
-                .filter(i -> i.getStatus() != null
-                        && i.getStatus().equals(SalesInvoiceStatus.PAID.getCode())) // PAID
-                .map(SalesInvoice::getFinalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//        BigDecimal systemTotal = invoices.stream()
+//                .filter(i -> i.getStatus() != null
+//                        && i.getStatus().equals(SalesInvoiceStatus.PAID.getCode())) // PAID
+//                .map(SalesInvoice::getFinalAmount)
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // System breakdown by payment method (Cash ~40%, Bank ~40%, VNPay ~20%)
-        BigDecimal systemCash = systemTotal.multiply(new BigDecimal("0.40"));
-        BigDecimal systemBank = systemTotal.multiply(new BigDecimal("0.40"));
-        BigDecimal systemVnpay = systemTotal.subtract(systemCash).subtract(systemBank);
+        Map<Short, BigDecimal> byMethod = new HashMap<>();
+        for (Object[] row : paymentRepository.sumAmountByMethod(store.getId(), startOfDay, endOfDay)) {
+            byMethod.put((Short) row[0], (BigDecimal) row[1]);
+        }
+
+        BigDecimal systemCash = byMethod.getOrDefault(PaymentMethod.CASH.getCode(), BigDecimal.ZERO);
+        BigDecimal systemBank = byMethod.getOrDefault(PaymentMethod.BANK_TRANSFER.getCode(), BigDecimal.ZERO);
+        BigDecimal systemVnpay = byMethod.getOrDefault(PaymentMethod.VNPAY.getCode(), BigDecimal.ZERO);
+        BigDecimal systemTotal = systemCash.add(systemBank).add(systemVnpay);
+
+//        // System breakdown by payment method (Cash ~40%, Bank ~40%, VNPay ~20%)
+//        BigDecimal systemCash = systemTotal.multiply(new BigDecimal("0.40"));
+//        BigDecimal systemBank = systemTotal.multiply(new BigDecimal("0.40"));
+//        BigDecimal systemVnpay = systemTotal.subtract(systemCash).subtract(systemBank);
 
         // Check if reconciliation record already exists in database
         Optional<DailySalesReconciliation> existing = reconciliationRepository
@@ -173,8 +186,8 @@ public class DailySalesServiceImpl implements DailySalesService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Store not found with ID: " + request.getStoreId()));
 
-         Account actor = accountRepository.findByUsername(currentUsername)
-         .orElse(null);
+        Account actor = accountRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found!"));
 
         if (actor != null) {
             if ((actor.getStore().getId()) != store.getId()) {
@@ -197,15 +210,16 @@ public class DailySalesServiceImpl implements DailySalesService {
         LocalDateTime endOfDay = request.getBusinessDate().atTime(LocalTime.MAX);
         List<SalesInvoice> invoices = invoiceRepository.findInvoicesByDateRange(store.getId(), startOfDay,
                 endOfDay);
-        BigDecimal systemTotal = invoices.stream()
-                .filter(i -> i.getStatus() != null
-                        && i.getStatus().equals(SalesInvoiceStatus.PAID.getCode()))
-                .map(SalesInvoice::getFinalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Map<Short, BigDecimal> byMethod = new HashMap<>();
+        for (Object[] row : paymentRepository.sumAmountByMethod(store.getId(), startOfDay, endOfDay)) {
+            byMethod.put((Short) row[0], (BigDecimal) row[1]);
+        }
 
-        BigDecimal systemCash = systemTotal.multiply(new BigDecimal("0.40"));
-        BigDecimal systemBank = systemTotal.multiply(new BigDecimal("0.40"));
-        BigDecimal systemVnpay = systemTotal.subtract(systemCash).subtract(systemBank);
+        BigDecimal systemCash = byMethod.getOrDefault(PaymentMethod.CASH.getCode(), BigDecimal.ZERO);
+        BigDecimal systemBank = byMethod.getOrDefault(PaymentMethod.BANK_TRANSFER.getCode(), BigDecimal.ZERO);
+        BigDecimal systemVnpay = byMethod.getOrDefault(PaymentMethod.VNPAY.getCode(), BigDecimal.ZERO);
+        BigDecimal systemTotal = systemCash.add(systemBank).add(systemVnpay);
+
         reconciliation.setReconciledBy(actor);
         reconciliation.setSystemCash(systemCash);
         reconciliation.setSystemBank(systemBank);
@@ -232,6 +246,7 @@ public class DailySalesServiceImpl implements DailySalesService {
         auditLog.setAction((short) 2); // 2: UPDATE / RECONCILE
         auditLog.setEntityName("DailySalesReconciliation");
         auditLog.setEntityId(reconciliation.getId());
+        auditLog.setAccount(actor);
         auditLog.setOldValue(oldValue);
         auditLog.setNewValue(String.format("actualCash=%s, difference=%s, status=1, note=%s",
                 request.getActualCash(), reconciliation.getDifference(), request.getNote()));
