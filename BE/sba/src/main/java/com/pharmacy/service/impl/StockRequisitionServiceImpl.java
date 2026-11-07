@@ -3,6 +3,7 @@ package com.pharmacy.service.impl;
 import com.pharmacy.dto.PageResponse;
 import com.pharmacy.dto.inventory.CreateStockRequisitionRequest;
 import com.pharmacy.dto.inventory.StockRequisitionDto;
+import com.pharmacy.dto.inventory.UpdateStockRequisitionRequest;
 import com.pharmacy.dto.warehouse.ProductOptionDto;
 import com.pharmacy.entity.Account;
 import com.pharmacy.entity.Product;
@@ -22,7 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -82,7 +85,7 @@ public class StockRequisitionServiceImpl implements StockRequisitionService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<StockRequisitionDto> getRequisitionList(Long storeId, Short status, String search,
-            Pageable pageable) {
+                                                                Pageable pageable) {
         Page<StockRequisition> page = requisitionRepository.findAllWithFilter(storeId, status, search, pageable);
         Page<StockRequisitionDto> mapped = page.map(r -> mapRequisition(r, false));
         return PageResponse.from(mapped);
@@ -147,6 +150,52 @@ public class StockRequisitionServiceImpl implements StockRequisitionService {
         StockRequisition saved = requisitionRepository.save(requisition);
         return mapRequisition(saved, true);
     }
+
+    @Override
+    @Transactional
+    public StockRequisitionDto updateRequisition(Long requisitionId, UpdateStockRequisitionRequest request) {
+        // 1. Tìm phiếu
+        StockRequisition requisition = requisitionRepository.findById(requisitionId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Stock requisition not found with ID: " + requisitionId));
+
+        // 2. Chỉ được sửa khi Kho tổng CHƯA phê duyệt / từ chối (Bản nháp hoặc Chờ xét duyệt).
+        //    Kiểm tra trong cùng transaction để tránh sửa trùng lúc Kho tổng đang duyệt.
+        Short status = requisition.getStatus();
+        boolean editable = StockRequisitionStatus.PENDING.getCode().equals(status)
+                || StockRequisitionStatus.DRAFT.getCode().equals(status);
+        if (!editable) {
+            throw new IllegalStateException(
+                    "Chỉ có thể chỉnh sửa phiếu khi đang ở trạng thái Bản nháp hoặc Chờ xét duyệt");
+        }
+
+        // 3. Gộp các dòng trùng productId (cộng dồn số lượng)
+        Map<Long, Integer> mergedItems = new LinkedHashMap<>();
+        for (CreateStockRequisitionRequest.ItemRequest item : request.getItems()) {
+            mergedItems.merge(item.getProductId(), item.getRequestedQty(), Integer::sum);
+        }
+
+        // 4. Thay toàn bộ chi tiết (orphanRemoval = true sẽ xóa các dòng cũ)
+        requisition.getDetails().clear();
+        // flush để lệnh DELETE chạy trước INSERT, tránh vướng ràng buộc unique (nếu có)
+        requisitionRepository.saveAndFlush(requisition);
+
+        for (Map.Entry<Long, Integer> entry : mergedItems.entrySet()) {
+            Product product = productRepository.findById(entry.getKey())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Product not found with ID: " + entry.getKey()));
+
+            requisition.getDetails().add(StockRequisitionDetail.builder()
+                    .stockRequisition(requisition)
+                    .product(product)
+                    .requestedQty(entry.getValue())
+                    .build());
+        }
+
+        StockRequisition saved = requisitionRepository.save(requisition);
+        return mapRequisition(saved, true);
+    }
+
 
     @Override
     @Transactional(readOnly = true)

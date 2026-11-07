@@ -3,6 +3,9 @@ import { useStockRequisition } from '../../hooks/inventory/useStockRequisition';
 import CreateRequisitionModal from '../../component/inventory/CreateRequisitionModal';
 
 // ── Cấu hình trạng thái tiếng Việt chuẩn FSM ─────────────────────────────────────────────
+// Phiếu chỉ được sửa khi Kho tổng chưa phê duyệt (Bản nháp / Chờ xét duyệt)
+const isEditable = (status) => status === 0 || status === 1;
+
 const STATUS_MAP = {
     0: { label: 'Bản nháp', cls: 'pms-badge pms-badge-neutral' },
     1: { label: 'Chờ xét duyệt', cls: 'pms-badge pms-badge-warning' },
@@ -11,6 +14,7 @@ const STATUS_MAP = {
     4: { label: 'Đã xuất kho / Đang giao', cls: 'pms-badge pms-badge-info' },
     5: { label: 'Đã nhận hàng', cls: 'pms-badge pms-badge-success' },
     6: { label: 'Đã hủy', cls: 'pms-badge pms-badge-neutral' },
+    7: { label: 'Nhận một phần', cls: 'pms-badge pms-badge-warning' },
 };
 
 function StatusBadge({ status }) {
@@ -64,7 +68,7 @@ function RequisitionTimeline({ item }) {
 }
 
 // ── Modal chi tiết yêu cầu ─────────────────────────────────────────────────────
-function DetailModal({ show, item, loading, onHide }) {
+function DetailModal({ show, item, loading, onHide, onEdit }) {
     if (!show) return null;
     return (
         <div className="pms-modal-overlay" onClick={onHide}>
@@ -157,6 +161,11 @@ function DetailModal({ show, item, loading, onHide }) {
                     ) : null}
                 </div>
                 <div className="pms-modal-footer">
+                    {item && !loading && isEditable(item.status) && (
+                        <button type="button" className="btn-pms btn-pms-primary" onClick={() => onEdit(item)}>
+                            Chỉnh sửa phiếu
+                        </button>
+                    )}
                     <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide}>Đóng</button>
                 </div>
             </div>
@@ -179,6 +188,7 @@ export default function StockRequisitionsPage() {
         createModalOpen, setCreateModalOpen,
         submitting,
         handleCreateRequisition,
+        editModalOpen, editingItem, openEdit, closeEdit, handleUpdateRequisition,
         error, setError,
         successMsg, setSuccessMsg,
         fetchList,
@@ -415,6 +425,16 @@ export default function StockRequisitionsPage() {
                                             >
                                                 Chi tiết
                                             </button>
+                                            {isEditable(item.status) && (
+                                                <button
+                                                    type="button"
+                                                    className="btn-pms btn-pms-primary"
+                                                    style={{ padding: '4px 12px', fontSize: 12, marginLeft: 6 }}
+                                                    onClick={() => openEdit(item)}
+                                                >
+                                                    Sửa
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -448,6 +468,7 @@ export default function StockRequisitionsPage() {
                 item={selectedItem}
                 loading={detailLoading}
                 onHide={() => setDetailModalOpen(false)}
+                onEdit={openEdit}
             />
 
             <CreateRequisitionModal
@@ -455,6 +476,16 @@ export default function StockRequisitionsPage() {
                 onHide={() => setCreateModalOpen(false)}
                 defaultStoreId={storeId || 3}
                 onConfirm={handleCreateRequisition}
+                submitting={submitting}
+            />
+
+            {/* ── Edit Modal (tái dùng form tạo phiếu) ── */}
+            <CreateRequisitionModal
+                show={editModalOpen}
+                onHide={closeEdit}
+                defaultStoreId={editingItem?.storeId || storeId || 3}
+                editItem={editingItem}
+                onConfirm={handleUpdateRequisition}
                 submitting={submitting}
             />
         </div>

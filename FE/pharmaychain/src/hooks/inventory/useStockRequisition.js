@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getRequisitionList, getRequisitionDetail, createStockRequisition } from '../../api/StockRequisitionAPI';
+import { getRequisitionList, getRequisitionDetail, createStockRequisition, updateStockRequisition } from '../../api/StockRequisitionAPI';
 
 export const useStockRequisition = () => {
     const [searchParams] = useSearchParams();
@@ -41,6 +41,10 @@ export const useStockRequisition = () => {
     // ── create modal state ───────────────────────────────────────────────────────
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+
+    // ── edit modal state ─────────────────────────────────────────────────────────
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState(null);
 
     // ── alerts ───────────────────────────────────────────────────────────────────
     const [error, setError] = useState(null);
@@ -95,6 +99,42 @@ export const useStockRequisition = () => {
         }
     }, [fetchList]);
 
+    // ── open edit (load full detail so the modal has the item list) ──────────────
+    const openEdit = useCallback(async (item) => {
+        setError(null);
+        try {
+            const detail = await getRequisitionDetail(item.id);
+            setEditingItem(detail);
+            setEditModalOpen(true);
+        } catch (e) {
+            setError(e.message || 'Failed to load requisition details');
+        }
+    }, []);
+
+    const closeEdit = useCallback(() => {
+        setEditModalOpen(false);
+        setEditingItem(null);
+    }, []);
+
+    // ── update requisition ────────────────────────────────────────────────────────
+    const handleUpdateRequisition = useCallback(async (payload) => {
+        if (!editingItem) return;
+        setSubmitting(true);
+        setError(null);
+        try {
+            await updateStockRequisition(editingItem.id, payload);
+            setSuccessMsg('Stock requisition updated successfully!');
+            closeEdit();
+            setDetailModalOpen(false);
+            fetchList();
+        } catch (e) {
+            setError(e.message || 'Failed to update stock requisition');
+            throw e;
+        } finally {
+            setSubmitting(false);
+        }
+    }, [editingItem, fetchList, closeEdit]);
+
     return {
         list, total, page, setPage, size,
         search, setSearch,
@@ -108,6 +148,7 @@ export const useStockRequisition = () => {
         createModalOpen, setCreateModalOpen,
         submitting,
         handleCreateRequisition,
+        editModalOpen, editingItem, openEdit, closeEdit, handleUpdateRequisition,
         error, setError,
         successMsg, setSuccessMsg,
         fetchList,

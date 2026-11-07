@@ -4,6 +4,7 @@ import com.pharmacy.dto.ApiResponse;
 import com.pharmacy.dto.PageResponse;
 import com.pharmacy.dto.inventory.CreateStockRequisitionRequest;
 import com.pharmacy.dto.inventory.StockRequisitionDto;
+import com.pharmacy.dto.inventory.UpdateStockRequisitionRequest;
 import com.pharmacy.service.StockRequisitionService;
 
 import jakarta.validation.Valid;
@@ -59,6 +60,17 @@ public class StockRequisitionController {
         StockRequisitionDto result = stockRequisitionService.createRequisition(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Stock requisition created successfully", result));
+    }
+
+    /**
+     * Update a stock requisition (only while DRAFT / PENDING, before warehouse accepts)
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<StockRequisitionDto>> updateRequisition(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateStockRequisitionRequest request) {
+        StockRequisitionDto result = stockRequisitionService.updateRequisition(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Stock requisition updated successfully", result));
     }
 
     /**

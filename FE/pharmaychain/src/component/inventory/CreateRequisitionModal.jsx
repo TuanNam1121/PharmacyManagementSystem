@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { searchProductsForRequisition } from '../../api/StockRequisitionAPI';
 
-export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 1, onConfirm, submitting }) {
+export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 1, onConfirm, submitting, editItem = null }) {
+    const isEdit = !!editItem;
     const [storeId, setStoreId] = useState(defaultStoreId);
     const [products, setProducts] = useState([]);
     const [loadingProducts, setLoadingProducts] = useState(false);
@@ -15,14 +16,26 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
     // Reset state & load initial list from Backend when Modal opens
     useEffect(() => {
         if (show) {
-            setStoreId(defaultStoreId || 1);
-            setSelectedItems([]);
+            if (editItem) {
+                // Chế độ sửa: đổ dữ liệu phiếu hiện tại vào form, chi nhánh giữ nguyên
+                setStoreId(editItem.storeId || defaultStoreId || 1);
+                setSelectedItems((editItem.details || []).map(d => ({
+                    productId: d.productId,
+                    productName: d.productName,
+                    barcode: d.barcode,
+                    unit: d.productUnit || 'Unit',
+                    requestedQty: d.requestedQty
+                })));
+            } else {
+                setStoreId(defaultStoreId || 1);
+                setSelectedItems([]);
+            }
             setSearchTerm('');
             setIsDropdownOpen(false);
             setFormError(null);
             fetchProductsFromBackend('');
         }
-    }, [show, defaultStoreId]);
+    }, [show, defaultStoreId, editItem]);
 
     // Click outside to close dropdown
     useEffect(() => {
@@ -130,19 +143,22 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
             }
         }
 
-        const payload = {
-            storeId: Number(storeId),
-            createdByUsername: 'manager',
-            items: selectedItems.map(item => ({
-                productId: item.productId,
-                requestedQty: Number(item.requestedQty)
-            }))
-        };
+        const items = selectedItems.map(item => ({
+            productId: item.productId,
+            requestedQty: Number(item.requestedQty)
+        }));
+
+        // Sửa phiếu: chỉ gửi danh sách mặt hàng; tạo mới: gửi thêm chi nhánh + người lập
+        const payload = isEdit
+            ? { items }
+            : { storeId: Number(storeId), createdByUsername: 'manager', items };
 
         try {
             await onConfirm(payload);
         } catch (err) {
-            setFormError(err.message || 'Có lỗi xảy ra khi tạo phiếu yêu cầu cấp phát thuốc.');
+            setFormError(err.message || (isEdit
+                ? 'Có lỗi xảy ra khi cập nhật phiếu yêu cầu cấp phát thuốc.'
+                : 'Có lỗi xảy ra khi tạo phiếu yêu cầu cấp phát thuốc.'));
         }
     };
 
@@ -157,8 +173,14 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                     {/* Header */}
                     <div className="pms-modal-header" style={{ flexShrink: 0 }}>
                         <div>
-                            <h3 className="pms-modal-title">Tạo Phiếu Yêu Cầu Cấp Phát Thuốc</h3>
-                            <div className="pms-modal-sub">Gửi yêu cầu điều chuyển dược phẩm từ Kho tổng trung tâm về chi nhánh tiếp nhận</div>
+                            <h3 className="pms-modal-title">
+                                {isEdit ? `Chỉnh Sửa Phiếu Yêu Cầu ${editItem.code}` : 'Tạo Phiếu Yêu Cầu Cấp Phát Thuốc'}
+                            </h3>
+                            <div className="pms-modal-sub">
+                                {isEdit
+                                    ? 'Chỉ có thể sửa danh sách thuốc khi Kho tổng chưa phê duyệt phiếu'
+                                    : 'Gửi yêu cầu điều chuyển dược phẩm từ Kho tổng trung tâm về chi nhánh tiếp nhận'}
+                            </div>
                         </div>
                         <button type="button" className="pms-modal-close" onClick={onHide} disabled={submitting}>✕</button>
                     </div>
@@ -186,7 +208,7 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                     style={{ width: '100%' }}
                                     value={storeId}
                                     onChange={e => setStoreId(e.target.value)}
-                                    disabled={submitting}
+                                    disabled={submitting || isEdit}
                                     required
                                 >
                                     <option value="3">Chi nhánh 01 — Cầu Giấy (ST01)</option>
@@ -429,7 +451,11 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                             Hủy bỏ
                         </button>
                         <button type="submit" className="btn-pms btn-pms-primary" disabled={submitting || selectedItems.length === 0}>
-                            {submitting ? 'Đang gửi yêu cầu...' : `Gửi phiếu yêu cầu cấp phát (${selectedItems.length})`}
+                            {submitting
+                                ? (isEdit ? 'Đang lưu...' : 'Đang gửi yêu cầu...')
+                                : (isEdit
+                                    ? `Lưu thay đổi (${selectedItems.length})`
+                                    : `Gửi phiếu yêu cầu cấp phát (${selectedItems.length})`)}
                         </button>
                     </div>
                 </form>
