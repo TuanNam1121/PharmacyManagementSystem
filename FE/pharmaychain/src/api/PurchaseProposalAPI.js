@@ -66,6 +66,15 @@ export const rejectPurchaseProposal = async (id, reason = '') => {
   return unwrapApiResponse(json);
 };
 
+/**
+ * Select the winning supplier quotation for a purchase proposal (moves it to Pending Approval)
+ */
+export const selectProposalSupplier = async (id, rfqId) => {
+  const params = new URLSearchParams({ rfqId: String(rfqId) });
+  const json = await patch(`${BASE_URL}/${encodeURIComponent(id)}/select-supplier?${params.toString()}`);
+  return unwrapApiResponse(json);
+};
+
 export default {
   createPurchaseProposal,
   getPurchaseProposals,
@@ -73,4 +82,5 @@ export default {
   getEligiblePurchaseRequests,
   approvePurchaseProposal,
   rejectPurchaseProposal,
+  selectProposalSupplier,
 };

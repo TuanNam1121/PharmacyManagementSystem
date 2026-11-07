@@ -1,11 +1,14 @@
-import { formatDate } from "../../utils/format";
+import { formatDate, isInactiveStatus } from "../../utils/format";
 
 export default function RfqTable({
   data,
   loading,
-  selectedRfqs = [],
+  page = 0,
+  size = 10,
   onViewDetail,
-  onToggleSelect,
+  onCompare,
+  onSelectSupplier,
+  selectingRfqId,
 }) {
   const getStatusBadge = (status) => {
     const s = String(status || '').toUpperCase().trim();
@@ -15,204 +18,188 @@ export default function RfqTable({
     if (s === 'RESPONDED' || s === '1' || s === 'ĐÃ NHẬN BÁO GIÁ' || s === 'ĐÃ PHẢN HỒI') {
       return <span className="pms-badge pms-badge-success">Đã phản hồi</span>;
     }
-    if (s === 'EXPIRED' || s === '2' || s === 'HẾT HẠN') {
+    if (s === 'EXPIRED' || s === '2' || s === 'HẾT HẠN' || s === 'ĐÃ HẾT HẠN') {
       return <span className="pms-badge pms-badge-warning">Đã hết hạn</span>;
     }
     if (s === 'CANCELLED' || s === '3' || s === 'ĐÃ HỦY') {
-      return <span className="pms-badge pms-badge-neutral">Đã hủy</span>;
+      return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
     }
-    return <span className="pms-badge pms-badge-neutral">Chờ phản hồi</span>;
+    return <span className="pms-badge pms-badge-neutral">{status || '—'}</span>;
   };
 
-  const columns = [
-    { key: "id", label: "#", width: 50 },
-    { key: "code", label: "Mã RFQ", width: 120 },
-    { key: "supplier", label: "Nhà Cung Cấp", width: 180 },
-    { key: "purchaseProposal", label: "Đề Xuất Mua Hàng", width: 140 },
-    { key: "status", label: "Trạng Thái", width: 100 },
-    { key: "sentAt", label: "Ngày Gửi", width: 100 },
-    { key: "deadline", label: "Hạn Chót", width: 100 },
-    { key: "actions", label: "Thao Tác", width: 120, align: "center" },
-  ];
-
-  if (loading) {
-    return (
-      <div className="pms-table-container">
-        <table className="pms-table">
-          <thead>
-            <tr>
-              {columns.map((col) => (
-                <th key={col.key} style={{ width: col.width, textAlign: col.align || 'left' }}>
-                  {col.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td
-                colSpan={columns.length}
-                style={{ textAlign: "center", padding: 48 }}
-              >
-                <div className="pms-loading">
-                  <div className="pms-loading-spinner"></div>
-                  <div>Đang tải danh sách yêu cầu báo giá...</div>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <div className="pms-table-container">
-        <table className="pms-table">
-          <thead>
-            <tr>
-              {columns.map((col) => (
-                <th key={col.key} style={{ width: col.width, textAlign: col.align || 'left' }}>
-                  {col.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td
-                colSpan={columns.length}
-                style={{ textAlign: "center", padding: 48 }}
-              >
-                <div style={{ color: "var(--text-muted)", fontSize: 14 }}>
-                  Không tìm thấy yêu cầu báo giá nào phù hợp bộ lọc.
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
   return (
-    <div className="pms-table-container">
-      <table className="pms-table">
-        <thead>
-          <tr>
-            {columns.map((col) => (
-              <th key={col.key} style={{ width: col.width }}>
-                {col.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((rfq) => (
-            <tr
-              key={rfq.id}
-              className={
-                selectedRfqs.includes(rfq.id) ? "pms-row-selected" : ""
-              }
-            >
-              {/* Row ID */}
-              <td style={{ color: "var(--text-muted)", fontSize: 12 }}>
-                {rfq.id}
-              </td>
-              {/* RFQ Code */}
-              <td>
-                <div className="pms-table-cell-primary">{rfq.code}</div>
-              </td>
-              {/* Supplier */}
-              <td>
-                <div className="pms-table-cell-primary">
-                  {rfq.supplierName || rfq.supplier?.name || "-"}
-                </div>
-                <div className="pms-table-cell-secondary">
-                  {rfq.supplierCode || rfq.supplier?.code || ""}
-                </div>
-              </td>
-              {/* Purchase Proposal */}
-              <td>
-                <div className="pms-table-cell-primary">
-                  {rfq.purchaseProposalCode || "-"}
-                </div>
-                <div className="pms-table-cell-secondary"></div>
-              </td>
-              {/* Status */}
-              <td>{getStatusBadge(rfq.status)}</td>
-              {/* Sent Date */}
-              <td>
-                <div>{formatDate(rfq.sentAt)}</div>
-              </td>
-              {/* Deadline (expiredAt) */}
-              <td>
-                <div>{formatDate(rfq.expiredAt)}</div>
-                {rfq.status === "SENT" && rfq.expiredAt && rfq.expiredAt !== 'Invalid Date' && (
-                  <div
-                    className="pms-table-cell-secondary"
-                    style={{ fontSize: 11 }}
+    <div className="pms-card">
+      <div className="pms-card-body" style={{ padding: 0 }}>
+        <div className="pms-table-wrap">
+          <table className="pms-table">
+            <thead>
+              <tr>
+                <th style={{ width: 50 }}>STT</th>
+                <th>MÃ RFQ</th>
+                <th>NHÀ CUNG CẤP</th>
+                <th>ĐỀ XUẤT MUA HÀNG LIÊN KẾT</th>
+                <th>TRẠNG THÁI</th>
+                <th>NGÀY GỬI</th>
+                <th>HẠN CHÓT</th>
+                <th style={{ width: 150, textAlign: "center" }}>THAO TÁC</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={8}
+                    style={{ textAlign: "center", padding: "32px", color: "var(--text-muted)" }}
                   >
-                    {(() => {
-                      let d = new Date(rfq.expiredAt);
-                      if (isNaN(d.getTime()) && typeof rfq.expiredAt === 'string') {
-                        const parts = rfq.expiredAt.split(/[/\s:]/);
-                        if (parts.length >= 3) {
-                          d = new Date(parts[2], parts[1] - 1, parts[0]);
-                        }
-                      }
-                      if (isNaN(d.getTime())) return null;
-                      return d < new Date() ? "Quá hạn" : "Còn hiệu lực";
-                    })()}
-                  </div>
-                )}
-              </td>
-              {/* Actions */}
-              <td style={{ textAlign: "center" }}>
-                <div
-                  className="pms-table-actions"
-                  style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}
-                >
-                  {/* Compare selection */}
-                  <input
-                    type="checkbox"
-                    checked={selectedRfqs.includes(rfq.id)}
-                    onChange={() =>
-                      onToggleSelect(rfq.id, rfq.purchaseProposalId)
-                    }
-                    disabled={rfq.status !== "RESPONDED"}
-                    title={
-                      rfq.status !== "RESPONDED"
-                        ? "Chỉ các RFQ có trạng thái ĐÃ PHẢN HỒI mới có thể so sánh báo giá"
-                        : "Chọn để so sánh báo giá"
-                    }
-                    aria-label="Chọn so sánh báo giá"
-                  />
-                  <button
-                    className="pms-icon-btn view"
-                    onClick={() => onViewDetail(rfq.id)}
-                    title="Xem chi tiết báo giá"
-                    aria-label="Xem chi tiết"
+                    Đang tải danh sách yêu cầu báo giá...
+                  </td>
+                </tr>
+              ) : !data || data.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={8}
+                    style={{ textAlign: "center", padding: "32px", color: "var(--text-muted)" }}
                   >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                    Không tìm thấy yêu cầu báo giá nào phù hợp bộ lọc.
+                  </td>
+                </tr>
+              ) : (
+                data.map((rfq, idx) => {
+                  const isResponded =
+                    rfq.status === 'RESPONDED' ||
+                    rfq.status === '1' ||
+                    String(rfq.status).toUpperCase() === 'ĐÃ PHẢN HỒI';
+
+                  const canSelectSupplier =
+                    Number(rfq.purchaseProposalStatus) === 0 &&
+                    !isInactiveStatus(rfq.supplierStatus) &&
+                    isResponded;
+
+                  return (
+                    <tr key={rfq.id}>
+                      {/* STT */}
+                      <td className="text-xs text-muted-color">
+                        {page * size + idx + 1}
+                      </td>
+
+                      {/* RFQ Code */}
+                      <td>
+                        <span className="mono fw-700" style={{ fontSize: 13 }}>
+                          {rfq.code}
+                        </span>
+                      </td>
+
+                      {/* Supplier */}
+                      <td>
+                        <div style={{ fontWeight: 500 }}>
+                          {rfq.supplierName || rfq.supplier?.name || "—"}
+                        </div>
+                        {(rfq.supplierCode || rfq.supplier?.code) && (
+                          <div className="text-xs text-muted-color">
+                            {rfq.supplierCode || rfq.supplier?.code}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Purchase Proposal */}
+                      <td>
+                        <span className="mono" style={{ fontSize: 12 }}>
+                          {rfq.purchaseProposalCode || "—"}
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td>{getStatusBadge(rfq.status)}</td>
+
+                      {/* Sent Date */}
+                      <td className="text-sm text-muted-color">
+                        {formatDate(rfq.sentAt)}
+                      </td>
+
+                      {/* Deadline */}
+                      <td className="text-sm text-muted-color">
+                        {formatDate(rfq.expiredAt || rfq.deadline)}
+                      </td>
+
+                      {/* Actions */}
+                      <td style={{ textAlign: "center" }}>
+                        <div
+                          style={{
+                            display: "inline-flex",
+                            gap: 6,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          {isResponded && (
+                            <button
+                              className="pms-icon-btn edit"
+                              style={{ color: "var(--brand-primary)" }}
+                              onClick={() => onCompare && onCompare(rfq)}
+                              title="So sánh bảng báo giá của đề xuất này"
+                              aria-label="So sánh báo giá"
+                            >
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M18 20V10M12 20V4M6 20v-6" />
+                              </svg>
+                            </button>
+                          )}
+                          {canSelectSupplier && (
+                            <button
+                              className="pms-icon-btn edit"
+                              style={{ color: "var(--color-success)" }}
+                              onClick={() => onSelectSupplier && onSelectSupplier(rfq)}
+                              disabled={selectingRfqId === rfq.id}
+                              title="Chọn nhà cung cấp này"
+                              aria-label="Chọn nhà cung cấp"
+                            >
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                              >
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            </button>
+                          )}
+                          <button
+                            className="pms-icon-btn view"
+                            onClick={() => onViewDetail(rfq.id)}
+                            title="Xem chi tiết báo giá"
+                            aria-label="Xem chi tiết"
+                          >
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

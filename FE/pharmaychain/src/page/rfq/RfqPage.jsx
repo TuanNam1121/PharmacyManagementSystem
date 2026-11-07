@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   useRfq,
   useRfqDetail,
   useCompareRfqs,
-  useRfqSelection,
 } from '../../hooks/rfq/useRfq';
 import RfqFilters from '../../component/rfq/RfqFilters';
 import RfqTable from '../../component/rfq/RfqTable';
 import RfqDetailModal from '../../component/rfq/RfqDetailModal';
 import QuotationCompareModal from '../../component/rfq/QuotationCompareModal';
 import SendRfqModal from '../../component/supplier/SendRfqModal';
+import { getRfqs } from '../../api/RfqAPI';
+import { selectProposalSupplier } from '../../api/PurchaseProposalAPI';
 
 function Pagination({ total, page, size, onPage }) {
   if (total <= size) return null;
@@ -27,18 +29,30 @@ function Pagination({ total, page, size, onPage }) {
 }
 
 export default function RfqPage() {
+  const [searchParams] = useSearchParams();
+  const urlProposalId = searchParams.get('proposalId');
+  const [preselectedProposalId, setPreselectedProposalId] = useState(urlProposalId ? Number(urlProposalId) : null);
   const [page, setPage] = useState(0);
   const [size] = useState(10);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [supplierFilter, setSupplierFilter] = useState('');
-  const [purchaseProposalFilter, setPurchaseProposalFilter] = useState('');
+  const [supplierFilter] = useState('');
+  const [purchaseProposalFilter] = useState('');
   const [successMsg, setSuccessMsg] = useState(null);
   const [uiError, setUiError] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [compareModalOpen, setCompareModalOpen] = useState(false);
+  const [compareEmptyMessage, setCompareEmptyMessage] = useState(null);
   const [detailRfqId, setDetailRfqId] = useState(null);
   const [sendModalOpen, setSendModalOpen] = useState(false);
+  const [selectingRfqId, setSelectingRfqId] = useState(null);
+
+  useEffect(() => {
+    if (urlProposalId) {
+      setPreselectedProposalId(Number(urlProposalId));
+      setSendModalOpen(true);
+    }
+  }, [urlProposalId]);
 
   const {
     data,
@@ -55,81 +69,124 @@ export default function RfqPage() {
     size,
   });
 
-  const { detail: detailData, loading: detailLoading, refetch: fetchDetail } =
+  const { detail: detailData, loading: detailLoading } =
     useRfqDetail(detailRfqId);
 
   const { compareData, compareLoading, error: compareError, compare } =
     useCompareRfqs();
-
-  const {
-    selectedRfqs,
-    toggleSelect,
-    clearSelection,
-    setSelectedRfqs: setSelectedRfqsState,
-    selectedCount,
-  } = useRfqSelection(data);
 
   const handleViewDetail = (rfqId) => {
     setDetailRfqId(rfqId);
     setDetailModalOpen(true);
   };
 
-  const handleToggleSelect = (rfqId, rfqPurchaseProposalId) => {
-    if (selectedRfqs.length > 0) {
-      const firstSelected = selectedRfqs[0];
-      if (firstSelected.purchaseProposalId !== rfqPurchaseProposalId) {
-        setUiError('Chỉ có thể so sánh các yêu cầu báo giá (RFQ) xuất phát từ cùng một đề xuất mua hàng!');
-        return;
-      }
+  const isRespondedStatus = (status) =>
+    status === 'RESPONDED' || status === '1' || String(status).toUpperCase() === 'ĐÃ PHẢN HỒI';
+
+  const COMPARE_EMPTY_MESSAGE =
+    'Không có hoặc chưa có nhà cung cấp khác báo giá cho cùng đề xuất mua hàng.';
+
+  // Collect every responded RFQ that belongs to the same purchase proposal.
+  // The full set is fetched (not just the current page) so a supplier that
+  // responded on another page is not missed.
+  const fetchRespondedRfqIds = async (proposalId) => {
+    try {
+      const response = await getRfqs({
+        purchaseProposalId: proposalId,
+        status: 'RESPONDED',
+        page: 0,
+        size: 200,
+      });
+      return (response?.content || []).map((r) => r.id);
+    } catch {
+      // Fallback to what is already loaded on the current page
+      return (data || [])
+        .filter(
+          (r) =>
+            (r.purchaseProposalId === proposalId || r.purchaseProposal?.id === proposalId) &&
+            isRespondedStatus(r.status)
+        )
+        .map((r) => r.id);
     }
-    toggleSelect(rfqId, rfqPurchaseProposalId);
   };
 
-  const handleCompareSelected = async () => {
-    if (selectedRfqs.length < 2) {
-      setUiError('Vui lòng chọn ít nhất 2 RFQ để thực hiện so sánh báo giá');
+  const openCompareForProposal = async (proposalId) => {
+    if (!proposalId) {
+      setUiError('Yêu cầu báo giá này chưa liên kết với đề xuất mua hàng nào.');
       return;
     }
 
-    const firstProposalId = selectedRfqs[0]?.purchaseProposalId;
-    if (!firstProposalId) {
-      setUiError('Các RFQ đã chọn phải liên kết với một đề xuất mua hàng hợp lệ');
-      return;
-    }
-
-    const allSameProposal = selectedRfqs.every((r) => r.purchaseProposalId === firstProposalId);
-    if (!allSameProposal) {
-      setUiError('Tất cả RFQ được chọn phải thuộc cùng một đề xuất mua hàng');
-      return;
-    }
-
+    const respondedIds = await fetchRespondedRfqIds(proposalId);
     setCompareModalOpen(true);
-    await compare(selectedRfqs.map((r) => r.id));
+
+    if (respondedIds.length < 2) {
+      setCompareEmptyMessage(COMPARE_EMPTY_MESSAGE);
+      return;
+    }
+
+    setCompareEmptyMessage(null);
+    await compare(respondedIds);
   };
 
-  const handleClearSelection = () => {
-    clearSelection();
+  const handleCompareRfq = (rfq) =>
+    openCompareForProposal(rfq.purchaseProposalId || rfq.purchaseProposal?.id);
+
+  const handleSelectSupplier = async (col) => {
+    const proposalId = compareData?.purchaseProposalId;
+    if (!proposalId || !col?.rfqId) return;
+    setSelectingRfqId(col.rfqId);
+    setUiError(null);
+    try {
+      await selectProposalSupplier(proposalId, col.rfqId);
+      setCompareModalOpen(false);
+      setCompareEmptyMessage(null);
+      setSuccessMsg(
+        `Đã chọn nhà cung cấp ${col.supplier?.name || ''}. Đề xuất chuyển sang trạng thái "Chờ phê duyệt" và không thể gửi email RFQ nữa.`
+      );
+      fetchRfqs();
+    } catch (err) {
+      setUiError(err?.message || 'Chọn nhà cung cấp thất bại');
+    } finally {
+      setSelectingRfqId(null);
+    }
+  };
+
+  const handleSelectSupplierRow = async (rfq) => {
+    const proposalId = rfq?.purchaseProposalId || rfq?.purchaseProposal?.id;
+    if (!proposalId || !rfq?.id) return;
+    setSelectingRfqId(rfq.id);
+    setUiError(null);
+    try {
+      await selectProposalSupplier(proposalId, rfq.id);
+      setSuccessMsg(
+        `Đã chọn nhà cung cấp ${rfq.supplierName || ''}. Đề xuất chuyển sang trạng thái "Chờ phê duyệt" và không thể gửi email RFQ nữa.`
+      );
+      fetchRfqs();
+    } catch (err) {
+      setUiError(err?.message || 'Chọn nhà cung cấp thất bại');
+    } finally {
+      setSelectingRfqId(null);
+    }
   };
 
   return (
-    <div>
+    <div className="pms-page">
       <div className="pms-page-header">
         <div>
-          <h1 className="pms-page-title">Yêu Cầu Báo Giá &amp; Đấu Thầu (RFQ)</h1>
+          <h1 className="pms-page-title">Yêu Cầu Báo Giá (RFQ)</h1>
           <p className="pms-page-sub">
-            Quản lý yêu cầu chào giá gửi nhà cung cấp, tiếp nhận báo giá và thẩm định ma trận so sánh giá
+            Quản lý chào giá gửi nhà cung cấp, tiếp nhận báo giá và thẩm định so sánh giá
           </p>
         </div>
         <button
           className="btn-pms btn-pms-primary"
           onClick={() => setSendModalOpen(true)}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-            <polyline points="22,6 12,13 2,6" />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Gửi Yêu Cầu Báo Giá (Email)
+          Gửi Yêu Cầu Báo Giá
         </button>
       </div>
 
@@ -153,34 +210,12 @@ export default function RfqPage() {
         </div>
       )}
 
-      {selectedRfqs.length > 0 && (
-        <div className="pms-alert pms-alert-info" style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-            <div>
-              <strong>Đã chọn {selectedRfqs.length} RFQ</strong> từ cùng một đề xuất mua hàng: {selectedRfqs.map((r) => r.code).join(', ')}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn-pms btn-pms-primary" onClick={handleCompareSelected}>
-                So Sánh Báo Giá Đã Chọn
-              </button>
-              <button className="btn-pms btn-pms-ghost" onClick={handleClearSelection}>
-                Bỏ chọn
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <RfqFilters
         search={search}
         statusFilter={statusFilter}
-        supplierFilter={supplierFilter}
-        purchaseProposalFilter={purchaseProposalFilter}
+        total={total}
         onSearch={(val) => { setSearch(val); setPage(0); }}
         onStatusChange={(val) => { setStatusFilter(val); setPage(0); }}
-        onSupplierChange={(val) => { setSupplierFilter(val); setPage(0); }}
-        onPurchaseProposalChange={(val) => { setPurchaseProposalFilter(val); setPage(0); }}
-        onRefresh={fetchRfqs}
       />
 
       <RfqTable
@@ -188,12 +223,15 @@ export default function RfqPage() {
         loading={loading}
         page={page}
         size={size}
-        selectedRfqs={selectedRfqs.map((r) => r.id)}
         onViewDetail={handleViewDetail}
-        onToggleSelect={handleToggleSelect}
+        onCompare={handleCompareRfq}
+        onSelectSupplier={handleSelectSupplierRow}
+        selectingRfqId={selectingRfqId}
       />
 
-      <Pagination total={total} page={page} size={size} onPage={setPage} />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+        <Pagination total={total} page={page} size={size} onPage={setPage} />
+      </div>
 
       <RfqDetailModal
         show={detailModalOpen}
@@ -201,36 +239,30 @@ export default function RfqPage() {
         detail={detailData}
         loading={detailLoading}
         onCompare={() => {
-          if (detailData) {
-            const purchaseProposalId = detailData.purchaseProposal?.id;
-            const sameProposalRfqs = data.filter((r) => r.purchaseProposalId === purchaseProposalId);
-            setSelectedRfqsState(
-              sameProposalRfqs.map((rfq) => ({
-                id: rfq.id,
-                code: rfq.code,
-                supplierName: rfq.supplierName,
-                purchaseProposalId,
-              }))
-            );
-            setDetailModalOpen(false);
-            setSuccessMsg(
-              `Đã chọn ${sameProposalRfqs.length} RFQ từ cùng đề xuất. Nhấn "So Sánh Báo Giá Đã Chọn" để xem bảng đối chiếu chi tiết.`
-            );
-          }
+          if (!detailData) return;
+          const proposalId = detailData.purchaseProposal?.id || detailData.purchaseProposalId;
+          setDetailModalOpen(false);
+          setDetailRfqId(null);
+          openCompareForProposal(proposalId);
         }}
       />
 
       <QuotationCompareModal
         show={compareModalOpen}
-        onHide={() => { setCompareModalOpen(false); }}
+        onHide={() => { setCompareModalOpen(false); setCompareEmptyMessage(null); }}
         data={compareData}
         loading={compareLoading}
+        emptyMessage={compareEmptyMessage}
+        error={compareError}
+        onSelectSupplier={handleSelectSupplier}
+        selectingRfqId={selectingRfqId}
       />
 
       <SendRfqModal
         show={sendModalOpen}
         onHide={() => setSendModalOpen(false)}
         supplierSelectMode
+        preselectedProposalId={preselectedProposalId}
         onSuccess={() => { fetchRfqs(); setSuccessMsg('Gửi yêu cầu báo giá thành công!'); }}
       />
     </div>

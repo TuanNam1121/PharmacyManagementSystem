@@ -35,12 +35,21 @@ export const formatStatus = (status) => {
   };
 };
 
+/**
+ * Kiểm tra trạng thái "Ngừng hoạt động" của nhà cung cấp.
+ * Backend trả về tên enum SupplierStatus (ACTIVE/INACTIVE/PENDING), hỗ trợ thêm dạng số (1/2/3).
+ */
+export const isInactiveStatus = (status) => {
+  const s = String(status ?? '').toUpperCase();
+  return s === 'INACTIVE' || s === '2';
+};
+
 export const formatPaymentMethod = (method) => {
   if (!method) return 'Tiền mặt';
   const m = String(method).toUpperCase().trim();
-  if (m === 'CASH') return 'Tiền mặt';
-  if (m === 'BANK_TRANSFER' || m === 'TRANSFER' || m === 'BANK') return 'Chuyển khoản / Thẻ';
-  if (m === 'VNPAY_QR' || m === 'VIETQR' || m === 'QR') return 'Ví VietQR';
+  if (m === 'CASH' || m === '1') return 'Tiền mặt';
+  if (m === 'BANK_TRANSFER' || m === 'TRANSFER' || m === 'BANK' || m === 'CARD' || m === '2') return 'Quẹt thẻ POS';
+  if (m === 'VNPAY_QR' || m === 'VIETQR' || m === 'QR' || m === 'MOMO' || m === 'VNPAY' || m === '3') return 'VietQR / MoMo';
   return method;
 };
 
@@ -59,3 +68,13 @@ export const money = (n) => {
   if (n == null || isNaN(n)) return '0 VND';
   return Number(n).toLocaleString('en-US') + ' VND';
 };
+
+export const getLocalDateStr = (date = new Date()) => {
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+

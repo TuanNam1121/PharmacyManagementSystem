@@ -116,6 +116,7 @@ dist-ssr/
 
 # Environment files
 *.local
+.env
 .env.local
 .env.*.local
 

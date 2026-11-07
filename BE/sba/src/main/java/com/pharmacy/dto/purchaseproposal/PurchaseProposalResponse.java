@@ -32,6 +32,9 @@ public class PurchaseProposalResponse {
     private LocalDateTime createdAt;
     private LocalDateTime approvedAt;
     private String rejectReason;
+    private Long supplierQuotationId;
+    private Long supplierId;
+    private String supplierName;
 
     public static PurchaseProposalResponse fromEntity(PurchaseProposal pp) {
         if (pp == null) {
@@ -62,6 +65,11 @@ public class PurchaseProposalResponse {
                 .createdAt(pp.getCreatedAt())
                 .approvedAt(pp.getApprovedAt())
                 .rejectReason(pp.getRejectReason())
+                .supplierQuotationId(pp.getSupplierQuotation() != null ? pp.getSupplierQuotation().getId() : null)
+                .supplierId(pp.getSupplierQuotation() != null && pp.getSupplierQuotation().getSupplier() != null
+                        ? pp.getSupplierQuotation().getSupplier().getId() : null)
+                .supplierName(pp.getSupplierQuotation() != null && pp.getSupplierQuotation().getSupplier() != null
+                        ? pp.getSupplierQuotation().getSupplier().getName() : null)
                 .build();
     }
 

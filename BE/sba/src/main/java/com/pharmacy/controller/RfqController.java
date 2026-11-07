@@ -98,7 +98,7 @@ public class RfqController {
         return ResponseEntity.ok(
                 ApiResponse.success("RFQ quotation details retrieved successfully", data));
     }
-    
+
     @Operation(summary = "Compare multiple RFQs")
     @GetMapping("/compare")
     public ResponseEntity<ApiResponse<CompareResponse>> compareRfqs(

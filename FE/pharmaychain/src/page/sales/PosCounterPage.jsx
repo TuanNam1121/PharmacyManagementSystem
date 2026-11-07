@@ -134,7 +134,7 @@ export default function PosCounterPage() {
         try {
             const invoicePayload = {
                 shiftId: currentShift.shiftId || currentShift.id,
-                customerId: customer?.id || null,
+                customerId: customer?.customerId || customer?.id || null,
                 discount: Number(discountAmount) || 0,
                 prescriptionCode: prescriptionCode.trim() || null,
                 note: orderNote.trim() || null,
@@ -157,6 +157,8 @@ export default function PosCounterPage() {
             clearCart();
             setLastCompletedInvoice(completed);
             setPrintModalOpen(true);
+            refreshShift();
+            fetchSummary();
         } catch (err) {
             setCheckoutError(err.message || 'Thanh toán hóa đơn thất bại');
             alert(err.message || 'Thanh toán thất bại');
@@ -472,7 +474,7 @@ export default function PosCounterPage() {
                                         </div>
                                         <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2, display: 'flex', justifyContent: 'space-between' }}>
                                             <span>SĐT: <strong>{customer.phone}</strong></span>
-                                            <span>Điểm tích lũy: <strong style={{ color: 'var(--brand-primary)' }}>{customer.rewardPoints || 0} điểm</strong></span>
+                                            <span>Điểm tích lũy: <strong style={{ color: 'var(--brand-primary)' }}>{(customer.loyaltyPoints ?? customer.rewardPoints ?? customer.points ?? 0)} điểm</strong></span>
                                         </div>
                                         {customer.allergies && (
                                             <div style={{ fontSize: 11, color: '#dc2626', marginTop: 4, fontWeight: 600 }}>

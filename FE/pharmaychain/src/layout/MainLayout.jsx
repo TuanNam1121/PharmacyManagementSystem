@@ -38,6 +38,7 @@ const NAV_MODULES = [
         items: [
           { to: "/warehouse/inventory", label: "Tồn kho tổng FEFO", roles: ["ADMIN", "WAREHOUSE_MANAGER", "WAREHOUSE_STAFF", "GENERAL_MANAGER", "PURCHASING_STAFF"] },
           { to: "/warehouse/replenishment", label: "Điều chuyển chi nhánh", roles: ["ADMIN", "WAREHOUSE_MANAGER", "WAREHOUSE_STAFF", "GENERAL_MANAGER"] },
+          { to: "/warehouse/requests", label: "Yêu cầu mua hàng", roles: ["ADMIN", "WAREHOUSE_MANAGER", "WAREHOUSE_STAFF", "GENERAL_MANAGER", "PURCHASING_STAFF"] },
         ],
       },
       {
@@ -66,9 +67,8 @@ const NAV_MODULES = [
       </svg>
     ),
     items: [
-      { to: "/procurement/requests", label: "Yêu cầu mua hàng", roles: ["ADMIN", "PURCHASING_STAFF", "WAREHOUSE_MANAGER", "GENERAL_MANAGER"] },
-      { to: "/supplier", label: "Nhà cung cấp", roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"] },
       { to: "/procurement/proposals", label: "Đề xuất mua hàng", roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"] },
+      { to: "/supplier", label: "Nhà cung cấp", roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"] },
       { to: "/procurement/rfq", label: "RFQ & Báo giá", roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"] },
       { to: "/procurement/orders", label: "Đơn đặt hàng PO", roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"] },
     ],
@@ -129,7 +129,7 @@ const BREADCRUMB_MAP = {
   "/warehouse/adjustments": ["Kho & Tồn kho", "Tồn kho tổng FEFO"],
   "/warehouse/alerts": ["Kho & Tồn kho", "Tồn kho tổng FEFO"],
   "/warehouse/replenishment": ["Kho & Tồn kho", "Điều chuyển chi nhánh"],
-  "/warehouse/requests": ["Thu mua & Nhà cung cấp", "Yêu cầu mua hàng"],
+  "/warehouse/requests": ["Kho & Tồn Kho", "Yêu cầu mua hàng"],
   "/procurement/requests": ["Thu mua & Nhà cung cấp", "Yêu cầu mua hàng"],
   "/supplier": ["Thu mua & Nhà cung cấp", "Nhà cung cấp"],
   "/procurement/rfq": ["Thu mua & Nhà cung cấp", "RFQ & Báo giá"],

@@ -89,7 +89,7 @@ export default function DailySalesInvoicesTable({ invoices, loading, total, page
                                             className={`pms-badge ${
                                                 formatPaymentMethod(inv.paymentMethod) === 'Tiền mặt'
                                                     ? 'pms-badge-success'
-                                                    : formatPaymentMethod(inv.paymentMethod) === 'Ví VietQR'
+                                                    : (formatPaymentMethod(inv.paymentMethod) === 'Ví VietQR' || formatPaymentMethod(inv.paymentMethod) === 'VietQR / MoMo')
                                                     ? 'pms-badge-violet'
                                                     : 'pms-badge-info'
                                             }`}

@@ -17,7 +17,7 @@ export default function CustomerSelectModal({
             setLoading(true);
             try {
                 const res = await fetchCustomers({
-                    search: search.trim(),
+                    keyword: search.trim(),
                     status: 1, // only active
                     page: 0,
                     size: 10,
@@ -103,7 +103,7 @@ export default function CustomerSelectModal({
 
                         {!loading && customers.map((c) => (
                             <div
-                                key={c.id}
+                                key={c.customerId || c.id}
                                 onClick={() => {
                                     onSelectCustomer(c);
                                     onClose();
@@ -140,7 +140,7 @@ export default function CustomerSelectModal({
 
                                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                                     <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--brand-primary, #059669)' }}>
-                                        {c.rewardPoints || 0} điểm
+                                        {(c.loyaltyPoints ?? c.rewardPoints ?? c.points ?? 0)} điểm
                                     </div>
                                     <button
                                         type="button"

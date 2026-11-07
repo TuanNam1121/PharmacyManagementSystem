@@ -5,6 +5,7 @@ import com.pharmacy.dto.rfq.SubmitQuotationRequest;
 import com.pharmacy.dto.rfq.PublicRfqResponse.PublicRfqItemDto;
 import com.pharmacy.entity.*;
 import com.pharmacy.entity.enums.RfqStatus;
+import com.pharmacy.entity.enums.SupplierStatus;
 import com.pharmacy.repository.*;
 import com.pharmacy.service.PublicRfqService;
 import com.pharmacy.util.SecurityUtils;
@@ -37,6 +38,8 @@ public class PublicRfqServiceImpl implements PublicRfqService {
         Rfq rfq = rfqRepository.findValidRfqByTokenHash(tokenHash, LocalDateTime.now())
                 .orElseThrow(() -> new EntityNotFoundException("RFQ token is invalid or expired"));
 
+        ensureSupplierActive(rfq);
+
         PurchaseProposal proposal = rfq.getPurchaseProposal();
         List<PublicRfqItemDto> items = proposal == null || proposal.getDetails() == null
                 ? List.of()
@@ -57,6 +60,8 @@ public class PublicRfqServiceImpl implements PublicRfqService {
         String tokenHash = SecurityUtils.sha256Hex(rawToken);
         Rfq rfq = rfqRepository.findValidRfqByTokenHash(tokenHash, LocalDateTime.now())
                 .orElseThrow(() -> new EntityNotFoundException("RFQ token is invalid or expired"));
+
+        ensureSupplierActive(rfq);
 
         if (rfq.getStatus() != RfqStatus.SENT) {
             throw new IllegalArgumentException("RFQ already responded or expired");
@@ -129,5 +134,16 @@ public class PublicRfqServiceImpl implements PublicRfqService {
         log.info("Quotation submitted for RFQ {}, quotation ID: {}, total amount: {}",
                 rfq.getId(), savedQuotation.getId(), totalAmount);
         return true;
+    }
+
+    /**
+     * Chặn luồng RFQ công khai khi nhà cung cấp đã ngừng hoạt động.
+     */
+    private void ensureSupplierActive(Rfq rfq) {
+        Supplier supplier = rfq.getSupplier();
+        if (supplier != null && SupplierStatus.INACTIVE.equals(supplier.getStatus())) {
+            throw new IllegalArgumentException(
+                    "This supplier is inactive; the quotation request is no longer available");
+        }
     }
 }

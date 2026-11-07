@@ -1,5 +1,22 @@
 import { formatDate } from '../../utils/format';
 
+const getPrStatusBadge = (status, statusText) => {
+  switch (Number(status)) {
+    case 1:
+      return <span className="pms-badge pms-badge-warning">Chờ duyệt</span>;
+    case 2:
+      return <span className="pms-badge pms-badge-info">Đang chào giá RFQ</span>;
+    case 3:
+      return <span className="pms-badge pms-badge-info">Đã lập đề xuất</span>;
+    case 4:
+      return <span className="pms-badge pms-badge-success">Đã duyệt đơn PO</span>;
+    case 5:
+      return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
+    default:
+      return <span className="pms-badge pms-badge-neutral">{statusText || 'Không xác định'}</span>;
+  }
+};
+
 export default function WarehousePurchaseRequestDetailModal({ show, onHide, detail, loading }) {
   if (!show) return null;
 
@@ -41,7 +58,7 @@ export default function WarehousePurchaseRequestDetailModal({ show, onHide, deta
                 <div className="pms-detail-row">
                   <div className="pms-detail-label">Trạng Thái</div>
                   <div style={{ marginTop: 2 }}>
-                    <span className="pms-badge pms-badge-info">{detail.statusText || 'Đã gửi'}</span>
+                    {getPrStatusBadge(detail.status, detail.statusText)}
                   </div>
                 </div>
                 <div className="pms-detail-row">

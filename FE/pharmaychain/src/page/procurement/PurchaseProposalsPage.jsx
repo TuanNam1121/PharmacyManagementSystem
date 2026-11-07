@@ -11,6 +11,7 @@ import {
 import PurchaseProposalCreateModal from '../../component/procurement/PurchaseProposalCreateModal';
 import PurchaseProposalDetailModal from '../../component/procurement/PurchaseProposalDetailModal';
 import PurchaseProposalRejectModal from '../../component/procurement/PurchaseProposalRejectModal';
+import SendRfqModal from '../../component/supplier/SendRfqModal';
 
 function Pagination({ total, page, size, onPage }) {
   if (total <= size) return null;
@@ -48,6 +49,9 @@ export default function PurchaseProposalsPage() {
 
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
+
+  const [sendRfqModalOpen, setSendRfqModalOpen] = useState(false);
+  const [selectedProposalForRfq, setSelectedProposalForRfq] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectSubmitting, setRejectSubmitting] = useState(false);
 
@@ -137,16 +141,21 @@ export default function PurchaseProposalsPage() {
   const statusOptions = [
     { value: '', label: 'Tất cả trạng thái' },
     { value: '0', label: 'Đã lập đề xuất' },
-    { value: '1', label: 'Sẵn sàng tạo RFQ' },
-    { value: '3', label: 'Hoàn tất' },
+    { value: '1', label: 'Chờ phê duyệt' },
+    { value: '2', label: 'Đã phê duyệt' },
+    { value: '3', label: 'Đã từ chối' },
+    { value: '5', label: 'Hoàn tất' },
   ];
 
-  const getStatusBadge = (statusCode) => {
+  const getStatusBadge = (statusCode, statusText) => {
     const s = Number(statusCode);
-    if (s === 1) return <span className="pms-badge pms-badge-success">Sẵn sàng tạo RFQ</span>;
-    if (s === 2) return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
-    if (s === 3) return <span className="pms-badge pms-badge-neutral">Hoàn tất</span>;
-    return <span className="pms-badge pms-badge-info">Đã lập đề xuất</span>;
+    if (s === 2) return <span className="pms-badge pms-badge-success">Đã phê duyệt</span>;
+    if (s === 1) return <span className="pms-badge pms-badge-warning">Chờ phê duyệt</span>;
+    if (s === 3) return <span className="pms-badge pms-badge-danger">Đã từ chối</span>;
+    if (s === 4) return <span className="pms-badge pms-badge-info">Nhập một phần</span>;
+    if (s === 5) return <span className="pms-badge pms-badge-success">Hoàn tất</span>;
+    if (s === 6) return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
+    return <span className="pms-badge pms-badge-info">{statusText || 'Đã lập đề xuất'}</span>;
   };
 
   return (
@@ -250,16 +259,19 @@ export default function PurchaseProposalsPage() {
                         ? row.purchaseRequests.map((r) => r.code).join(', ')
                         : '—'}</td>
                       <td>
-                        {getStatusBadge(row.status)}
+                        {getStatusBadge(row.status, row.statusText)}
                       </td>
                       <td className="text-sm text-muted-color">{formatDate(row.createdAt)}</td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
-                          {(Number(row.status) === 0 || Number(row.status) === 1) && (
+                          {Number(row.status) === 0 && (
                             <button
                               className="pms-icon-btn edit"
                               style={{ color: 'var(--brand-primary)' }}
-                              onClick={() => navigate(`/procurement/rfq?proposalId=${row.id}`)}
+                              onClick={() => {
+                                setSelectedProposalForRfq(row.id);
+                                setSendRfqModalOpen(true);
+                              }}
                               title="Tạo yêu cầu báo giá RFQ gửi nhà cung cấp"
                               aria-label="Tạo RFQ báo giá"
                             >
@@ -305,6 +317,16 @@ export default function PurchaseProposalsPage() {
         onHide={() => { setDetailModalOpen(false); setSelectedDetail(null); }}
         detail={selectedDetail}
         loading={detailLoading}
+      />
+      <SendRfqModal
+        show={sendRfqModalOpen}
+        onHide={() => { setSendRfqModalOpen(false); setSelectedProposalForRfq(null); }}
+        supplierSelectMode
+        preselectedProposalId={selectedProposalForRfq}
+        onSuccess={() => {
+          setSuccessMsg('Gửi yêu cầu báo giá RFQ thành công!');
+          fetchList();
+        }}
       />
     </div>
   );

@@ -4,7 +4,6 @@ import lombok.Getter;
 
 @Getter
 public enum PurchaseRequestStatus {
-    DRAFT((short) 0, "Bản nháp"),
     SUBMITTED((short) 1, "Đã gửi duyệt"),
     RFQ_SENT((short) 2, "Đang chào giá RFQ"),
     PROPOSAL_CREATED((short) 3, "Đã lập đề xuất"),
@@ -32,13 +31,16 @@ public enum PurchaseRequestStatus {
     }
 
     public static String resolveText(Short status) {
-        return switch (status != null ? status.intValue() : 0) {
+        if (status == null) {
+            return null;
+        }
+        return switch (status.intValue()) {
             case 1 -> SUBMITTED.label;
             case 2 -> RFQ_SENT.label;
             case 3 -> PROPOSAL_CREATED.label;
             case 4 -> COMPLETED.label;
             case 5 -> CANCELLED.label;
-            default -> DRAFT.label;
+            default -> null;
         };
     }
 

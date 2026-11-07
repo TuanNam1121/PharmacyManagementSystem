@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { getLocalDateStr } from '../../utils/format';
 
 export default function RequestAuditModal({ show, defaultStoreId = '3', onHide, onConfirm, submitting }) {
     const [storeId, setStoreId] = useState(String(defaultStoreId || '3'));
-    const [auditDate, setAuditDate] = useState(new Date().toISOString().split('T')[0]);
+    const [auditDate, setAuditDate] = useState(getLocalDateStr());
     const [reason, setReason] = useState('');
     const [error, setError] = useState(null);
 

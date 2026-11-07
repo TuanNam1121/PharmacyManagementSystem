@@ -1,5 +1,8 @@
-export default function QuotationCompareModal({ show, onHide, data, loading }) {
+export default function QuotationCompareModal({ show, onHide, data, loading, emptyMessage, error, onSelectSupplier, selectingRfqId }) {
   if (!show) return null;
+  const showEmpty = !loading && (!!emptyMessage || !data);
+  const emptyText =
+    emptyMessage || error || 'Không có dữ liệu báo giá để so sánh cho đề xuất mua hàng này.';
   const formatCurrency = (amount) => {
     if (!amount) return '-';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -27,7 +30,18 @@ export default function QuotationCompareModal({ show, onHide, data, loading }) {
             <span className="pms-spinner-text">Đang tổng hợp dữ liệu so sánh…</span>
           </div>
         )}
-        {!loading && data && (
+        {showEmpty && (
+          <div className="pms-modal-body">
+            <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>📄</div>
+              <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--text-secondary)' }}>
+                Không thể so sánh báo giá
+              </div>
+              <div>{emptyText}</div>
+            </div>
+          </div>
+        )}
+        {!loading && !emptyMessage && data && (
           <>
             <div className="pms-modal-body">
               <div style={{ marginBottom: 16 }}>
@@ -90,6 +104,29 @@ export default function QuotationCompareModal({ show, onHide, data, loading }) {
                       ))}
                       <td style={{ borderLeft: '1px solid var(--border)' }}></td>
                     </tr>
+                    {Number(data.purchaseProposalStatus) === 0 && (
+                      <tr>
+                        <td colSpan="2"></td>
+                        {data.columns.map(col => {
+                          const hasQuotation = data.totals[col.rfqId] != null && Number(data.totals[col.rfqId]) > 0;
+                          return (
+                            <td key={col.rfqId} style={{ textAlign: 'center', borderLeft: '1px solid var(--border)', paddingTop: 10 }}>
+                              <button
+                                type="button"
+                                className="btn-pms btn-pms-primary"
+                                style={{ fontSize: 12, padding: '5px 12px' }}
+                                disabled={!hasQuotation || selectingRfqId === col.rfqId}
+                                title={hasQuotation ? 'Chọn nhà cung cấp này' : 'Nhà cung cấp chưa gửi báo giá'}
+                                onClick={() => onSelectSupplier && onSelectSupplier(col)}
+                              >
+                                {selectingRfqId === col.rfqId ? 'Đang chọn…' : 'Chọn NCC'}
+                              </button>
+                            </td>
+                          );
+                        })}
+                        <td style={{ borderLeft: '1px solid var(--border)' }}></td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

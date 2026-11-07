@@ -16,4 +16,6 @@ public interface PurchaseProposalService {
     PurchaseProposalResponse approvePurchaseProposal(Long id);
 
     PurchaseProposalResponse rejectPurchaseProposal(Long id, String reason);
+
+    PurchaseProposalResponse selectSupplier(Long id, Long rfqId);
 }

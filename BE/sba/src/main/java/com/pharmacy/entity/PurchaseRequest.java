@@ -30,12 +30,16 @@ public class PurchaseRequest {
     private String code;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id")
+    private Store store;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private Account createdBy;
 
-    @ColumnDefault("0")
+    @ColumnDefault("1")
     @Column(name = "status", columnDefinition = "tinyint not null")
-    private Short status; // 0 draft, 1 submitted/approved for purchasing, 2 RFQ sent, 3 proposal created, 4 completed, 5 cancelled
+    private Short status; // 1 submitted/approved for purchasing, 2 RFQ sent, 3 proposal created, 4 completed, 5 cancelled
 
     @Size(max = 500)
     @Nationalized

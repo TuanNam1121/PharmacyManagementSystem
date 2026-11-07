@@ -12,6 +12,7 @@ import com.pharmacy.entity.Account;
 import com.pharmacy.entity.enums.PurchaseProposalStatus;
 import com.pharmacy.entity.enums.PurchaseRequestStatus;
 import com.pharmacy.entity.enums.RfqStatus;
+import com.pharmacy.entity.enums.SupplierStatus;
 import com.pharmacy.repository.RfqRepository;
 import com.pharmacy.repository.SupplierRepository;
 import com.pharmacy.repository.PurchaseRequestRepository;
@@ -58,9 +59,9 @@ public class RfqServiceImpl implements RfqService {
 
     @Override
     public List<PurchaseProposalResponse> getEligiblePurchaseProposals() {
-        // Proposals created by purchasing staff are immediately eligible for RFQ
+        // Only proposals that have not yet chosen a supplier are eligible to send RFQ emails
         return purchaseProposalRepository.findByStatusIn(
-                List.of(PurchaseProposalStatus.PENDING.getCode(), PurchaseProposalStatus.APPROVED.getCode()))
+                List.of(PurchaseProposalStatus.DRAFT.getCode()))
                 .stream()
                 .map(PurchaseProposalResponse::fromEntity)
                 .toList();
@@ -73,21 +74,36 @@ public class RfqServiceImpl implements RfqService {
         Supplier supplier = supplierRepository.findById(request.supplierId())
                 .orElseThrow(() -> new EntityNotFoundException("Supplier not found with ID: " + request.supplierId()));
 
+        // Inactive suppliers must not receive quotation requests
+        if (SupplierStatus.INACTIVE.equals(supplier.getStatus())) {
+            throw new IllegalArgumentException(
+                    "Cannot send RFQ to supplier '" + supplier.getCode() + "': supplier is inactive");
+        }
+
         // Validate the aggregated purchase proposal (source of the RFQ)
         PurchaseProposal proposal = purchaseProposalRepository.findById(request.purchaseProposalId())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Purchase proposal not found with ID: " + request.purchaseProposalId()));
 
-        // Proposal must be pending or approved to send an RFQ
+        // Only proposals that have not yet chosen a supplier can send an RFQ
         Short proposalStatus = proposal.getStatus();
         if (proposalStatus == null
-                || (!proposalStatus.equals(PurchaseProposalStatus.PENDING.getCode())
-                        && !proposalStatus.equals(PurchaseProposalStatus.APPROVED.getCode()))) {
-            throw new IllegalArgumentException("Purchase proposal must be pending or approved to send RFQ");
+                || !proposalStatus.equals(PurchaseProposalStatus.DRAFT.getCode())) {
+            throw new IllegalArgumentException(
+                    "Chỉ đề xuất chưa chọn nhà cung cấp mới được gửi RFQ");
         }
 
-        // Check if RFQ already sent for this supplier and purchase proposal
-        if (rfqRepository.existsBySupplierIdAndPurchaseProposalId(supplier.getId(), proposal.getId())) {
+        // Block sending only if an RFQ for this supplier + proposal is still active
+        // (already responded, or sent and not yet past its deadline). Expired or
+        // cancelled RFQs can be re-sent.
+        List<Rfq> existingRfqs = rfqRepository
+                .findBySupplierIdAndPurchaseProposalId(supplier.getId(), proposal.getId());
+        LocalDateTime now = LocalDateTime.now();
+        boolean hasActiveRfq = existingRfqs.stream().anyMatch(r ->
+                r.getStatus() == RfqStatus.RESPONDED
+                        || (r.getStatus() == RfqStatus.SENT
+                                && (r.getExpiredAt() == null || r.getExpiredAt().isAfter(now))));
+        if (hasActiveRfq) {
             throw new IllegalArgumentException(
                     "RFQ already sent to this supplier for the same purchase proposal");
         }
@@ -104,12 +120,19 @@ public class RfqServiceImpl implements RfqService {
         // Calculate expiration (3 days from now)
         LocalDateTime expiredAt = LocalDateTime.now().plusDays(3);
 
-        // Create RFQ entity - built from the aggregated purchase proposal, not a single PR
+        Account currentAccount = getCurrentAccount();
+        PurchaseRequest legacyPr = (proposal.getRequests() != null && !proposal.getRequests().isEmpty())
+                ? proposal.getRequests().get(0).getPurchaseRequest()
+                : null;
+
+        // Create RFQ entity - built from the aggregated purchase proposal
         Rfq rfq = Rfq.builder()
                 .code(rfqCode)
                 .supplier(supplier)
                 .purchaseProposal(proposal)
-                .sentBy(getCurrentAccount())
+                .purchaseRequest(legacyPr)
+                .createdBy(currentAccount)
+                .sentBy(currentAccount)
                 .tokenHash(tokenHash)
                 .expiredAt(expiredAt)
                 .subject(request.subject())
@@ -121,6 +144,9 @@ public class RfqServiceImpl implements RfqService {
 
         // Save RFQ
         Rfq savedRfq = rfqRepository.save(rfq);
+
+        // NOTE: sending an RFQ no longer mutates the proposal status. The proposal only
+        // becomes PENDING_APPROVAL when a winning supplier is chosen (selectSupplier).
 
         // Move every aggregated purchase request to RFQ_SENT
         if (proposal.getRequests() != null) {
@@ -215,10 +241,14 @@ public class RfqServiceImpl implements RfqService {
     }
 
     private Account getCurrentAccount() {
-        // TODO: Implement authentication context - get currently logged-in user
-        // For now, return the first active account or throw exception if none exists
-        return accountRepository.findAll().stream().findFirst()
-                .orElseThrow(
-                        () -> new IllegalStateException("No account found in system. Please create an account first."));
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getName() != null && !auth.getName().equalsIgnoreCase("anonymousUser")) {
+            var acc = accountRepository.findByUsername(auth.getName());
+            if (acc.isPresent()) return acc.get();
+        }
+        return accountRepository.findByUsername("purchasing01")
+                .or(() -> accountRepository.findByUsername("admin"))
+                .or(() -> accountRepository.findAll().stream().findFirst())
+                .orElse(null);
     }
 }
