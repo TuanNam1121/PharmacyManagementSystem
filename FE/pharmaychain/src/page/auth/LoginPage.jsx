@@ -9,8 +9,7 @@ export default function LoginPage() {
 
   const [formData, setFormData] = useState({
     username: '',
-    password: '',
-    rememberMe: false,
+    password: ''
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -79,8 +78,7 @@ export default function LoginPage() {
 
     const res = await login({
       username: formData.username.trim(),
-      password: formData.password,
-      rememberMe: formData.rememberMe,
+      password: formData.password
     });
 
     if (res.success) {
@@ -88,16 +86,6 @@ export default function LoginPage() {
     } else {
       setServerError(res.error || 'Tên đăng nhập hoặc mật khẩu không chính xác');
     }
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      username: '',
-      password: '',
-      rememberMe: false,
-    });
-    setFieldErrors({});
-    setServerError('');
   };
 
   return (
@@ -400,30 +388,6 @@ export default function LoginPage() {
               fontSize: '13px',
             }}
           >
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                color: '#475569',
-                userSelect: 'none',
-              }}
-            >
-              <input
-                type="checkbox"
-                name="rememberMe"
-                checked={formData.rememberMe}
-                onChange={handleChange}
-                style={{
-                  width: '16px',
-                  height: '16px',
-                  accentColor: '#10b981',
-                  cursor: 'pointer',
-                }}
-              />
-              Ghi nhớ đăng nhập
-            </label>
 
             <Link
               to="/forgot-password"
@@ -441,21 +405,6 @@ export default function LoginPage() {
 
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={isLoading}
-              className="btn-pms btn-pms-secondary"
-              style={{
-                flex: 1,
-                padding: '11px',
-                borderRadius: '10px',
-                fontWeight: 600,
-                fontSize: '14px',
-              }}
-            >
-              Hủy
-            </button>
             <button
               type="submit"
               disabled={isLoading}
@@ -506,7 +455,7 @@ export default function LoginPage() {
             color: '#94a3b8',
           }}
         >
-          © 2026 PharmaChain Inc. Mọi quyền được bảo lưu.
+          © 2026 PharmaChain Inc.
         </div>
       </div>
     </div>

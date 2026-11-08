@@ -969,5 +969,23 @@ BEGIN
 END
 GO
 
+-- 12.7 Bảng lưu trữ Refresh Tokens (Refresh Token Rotation)
+IF OBJECT_ID('dbo.refresh_tokens', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.refresh_tokens (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        account_id BIGINT NOT NULL,
+        token VARCHAR(500) NOT NULL UNIQUE,
+        expiry_date DATETIME2 NOT NULL,
+        is_revoked BIT DEFAULT 0 NOT NULL,
+        created_at DATETIME2 DEFAULT SYSDATETIME() NOT NULL,
+        replaced_by_token VARCHAR(500) NULL,
+        CONSTRAINT FK_refresh_tokens_accounts FOREIGN KEY (account_id) REFERENCES dbo.accounts(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IX_refresh_tokens_account_id ON dbo.refresh_tokens(account_id);
+    CREATE INDEX IX_refresh_tokens_token ON dbo.refresh_tokens(token);
+END
 GO
+
 

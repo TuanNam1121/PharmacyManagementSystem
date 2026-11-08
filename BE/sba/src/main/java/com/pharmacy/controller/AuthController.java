@@ -7,9 +7,12 @@ import com.pharmacy.security.JwtTokenProvider;
 import com.pharmacy.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,8 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "APIs for user login, logout, password lifecycle and recovery")
-@CrossOrigin(origins = "*")
+@Tag(name = "Authentication", description = "APIs for user login, logout, token refresh, password lifecycle and recovery")
 public class AuthController {
 
     private final AuthService authService;
@@ -31,18 +33,72 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest) {
         String clientIp = extractClientIp(httpRequest);
-        LoginResponse response = authService.login(request, clientIp);
-        return ResponseEntity.ok(ApiResponse.success("Đăng nhập thành công", response));
+        LoginResult result = authService.login(request, clientIp);
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", result.getRefreshToken())
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Lax")
+                .path("/api/v1/auth")
+                .maxAge(jwtTokenProvider.getRefreshTokenExpirationInSeconds())
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(ApiResponse.success("Đăng nhập thành công", result.getResponse()));
+    }
+
+    @PostMapping("/refresh-token")
+    @Operation(summary = "Làm mới Access Token bằng Refresh Token từ HttpOnly Cookie")
+    public ResponseEntity<ApiResponse<LoginResponse>> refreshToken(
+            @CookieValue(name = "refreshToken", required = false) String refreshTokenCookie,
+            HttpServletRequest httpRequest) {
+        String clientIp = extractClientIp(httpRequest);
+        String tokenToRefresh = refreshTokenCookie;
+        if (tokenToRefresh == null || tokenToRefresh.isBlank()) {
+            tokenToRefresh = extractCookieFromRequest(httpRequest, "refreshToken");
+        }
+
+        LoginResult result = authService.refreshToken(tokenToRefresh, clientIp);
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", result.getRefreshToken())
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Lax")
+                .path("/api/v1/auth")
+                .maxAge(jwtTokenProvider.getRefreshTokenExpirationInSeconds())
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(ApiResponse.success("Làm mới token thành công", result.getResponse()));
     }
 
     @PostMapping("/logout")
     @Operation(summary = "Đăng xuất khỏi hệ thống và vô hiệu hóa phiên làm việc")
     public ResponseEntity<ApiResponse<Void>> logout(
+            @CookieValue(name = "refreshToken", required = false) String refreshTokenCookie,
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             HttpServletRequest httpRequest) {
         String clientIp = extractClientIp(httpRequest);
-        authService.logout(authHeader, clientIp);
-        return ResponseEntity.ok(ApiResponse.success("Đăng xuất thành công", null));
+        String tokenToRevoke = refreshTokenCookie;
+        if (tokenToRevoke == null || tokenToRevoke.isBlank()) {
+            tokenToRevoke = extractCookieFromRequest(httpRequest, "refreshToken");
+        }
+
+        authService.logout(authHeader, tokenToRevoke, clientIp);
+
+        ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Lax")
+                .path("/api/v1/auth")
+                .maxAge(0)
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
+                .body(ApiResponse.success("Đăng xuất thành công", null));
     }
 
     @PostMapping("/change-password")
@@ -93,6 +149,18 @@ public class AuthController {
             return jwtTokenProvider.getAccountIdFromToken(token);
         }
         throw new IllegalStateException("Không xác định được danh tính người dùng đang thao tác");
+    }
+
+    private String extractCookieFromRequest(HttpServletRequest request, String cookieName) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+        for (Cookie cookie : request.getCookies()) {
+            if (cookieName.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     private String extractClientIp(HttpServletRequest request) {

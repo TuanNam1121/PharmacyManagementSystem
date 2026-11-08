@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 export class ApiError extends Error {
   constructor(message, status, data = null) {
     super(message);
@@ -7,75 +9,165 @@ export class ApiError extends Error {
   }
 }
 
-function getStoredToken() {
-  try {
-    return localStorage.getItem('pms_token') || sessionStorage.getItem('pms_token') || null;
-  } catch {
-    return null;
-  }
-}
+// In-Memory Access Token (không lưu localStorage để phòng chống tấn công XSS)
+let memoryAccessToken = null;
 
-async function sendRequest(url, method = 'GET', payload = null) {
-  const options = {
-    method: method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
+// Callbacks to synchronize state with React AuthContext
+let onTokenRefreshedCallback = null;
+let onAuthFailedCallback = null;
 
-  const token = getStoredToken();
-  if (token) {
-    options.headers['Authorization'] = `Bearer ${token}`;
-  }
+export const setAuthToken = (token) => {
+  memoryAccessToken = token;
+};
 
-  if (payload !== null && payload !== undefined) {
-    options.body = JSON.stringify(payload);
-  }
+export const getAuthToken = () => {
+  return memoryAccessToken;
+};
 
-  let res;
-  try {
-    res = await fetch(url, options);
-  } catch (err) {
-    throw new ApiError(
-      'Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng hoặc thử lại sau.',
-      err.message
-    );
-  }
+export const setOnTokenRefreshed = (callback) => {
+  onTokenRefreshedCallback = callback;
+};
 
-  if (!res.ok) {
-    let message = `Error ${res.status}`;
-    let resData = null;
-    try {
-      const text = await res.text();
-      if (text) {
-        try {
-          const json = JSON.parse(text);
-          message = json.message || json.error || text;
-          resData = json.data || null;
-        } catch {
-          message = text;
-        }
-      }
-    } catch {
-      // ignore
+export const setOnAuthFailed = (callback) => {
+  onAuthFailedCallback = callback;
+};
+
+// Create Axios Instance
+export const apiClient = axios.create({
+  baseURL: '',
+  withCredentials: true, // Tự động đính kèm HttpOnly Cookie chứa Refresh Token
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// 1. Request Interceptor: Đính kèm Access Token vào header Authorization
+apiClient.interceptors.request.use(
+  (config) => {
+    if (memoryAccessToken) {
+      config.headers['Authorization'] = `Bearer ${memoryAccessToken}`;
     }
-    throw new ApiError(message, res.status, resData);
-  }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-  if (res.status === 204 || res.status === 205) {
-    return null;
-  }
-  const text = await res.text();
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
-}
+// Biến trạng thái và hàng đợi hỗ trợ xử lý nhiều request 401 đồng thời
+let isRefreshing = false;
+let failedQueue = [];
 
-export const get = (url) => sendRequest(url, 'GET');
-export const post = (url, data) => sendRequest(url, 'POST', data);
-export const put = (url, data) => sendRequest(url, 'PUT', data);
-export const patch = (url, data) => sendRequest(url, 'PATCH', data);
-export const del = (url) => sendRequest(url, 'DELETE');
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// 2. Response Interceptor: Bắt lỗi 401 và tự động gọi /refresh-token
+apiClient.interceptors.response.use(
+  (response) => {
+    return response.data;
+  },
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (!error.response) {
+      throw new ApiError(
+        'Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng hoặc thử lại sau.',
+        0
+      );
+    }
+
+    const status = error.response.status;
+    const resData = error.response.data;
+    const message = resData?.message || resData?.error || error.message || `Lỗi ${status}`;
+
+    const requestUrl = originalRequest?.url || '';
+    const isAuthExempt =
+      requestUrl.includes('/api/v1/auth/login') ||
+      requestUrl.includes('/api/v1/auth/refresh-token') ||
+      requestUrl.includes('/api/v1/auth/logout') ||
+      requestUrl.includes('/api/v1/auth/forgot-password') ||
+      requestUrl.includes('/api/v1/auth/reset-password');
+
+    // Nếu lỗi 401 và không phải là request auth hay request đã retry
+    if (status === 401 && !originalRequest?._retry && !isAuthExempt) {
+      if (isRefreshing) {
+        // Đưa request vào hàng đợi chờ token mới
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((newToken) => {
+            originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+            return apiClient(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Gọi API /refresh-token (cookie HttpOnly tự động được gửi qua withCredentials: true)
+        const refreshRes = await axios.post(
+          'http://localhost:8080/api/v1/auth/refresh-token',
+          {},
+          { withCredentials: true }
+        );
+
+        const payload = refreshRes.data?.data || refreshRes.data;
+        const newAccessToken = payload?.accessToken;
+
+        if (!newAccessToken) {
+          throw new Error('Không nhận được Access Token mới');
+        }
+
+        // Cập nhật Access Token trong bộ nhớ
+        memoryAccessToken = newAccessToken;
+
+        // Báo cho React AuthContext cập nhật state
+        if (onTokenRefreshedCallback) {
+          onTokenRefreshedCallback(newAccessToken, payload.user || null);
+        }
+
+        // Giải phóng các request đang chờ
+        processQueue(null, newAccessToken);
+
+        // Thực thi lại request ban đầu với Access Token mới
+        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+        return apiClient(originalRequest);
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        memoryAccessToken = null;
+
+        // Xóa sạch trạng thái ứng dụng và điều hướng về trang Login
+        if (onAuthFailedCallback) {
+          onAuthFailedCallback();
+        }
+
+        throw new ApiError(
+          'Phiên làm việc đã hết hạn hoặc bị hủy. Vui lòng đăng nhập lại.',
+          401,
+          resData?.data || null
+        );
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    throw new ApiError(message, status, resData?.data || null);
+  }
+);
+
+// Shorthand methods
+export const get = (url, config = {}) => apiClient.get(url, config);
+export const post = (url, data = null, config = {}) => apiClient.post(url, data, config);
+export const put = (url, data = null, config = {}) => apiClient.put(url, data, config);
+export const patch = (url, data = null, config = {}) => apiClient.patch(url, data, config);
+export const del = (url, config = {}) => apiClient.delete(url, config);
+
+export default apiClient;
