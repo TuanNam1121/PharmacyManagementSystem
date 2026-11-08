@@ -11,6 +11,8 @@ import PosCartTable from '../../component/sales/PosCartTable';
 import OpenShiftModal from '../../component/sales/OpenShiftModal';
 import CloseShiftModal from '../../component/sales/CloseShiftModal';
 import CustomerSelectModal from '../../component/sales/CustomerSelectModal';
+import CustomerFormModal from '../../component/customer/CustomerFormModal';
+import { createCustomer } from '../../api/customerApi';
 import PaymentModal from '../../component/sales/PaymentModal';
 import InvoicePrintTemplate from '../../component/sales/InvoicePrintTemplate';
 import SalesReturnModal from '../../component/sales/SalesReturnModal';
@@ -83,6 +85,23 @@ export default function PosCounterPage() {
     const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
     const [checkoutError, setCheckoutError] = useState(null);
     const [printModalOpen, setPrintModalOpen] = useState(false);
+    const [customerFormModalOpen, setCustomerFormModalOpen] = useState(false);
+    const [createCustomerLoading, setCreateCustomerLoading] = useState(false);
+
+    const handleQuickCustomerSubmit = async (payload) => {
+        setCreateCustomerLoading(true);
+        try {
+            const created = await createCustomer(payload);
+            const customerObj = created?.customer || created;
+            selectCustomer(customerObj);
+            setCustomerFormModalOpen(false);
+        } catch (err) {
+            console.error('Lỗi khi tạo mới khách hàng:', err);
+            alert(err?.message || 'Không thể tạo mới khách hàng');
+        } finally {
+            setCreateCustomerLoading(false);
+        }
+    };
 
     // Fast payment states directly on right panel
     const [quickMethod, setQuickMethod] = useState('CASH'); // CASH, BANK_TRANSFER (PayOS)
@@ -472,14 +491,26 @@ export default function PosCounterPage() {
                                         </span>
                                     </div>
 
-                                    <button
-                                        type="button"
-                                        className="btn-pms btn-pms-secondary"
-                                        style={{ fontSize: 11, padding: '2px 8px', height: 24, fontWeight: 600 }}
-                                        onClick={() => setCustomerModalOpen(true)}
-                                    >
-                                        {customer ? 'Đổi khách' : '+ Chọn khách hàng'}
-                                    </button>
+                                    <div style={{ display: 'flex', gap: 6 }}>
+                                        <button
+                                            type="button"
+                                            className="btn-pms btn-pms-secondary"
+                                            style={{ fontSize: 11, padding: '2px 8px', height: 24, fontWeight: 600 }}
+                                            onClick={() => setCustomerModalOpen(true)}
+                                        >
+                                            {customer ? 'Đổi khách' : '+ Chọn khách hàng'}
+                                        </button>
+                                        {!customer && (
+                                            <button
+                                                type="button"
+                                                className="btn-pms btn-pms-primary"
+                                                style={{ fontSize: 11, padding: '2px 8px', height: 24, fontWeight: 700 }}
+                                                onClick={() => setCustomerFormModalOpen(true)}
+                                            >
+                                                + Tạo mới
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {customer ? (
@@ -513,27 +544,8 @@ export default function PosCounterPage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div style={{
-                                        fontSize: 12,
-                                        color: '#b91c1c',
-                                        background: '#fef2f2',
-                                        padding: '8px 12px',
-                                        borderRadius: 8,
-                                        border: '1px solid #fecaca',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        gap: 8
-                                    }}>
-                                        <span>⚠️ Chưa có khách hàng (Bắt buộc)</span>
-                                        <button
-                                            type="button"
-                                            className="btn-pms btn-pms-primary"
-                                            style={{ fontSize: 11, padding: '3px 8px', height: 24, fontWeight: 700 }}
-                                            onClick={() => setCustomerModalOpen(true)}
-                                        >
-                                            + Nhập SĐT
-                                        </button>
+                                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                                        Chưa chọn thông tin khách hàng
                                     </div>
                                 )}
                             </div>
@@ -837,6 +849,14 @@ export default function PosCounterPage() {
                 isOpen={customerModalOpen}
                 onClose={() => setCustomerModalOpen(false)}
                 onSelectCustomer={selectCustomer}
+            />
+
+            <CustomerFormModal
+                show={customerFormModalOpen}
+                onHide={() => setCustomerFormModalOpen(false)}
+                mode="create"
+                onSubmit={handleQuickCustomerSubmit}
+                loading={createCustomerLoading}
             />
 
             <PaymentModal

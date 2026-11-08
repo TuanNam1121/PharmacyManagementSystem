@@ -54,7 +54,10 @@ export default function CustomerFormModal({
           notes: hp.notes || '',
         });
       } else {
-        setFormData(INITIAL_FORM_STATE);
+        setFormData({
+          ...INITIAL_FORM_STATE,
+          phone: customer?.phone || '',
+        });
       }
       setErrors({});
     }
