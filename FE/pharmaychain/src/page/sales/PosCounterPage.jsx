@@ -85,7 +85,7 @@ export default function PosCounterPage() {
     const [printModalOpen, setPrintModalOpen] = useState(false);
 
     // Fast payment states directly on right panel
-    const [quickMethod, setQuickMethod] = useState('CASH'); // CASH, VNPAY_QR, BANK_TRANSFER
+    const [quickMethod, setQuickMethod] = useState('CASH'); // CASH, BANK_TRANSFER (PayOS)
     const [tenderedCash, setTenderedCash] = useState('');
 
     useEffect(() => {
@@ -117,6 +117,12 @@ export default function PosCounterPage() {
 
         if (cartItems.length === 0) {
             alert('Giỏ hàng chưa có sản phẩm nào!');
+            return;
+        }
+
+        // Nếu chọn chuyển khoản PayOS mà chưa mở mã QR để nhận thanh toán, mở Modal PayOS
+        if (!paymentOverride && quickMethod === 'BANK_TRANSFER') {
+            setPaymentModalOpen(true);
             return;
         }
 
@@ -599,7 +605,7 @@ export default function PosCounterPage() {
                                 flexDirection: 'column',
                                 gap: 10
                             }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                                     <button
                                         type="button"
                                         onClick={() => setQuickMethod('CASH')}
@@ -619,24 +625,10 @@ export default function PosCounterPage() {
 
                                     <button
                                         type="button"
-                                        onClick={() => setQuickMethod('VNPAY_QR')}
-                                        style={{
-                                            border: `1.5px solid ${quickMethod === 'VNPAY_QR' ? 'var(--brand-primary)' : '#e2e8f0'}`,
-                                            background: quickMethod === 'VNPAY_QR' ? 'var(--brand-primary-light, #ecfdf5)' : '#fff',
-                                            color: quickMethod === 'VNPAY_QR' ? 'var(--brand-primary)' : '#475569',
-                                            fontWeight: 700,
-                                            fontSize: 12,
-                                            padding: '8px 4px',
-                                            borderRadius: 8,
-                                            cursor: 'pointer'
+                                        onClick={() => {
+                                            setQuickMethod('BANK_TRANSFER');
+                                            setPaymentModalOpen(true);
                                         }}
-                                    >
-                                        VietQR / MoMo
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => setQuickMethod('BANK_TRANSFER')}
                                         style={{
                                             border: `1.5px solid ${quickMethod === 'BANK_TRANSFER' ? 'var(--brand-primary)' : '#e2e8f0'}`,
                                             background: quickMethod === 'BANK_TRANSFER' ? 'var(--brand-primary-light, #ecfdf5)' : '#fff',
@@ -648,9 +640,23 @@ export default function PosCounterPage() {
                                             cursor: 'pointer'
                                         }}
                                     >
-                                        Quẹt thẻ POS
+                                        Chuyển khoản PayOS
                                     </button>
                                 </div>
+
+                                {quickMethod === 'BANK_TRANSFER' && (
+                                    <div style={{
+                                        padding: '8px 10px',
+                                        background: '#eff6ff',
+                                        borderRadius: 6,
+                                        border: '1px solid #bfdbfe',
+                                        fontSize: 11,
+                                        color: '#1e40af',
+                                        lineHeight: 1.4
+                                    }}>
+                                        Tự động nhận diện thanh toán VietQR qua cổng PayOS. Bấm vào nút để mở mã QR.
+                                    </div>
+                                )}
 
                                 {quickMethod === 'CASH' && (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

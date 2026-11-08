@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { money } from '../../utils/format';
+import { createPayOSPaymentLink, checkPayOSPaymentStatus } from '../../api/paymentApi';
 
 export default function PaymentModal({
     isOpen,
@@ -12,19 +13,104 @@ export default function PaymentModal({
     submitting,
     error,
 }) {
-    const [paymentMethod, setPaymentMethod] = useState('CASH'); // CASH, VNPAY_QR, BANK_TRANSFER
+    // Chỉ hỗ trợ 2 hình thức: CASH (Tiền mặt) và BANK_TRANSFER (Chuyển khoản PayOS VietQR)
+    const [paymentMethod, setPaymentMethod] = useState('CASH');
     const [tenderedCash, setTenderedCash] = useState('');
-    const [transactionRef, setTransactionRef] = useState('');
     const [valError, setValError] = useState('');
 
+    // State cho cổng PayOS VietQR
+    const [payOSLoading, setPayOSLoading] = useState(false);
+    const [payOSData, setPayOSData] = useState(null);
+    const [payOSError, setPayOSError] = useState('');
+    const [payOSSuccess, setPayOSSuccess] = useState(false);
+    const [successTxnRef, setSuccessTxnRef] = useState('');
+
+    const pollingTimerRef = useRef(null);
+
+    // Dọn dẹp Polling timer
+    const clearPolling = () => {
+        if (pollingTimerRef.current) {
+            clearInterval(pollingTimerRef.current);
+            pollingTimerRef.current = null;
+        }
+    };
+
+    // Reset khi mở modal hoặc thay đổi netAmount
     useEffect(() => {
         if (isOpen) {
             setTenderedCash(String(netAmount));
-            setTransactionRef('');
             setValError('');
             setPaymentMethod('CASH');
+            setPayOSData(null);
+            setPayOSError('');
+            setPayOSSuccess(false);
+            setSuccessTxnRef('');
+        } else {
+            clearPolling();
         }
+        return () => clearPolling();
     }, [isOpen, netAmount]);
+
+    // Xử lý khi người dùng chuyển sang tab PayOS
+    const handleSelectPayOS = async () => {
+        setPaymentMethod('BANK_TRANSFER');
+        setValError('');
+
+        if (payOSData && !payOSSuccess) {
+            // Đã có mã QR trước đó, tiếp tục lắng nghe polling
+            startPolling(payOSData.orderCode);
+            return;
+        }
+
+        try {
+            setPayOSLoading(true);
+            setPayOSError('');
+            clearPolling();
+
+            const res = await createPayOSPaymentLink({
+                amount: netAmount,
+                description: 'PMS POS ' + Math.floor(netAmount),
+            });
+
+            setPayOSData(res);
+            startPolling(res.orderCode);
+        } catch (err) {
+            console.error('Không thể tạo mã VietQR PayOS:', err);
+            setPayOSError(err.message || 'Chưa thể kết nối tới PayOS. Vui lòng kiểm tra cấu hình .env hoặc chọn Tiền mặt.');
+        } finally {
+            setPayOSLoading(false);
+        }
+    };
+
+    // Bắt đầu chu kỳ Polling kiểm tra trạng thái thanh toán tự động (mỗi 2 giây)
+    const startPolling = (orderCode) => {
+        clearPolling();
+        if (!orderCode) return;
+
+        pollingTimerRef.current = setInterval(async () => {
+            try {
+                const statusRes = await checkPayOSPaymentStatus(orderCode);
+                if (statusRes && (statusRes.completed || statusRes.status === 'PAID')) {
+                    clearPolling();
+                    setPayOSSuccess(true);
+                    const refCode = statusRes.reference || `REF-${orderCode}`;
+                    setSuccessTxnRef(refCode);
+
+                    // Tự động kích hoạt hoàn tất đơn hàng sau 1.2s để thu ngân kịp nhìn thấy thông báo thành công
+                    setTimeout(() => {
+                        onConfirmPayment({
+                            paymentMethod: 'BANK_TRANSFER',
+                            amountPaid: netAmount,
+                            tenderedCash: netAmount,
+                            transactionRef: `PayOS #${orderCode} (${refCode})`,
+                        });
+                    }, 1200);
+                }
+            } catch (err) {
+                console.warn('Polling PayOS status error:', err);
+            }
+        }, 2000);
+    };
 
     if (!isOpen) return null;
 
@@ -40,29 +126,38 @@ export default function PaymentModal({
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleCashSubmit = (e) => {
         e.preventDefault();
         if (paymentMethod === 'CASH') {
             if (tendered < netAmount) {
                 setValError(`Số tiền khách đưa không đủ (${money(tendered)} < ${money(netAmount)})`);
                 return;
             }
+            setValError('');
+            onConfirmPayment({
+                paymentMethod: 'CASH',
+                amountPaid: netAmount,
+                tenderedCash: tendered,
+            });
         }
-        setValError('');
-        onConfirmPayment({
-            paymentMethod,
-            amountPaid: netAmount,
-            tenderedCash: paymentMethod === 'CASH' ? tendered : netAmount,
-            transactionRef: transactionRef.trim() || undefined,
-        });
     };
+
+    // URL ảnh VietQR chuẩn Napas 247 được sinh từ PayOS
+    const qrImageUrl = payOSData
+        ? (payOSData.bin && payOSData.accountNumber
+            ? `https://img.vietqr.io/image/${payOSData.bin}-${payOSData.accountNumber}-compact2.png?amount=${payOSData.amount}&addInfo=${encodeURIComponent(payOSData.description)}&accountName=${encodeURIComponent(payOSData.accountName || '')}`
+            : payOSData.checkoutUrl)
+        : null;
 
     return (
         <div
             className="pms-modal-overlay"
             style={{ zIndex: 1200 }}
             onClick={(e) => {
-                if (e.target === e.currentTarget && !submitting) onClose();
+                if (e.target === e.currentTarget && !submitting && !payOSSuccess) {
+                    clearPolling();
+                    onClose();
+                }
             }}
         >
             <div className="pms-modal" style={{ maxWidth: 540, width: '100%' }}>
@@ -85,7 +180,7 @@ export default function PaymentModal({
                                 Thanh Toán Hóa Đơn
                             </div>
                             <div className="pms-modal-sub">
-                                Xác nhận phương thức và thu tiền đơn bán lẻ
+                                Hỗ trợ Tiền mặt & Chuyển khoản VietQR tự động (PayOS)
                             </div>
                         </div>
                     </div>
@@ -93,18 +188,21 @@ export default function PaymentModal({
                     <button
                         type="button"
                         className="pms-modal-close"
-                        onClick={onClose}
-                        disabled={submitting}
+                        onClick={() => {
+                            clearPolling();
+                            onClose();
+                        }}
+                        disabled={submitting || payOSSuccess}
                     >
                         ✕
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleCashSubmit}>
                     <div className="pms-modal-body" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        {(error || valError) && (
+                        {(error || valError || payOSError) && (
                             <div className="pms-alert pms-alert-danger" style={{ padding: '10px 14px', fontSize: 13 }}>
-                                {valError || error}
+                                {valError || error || payOSError}
                             </div>
                         )}
 
@@ -150,83 +248,77 @@ export default function PaymentModal({
                             )}
                         </div>
 
-                        {/* Payment Method Selector */}
+                        {/* Payment Method Selector - Chỉ 2 hình thức: CASH và BANK_TRANSFER (PayOS) */}
                         <div>
                             <label className="pms-label" style={{ fontWeight: 700, marginBottom: 8, display: 'block' }}>
                                 Chọn hình thức thanh toán:
                             </label>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                {/* Nút 1: Tiền mặt */}
                                 <button
                                     type="button"
-                                    onClick={() => setPaymentMethod('CASH')}
+                                    onClick={() => {
+                                        clearPolling();
+                                        setPaymentMethod('CASH');
+                                    }}
                                     className="btn-pms"
                                     style={{
                                         border: `2px solid ${paymentMethod === 'CASH' ? 'var(--brand-primary, #059669)' : '#e2e8f0'}`,
                                         background: paymentMethod === 'CASH' ? 'var(--brand-primary-light, #ecfdf5)' : '#fff',
                                         color: paymentMethod === 'CASH' ? 'var(--brand-primary, #059669)' : '#475569',
                                         fontWeight: 700,
-                                        padding: '12px 8px',
-                                        borderRadius: 8,
+                                        padding: '14px 10px',
+                                        borderRadius: 10,
                                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                                         cursor: 'pointer',
+                                        transition: 'all 0.2s',
                                     }}
                                 >
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <rect x="2" y="6" width="20" height="12" rx="2" />
                                         <circle cx="12" cy="12" r="2" />
                                     </svg>
-                                    <span>Tiền mặt</span>
+                                    <span style={{ fontSize: 14 }}>Tiền mặt</span>
                                 </button>
 
+                                {/* Nút 2: Chuyển khoản VietQR PayOS */}
                                 <button
                                     type="button"
-                                    onClick={() => setPaymentMethod('VNPAY_QR')}
+                                    onClick={handleSelectPayOS}
                                     className="btn-pms"
                                     style={{
-                                        border: `2px solid ${paymentMethod === 'VNPAY_QR' ? 'var(--brand-primary, #059669)' : '#e2e8f0'}`,
-                                        background: paymentMethod === 'VNPAY_QR' ? 'var(--brand-primary-light, #ecfdf5)' : '#fff',
-                                        color: paymentMethod === 'VNPAY_QR' ? 'var(--brand-primary, #059669)' : '#475569',
+                                        position: 'relative',
+                                        border: `2px solid ${paymentMethod === 'BANK_TRANSFER' ? 'var(--brand-primary, #059669)' : '#e2e8f0'}`,
+                                        background: paymentMethod === 'BANK_TRANSFER' ? 'var(--brand-primary-light, #ecfdf5)' : '#fff',
+                                        color: paymentMethod === 'BANK_TRANSFER' ? 'var(--brand-primary, #059669)' : '#475569',
                                         fontWeight: 700,
-                                        padding: '12px 8px',
-                                        borderRadius: 8,
+                                        padding: '14px 10px',
+                                        borderRadius: 10,
                                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                                         cursor: 'pointer',
+                                        transition: 'all 0.2s',
                                     }}
                                 >
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <span style={{
+                                        position: 'absolute', top: -8, right: 8,
+                                        background: '#2563eb', color: '#fff', fontSize: 10,
+                                        padding: '2px 8px', borderRadius: 10, fontWeight: 800,
+                                        letterSpacing: 0.5
+                                    }}>
+                                        TỰ ĐỘNG
+                                    </span>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <rect x="3" y="3" width="7" height="7" />
                                         <rect x="14" y="3" width="7" height="7" />
                                         <rect x="14" y="14" width="7" height="7" />
                                         <rect x="3" y="14" width="7" height="7" />
                                     </svg>
-                                    <span>VietQR / MoMo</span>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => setPaymentMethod('BANK_TRANSFER')}
-                                    className="btn-pms"
-                                    style={{
-                                        border: `2px solid ${paymentMethod === 'BANK_TRANSFER' ? 'var(--brand-primary, #059669)' : '#e2e8f0'}`,
-                                        background: paymentMethod === 'BANK_TRANSFER' ? 'var(--brand-primary-light, #ecfdf5)' : '#fff',
-                                        color: paymentMethod === 'BANK_TRANSFER' ? 'var(--brand-primary, #059669)' : '#475569',
-                                        fontWeight: 700,
-                                        padding: '12px 8px',
-                                        borderRadius: 8,
-                                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <rect x="2" y="5" width="20" height="14" rx="2" />
-                                        <line x1="2" y1="10" x2="22" y2="10" />
-                                    </svg>
-                                    <span>Quẹt thẻ POS</span>
+                                    <span style={{ fontSize: 14 }}>Chuyển khoản PayOS</span>
                                 </button>
                             </div>
                         </div>
 
-                        {/* Cash Calculation */}
+                        {/* ===================== VIEW 1: TIỀN MẶT (CASH) ===================== */}
                         {paymentMethod === 'CASH' && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                 <div className="pms-form-group">
@@ -253,12 +345,12 @@ export default function PaymentModal({
                                     </div>
                                 </div>
 
-                                {/* Quick Denominations */}
+                                {/* Phím chọn mệnh giá nhanh */}
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                                     <button
                                         type="button"
                                         className="pos-denom-chip"
-                                        style={{ background: '#f0fdf4', color: '#16a34a', borderColor: '#bbf7d0' }}
+                                        style={{ background: '#f0fdf4', color: '#16a34a', borderColor: '#bbf7d0', fontWeight: 700 }}
                                         onClick={() => handleQuickDenom('EXACT')}
                                     >
                                         Đúng tiền ({money(netAmount)})
@@ -275,7 +367,7 @@ export default function PaymentModal({
                                     ))}
                                 </div>
 
-                                {/* Change Display */}
+                                {/* Khung hiển thị tiền thừa / thiếu */}
                                 <div style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
@@ -295,59 +387,130 @@ export default function PaymentModal({
                             </div>
                         )}
 
-                        {/* VietQR View */}
-                        {paymentMethod === 'VNPAY_QR' && (
+                        {/* ===================== VIEW 2: CHUYỂN KHOẢN PAYOS ===================== */}
+                        {paymentMethod === 'BANK_TRANSFER' && (
                             <div style={{
                                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                padding: 20, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, gap: 12
+                                padding: '16px 20px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, gap: 14
                             }}>
-                                <img
-                                    src={`https://img.vietqr.io/image/970422-0987654321-compact2.png?amount=${netAmount}&addInfo=PMS%20POS%20CHECKOUT`}
-                                    alt="VietQR Code"
-                                    style={{ width: 190, height: 190, borderRadius: 10, border: '1px solid #e2e8f0' }}
-                                />
-                                <div style={{ textAlign: 'center', fontSize: 13 }}>
-                                    <div style={{ color: '#475569' }}>Quét mã QR qua ứng dụng Ngân hàng hoặc Ví MoMo/VNPay</div>
-                                    <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--brand-primary, #059669)', marginTop: 4 }}>
-                                        {money(netAmount)}
+                                {payOSLoading ? (
+                                    <div style={{ padding: '36px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                                        <div className="spinner-border text-success" role="status" style={{ width: 36, height: 36 }} />
+                                        <span style={{ fontSize: 14, fontWeight: 600, color: '#475569' }}>
+                                            Đang kết nối PayOS để tạo mã VietQR...
+                                        </span>
                                     </div>
-                                </div>
-                            </div>
-                        )}
+                                ) : payOSSuccess ? (
+                                    /* Màn hình Xác nhận Thành công Tự động */
+                                    <div style={{ padding: '24px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                                        <div style={{
+                                            width: 64, height: 64, borderRadius: '50%', background: '#dcfce7',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a'
+                                        }}>
+                                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                                <polyline points="20 6 9 17 4 12" />
+                                            </svg>
+                                        </div>
+                                        <div style={{ fontSize: 18, fontWeight: 800, color: '#15803d' }}>
+                                            Thanh Toán Thành Công!
+                                        </div>
+                                        <div style={{ fontSize: 13, color: '#64748b' }}>
+                                            PayOS đã tự động xác nhận tiền vào tài khoản ({successTxnRef})
+                                        </div>
+                                        <div style={{ fontSize: 12, color: '#059669', fontStyle: 'italic' }}>
+                                            Đang tự động in hóa đơn...
+                                        </div>
+                                    </div>
+                                ) : payOSData ? (
+                                    /* Màn hình hiển thị QR & Lắng nghe tự động */
+                                    <>
+                                        <div style={{ position: 'relative', padding: 8, background: '#fff', borderRadius: 12, border: '2px solid #059669', boxShadow: '0 4px 12px rgba(5,150,105,0.15)' }}>
+                                            <img
+                                                src={qrImageUrl}
+                                                alt="PayOS VietQR Code"
+                                                style={{ width: 190, height: 190, display: 'block', borderRadius: 8 }}
+                                            />
+                                        </div>
 
-                        {/* Card Ref */}
-                        {paymentMethod === 'BANK_TRANSFER' && (
-                            <div className="pms-form-group">
-                                <label className="pms-label">Mã tham chiếu / Số chuẩn chi máy cà thẻ POS</label>
-                                <input
-                                    type="text"
-                                    className="pms-input"
-                                    placeholder="Nhập Trace No / Ref No trên hóa đơn cà thẻ..."
-                                    value={transactionRef}
-                                    onChange={(e) => setTransactionRef(e.target.value)}
-                                    autoFocus
-                                />
+                                        <div style={{ width: '100%', background: '#f8fafc', padding: '10px 14px', borderRadius: 8, fontSize: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ color: '#64748b' }}>Ngân hàng thụ hưởng:</span>
+                                                <strong style={{ color: '#0f172a' }}>{payOSData.bin || 'Napas 247'}</strong>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ color: '#64748b' }}>Số tài khoản:</span>
+                                                <strong style={{ color: '#0f172a', letterSpacing: 0.5 }}>{payOSData.accountNumber || '-'}</strong>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ color: '#64748b' }}>Chủ tài khoản:</span>
+                                                <strong style={{ color: '#0f172a' }}>{payOSData.accountName || 'PHARMACY'}</strong>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ color: '#64748b' }}>Nội dung chuyển khoản:</span>
+                                                <strong style={{ color: '#dc2626', background: '#fee2e2', padding: '1px 6px', borderRadius: 4 }}>
+                                                    {payOSData.description}
+                                                </strong>
+                                            </div>
+                                        </div>
+
+                                        {/* Status Listening Indicator */}
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: 8,
+                                            padding: '8px 14px', background: '#eff6ff', borderRadius: 20,
+                                            border: '1px solid #bfdbfe'
+                                        }}>
+                                            <div className="spinner-grow spinner-grow-sm text-primary" role="status" style={{ width: 12, height: 12 }} />
+                                            <span style={{ fontSize: 12, fontWeight: 700, color: '#1d4ed8' }}>
+                                                Đang chờ khách quét mã... Hệ thống tự nhận tiền 24/7
+                                            </span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div style={{ padding: '20px 0', textAlign: 'center', color: '#64748b', fontSize: 13 }}>
+                                        Bấm vào Chuyển khoản PayOS để tạo mã QR
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
 
-                    <div className="pms-modal-footer" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                    {/* Footer */}
+                    <div className="pms-modal-footer" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
                         <button
                             type="button"
                             className="btn-pms btn-pms-secondary"
-                            onClick={onClose}
-                            disabled={submitting}
+                            onClick={() => {
+                                clearPolling();
+                                onClose();
+                            }}
+                            disabled={submitting || payOSSuccess}
                         >
                             Quay lại
                         </button>
-                        <button
-                            type="submit"
-                            className="btn-pms btn-pms-primary"
-                            style={{ minWidth: 180, height: 42, fontSize: 14, fontWeight: 700 }}
-                            disabled={submitting || isCashInsufficient}
-                        >
-                            {submitting ? 'Đang thanh toán...' : 'Hoàn tất & In Hóa Đơn'}
-                        </button>
+
+                        {paymentMethod === 'CASH' ? (
+                            <button
+                                type="submit"
+                                className="btn-pms btn-pms-primary"
+                                style={{ minWidth: 180, height: 42, fontSize: 14, fontWeight: 700 }}
+                                disabled={submitting || isCashInsufficient}
+                            >
+                                {submitting ? 'Đang thanh toán...' : 'Hoàn tất & In Hóa Đơn (Enter)'}
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                className="btn-pms btn-pms-secondary"
+                                style={{ color: '#475569', fontSize: 13 }}
+                                onClick={() => {
+                                    clearPolling();
+                                    setPaymentMethod('CASH');
+                                }}
+                                disabled={submitting || payOSSuccess}
+                            >
+                                Đổi sang Tiền mặt
+                            </button>
+                        )}
                     </div>
                 </form>
             </div>
