@@ -17,6 +17,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     boolean existsByBarcodeAndIdNot(String barcode, Long id);
 
+    boolean existsByCategoryId(Long categoryId);
+
+    long countByCategoryId(Long categoryId);
+
     boolean existsByCategoryIdAndStatus(Long categoryId, ProductStatus status);
 
     @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.id = :id")
@@ -44,6 +48,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                                           @Param("status") ProductStatus status,
                                           @Param("categoryId") Long categoryId,
                                           Pageable pageable);
+
     @Query("""
             SELECT p FROM Product p
             WHERE (:search IS NULL OR :search = ''
@@ -53,4 +58,23 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             ORDER BY p.name ASC
             """)
     List<Product> searchProducts(@Param("search") String search, Pageable pageable);
+
+    @Query(value = """
+            SELECT (
+                (SELECT COUNT(1) FROM dbo.sales_invoice_details WHERE product_id = :id) +
+                (SELECT COUNT(1) FROM dbo.sales_return_details WHERE product_id = :id) +
+                (SELECT COUNT(1) FROM dbo.product_batches WHERE product_id = :id) +
+                (SELECT COUNT(1) FROM dbo.inventory WHERE product_id = :id) +
+                (SELECT COUNT(1) FROM dbo.stock_movements WHERE product_id = :id) +
+                (SELECT COUNT(1) FROM dbo.purchase_receipt_details WHERE product_id = :id) +
+                (SELECT COUNT(1) FROM dbo.goods_issue_details WHERE product_id = :id) +
+                (SELECT COUNT(1) FROM dbo.stock_requisition_details WHERE product_id = :id) +
+                (SELECT COUNT(1) FROM dbo.inventory_audit_details WHERE product_id = :id) +
+                (SELECT COUNT(1) FROM dbo.inventory_adjustments WHERE product_id = :id) +
+                (SELECT COUNT(1) FROM dbo.purchase_request_details WHERE product_id = :id) +
+                (SELECT COUNT(1) FROM dbo.purchase_proposal_details WHERE product_id = :id) +
+                (SELECT COUNT(1) FROM dbo.supplier_quotation_details WHERE product_id = :id)
+            )
+            """, nativeQuery = true)
+    long countTransactionReferences(@Param("id") Long id);
 }

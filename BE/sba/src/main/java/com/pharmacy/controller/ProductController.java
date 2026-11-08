@@ -86,6 +86,13 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái sản phẩm thành công", null));
     }
 
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Xóa hoặc vô hiệu hóa sản phẩm")
+    public ResponseEntity<ApiResponse<String>> deleteProduct(@PathVariable Long id) {
+        String message = productService.deleteProduct(id);
+        return ResponseEntity.ok(ApiResponse.success(message, message));
+    }
+
     @GetMapping("/{id}/price-history")
     @Operation(summary = "Tra cứu lịch sử giá của sản phẩm (UC15)")
     public ResponseEntity<ApiResponse<List<PriceHistoryResponse>>> getPriceHistories(

@@ -10,6 +10,7 @@ import {
 
 export const useCategories = () => {
   const [data, setData] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -29,7 +30,10 @@ export const useCategories = () => {
       const res = await viewCategoryList({ page, size, sort });
       // Support both paginated object {content, totalElements} and raw array response
       const isArray = Array.isArray(res);
-      let items = isArray ? res : res.content || [];
+      const rawList = isArray ? res : res.content || [];
+      setAllCategories(rawList);
+
+      let items = rawList;
 
       if (search) {
         const s = search.toLowerCase();
@@ -42,9 +46,16 @@ export const useCategories = () => {
       if (statusFilter !== '' && statusFilter !== null) {
         items = items.filter((x) => String(x.status) === String(statusFilter));
       }
-      setData(items);
+
       const totalCount = isArray ? items.length : (res.totalElements != null ? res.totalElements : items.length);
       setTotal(totalCount);
+
+      if (isArray) {
+        const startIndex = page * size;
+        setData(items.slice(startIndex, startIndex + size));
+      } else {
+        setData(items);
+      }
     } catch (err) {
       setError(err.message || 'Failed to fetch category list');
     } finally {
@@ -113,18 +124,20 @@ export const useCategories = () => {
   const handleDeleteCategory = useCallback(async (id) => {
     try {
       setError(null);
-      await deleteCategory(id);
-      setSuccessMsg('Category deleted successfully.');
+      const res = await deleteCategory(id);
+      const msg = (res && typeof res === 'object' && res.message) || (typeof res === 'string' ? res : 'Đã thực hiện xóa / cập nhật danh mục thành công.');
+      setSuccessMsg(msg);
       await fetchList();
       return true;
     } catch (err) {
-      setError(err.message || 'Failed to delete category.');
+      setError(err.message || 'Không thể xóa danh mục.');
       throw err;
     }
   }, [fetchList]);
 
   return {
     data,
+    allCategories,
     total,
     page,
     size,

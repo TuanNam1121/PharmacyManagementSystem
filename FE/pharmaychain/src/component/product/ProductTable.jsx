@@ -9,6 +9,7 @@ export default function ProductTable({
   onEdit,
   onUpdatePrice,
   onToggleStatus,
+  onDelete,
 }) {
   if (loading) {
     return (
@@ -32,8 +33,8 @@ export default function ProductTable({
               <line x1="12" y1="22.08" x2="12" y2="12"/>
             </svg>
           </div>
-          <div className="pms-empty-title">Không tìm thấy sản phẩm nào</div>
-          <div className="pms-empty-sub">Không có dược phẩm nào khớp với từ khóa tìm kiếm hoặc bộ lọc.</div>
+          <div className="pms-empty-title">Không tìm thấy sản phẩm thuốc nào</div>
+          <div className="pms-empty-sub">Không có bản ghi nào phù hợp với bộ lọc hoặc từ khóa tìm kiếm.</div>
         </div>
       </div>
     );
@@ -51,22 +52,22 @@ export default function ProductTable({
         </span>
       );
     }
-    if (s === 2) {
+    if (s === 0) {
       return (
-        <span className="pms-badge pms-badge-neutral">
+        <span className="pms-badge pms-badge-danger">
           <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="12" cy="12" r="10" />
           </svg>
-          Ngừng lưu hành
+          Ngừng kinh doanh
         </span>
       );
     }
     return (
-      <span className="pms-badge pms-badge-danger">
+      <span className="pms-badge pms-badge-warning">
         <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
           <circle cx="12" cy="12" r="10" />
         </svg>
-        Ngừng kinh doanh
+        Tạm ngưng
       </span>
     );
   };
@@ -77,103 +78,93 @@ export default function ProductTable({
         <table className="pms-table">
           <thead>
             <tr>
-              <th style={{ width: 44 }}>#</th>
-              <th style={{ width: 56 }}>Ảnh</th>
-              <th>Thông Tin Dược Phẩm</th>
-              <th>Danh Mục</th>
-              <th>ĐVT</th>
-              <th>Giá (Bán lẻ / Giá vốn)</th>
+              <th style={{ width: 44 }}>STT</th>
+              <th style={{ width: 64, textAlign: 'center' }}>Ảnh</th>
+              <th>Mã Vạch</th>
+              <th>Tên Thuốc / Quy Cách</th>
+              <th>Nhóm Danh Mục</th>
+              <th>Đơn Vị</th>
+              <th>Giá Bán Niêm Yết</th>
               <th>Phân Loại</th>
-              <th>Tồn Tối Thiểu</th>
+              <th>Định Mức Tồn</th>
               <th>Trạng Thái</th>
-              <th style={{ width: 150, textAlign: 'center' }}>Thao Tác</th>
+              <th style={{ width: 170, textAlign: 'center' }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
             {data.map((row, i) => {
-              const isRx = row.isPrescription === true;
               const isActive = Number(row.status) === 1;
+              const isRx = Boolean(row.isPrescription);
 
               return (
                 <tr key={row.id || i}>
+                  {/* Index */}
                   <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>
                     {page * size + i + 1}
                   </td>
 
-                  {/* Avatar / Thumbnail */}
-                  <td style={{ width: 56 }}>
+                  {/* Image */}
+                  <td style={{ textAlign: 'center' }}>
+                    {row.imageUrl ? (
+                      <img
+                        src={row.imageUrl}
+                        alt={row.name}
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 6,
+                          objectFit: 'cover',
+                          border: '1px solid var(--border-color)',
+                          verticalAlign: 'middle',
+                        }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
                     <div
                       style={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: 8,
-                        overflow: 'hidden',
-                        display: 'flex',
+                        width: 36,
+                        height: 36,
+                        borderRadius: 6,
+                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15))',
+                        color: 'var(--brand-primary)',
+                        display: row.imageUrl ? 'none' : 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        border: '1px solid var(--border-color)',
-                        background: '#f8fafc',
+                        fontWeight: 700,
+                        fontSize: 12,
+                        margin: '0 auto',
+                        border: '1px solid rgba(99, 102, 241, 0.3)',
                       }}
                     >
-                      {row.imageUrl ? (
-                        <img
-                          src={row.imageUrl}
-                          alt={row.name}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                          }}
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            if (e.currentTarget.nextSibling) {
-                              e.currentTarget.nextSibling.style.display = 'flex';
-                            }
-                          }}
-                        />
-                      ) : null}
-                      <div
-                        style={{
-                          display: row.imageUrl ? 'none' : 'flex',
-                          width: '100%',
-                          height: '100%',
-                          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.15))',
-                          color: 'var(--brand-primary)',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 700,
-                          fontSize: 12,
-                        }}
-                      >
-                        {getInitials(row.name)}
-                      </div>
+                      {getInitials(row.name)}
                     </div>
                   </td>
 
-                  {/* Product Info */}
+                  {/* Barcode */}
                   <td>
-                    <div>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13.5 }}>
-                        {row.name}
-                      </div>
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 3 }}>
-                        {row.barcode && (
-                          <span className="pms-badge pms-badge-neutral mono" style={{ fontSize: 10.5 }}>
-                            {row.barcode}
-                          </span>
-                        )}
-                        {row.manufacturer && (
-                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                            {row.manufacturer}
-                          </span>
-                        )}
-                      </div>
+                    <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-secondary)' }}>
+                      {row.barcode || '—'}
+                    </span>
+                  </td>
+
+                  {/* Product Name & Manufacturer */}
+                  <td>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13.5 }}>
+                      {row.name}
                     </div>
+                    {row.manufacturer && (
+                      <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                        {row.manufacturer}
+                      </div>
+                    )}
                   </td>
 
                   {/* Category */}
                   <td>
-                    <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                    <span style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
                       {row.categoryName || '—'}
                     </span>
                   </td>
@@ -275,6 +266,21 @@ export default function ProductTable({
                             <polyline points="20 6 9 17 4 12"/>
                           </svg>
                         )}
+                      </button>
+
+                      {/* Delete Product */}
+                      <button
+                        className="btn-pms btn-pms-ghost btn-pms-sm"
+                        style={{ color: 'var(--status-danger)' }}
+                        title="Xóa sản phẩm"
+                        onClick={() => onDelete && onDelete(row)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          <line x1="10" y1="11" x2="10" y2="17"/>
+                          <line x1="14" y1="11" x2="14" y2="17"/>
+                        </svg>
                       </button>
                     </div>
                   </td>

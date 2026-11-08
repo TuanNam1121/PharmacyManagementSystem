@@ -253,6 +253,27 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
+    public String deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + id));
+
+        long refCount = productRepository.countTransactionReferences(id);
+        if (refCount > 0) {
+            // Đã phát sinh giao dịch/chứng từ/tồn kho -> Inactive để bảo toàn chứng từ kiểm toán
+            product.setStatus(ProductStatus.INACTIVE);
+            product.setUpdatedAt(LocalDateTime.now());
+            productRepository.save(product);
+            return "Sản phẩm đã phát sinh giao dịch / chứng từ trong hệ thống nên đã được chuyển sang trạng thái Ngừng kinh doanh (Inactive).";
+        } else {
+            // Chưa từng phát sinh giao dịch nào -> Xóa lịch sử giá ban đầu và xóa vật lý sản phẩm khỏi DB
+            priceHistoryRepository.deleteByProductId(id);
+            productRepository.delete(product);
+            return "Sản phẩm chưa phát sinh bất kỳ giao dịch nào đã được xóa hoàn toàn khỏi cơ sở dữ liệu.";
+        }
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public PageResponse<ProductResponse> getProducts(String keyword, Short status, Integer categoryId,
                                                      int page, int size, String sortBy, String sortDir) {

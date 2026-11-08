@@ -2,6 +2,7 @@ package com.pharmacy.repository;
 
 import com.pharmacy.entity.PriceHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -19,4 +20,8 @@ public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Long
     List<PriceHistory> findByProductIdWithAccount(@Param("productId") Long productId);
 
     List<PriceHistory> findByProductIdOrderByEffectiveFromDesc(Long productId);
+
+    @Modifying
+    @Query("DELETE FROM PriceHistory ph WHERE ph.product.id = :productId")
+    void deleteByProductId(@Param("productId") Long productId);
 }
