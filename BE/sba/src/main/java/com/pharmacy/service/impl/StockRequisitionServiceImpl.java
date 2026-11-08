@@ -113,7 +113,7 @@ public class StockRequisitionServiceImpl implements StockRequisitionService {
             creator = accountRepository.findByUsername(request.getCreatedByUsername()).orElse(null);
         }
         if (creator == null) {
-            creator = accountRepository.findAll().stream().findFirst()
+            creator = accountRepository.findByUsername(request.getCreatedByUsername())
                     .orElseThrow(() -> new IllegalStateException("No active account found to assign as creator"));
         }
 

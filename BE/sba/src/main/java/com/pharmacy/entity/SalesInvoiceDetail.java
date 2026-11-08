@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.Nationalized;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -50,8 +51,7 @@ public class SalesInvoiceDetail {
     @Column(name = "unit_cost", nullable = false, precision = 18, scale = 2)
     private BigDecimal unitCost;
 
-    @ColumnDefault("CONVERT([decimal](18,2),[quantity]*[unit_price])")
-    @Column(name = "sub_total", precision = 18, scale = 2, insertable = false, updatable = false)
+    @Formula("CAST(quantity * unit_price AS DECIMAL(18,2))")
     private BigDecimal subTotal;
 
     @Size(max = 300)

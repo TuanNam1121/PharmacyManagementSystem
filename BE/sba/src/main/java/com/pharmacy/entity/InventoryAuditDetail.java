@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.Nationalized;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -43,8 +43,7 @@ public class InventoryAuditDetail {
     @Column(name = "counted_quantity")
     private Integer countedQuantity;
 
-    @ColumnDefault("[counted_quantity]-[system_quantity]")
-    @Column(name = "variance", insertable = false, updatable = false)
+    @Formula("counted_quantity - system_quantity")
     private Integer variance;
 
     @Size(max = 500)

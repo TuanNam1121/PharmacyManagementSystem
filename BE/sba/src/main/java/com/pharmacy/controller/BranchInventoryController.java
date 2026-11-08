@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -66,9 +67,9 @@ public class BranchInventoryController {
     @PatchMapping("/threshold")
     public ResponseEntity<ApiResponse<BranchInventoryResponse>> updateMinQuantity(
             @Valid @RequestBody UpdateStockThresholdRequest request,
-            HttpServletRequest servletRequest) {
+            HttpServletRequest servletRequest, Authentication authentication) {
 
-        String username = "store_manager_or_pharmacist";
+        String username = authentication.getName();
         String clientIp = servletRequest.getRemoteAddr();
         BranchInventoryResponse response = branchInventoryService.updateMinQuantity(request, username, clientIp);
         return ResponseEntity.ok(ApiResponse.success("Stock threshold updated successfully", response));
@@ -80,9 +81,9 @@ public class BranchInventoryController {
     @PostMapping("/audit-check")
     public ResponseEntity<ApiResponse<String>> logStockAuditCheck(
             @Valid @RequestBody StockAuditCheckRequest request,
-            HttpServletRequest servletRequest) {
+            HttpServletRequest servletRequest, Authentication authentication) {
 
-        String username = "pharmacist_duty";
+        String username = authentication.getName();
         String clientIp = servletRequest.getRemoteAddr();
         branchInventoryService.logStockAuditCheck(request, username, clientIp);
         return ResponseEntity

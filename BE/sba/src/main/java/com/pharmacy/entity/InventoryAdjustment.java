@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.Nationalized;
 
 import java.math.BigDecimal;
@@ -70,8 +71,7 @@ public class InventoryAdjustment {
     @Column(name = "quantity_after", nullable = false)
     private Integer quantityAfter;
 
-    @ColumnDefault("[quantity_after]-[quantity_before]")
-    @Column(name = "difference", insertable = false, updatable = false)
+    @Formula("quantity_after - quantity_before")
     private Integer difference;
 
     @Column(name = "value_impact", precision = 18, scale = 2)

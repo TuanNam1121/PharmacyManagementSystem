@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.Nationalized;
 
 import java.math.BigDecimal;
@@ -49,8 +50,7 @@ public class Shift {
     @Column(name = "expected_cash", precision = 18, scale = 2)
     private BigDecimal expectedCash;
 
-    @ColumnDefault("[closing_cash]-[expected_cash]")
-    @Column(name = "difference", precision = 19, scale = 2, insertable = false, updatable = false)
+    @Formula("CAST(closing_cash - expected_cash AS DECIMAL(19,2))")
     private BigDecimal difference;
 
     @ColumnDefault("1")
