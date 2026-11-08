@@ -5,6 +5,7 @@ import com.pharmacy.dto.procurement.PurchaseOrderResponse;
 import com.pharmacy.entity.Account;
 import com.pharmacy.entity.AuditLog;
 import com.pharmacy.entity.PurchaseProposal;
+import com.pharmacy.entity.PurchaseProposalDetail;
 import com.pharmacy.entity.PurchaseProposalRequest;
 import com.pharmacy.entity.PurchaseRequest;
 import com.pharmacy.entity.SupplierQuotationDetail;
@@ -25,7 +26,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,8 +46,66 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     @Transactional(readOnly = true)
     public Page<PurchaseOrderResponse> getPurchaseOrders(Pageable pageable, String search, Short status) {
         String keyword = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
-        return purchaseProposalRepository.findWithFilters(keyword, status, pageable)
+        Page<PurchaseOrderResponse> page = purchaseProposalRepository.findWithFilters(keyword, status, pageable)
                 .map(this::mapToResponseSummary);
+
+        // Danh sách phải hiển thị cùng con số với màn chi tiết, không dùng
+        // total_amount lưu sẵn (vốn có thể đã cũ so với báo giá đã chốt).
+        applyDerivedTotals(page.getContent());
+
+        return page;
+    }
+
+    /**
+     * Suy tổng tiền cho danh sách PO theo đúng công thức của màn chi tiết:
+     * - Có báo giá   -> Σ supplier_quotation_details.subtotal
+     * - Chưa có báo giá -> Σ (products.cost_price × purchase_proposal_details.quantity)
+     * Dùng truy vấn gộp theo lô (2 query cho cả trang) để tránh N+1.
+     */
+    private void applyDerivedTotals(List<PurchaseOrderResponse> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return;
+        }
+
+        List<Long> quotationIds = rows.stream()
+                .map(PurchaseOrderResponse::getSupplierQuotationId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Long, BigDecimal> quotedTotals = quotationIds.isEmpty()
+                ? Collections.emptyMap()
+                : quotationDetailRepository.sumSubtotalByQuotationIds(quotationIds).stream()
+                        .collect(Collectors.toMap(
+                                row -> (Long) row[0],
+                                row -> row[1] == null ? BigDecimal.ZERO : new BigDecimal(row[1].toString())));
+
+        List<Long> proposalIdsWithoutQuotation = rows.stream()
+                .filter(row -> row.getSupplierQuotationId() == null)
+                .map(PurchaseOrderResponse::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        Map<Long, BigDecimal> estimatedTotals = new HashMap<>();
+        if (!proposalIdsWithoutQuotation.isEmpty()) {
+            for (PurchaseProposalDetail detail : purchaseProposalRepository
+                    .findDetailsWithProductByProposalIds(proposalIdsWithoutQuotation)) {
+                BigDecimal cost = (detail.getProduct() != null && detail.getProduct().getCostPrice() != null)
+                        ? detail.getProduct().getCostPrice()
+                        : BigDecimal.ZERO;
+                int quantity = detail.getQuantity() != null ? detail.getQuantity() : 0;
+                estimatedTotals.merge(detail.getPurchaseProposal().getId(),
+                        cost.multiply(BigDecimal.valueOf(quantity)), BigDecimal::add);
+            }
+        }
+
+        for (PurchaseOrderResponse row : rows) {
+            if (row.getSupplierQuotationId() != null) {
+                row.setTotalAmount(quotedTotals.getOrDefault(row.getSupplierQuotationId(), BigDecimal.ZERO));
+            } else if (estimatedTotals.containsKey(row.getId())) {
+                row.setTotalAmount(estimatedTotals.get(row.getId()));
+            }
+        }
     }
 
     @Override
@@ -76,6 +138,14 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                             .build())
                     .collect(Collectors.toList());
             res.setItems(items);
+        }
+
+        // Tổng tiền luôn khớp tổng các dòng hàng đang hiển thị
+        // (áp dụng cho cả nhánh có báo giá và nhánh dự phòng từ chi tiết đề xuất)
+        if (res.getItems() != null) {
+            res.setTotalAmount(res.getItems().stream()
+                    .map(i -> i.getSubtotal() != null ? i.getSubtotal() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add));
         }
 
         return res;

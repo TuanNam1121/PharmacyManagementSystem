@@ -33,6 +33,9 @@ export default function PurchaseOrderDetailModal({
 
     const isPending = detail?.status === 0 || detail?.status === 1;
 
+    // Chỉ coi là giá đã chốt khi đơn đã gắn báo giá của nhà cung cấp
+    const hasQuotation = Boolean(detail?.supplierQuotationCode);
+
     const handleConfirmReject = () => {
         if (!rejectReason.trim()) {
             setErrorMsg('Vui lòng nhập lý do từ chối đơn đặt hàng.');
@@ -125,12 +128,14 @@ export default function PurchaseOrderDetailModal({
 
                                 <div>
                                     <div style={{ fontSize: 11, textTransform: 'uppercase', color: '#64748b', fontWeight: 600 }}>
-                                        Tổng Giá Trị Đơn Hàng
+                                        {hasQuotation ? 'Tổng Giá Trị Đơn Hàng' : 'Tạm Tính Đơn Hàng'}
                                     </div>
                                     <div style={{ fontWeight: 700, fontSize: 16, color: '#059669', marginTop: 2 }}>
                                         {Number(detail.totalAmount || 0).toLocaleString('vi-VN')} ₫
                                     </div>
-                                    <div style={{ fontSize: 11, color: '#64748b' }}>Đã gồm thuế GTGT</div>
+                                    <div style={{ fontSize: 11, color: '#64748b' }}>
+                                        {hasQuotation ? 'Chưa gồm thuế GTGT' : 'Chưa có báo giá — chỉ là tạm tính'}
+                                    </div>
                                 </div>
 
                                 <div>
@@ -223,7 +228,9 @@ export default function PurchaseOrderDetailModal({
                                         </tbody>
                                         <tfoot>
                                             <tr style={{ background: '#f8fafc', fontWeight: 700 }}>
-                                                <td colSpan={7} style={{ textAlign: 'right' }}>Tổng Tiền (Đã Gồm VAT):</td>
+                                                <td colSpan={7} style={{ textAlign: 'right' }}>
+                                                    {hasQuotation ? 'Tổng Tiền (Chưa Gồm VAT):' : 'Tạm Tính (Chưa Có Báo Giá):'}
+                                                </td>
                                                 <td style={{ textAlign: 'right', color: '#059669', fontSize: 15 }}>
                                                     {Number(detail.totalAmount || 0).toLocaleString('vi-VN')} ₫
                                                 </td>

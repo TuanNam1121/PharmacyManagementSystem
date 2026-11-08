@@ -1302,6 +1302,7 @@ inventory_audits ─→ inventory_audit_details (system_quantity vs counted_quan
 9. **`SupplierStatus` implements `PersistenceEnum<Integer>`** trong khi các enum khác dùng `Short` → cần chú ý khi so sánh/`switch`.
 10. **Không có entity `purchase_orders`**: mặc dù có `PurchaseOrderService` và `PurchaseOrderController`, tầng DB chưa có bảng đơn đặt hàng riêng.
 11. **`inventory_audits` / `inventory_adjustments` / `stock_movements`** đều là bảng nghiệp vụ quan trọng nhưng chưa có unique constraint ở mức entity (khác với `supplier_quotation_details`).
+12. **`purchase_proposals.total_amount`**: lúc tạo đề xuất chỉ là **tạm tính** theo `products.cost_price × quantity` (giá vốn danh mục); được **tính lại** bằng `Σ supplier_quotation_details.subtotal` khi chốt nhà cung cấp (`PurchaseProposalServiceImpl.selectSupplier`). Script đồng bộ dữ liệu cũ: `DB/backfill_purchase_proposal_total_amount.sql`. Lưu ý: API đơn đặt hàng `/api/v1/procurement/purchase-orders` **không dùng** cột này để hiển thị mà **suy tổng tại thời điểm đọc** (`PurchaseOrderServiceImpl.applyDerivedTotals`), nên danh sách và chi tiết luôn khớp nhau.
 
 ---
 

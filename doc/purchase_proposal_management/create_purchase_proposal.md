@@ -36,7 +36,7 @@
    - **Gộp (consolidate) các mặt hàng**: cộng dồn số lượng theo cùng sản phẩm (dùng `LinkedHashMap`) thành danh sách `PurchaseProposalDetail`.
    - Bổ sung các mặt hàng mua chủ động (tra `Product` theo `productId`).
    - Sinh mã đề xuất tự động dạng `PP-YYYYMMDD-####` (`generateProposalCode`).
-   - Tính `totalAmount = Σ (costPrice × quantity)`.
+   - Tính **tạm tính** `totalAmount = Σ (costPrice × quantity)` theo **giá vốn danh mục** sản phẩm. Giá trị này **sẽ được tính lại theo báo giá thực tế** khi chốt nhà cung cấp (xem `selectSupplier`).
    - Lưu `PurchaseProposal` với `status = DRAFT`, `createdBy = người dùng hiện tại`.
    - Cập nhật trạng thái các Yêu cầu mua hàng liên quan sang `PROPOSAL_CREATED`.
    - Ghi nhật ký kiểm toán.
@@ -56,6 +56,7 @@
 - **BR-03 (Mã đề xuất duy nhất)**: Mã sinh tự động theo mẫu `PP-YYYYMMDD-####`, tăng dần trong ngày.
 - **BR-04 (Khóa báo giá)**: Một khi đề xuất đã được nộp/duyệt, báo giá liên kết không thể chỉnh sửa.
 - **BR-05 (Nhật ký kiểm toán)**: Mọi thao tác tạo đề xuất phải sinh bản ghi `audit_logs` kèm người dùng/thời gian.
+- **BR-06 (Đồng bộ tổng tiền theo báo giá)**: Khi chốt nhà cung cấp (`selectSupplier`), `total_amount` phải được **tính lại** bằng `Σ supplier_quotation_details.subtotal` để tổng của đơn đặt hàng (`/procurement/orders`) khớp với các dòng hàng báo giá. `total_amount` lúc tạo đề xuất chỉ là **tạm tính** theo giá vốn danh mục. Ngoài ra, API đơn đặt hàng **không đọc** `total_amount` để hiển thị mà luôn **suy tổng tại thời điểm đọc** (báo giá nếu có, ngược lại tạm tính theo giá vốn) — xem `PurchaseOrderServiceImpl.applyDerivedTotals`, đảm bảo danh sách và chi tiết luôn cùng một con số.
 
 ---
 
