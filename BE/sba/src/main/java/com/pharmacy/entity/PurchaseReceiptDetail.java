@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -48,7 +49,7 @@ public class PurchaseReceiptDetail {
     @Column(name = "unit_cost", nullable = false, precision = 18, scale = 2)
     private BigDecimal unitCost;
 
-    @Column(name = "subtotal", precision = 18, scale = 2, insertable = false, updatable = false)
+    @Formula("CAST(quantity * unit_cost AS DECIMAL(18,2))")
     private BigDecimal subtotal;
 
     @Size(max = 50)
