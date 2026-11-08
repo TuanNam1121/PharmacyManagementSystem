@@ -19,6 +19,7 @@ import com.pharmacy.repository.PasswordResetTokenRepository;
 import com.pharmacy.repository.RefreshTokenRepository;
 import com.pharmacy.security.JwtTokenProvider;
 import com.pharmacy.service.AuthService;
+import com.pharmacy.service.EmailService;
 import com.pharmacy.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
