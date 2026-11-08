@@ -38,6 +38,7 @@ function Pagination({ total, page, size, onPage }) {
 export default function CategoryPage() {
   const {
     data,
+    allCategories,
     total,
     page,
     size,
@@ -53,6 +54,7 @@ export default function CategoryPage() {
     setStatusFilter,
     fetchList,
     handleToggleStatus,
+    handleDeleteCategory,
   } = useCategories();
 
   const [formOpen, setFormOpen] = useState(false);
@@ -93,13 +95,28 @@ export default function CategoryPage() {
   };
 
   const handleConfirmStatusChange = async (categoryId, targetStatus) => {
-    await handleToggleStatus(categoryId, targetStatus === 0 ? 1 : 0);
+    await handleToggleStatus(categoryId, statusCategory?.status ?? (targetStatus === 0 ? 1 : 0));
     setSuccessMsg(
       targetStatus === 0
         ? 'Đã ngừng hoạt động nhóm danh mục thành công!'
         : 'Đã kích hoạt lại nhóm danh mục thành công!'
     );
     await fetchList();
+  };
+
+  const handleDeleteClick = async (cat) => {
+    const isConfirmed = window.confirm(
+      `Bạn có chắc chắn muốn xóa nhóm danh mục "${cat.name}"?\n\n` +
+      `- Nếu danh mục này đang chứa sản phẩm, hệ thống sẽ tự động chuyển sang trạng thái "Ngừng hoạt động" (Inactive) để bảo toàn dữ liệu.\n` +
+      `- Nếu danh mục chưa có sản phẩm nào, hệ thống sẽ xóa hoàn toàn khỏi cơ sở dữ liệu.`
+    );
+    if (!isConfirmed) return;
+
+    try {
+      await handleDeleteCategory(cat.id);
+    } catch {
+      // Error handled in hook
+    }
   };
 
   return (
@@ -144,7 +161,7 @@ export default function CategoryPage() {
       )}
 
       {/* ── Stats Grid ── */}
-      <CategoryStats total={total} categories={data} />
+      <CategoryStats total={allCategories.length} categories={allCategories} />
 
       {/* ── Filters Bar ── */}
       <CategoryFilters
@@ -153,7 +170,7 @@ export default function CategoryPage() {
         onSearch={(val) => { setSearch(val); setPage(0); }}
         onStatus={(val) => { setStatusFilter(val); setPage(0); }}
         onAddNew={handleCreateNew}
-        total={data.length}
+        total={total}
       />
 
       {/* ── Table ── */}
@@ -164,6 +181,7 @@ export default function CategoryPage() {
         size={size}
         onEdit={handleEdit}
         onToggleStatus={handleToggleCategoryStatus}
+        onDelete={handleDeleteClick}
       />
 
       {/* ── Pagination ── */}

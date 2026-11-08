@@ -63,6 +63,7 @@ export default function ProductPage() {
     categories,
     fetchCategories,
     handleToggleStatus,
+    handleDeleteProduct,
   } = useProducts();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -133,6 +134,22 @@ export default function ProductPage() {
     setStatusModalOpen(true);
   };
 
+  // Delete Product handler
+  const handleDeleteClick = async (product) => {
+    const isConfirmed = window.confirm(
+      `Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?\n\n` +
+      `- Nếu sản phẩm đã phát sinh giao dịch (hóa đơn, lô hàng, phiếu nhập/xuất kho), hệ thống sẽ tự động chuyển sang trạng thái "Ngừng kinh doanh" (Inactive) để bảo toàn chứng từ kiểm toán.\n` +
+      `- Nếu sản phẩm chưa từng phát sinh bất kỳ giao dịch nào, hệ thống sẽ xóa hoàn toàn khỏi cơ sở dữ liệu.`
+    );
+    if (!isConfirmed) return;
+
+    try {
+      await handleDeleteProduct(product.id);
+    } catch {
+      // Error handled in hook
+    }
+  };
+
   return (
     <div>
       {/* ── Page Header ── */}
@@ -187,7 +204,7 @@ export default function ProductPage() {
         onStatus={(val) => { setStatusFilter(val); setPage(0); }}
         onCategory={(val) => { setCategoryFilter(val); setPage(0); }}
         onAddNew={handleCreateNew}
-        total={data.length}
+        total={total}
       />
 
       {/* ── Table ── */}
@@ -200,6 +217,7 @@ export default function ProductPage() {
         onEdit={handleEdit}
         onUpdatePrice={handleUpdatePrice}
         onToggleStatus={handleToggleProductStatus}
+        onDelete={handleDeleteClick}
       />
 
       {/* ── Pagination ── */}

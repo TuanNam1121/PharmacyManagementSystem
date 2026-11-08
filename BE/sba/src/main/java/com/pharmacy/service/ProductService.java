@@ -22,6 +22,8 @@ public interface ProductService {
 
     void updateProductStatus(Long id, Short status);
 
+    String deleteProduct(Long id);
+
     PageResponse<ProductResponse> getProducts(String keyword, Short status, Integer categoryId, int page, int size, String sortBy, String sortDir);
 
     List<PriceHistoryResponse> getPriceHistories(Long productId);

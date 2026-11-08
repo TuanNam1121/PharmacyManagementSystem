@@ -60,10 +60,10 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Xóa danh mục sản phẩm (UC20)")
-    public ResponseEntity<ApiResponse<Void>> deleteCategory(
+    @Operation(summary = "Xóa hoặc vô hiệu hóa danh mục sản phẩm")
+    public ResponseEntity<ApiResponse<String>> deleteCategory(
             @PathVariable Long id) {
-        categoryService.deleteCategory(id);
-        return ResponseEntity.ok(ApiResponse.success("Xóa danh mục thành công", null));
+        String message = categoryService.deleteCategory(id);
+        return ResponseEntity.ok(ApiResponse.success(message, message));
     }
 }

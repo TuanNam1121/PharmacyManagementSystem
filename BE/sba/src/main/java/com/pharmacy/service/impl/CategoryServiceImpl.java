@@ -114,21 +114,21 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public void deleteCategory(Long id) {
+    public String deleteCategory(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + id));
 
-        // Ràng buộc UC20: Chỉ cho phép Xóa danh mục khi không có sản phẩm nào thuộc danh mục đang ở ProductStatus.ACTIVE
-        if (productRepository.existsByCategoryIdAndStatus(id, ProductStatus.ACTIVE)) {
-            throw new IllegalStateException("Không thể xóa danh mục vì vẫn còn sản phẩm đang hoạt động thuộc danh mục này.");
-        }
-
-        try {
-            categoryRepository.delete(category);
-        } catch (Exception ex) {
-            // Nếu có ràng buộc khóa ngoại (sản phẩm đã ngừng kinh doanh/inactive), chuyển sang xóa mềm bằng cách tắt trạng thái
+        // Kiểm tra xem danh mục có đang được sử dụng bởi bất kỳ sản phẩm nào không
+        boolean hasProducts = productRepository.existsByCategoryId(id);
+        if (hasProducts) {
+            // Đang được sử dụng bởi sản phẩm -> Inactive để bảo toàn dữ liệu nghiệp vụ
             category.setStatus(CategoryStatus.INACTIVE);
             categoryRepository.save(category);
+            return "Nhóm danh mục đang được sử dụng cho các sản phẩm nên đã được chuyển sang trạng thái Ngừng hoạt động (Inactive).";
+        } else {
+            // Không chứa sản phẩm nào (mới tạo hoặc không có dữ liệu liên kết) -> Xóa vật lý khỏi DB
+            categoryRepository.delete(category);
+            return "Nhóm danh mục chưa chứa sản phẩm nào đã được xóa hoàn toàn khỏi cơ sở dữ liệu.";
         }
     }
 

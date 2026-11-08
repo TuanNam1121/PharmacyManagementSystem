@@ -4,7 +4,9 @@ import {
   viewProductDetail,
   createProduct,
   updateProduct,
+  updateProductPrice,
   updateProductStatus,
+  deleteProduct,
   viewCategoryOptions,
 } from '../../api/ProductAPI';
 
@@ -28,26 +30,15 @@ export const useProducts = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await viewProductList({ page, size, sort });
+      const res = await viewProductList({
+        page,
+        size,
+        sortBy: sort,
+        keyword: search,
+        status: statusFilter,
+        categoryId: categoryFilter,
+      });
       let items = res.content || [];
-
-      if (search) {
-        const s = search.toLowerCase();
-        items = items.filter(
-          (x) =>
-            (x.name || '').toLowerCase().includes(s) ||
-            (x.barcode || '').toLowerCase().includes(s) ||
-            (x.manufacturer || '').toLowerCase().includes(s)
-        );
-      }
-
-      if (statusFilter !== '' && statusFilter !== null) {
-        items = items.filter((x) => String(x.status) === String(statusFilter));
-      }
-
-      if (categoryFilter !== '' && categoryFilter !== null) {
-        items = items.filter((x) => String(x.categoryId) === String(categoryFilter));
-      }
 
       setData(items);
       setTotal(res.totalElements ?? items.length);
@@ -131,6 +122,23 @@ export const useProducts = () => {
     [fetchList, detail, fetchDetail]
   );
 
+  const handleDeleteProduct = useCallback(
+    async (id) => {
+      try {
+        setError(null);
+        const res = await deleteProduct(id);
+        const msg = (res && typeof res === 'object' && res.message) || (typeof res === 'string' ? res : 'Đã xóa / cập nhật trạng thái sản phẩm thành công.');
+        setSuccessMsg(msg);
+        await fetchList();
+        return true;
+      } catch (err) {
+        setError(err.message || 'Không thể xóa sản phẩm.');
+        throw err;
+      }
+    },
+    [fetchList]
+  );
+
   const fetchCategories = useCallback(async () => {
     try {
       const res = await viewCategoryOptions();
@@ -166,6 +174,7 @@ export const useProducts = () => {
     handleCreate,
     handleUpdate,
     handleToggleStatus,
+    handleDeleteProduct,
     detail,
     detailLoading,
     setDetail,

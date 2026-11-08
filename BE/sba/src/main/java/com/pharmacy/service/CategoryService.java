@@ -16,5 +16,5 @@ public interface CategoryService {
 
     void updateCategoryStatus(Long id, Short status);
 
-    void deleteCategory(Long id);
+    String deleteCategory(Long id);
 }
