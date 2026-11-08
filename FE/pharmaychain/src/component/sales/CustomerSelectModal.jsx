@@ -146,7 +146,7 @@ export default function CustomerSelectModal({
                             <button
                                 type="button"
                                 className="btn-pms btn-pms-primary"
-                                style={{ height: 44, padding: '0 16px', fontWeight: 700, gap: 6 }}
+                                style={{ height: 44, padding: '0 16px', fontWeight: 700, gap: 6, whiteSpace: 'nowrap' }}
                                 onClick={handleOpenCreateModal}
                             >
                                 + Thêm Mới
@@ -246,12 +246,13 @@ export default function CustomerSelectModal({
                 </div>
             </div>
 
-            {/* Modal tạo mới khách hàng chuẩn của hệ thống (CustomerFormModal) */}
+            {/* Modal tạo mới khách hàng chuẩn của hệ thống (CustomerFormModal) - Đặt zIndex cao hơn modal chọn */}
             <CustomerFormModal
                 show={createModalOpen}
                 onHide={() => setCreateModalOpen(false)}
                 mode="create"
                 customer={cleanSearchPhone ? { phone: cleanSearchPhone } : null}
+                zIndex={1400}
                 onSubmit={handleCreateCustomerSubmit}
                 loading={createLoading}
             />
