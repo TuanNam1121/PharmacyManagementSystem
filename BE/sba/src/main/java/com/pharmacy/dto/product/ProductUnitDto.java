@@ -19,3 +19,4 @@ public class ProductUnitDto {
     private Boolean isBaseUnit;
     private String barcode;
 }
+

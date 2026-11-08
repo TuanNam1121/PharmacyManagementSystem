@@ -16,3 +16,4 @@ public interface ProductUnitRepository extends JpaRepository<ProductUnit, Long> 
 
     Optional<ProductUnit> findByProduct_IdAndIsBaseUnitTrue(Long productId);
 }
+
