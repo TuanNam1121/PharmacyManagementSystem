@@ -55,7 +55,19 @@ FROM dbo.products p
 JOIN dbo.product_units base_u ON base_u.product_id = p.id AND (base_u.is_base_unit = 1 OR base_u.conversion_factor = 1)
 WHERE p.unit <> base_u.unit_name;
 
-PRINT N'[PRODUCTS] Đã đồng bộ đơn vị cơ bản và giá niêm yết tối thiểu cho danh mục sản phẩm.';
+-- 2.1 Chuẩn hóa giá vốn cost_price về đơn vị cơ bản (tránh phóng đại giá trị tài sản kho tổng)
+UPDATE p
+SET p.cost_price = ROUND(p.cost_price / max_u.max_factor, 2)
+FROM dbo.products p
+JOIN (
+    SELECT product_id, MAX(conversion_factor) AS max_factor
+    FROM dbo.product_units
+    GROUP BY product_id
+    HAVING MAX(conversion_factor) > 1
+) max_u ON max_u.product_id = p.id
+WHERE p.cost_price > p.selling_price;
+
+PRINT N'[PRODUCTS] Đã đồng bộ đơn vị cơ bản, giá niêm yết tối thiểu và chuẩn hóa giá vốn cost_price.';
 
 -- 3. Hiển thị báo cáo kiểm tra tồn kho tại Nhà Thuốc Chi Nhánh 01 (ST01) sau khi quy đổi
 DECLARE @St01Id BIGINT = (SELECT TOP 1 id FROM dbo.stores WHERE code = 'ST01');
@@ -90,3 +102,4 @@ PRINT N'------------------------------------------------------------------------
 PRINT N'HOÀN TẤT ĐỒNG BỘ DỮ LIỆU TỒN KHO!';
 PRINT N'--------------------------------------------------------------------------------';
 GO
+
