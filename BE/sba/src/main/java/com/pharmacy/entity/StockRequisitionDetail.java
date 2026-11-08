@@ -39,4 +39,14 @@ public class StockRequisitionDetail {
 
     @Column(name = "received_qty")
     private Integer receivedQty;
+
+    @Column(name = "unit_name", length = 50)
+    private String unitName;
+
+    @Builder.Default
+    @Column(name = "conversion_factor", nullable = false)
+    private Integer conversionFactor = 1;
+
+    @Column(name = "base_requested_qty")
+    private Integer baseRequestedQty;
 }

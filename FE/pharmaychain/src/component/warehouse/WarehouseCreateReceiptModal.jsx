@@ -55,9 +55,47 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
       // If user selected a product, auto-fill unitCost if available
       if (field === 'productId') {
         const p = products.find((prod) => String(prod.id) === String(value));
-        if (p && p.purchasePrice) {
-          copy[index].unitCost = p.purchasePrice;
+        if (p) {
+          const pUnits = p.units || [];
+          if (pUnits.length > 0) {
+            // Mặc định chọn đơn vị đóng gói lớn nhất (thường là Hộp khi nhập từ NCC)
+            const highestUnit = [...pUnits].sort((a, b) => (b.conversionFactor || 1) - (a.conversionFactor || 1))[0];
+            copy[index].unitId = highestUnit.id;
+            copy[index].unitName = highestUnit.unitName;
+            copy[index].conversionFactor = highestUnit.conversionFactor || 1;
+            const baseCost = Number(p.purchasePrice) || 0;
+            copy[index].unitCost = Math.round(baseCost * (highestUnit.conversionFactor || 1));
+          } else {
+            copy[index].unitId = '';
+            copy[index].unitName = p.unit || '';
+            copy[index].conversionFactor = 1;
+            copy[index].unitCost = Number(p.purchasePrice) || 0;
+          }
         }
+      }
+      return copy;
+    });
+  };
+
+  const handleUnitChange = (index, unitId) => {
+    setItems((prev) => {
+      const copy = [...prev];
+      const it = copy[index];
+      const p = products.find((prod) => String(prod.id) === String(it.productId));
+      const pUnits = p?.units || [];
+      const selectedUnit = pUnits.find((u) => String(u.id) === String(unitId));
+
+      if (selectedUnit) {
+        copy[index].unitId = selectedUnit.id;
+        copy[index].unitName = selectedUnit.unitName;
+        copy[index].conversionFactor = selectedUnit.conversionFactor || 1;
+        const baseCost = Number(p.purchasePrice) || 0;
+        copy[index].unitCost = Math.round(baseCost * (selectedUnit.conversionFactor || 1));
+      } else {
+        copy[index].unitId = '';
+        copy[index].unitName = p?.unit || '';
+        copy[index].conversionFactor = 1;
+        copy[index].unitCost = Number(p?.purchasePrice) || 0;
       }
       return copy;
     });
@@ -74,6 +112,9 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
         quantity: 50,
         unitCost: 0,
         locationId: '',
+        unitId: '',
+        unitName: '',
+        conversionFactor: 1,
       },
     ]);
   };
@@ -137,6 +178,9 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
         quantity: Number(it.quantity),
         unitCost: Number(it.unitCost) || 0,
         locationId: it.locationId ? Number(it.locationId) : undefined,
+        unitId: it.unitId ? Number(it.unitId) : undefined,
+        unitName: it.unitName || undefined,
+        conversionFactor: Number(it.conversionFactor) || 1,
       })),
     };
 
@@ -238,13 +282,14 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                   <thead>
                     <tr>
                       <th style={{ width: 30 }}>#</th>
-                      <th style={{ minWidth: 200 }}>Tên Thuốc / Sản Phẩm *</th>
-                      <th style={{ width: 130 }}>Số Lô (Batch) *</th>
-                      <th style={{ width: 130 }}>Ngày SX (Mfg)</th>
-                      <th style={{ width: 130 }}>Hạn Dùng (Exp) *</th>
-                      <th style={{ width: 90 }} className="text-right">SL Nhập *</th>
+                      <th style={{ minWidth: 180 }}>Tên Thuốc / Sản Phẩm *</th>
+                      <th style={{ width: 120 }}>ĐVT Nhập</th>
+                      <th style={{ width: 120 }}>Số Lô (Batch) *</th>
+                      <th style={{ width: 120 }}>Ngày SX (Mfg)</th>
+                      <th style={{ width: 120 }}>Hạn Dùng (Exp) *</th>
+                      <th style={{ width: 110 }} className="text-right">SL Nhập *</th>
                       <th style={{ width: 120 }} className="text-right">Đơn Giá Nhập</th>
-                      <th style={{ width: 130 }}>Vị Trí Ô Kệ</th>
+                      <th style={{ width: 120 }}>Vị Trí Ô Kệ</th>
                       <th style={{ width: 110 }} className="text-right">Thành Tiền</th>
                       <th style={{ width: 40 }}></th>
                     </tr>
@@ -252,6 +297,10 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                   <tbody>
                     {items.map((it, idx) => {
                       const subtotal = (Number(it.quantity) || 0) * (Number(it.unitCost) || 0);
+                      const prod = products.find((p) => String(p.id) === String(it.productId));
+                      const prodUnits = prod?.units || [];
+                      const hasUnits = prodUnits.length > 0;
+
                       return (
                         <tr key={idx}>
                           <td className="text-xs text-muted-color">{idx + 1}</td>
@@ -270,6 +319,26 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                                 </option>
                               ))}
                             </select>
+                          </td>
+                          <td>
+                            {hasUnits ? (
+                              <select
+                                className="pms-select"
+                                style={{ fontSize: 11.5, padding: '4px 6px', fontWeight: 600, color: '#0284c7' }}
+                                value={it.unitId || ''}
+                                onChange={(e) => handleUnitChange(idx, e.target.value)}
+                              >
+                                {prodUnits.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.unitName} (x{u.conversionFactor})
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="pms-badge pms-badge-neutral" style={{ fontSize: 11 }}>
+                                {it.unitName || prod?.unit || 'Đơn vị'}
+                              </span>
+                            )}
                           </td>
                           <td>
                             <input
@@ -312,6 +381,11 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                               onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
                               required
                             />
+                            {it.conversionFactor > 1 && (
+                              <div style={{ fontSize: 10.5, color: '#0284c7', fontWeight: 600, marginTop: 2, textAlign: 'right' }}>
+                                = {((Number(it.quantity) || 0) * it.conversionFactor).toLocaleString()} {prod?.unit || 'viên'}
+                              </div>
+                            )}
                           </td>
                           <td>
                             <input

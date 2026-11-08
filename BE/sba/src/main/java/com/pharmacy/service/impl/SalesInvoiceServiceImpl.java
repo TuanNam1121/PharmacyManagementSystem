@@ -8,6 +8,8 @@ import com.pharmacy.exception.NoOpenShiftException;
 import com.pharmacy.exception.ResourceNotFoundException;
 import com.pharmacy.repository.*;
 import com.pharmacy.service.SalesInvoiceService;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,11 +69,12 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
         Store store = shift.getStore();
         Account cashier = accountRepository.findById(accountId).orElse(shift.getAccount());
 
-        // 2. Customer (Optional)
-        Customer customer = null;
-        if (request.getCustomerId() != null) {
-            customer = customerRepository.findById(request.getCustomerId()).orElse(null);
+        // 2. Customer (Bắt buộc theo quy định nghiệp vụ)
+        if (request.getCustomerId() == null) {
+            throw new IllegalArgumentException("Hóa đơn bán lẻ bắt buộc phải có thông tin khách hàng định danh!");
         }
+        Customer customer = customerRepository.findById(request.getCustomerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin khách hàng ID: " + request.getCustomerId()));
 
         // 3. Compute totals
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -222,8 +225,9 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             if (shiftId != null) {
                 predicates.add(cb.equal(root.get("shift").get("id"), shiftId));
             }
+            Join<SalesInvoice, Customer> customerJoin = root.join("customer", JoinType.LEFT);
             if (customerId != null) {
-                predicates.add(cb.equal(root.get("customer").get("id"), customerId));
+                predicates.add(cb.equal(customerJoin.get("id"), customerId));
             }
             if (status != null) {
                 predicates.add(cb.equal(root.get("status"), status));
@@ -231,8 +235,9 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = "%" + keyword.trim().toLowerCase() + "%";
                 Predicate codePred = cb.like(cb.lower(root.get("code")), kw);
-                Predicate custPred = cb.like(cb.lower(root.get("customer").get("fullName")), kw);
-                predicates.add(cb.or(codePred, custPred));
+                Predicate custPred = cb.like(cb.lower(customerJoin.get("fullName")), kw);
+                Predicate phonePred = cb.like(cb.lower(customerJoin.get("phone")), kw);
+                predicates.add(cb.or(codePred, custPred, phonePred));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
@@ -269,7 +274,21 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
 
         Account processor = accountRepository.findById(accountId).orElse(invoice.getAccount());
 
+        // Validate items and pre-calculate refund amount and return type
         BigDecimal totalRefund = BigDecimal.ZERO;
+        List<SalesInvoiceDetail> validatedDetails = new ArrayList<>();
+        for (SalesReturnRequest.ReturnItemRequest item : request.getItems()) {
+            SalesInvoiceDetail invoiceDetail = salesInvoiceDetailRepository.findById(item.getSalesInvoiceDetailId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dòng chi tiết hóa đơn ID: " + item.getSalesInvoiceDetailId()));
+
+            BigDecimal lineRefund = invoiceDetail.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+            totalRefund = totalRefund.add(lineRefund);
+            validatedDetails.add(invoiceDetail);
+        }
+
+        boolean isFullReturn = totalRefund.compareTo(invoice.getFinalAmount()) >= 0;
+        short returnType = isFullReturn ? (short) 1 : (short) 2;
+
         String returnCode = generateReturnCode();
 
         SalesReturn salesReturn = new SalesReturn();
@@ -277,20 +296,18 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
         salesReturn.setSalesInvoice(invoice);
         salesReturn.setShift(shift);
         salesReturn.setProcessedBy(processor);
+        salesReturn.setReturnType(returnType);
         salesReturn.setRefundMethod(request.getRefundMethod() != null ? request.getRefundMethod() : (short) 1);
+        salesReturn.setRefundAmount(totalRefund);
         salesReturn.setReason(request.getReason());
         salesReturn.setCreatedAt(LocalDateTime.now());
-        salesReturn.setRefundAmount(BigDecimal.ZERO); // updated below
 
         SalesReturn savedReturn = salesReturnRepository.save(salesReturn);
 
         List<SalesReturnDetail> returnDetails = new ArrayList<>();
-        for (SalesReturnRequest.ReturnItemRequest item : request.getItems()) {
-            SalesInvoiceDetail invoiceDetail = salesInvoiceDetailRepository.findById(item.getSalesInvoiceDetailId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dòng chi tiết hóa đơn ID: " + item.getSalesInvoiceDetailId()));
-
-            BigDecimal lineRefund = invoiceDetail.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-            totalRefund = totalRefund.add(lineRefund);
+        for (int i = 0; i < request.getItems().size(); i++) {
+            SalesReturnRequest.ReturnItemRequest item = request.getItems().get(i);
+            SalesInvoiceDetail invoiceDetail = validatedDetails.get(i);
 
             // Return stock to branch inventory by base quantity
             if (invoiceDetail.getBatch() != null && invoice.getStore() != null) {
@@ -322,13 +339,10 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             returnDetails.add(salesReturnDetailRepository.save(returnDetail));
         }
 
-        savedReturn.setRefundAmount(totalRefund);
         savedReturn.getDetails().clear();
         savedReturn.getDetails().addAll(returnDetails);
 
         // Update SalesInvoice status (3 = PARTIALLY_RETURNED, 4 = FULLY_RETURNED)
-        boolean isFullReturn = totalRefund.compareTo(invoice.getFinalAmount()) >= 0;
-        savedReturn.setReturnType(isFullReturn ? (short) 1 : (short) 2);
         invoice.setStatus(isFullReturn ? (short) 4 : (short) 3);
         invoice.setCancelReason(request.getReason());
         salesInvoiceRepository.save(invoice);

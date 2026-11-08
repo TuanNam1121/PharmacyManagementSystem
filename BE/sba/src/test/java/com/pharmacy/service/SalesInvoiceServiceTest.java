@@ -73,6 +73,7 @@ class SalesInvoiceServiceTest {
     private Account account;
     private Product product;
     private ProductBatch batch;
+    private Customer customer;
 
     @BeforeEach
     void setUp() {
@@ -83,6 +84,11 @@ class SalesInvoiceServiceTest {
         account = new Account();
         account.setId(10L);
         account.setUsername("pharmacist");
+
+        customer = new Customer();
+        customer.setId(101L);
+        customer.setFullName("Trần Thị Lan");
+        customer.setPhone("0987123456");
 
         openShift = new Shift();
         openShift.setId(50L);
@@ -108,6 +114,7 @@ class SalesInvoiceServiceTest {
     void testCreateSalesInvoiceSuccess() {
         CreateSalesInvoiceRequest request = CreateSalesInvoiceRequest.builder()
                 .shiftId(50L)
+                .customerId(101L)
                 .discount(BigDecimal.valueOf(10000))
                 .items(List.of(
                         InvoiceItemRequest.builder()
@@ -127,6 +134,7 @@ class SalesInvoiceServiceTest {
 
         when(shiftRepository.findById(50L)).thenReturn(Optional.of(openShift));
         when(accountRepository.findById(10L)).thenReturn(Optional.of(account));
+        when(customerRepository.findById(101L)).thenReturn(Optional.of(customer));
         when(productRepository.findById(201L)).thenReturn(Optional.of(product));
         when(productBatchRepository.findById(301L)).thenReturn(Optional.of(batch));
 
@@ -186,5 +194,80 @@ class SalesInvoiceServiceTest {
         assertThrows(NoOpenShiftException.class, () -> {
             salesInvoiceService.createSalesInvoice(request, 10L);
         });
+    }
+
+    @Test
+    @DisplayName("TC-INV-03: Báo lỗi IllegalArgumentException nếu thiếu thông tin khách hàng định danh")
+    void testCreateSalesInvoiceMissingCustomerThrowsException() {
+        CreateSalesInvoiceRequest request = CreateSalesInvoiceRequest.builder()
+                .shiftId(50L)
+                .customerId(null) // Thiếu khách hàng
+                .items(List.of(
+                        InvoiceItemRequest.builder()
+                                .productId(201L)
+                                .quantity(1)
+                                .unitPrice(BigDecimal.valueOf(50000))
+                                .build()
+                ))
+                .build();
+
+        when(shiftRepository.findById(50L)).thenReturn(Optional.of(openShift));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            salesInvoiceService.createSalesInvoice(request, 10L);
+        });
+    }
+
+    @Test
+    @DisplayName("TC-INV-04: Trả hàng thành công, đảm bảo returnType không bao giờ null")
+    void testReturnSalesInvoiceSuccessWithReturnType() {
+        SalesInvoice invoice = new SalesInvoice();
+        invoice.setId(99L);
+        invoice.setCode("INV-20261108-9999");
+        invoice.setStatus((short) 1);
+        invoice.setFinalAmount(BigDecimal.valueOf(100000));
+        invoice.setStore(store);
+        invoice.setShift(openShift);
+        invoice.setAccount(account);
+
+        SalesInvoiceDetail detail = new SalesInvoiceDetail();
+        detail.setId(501L);
+        detail.setSalesInvoice(invoice);
+        detail.setProduct(product);
+        detail.setBatch(batch);
+        detail.setUnitPrice(BigDecimal.valueOf(50000));
+        detail.setQuantity(2);
+
+        when(salesInvoiceRepository.findById(99L)).thenReturn(Optional.of(invoice));
+        when(salesInvoiceDetailRepository.findById(501L)).thenReturn(Optional.of(detail));
+        when(shiftRepository.findFirstByAccount_IdAndStatus(10L, (short) 1)).thenReturn(Optional.of(openShift));
+        when(accountRepository.findById(10L)).thenReturn(Optional.of(account));
+        when(salesReturnRepository.save(any(SalesReturn.class))).thenAnswer(invocation -> {
+            SalesReturn sr = invocation.getArgument(0);
+            assertNotNull(sr.getReturnType(), "returnType must not be null before saving");
+            assertEquals((short) 1, sr.getReturnType(), "2 x 50k = 100k, equals finalAmount => full return (1)");
+            sr.setId(1L);
+            return sr;
+        });
+        when(salesReturnDetailRepository.save(any(SalesReturnDetail.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        com.pharmacy.dto.sales.SalesReturnRequest returnRequest = com.pharmacy.dto.sales.SalesReturnRequest.builder()
+                .invoiceId(99L)
+                .refundMethod((short) 1)
+                .reason("Khách đổi đơn thuốc bác sĩ")
+                .items(List.of(
+                        com.pharmacy.dto.sales.SalesReturnRequest.ReturnItemRequest.builder()
+                                .salesInvoiceDetailId(501L)
+                                .quantity(2)
+                                .build()
+                ))
+                .build();
+
+        com.pharmacy.dto.sales.SalesReturnResponse response = salesInvoiceService.returnSalesInvoice(returnRequest, 10L);
+
+        assertNotNull(response);
+        assertEquals(BigDecimal.valueOf(100000), response.getRefundAmount());
+        assertEquals((short) 4, invoice.getStatus(), "Hóa đơn phải đổi trạng thái thành 4 (FULLY_RETURNED)");
+        verify(salesReturnRepository, atLeastOnce()).save(any(SalesReturn.class));
     }
 }

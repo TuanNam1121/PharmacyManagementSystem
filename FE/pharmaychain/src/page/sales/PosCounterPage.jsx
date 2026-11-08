@@ -11,9 +11,10 @@ import PosCartTable from '../../component/sales/PosCartTable';
 import OpenShiftModal from '../../component/sales/OpenShiftModal';
 import CloseShiftModal from '../../component/sales/CloseShiftModal';
 import CustomerSelectModal from '../../component/sales/CustomerSelectModal';
+import CustomerFormModal from '../../component/customer/CustomerFormModal';
+import { createCustomer } from '../../api/customerApi';
 import PaymentModal from '../../component/sales/PaymentModal';
 import InvoicePrintTemplate from '../../component/sales/InvoicePrintTemplate';
-import SalesReturnModal from '../../component/sales/SalesReturnModal';
 import CustomerHistoryDrawer from '../../component/sales/CustomerHistoryDrawer';
 
 export default function PosCounterPage() {
@@ -52,8 +53,6 @@ export default function PosCounterPage() {
         setCustomerModalOpen,
         historyDrawerOpen,
         setHistoryDrawerOpen,
-        returnModalOpen,
-        setReturnModalOpen,
         lastCompletedInvoice,
         setLastCompletedInvoice,
         addToCart,
@@ -83,9 +82,26 @@ export default function PosCounterPage() {
     const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
     const [checkoutError, setCheckoutError] = useState(null);
     const [printModalOpen, setPrintModalOpen] = useState(false);
+    const [customerFormModalOpen, setCustomerFormModalOpen] = useState(false);
+    const [createCustomerLoading, setCreateCustomerLoading] = useState(false);
+
+    const handleQuickCustomerSubmit = async (payload) => {
+        setCreateCustomerLoading(true);
+        try {
+            const created = await createCustomer(payload);
+            const customerObj = created?.customer || created;
+            selectCustomer(customerObj);
+            setCustomerFormModalOpen(false);
+        } catch (err) {
+            console.error('Lỗi khi tạo mới khách hàng:', err);
+            alert(err?.message || 'Không thể tạo mới khách hàng');
+        } finally {
+            setCreateCustomerLoading(false);
+        }
+    };
 
     // Fast payment states directly on right panel
-    const [quickMethod, setQuickMethod] = useState('CASH'); // CASH, VNPAY_QR, BANK_TRANSFER
+    const [quickMethod, setQuickMethod] = useState('CASH'); // CASH, BANK_TRANSFER (PayOS)
     const [tenderedCash, setTenderedCash] = useState('');
 
     useEffect(() => {
@@ -117,6 +133,20 @@ export default function PosCounterPage() {
 
         if (cartItems.length === 0) {
             alert('Giỏ hàng chưa có sản phẩm nào!');
+            return;
+        }
+
+        // Bắt buộc phải có thông tin khách hàng định danh
+        const customerId = customer?.customerId || customer?.id;
+        if (!customerId) {
+            alert('Hóa đơn bán lẻ bắt buộc phải có thông tin khách hàng định danh. Vui lòng nhập số điện thoại khách hàng!');
+            setCustomerModalOpen(true);
+            return;
+        }
+
+        // Nếu chọn chuyển khoản PayOS mà chưa mở mã QR để nhận thanh toán, mở Modal PayOS
+        if (!paymentOverride && quickMethod === 'BANK_TRANSFER') {
+            setPaymentModalOpen(true);
             return;
         }
 
@@ -257,19 +287,6 @@ export default function PosCounterPage() {
                                     ))}
                                 </div>
                             )}
-
-                            <button
-                                type="button"
-                                className="btn-pms btn-pms-secondary"
-                                style={{ fontSize: 12, height: 36 }}
-                                onClick={() => setReturnModalOpen(true)}
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ marginRight: 6 }}>
-                                    <polyline points="1 4 1 10 7 10" />
-                                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-                                </svg>
-                                Trả hàng
-                            </button>
 
                             {currentShift ? (
                                 <button
@@ -458,14 +475,26 @@ export default function PosCounterPage() {
                                         </span>
                                     </div>
 
-                                    <button
-                                        type="button"
-                                        className="btn-pms btn-pms-secondary"
-                                        style={{ fontSize: 11, padding: '2px 8px', height: 24, fontWeight: 600 }}
-                                        onClick={() => setCustomerModalOpen(true)}
-                                    >
-                                        {customer ? 'Đổi khách' : '+ Chọn khách hàng'}
-                                    </button>
+                                    <div style={{ display: 'flex', gap: 6 }}>
+                                        <button
+                                            type="button"
+                                            className="btn-pms btn-pms-secondary"
+                                            style={{ fontSize: 11, padding: '2px 8px', height: 24, fontWeight: 600 }}
+                                            onClick={() => setCustomerModalOpen(true)}
+                                        >
+                                            {customer ? 'Đổi khách' : '+ Chọn khách hàng'}
+                                        </button>
+                                        {!customer && (
+                                            <button
+                                                type="button"
+                                                className="btn-pms btn-pms-primary"
+                                                style={{ fontSize: 11, padding: '2px 8px', height: 24, fontWeight: 700 }}
+                                                onClick={() => setCustomerFormModalOpen(true)}
+                                            >
+                                                + Tạo mới
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {customer ? (
@@ -499,8 +528,8 @@ export default function PosCounterPage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div style={{ fontSize: 12, color: '#64748b' }}>
-                                        Khách vãng lai (Không tích điểm thưởng thành viên)
+                                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                                        Chưa chọn thông tin khách hàng
                                     </div>
                                 )}
                             </div>
@@ -599,7 +628,7 @@ export default function PosCounterPage() {
                                 flexDirection: 'column',
                                 gap: 10
                             }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                                     <button
                                         type="button"
                                         onClick={() => setQuickMethod('CASH')}
@@ -619,24 +648,10 @@ export default function PosCounterPage() {
 
                                     <button
                                         type="button"
-                                        onClick={() => setQuickMethod('VNPAY_QR')}
-                                        style={{
-                                            border: `1.5px solid ${quickMethod === 'VNPAY_QR' ? 'var(--brand-primary)' : '#e2e8f0'}`,
-                                            background: quickMethod === 'VNPAY_QR' ? 'var(--brand-primary-light, #ecfdf5)' : '#fff',
-                                            color: quickMethod === 'VNPAY_QR' ? 'var(--brand-primary)' : '#475569',
-                                            fontWeight: 700,
-                                            fontSize: 12,
-                                            padding: '8px 4px',
-                                            borderRadius: 8,
-                                            cursor: 'pointer'
+                                        onClick={() => {
+                                            setQuickMethod('BANK_TRANSFER');
+                                            setPaymentModalOpen(true);
                                         }}
-                                    >
-                                        VietQR / MoMo
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => setQuickMethod('BANK_TRANSFER')}
                                         style={{
                                             border: `1.5px solid ${quickMethod === 'BANK_TRANSFER' ? 'var(--brand-primary)' : '#e2e8f0'}`,
                                             background: quickMethod === 'BANK_TRANSFER' ? 'var(--brand-primary-light, #ecfdf5)' : '#fff',
@@ -648,9 +663,23 @@ export default function PosCounterPage() {
                                             cursor: 'pointer'
                                         }}
                                     >
-                                        Quẹt thẻ POS
+                                        Chuyển khoản PayOS
                                     </button>
                                 </div>
+
+                                {quickMethod === 'BANK_TRANSFER' && (
+                                    <div style={{
+                                        padding: '8px 10px',
+                                        background: '#eff6ff',
+                                        borderRadius: 6,
+                                        border: '1px solid #bfdbfe',
+                                        fontSize: 11,
+                                        color: '#1e40af',
+                                        lineHeight: 1.4
+                                    }}>
+                                        Tự động nhận diện thanh toán VietQR qua cổng PayOS. Bấm vào nút để mở mã QR.
+                                    </div>
+                                )}
 
                                 {quickMethod === 'CASH' && (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -806,6 +835,14 @@ export default function PosCounterPage() {
                 onSelectCustomer={selectCustomer}
             />
 
+            <CustomerFormModal
+                show={customerFormModalOpen}
+                onHide={() => setCustomerFormModalOpen(false)}
+                mode="create"
+                onSubmit={handleQuickCustomerSubmit}
+                loading={createCustomerLoading}
+            />
+
             <PaymentModal
                 isOpen={paymentModalOpen}
                 onClose={() => setPaymentModalOpen(false)}
@@ -825,14 +862,6 @@ export default function PosCounterPage() {
                 isOpen={printModalOpen}
                 onClose={() => setPrintModalOpen(false)}
                 invoice={lastCompletedInvoice}
-            />
-
-            <SalesReturnModal
-                isOpen={returnModalOpen}
-                onClose={() => setReturnModalOpen(false)}
-                onReturnSuccess={() => {
-                    refreshShift();
-                }}
             />
 
             <CustomerHistoryDrawer

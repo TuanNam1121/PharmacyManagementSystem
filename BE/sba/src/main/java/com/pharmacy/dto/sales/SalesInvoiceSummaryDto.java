@@ -20,6 +20,10 @@ public class SalesInvoiceSummaryDto {
     private BigDecimal discount;
     private BigDecimal finalAmount;
     private Short status; // 1: Completed, 2: Cancelled
+    private Long customerId;
+    private String customerName;
+    private String customerPhone;
+    private Boolean canReturn;
     private LocalDateTime createdAt;
     private LocalDateTime paidAt;
     private String paymentMethod; // "CASH", "BANK_TRANSFER", "VNPAY"

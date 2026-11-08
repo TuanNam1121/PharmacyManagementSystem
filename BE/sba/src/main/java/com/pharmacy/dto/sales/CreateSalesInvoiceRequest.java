@@ -2,6 +2,7 @@ package com.pharmacy.dto.sales;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,6 +17,8 @@ import java.util.List;
 @AllArgsConstructor
 public class CreateSalesInvoiceRequest {
     private Long storeId;
+
+    @NotNull(message = "Thông tin khách hàng là bắt buộc đối với mọi hóa đơn bán lẻ")
     private Long customerId;
     private Long shiftId;
     private String prescriptionCode;

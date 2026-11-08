@@ -1,5 +1,6 @@
 package com.pharmacy.service.impl;
 
+import com.pharmacy.dto.product.ProductUnitDto;
 import com.pharmacy.dto.warehouse.*;
 import com.pharmacy.entity.*;
 import com.pharmacy.entity.enums.*;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -36,6 +38,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
     private final InventoryAdjustmentRepository adjustmentRepository;
     private final ProductRepository productRepository;
     private final ProductBatchRepository productBatchRepository;
+    private final ProductUnitRepository productUnitRepository;
     private final StoreRepository storeRepository;
     private final AccountRepository accountRepository;
     private final SupplierRepository supplierRepository;
@@ -163,6 +166,9 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                     .productCode(p != null ? p.getBarcode() : "")
                     .productName(p != null ? p.getName() : "")
                     .unit(p != null ? p.getUnit() : "")
+                    .unitName(d.getUnitName())
+                    .conversionFactor(d.getConversionFactor())
+                    .baseQuantity(d.getBaseQuantity())
                     .orderQuantity(d.getOrderQuantity())
                     .quantity(d.getQuantity())
                     .unitCost(d.getUnitCost())
@@ -340,6 +346,21 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                     ? locationRepository.findById(item.getLocationId()).orElse(null)
                     : null;
 
+            int conversionFactor = 1;
+            String unitName = product.getUnit();
+            if (item.getUnitId() != null) {
+                ProductUnit pu = productUnitRepository.findById(item.getUnitId()).orElse(null);
+                if (pu != null) {
+                    conversionFactor = (pu.getConversionFactor() != null && pu.getConversionFactor() > 0) ? pu.getConversionFactor() : 1;
+                    unitName = pu.getUnitName();
+                }
+            } else if (item.getConversionFactor() != null && item.getConversionFactor() > 0) {
+                conversionFactor = item.getConversionFactor();
+                unitName = item.getUnitName() != null ? item.getUnitName() : product.getUnit();
+            }
+
+            int baseQuantity = item.getQuantity() * conversionFactor;
+
             PurchaseReceiptDetail detail = PurchaseReceiptDetail.builder()
                     .purchaseReceipt(savedReceipt)
                     .product(product)
@@ -351,6 +372,9 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                     .manufactureDate(item.getManufactureDate())
                     .expiryDate(item.getExpiryDate())
                     .location(loc)
+                    .unitName(unitName)
+                    .conversionFactor(conversionFactor)
+                    .baseQuantity(baseQuantity)
                     .build();
 
             purchaseReceiptDetailRepository.save(detail);
@@ -400,7 +424,10 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
             detail.setBatch(batch);
             purchaseReceiptDetailRepository.save(detail);
 
-            // Update or Insert into warehouse inventory
+            // Update or Insert into warehouse inventory using baseQuantity (smallest unit)
+            int factor = (detail.getConversionFactor() != null && detail.getConversionFactor() > 0) ? detail.getConversionFactor() : 1;
+            int addQty = detail.getBaseQuantity() != null ? detail.getBaseQuantity() : (detail.getQuantity() * factor);
+
             if (warehouse != null) {
                 Inventory inv = inventoryRepository.findAll().stream()
                         .filter(i -> i.getStore().getId().equals(warehouse.getId()) &&
@@ -409,7 +436,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                         .orElse(null);
 
                 if (inv != null) {
-                    inv.setQuantity(inv.getQuantity() + detail.getQuantity());
+                    inv.setQuantity(inv.getQuantity() + addQty);
                     if (detail.getLocation() != null) {
                         inv.setLocation(detail.getLocation());
                     }
@@ -420,12 +447,18 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                             .product(product)
                             .batch(batch)
                             .location(detail.getLocation())
-                            .quantity(detail.getQuantity())
+                            .quantity(addQty)
                             .version(0)
                             .updatedAt(LocalDateTime.now())
                             .build();
                     inventoryRepository.save(newInv);
                 }
+            }
+
+            // Đồng bộ cập nhật cost_price cơ bản của sản phẩm nếu nhập theo đơn vị quy đổi
+            if (factor > 1 && detail.getUnitCost() != null) {
+                product.setCostPrice(detail.getUnitCost().divide(BigDecimal.valueOf(factor), 2, RoundingMode.HALF_UP));
+                productRepository.save(product);
             }
         }
 
@@ -637,7 +670,9 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         List<GoodsIssueResponse.GoodsIssueItemDto> itemDtos = new ArrayList<>();
 
         for (StockRequisitionDetail d : reqDetails) {
-            int neededQty = d.getApprovedQty() != null ? d.getApprovedQty() : d.getRequestedQty();
+            int factor = (d.getConversionFactor() != null && d.getConversionFactor() > 0) ? d.getConversionFactor() : 1;
+            int rawQty = d.getApprovedQty() != null ? d.getApprovedQty() : d.getRequestedQty();
+            int neededQty = rawQty * factor;
 
             // Pick inventory batches by FEFO (earliest expiry date first)
             List<Inventory> candidateBatches = inventoryRepository.findAll().stream()
@@ -821,13 +856,27 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
     @Transactional(readOnly = true)
     public List<ProductOptionDto> getProductOptions() {
         return productRepository.findAll().stream()
-                .map(p -> new ProductOptionDto(
-                        p.getId(),
-                        p.getName(),
-                        p.getBarcode(),
-                        p.getUnit(),
-                        p.getCostPrice()
-                ))
+                .map(p -> {
+                    List<ProductUnitDto> unitDtos = productUnitRepository.findByProduct_IdOrderByConversionFactorAsc(p.getId()).stream()
+                            .map(u -> ProductUnitDto.builder()
+                                    .id(u.getId())
+                                    .unitName(u.getUnitName())
+                                    .conversionFactor(u.getConversionFactor())
+                                    .sellingPrice(u.getSellingPrice())
+                                    .isBaseUnit(u.getIsBaseUnit())
+                                    .barcode(u.getBarcode())
+                                    .build())
+                            .collect(Collectors.toList());
+
+                    return ProductOptionDto.builder()
+                            .id(p.getId())
+                            .name(p.getName())
+                            .barcode(p.getBarcode())
+                            .unit(p.getUnit())
+                            .purchasePrice(p.getCostPrice())
+                            .units(unitDtos)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 

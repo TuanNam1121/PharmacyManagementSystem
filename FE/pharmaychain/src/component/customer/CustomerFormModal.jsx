@@ -25,6 +25,7 @@ export default function CustomerFormModal({
   customer = null,
   onSubmit,
   loading = false,
+  zIndex = 1300,
 }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [errors, setErrors] = useState({});
@@ -54,7 +55,10 @@ export default function CustomerFormModal({
           notes: hp.notes || '',
         });
       } else {
-        setFormData(INITIAL_FORM_STATE);
+        setFormData({
+          ...INITIAL_FORM_STATE,
+          phone: customer?.phone || '',
+        });
       }
       setErrors({});
     }
@@ -125,6 +129,7 @@ export default function CustomerFormModal({
   return (
     <div
       className="pms-modal-overlay"
+      style={{ zIndex }}
       onClick={(e) => {
         if (e.target === e.currentTarget && !loading) onHide();
       }}

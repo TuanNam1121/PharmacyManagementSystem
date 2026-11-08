@@ -47,5 +47,8 @@ public class StockRequisitionDto {
         private Integer requestedQty;
         private Integer approvedQty;
         private Integer receivedQty;
+        private String unitName;
+        private Integer conversionFactor;
+        private Integer baseRequestedQty;
     }
 }
