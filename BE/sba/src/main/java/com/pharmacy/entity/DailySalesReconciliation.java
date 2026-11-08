@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.Nationalized;
 
 import java.math.BigDecimal;
@@ -46,15 +47,13 @@ public class DailySalesReconciliation {
     @Column(name = "system_vnpay", nullable = false, precision = 18, scale = 2)
     private BigDecimal systemVnpay;
 
-    @ColumnDefault("[system_cash]+[system_bank]+[system_vnpay]")
-    @Column(name = "system_total", precision = 20, scale = 2, insertable = false, updatable = false)
+    @Formula("CAST(system_cash + system_bank + system_vnpay AS DECIMAL(20,2))")
     private BigDecimal systemTotal;
 
     @Column(name = "actual_cash", precision = 18, scale = 2)
     private BigDecimal actualCash;
 
-    @ColumnDefault("[actual_cash]-[system_cash]")
-    @Column(name = "difference", precision = 19, scale = 2, insertable = false, updatable = false)
+    @Formula("CAST(actual_cash - system_cash AS DECIMAL(19,2))")
     private BigDecimal difference;
 
     @ColumnDefault("0")

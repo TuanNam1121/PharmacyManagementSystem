@@ -1,8 +1,4 @@
-/* =========================================================================================
-   PMS - DATABASE INITIALIZATION & SEED DATA (SQL SERVER)
-   Mật khẩu mặc định: Password@123
-   ========================================================================================= */
-
+/* PMS seed data only. Requires the PMS schema to exist before execution. */
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 SET NOCOUNT ON;
@@ -11,247 +7,15 @@ GO
 USE [PMS];
 GO
 
-PRINT N'=========================================================================================';
-PRINT N'>>> BẮT ĐẦU KHỞI TẠO VÀ ĐỒNG BỘ CƠ SỞ DỮ LIỆU PMS TOÀN DIỆN...';
-PRINT N'=========================================================================================';
+-- Preserve the seed-data normalization from the original setup script.
+UPDATE dbo.purchase_requests
+SET status = 1, updated_at = SYSDATETIME()
+WHERE status = 0;
 GO
 
 /* =========================================================================================
-   PHẦN 1: BẢO ĐẢM CẤU TRÚC BẢNG NÂNG CAO (COMPUTED PERSISTED COLUMNS & DDL REWORK)
+   PHẦN 1: CẤU HÌNH HỆ THỐNG & CHI NHÁNH / KHO TỔNG (STORES)
    ========================================================================================= */
-PRINT N'-> [1/12] Kiểm tra và khởi tạo các bảng có cột Persisted & cập nhật schema...';
-
--- 1.1 supplier_quotation_details (có subtotal PERSISTED)
-IF OBJECT_ID('dbo.supplier_quotation_details', 'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.supplier_quotation_details (
-        id                    BIGINT IDENTITY(1,1) CONSTRAINT PK_sqd PRIMARY KEY,
-        supplier_quotation_id BIGINT NOT NULL CONSTRAINT FK_sqd_sq REFERENCES dbo.supplier_quotations(id) ON DELETE CASCADE,
-        product_id            BIGINT NOT NULL CONSTRAINT FK_sqd_product REFERENCES dbo.products(id),
-        quantity              INT    NOT NULL CONSTRAINT CK_sqd_qty CHECK (quantity > 0),
-        unit_price            DECIMAL(18,2) NOT NULL CONSTRAINT CK_sqd_price CHECK (unit_price >= 0),
-        tax_rate              DECIMAL(5,2)  NOT NULL CONSTRAINT DF_sqd_tax DEFAULT 0
-                              CONSTRAINT CK_sqd_tax CHECK (tax_rate BETWEEN 0 AND 100),
-        subtotal              AS CAST(quantity * unit_price * (1 + tax_rate/100.0) AS DECIMAL(18,2)) PERSISTED,
-        CONSTRAINT UQ_sqd UNIQUE (supplier_quotation_id, product_id)
-    );
-    PRINT N'   + Đã tạo bảng supplier_quotation_details (PERSISTED subtotal)';
-END
-GO
-
--- 1.2 inventory_audit_details (có variance PERSISTED)
-IF OBJECT_ID('dbo.inventory_audit_details', 'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.inventory_audit_details (
-        id                 BIGINT IDENTITY(1,1) CONSTRAINT PK_iad PRIMARY KEY,
-        inventory_audit_id BIGINT NOT NULL CONSTRAINT FK_iad_ia REFERENCES dbo.inventory_audits(id) ON DELETE CASCADE,
-        product_id         BIGINT NOT NULL CONSTRAINT FK_iad_product REFERENCES dbo.products(id),
-        batch_id           BIGINT NOT NULL CONSTRAINT FK_iad_batch REFERENCES dbo.product_batches(id),
-        system_quantity    INT NOT NULL,
-        counted_quantity   INT NULL CONSTRAINT CK_iad_cnt CHECK (counted_quantity >= 0),
-        variance           AS (counted_quantity - system_quantity) PERSISTED,
-        note               NVARCHAR(500) NULL
-    );
-    PRINT N'   + Đã tạo bảng inventory_audit_details (PERSISTED variance)';
-END
-GO
-
--- 1.3 inventory_adjustments (có difference PERSISTED)
-IF OBJECT_ID('dbo.inventory_adjustments', 'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.inventory_adjustments (
-        id                 BIGINT IDENTITY(1,1) CONSTRAINT PK_inventory_adjustments PRIMARY KEY,
-        store_id           BIGINT NOT NULL CONSTRAINT FK_adj_store REFERENCES dbo.stores(id),
-        product_id         BIGINT NOT NULL CONSTRAINT FK_adj_product REFERENCES dbo.products(id),
-        batch_id           BIGINT NOT NULL CONSTRAINT FK_adj_batch REFERENCES dbo.product_batches(id),
-        inventory_audit_id BIGINT NULL CONSTRAINT FK_adj_audit REFERENCES dbo.inventory_audits(id),
-        created_by         BIGINT NOT NULL CONSTRAINT FK_adj_creator REFERENCES dbo.accounts(id),
-        approved_by        BIGINT NULL CONSTRAINT FK_adj_approver REFERENCES dbo.accounts(id),
-        type               TINYINT NOT NULL CONSTRAINT CK_adj_type CHECK (type BETWEEN 1 AND 5),
-        status             TINYINT NOT NULL CONSTRAINT DF_adj_status DEFAULT 0
-                           CONSTRAINT CK_adj_status CHECK (status BETWEEN 0 AND 3),
-        quantity_before    INT NOT NULL,
-        quantity_after     INT NOT NULL CONSTRAINT CK_adj_after CHECK (quantity_after >= 0),
-        difference         AS (quantity_after - quantity_before) PERSISTED,
-        value_impact       DECIMAL(18,2) NULL,
-        reason             NVARCHAR(500) NOT NULL,
-        created_at         DATETIME2(0) NOT NULL CONSTRAINT DF_adj_created DEFAULT SYSDATETIME(),
-        approved_at        DATETIME2(0) NULL
-    );
-    CREATE INDEX IX_adj_status ON dbo.inventory_adjustments(status, created_at DESC);
-    PRINT N'   + Đã tạo bảng inventory_adjustments (PERSISTED difference)';
-END
-GO
-
--- 1.4 sales_return_details (có sub_total PERSISTED)
-IF OBJECT_ID('dbo.sales_return_details', 'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.sales_return_details (
-        id                      BIGINT IDENTITY(1,1) CONSTRAINT PK_srtd PRIMARY KEY,
-        sales_return_id         BIGINT NOT NULL CONSTRAINT FK_srtd_sret REFERENCES dbo.sales_returns(id) ON DELETE CASCADE,
-        sales_invoice_detail_id BIGINT NOT NULL CONSTRAINT FK_srtd_sid REFERENCES dbo.sales_invoice_details(id),
-        product_id              BIGINT NOT NULL CONSTRAINT FK_srtd_product REFERENCES dbo.products(id),
-        batch_id                BIGINT NULL CONSTRAINT FK_srtd_batch REFERENCES dbo.product_batches(id),
-        quantity                INT NOT NULL CONSTRAINT CK_srtd_qty CHECK (quantity > 0),
-        unit_price              DECIMAL(18,2) NOT NULL,
-        sub_total               AS CAST(quantity * unit_price AS DECIMAL(18,2)) PERSISTED
-    );
-    PRINT N'   + Đã tạo bảng sales_return_details (PERSISTED sub_total)';
-END
-GO
-
--- 1.5 daily_sales_reconciliations (có system_total & difference PERSISTED)
-IF OBJECT_ID('dbo.daily_sales_reconciliations', 'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.daily_sales_reconciliations (
-        id                BIGINT IDENTITY(1,1) CONSTRAINT PK_dsr PRIMARY KEY,
-        store_id          BIGINT NOT NULL CONSTRAINT FK_dsr_store REFERENCES dbo.stores(id),
-        business_date     DATE   NOT NULL,
-        system_cash       DECIMAL(18,2) NOT NULL DEFAULT 0,
-        system_bank       DECIMAL(18,2) NOT NULL DEFAULT 0,
-        system_vnpay      DECIMAL(18,2) NOT NULL DEFAULT 0,
-        system_total      AS (system_cash + system_bank + system_vnpay) PERSISTED,
-        actual_cash       DECIMAL(18,2) NULL,
-        difference        AS (actual_cash - system_cash) PERSISTED,
-        status            TINYINT NOT NULL CONSTRAINT DF_dsr_status DEFAULT 0
-                          CONSTRAINT CK_dsr_status CHECK (status IN (0,1,2)),
-        note              NVARCHAR(1000) NULL,
-        reconciled_by     BIGINT NULL CONSTRAINT FK_dsr_user REFERENCES dbo.accounts(id),
-        reconciled_at     DATETIME2(0) NULL,
-        CONSTRAINT UQ_dsr UNIQUE (store_id, business_date)
-    );
-    PRINT N'   + Đã tạo bảng daily_sales_reconciliations (PERSISTED system_total)';
-END
-GO
-
--- 1.6 shifts (có difference PERSISTED)
-IF OBJECT_ID('dbo.shifts', 'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.shifts (
-        id            BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_shifts PRIMARY KEY,
-        store_id      BIGINT       NOT NULL CONSTRAINT FK_shifts_stores REFERENCES dbo.stores(id),
-        account_id    BIGINT       NOT NULL CONSTRAINT FK_shifts_accounts REFERENCES dbo.accounts(id),
-        opened_at     DATETIME2(0) NOT NULL CONSTRAINT DF_shifts_opened_at DEFAULT SYSDATETIME(),
-        closed_at     DATETIME2(0) NULL,
-        opening_cash  DECIMAL(18,2) NOT NULL,
-        closing_cash  DECIMAL(18,2) NULL,
-        expected_cash DECIMAL(18,2) NULL,
-        difference    AS (closing_cash - expected_cash) PERSISTED,
-        status        TINYINT      NOT NULL CONSTRAINT DF_shifts_status DEFAULT 1,
-        note          NVARCHAR(1000) NULL,
-        reconciled_by BIGINT       NULL CONSTRAINT FK_shifts_reconciled REFERENCES dbo.accounts(id),
-        reconciled_at DATETIME2(0) NULL
-    );
-    PRINT N'   + Đã tạo bảng shifts (PERSISTED difference)';
-END
-GO
-
--- 1.7 sales_invoice_details (có sub_total COMPUTED)
-IF OBJECT_ID('dbo.sales_invoice_details', 'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.sales_invoice_details (
-        id                  BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_sales_invoice_details PRIMARY KEY,
-        sales_invoice_id    BIGINT        NOT NULL CONSTRAINT FK_sid_sales_invoice REFERENCES dbo.sales_invoices(id) ON DELETE CASCADE,
-        product_id          BIGINT        NOT NULL CONSTRAINT FK_sid_product REFERENCES dbo.products(id),
-        batch_id            BIGINT        NULL CONSTRAINT FK_sid_batch REFERENCES dbo.product_batches(id),
-        quantity            INT           NOT NULL CONSTRAINT CK_sid_quantity CHECK (quantity > 0),
-        unit_price          DECIMAL(18,2) NOT NULL CONSTRAINT CK_sid_unit_price CHECK (unit_price >= 0),
-        unit_cost           DECIMAL(18,2) NOT NULL CONSTRAINT DF_sid_unit_cost DEFAULT 0,
-        sub_total           AS (CONVERT(DECIMAL(18,2), quantity * unit_price)),
-        dosage_instruction  NVARCHAR(300) NULL
-    );
-    PRINT N'   + Đã tạo bảng sales_invoice_details (COMPUTED sub_total)';
-END
-GO
-
--- 1.8 purchase_receipt_details (có subtotal COMPUTED)
-IF OBJECT_ID('dbo.purchase_receipt_details', 'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.purchase_receipt_details (
-        id                  BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_prcd PRIMARY KEY,
-        purchase_receipt_id BIGINT        NOT NULL CONSTRAINT FK_prcd_receipt REFERENCES dbo.purchase_receipts(id) ON DELETE CASCADE,
-        product_id          BIGINT        NOT NULL CONSTRAINT FK_prcd_product REFERENCES dbo.products(id),
-        order_quantity      INT           NOT NULL CONSTRAINT DF_prcd_order_qty DEFAULT 0,
-        quantity            INT           NOT NULL,
-        unit_cost           DECIMAL(18,2) NOT NULL,
-        subtotal            AS (CONVERT(DECIMAL(18,2), quantity * unit_cost)),
-        batch_number        VARCHAR(50)   NOT NULL,
-        manufacture_date    DATE          NULL,
-        expiry_date         DATE          NOT NULL,
-        location_id         BIGINT        NULL CONSTRAINT FK_prcd_location REFERENCES dbo.warehouse_locations(id),
-        batch_id            BIGINT        NULL CONSTRAINT FK_prcd_batch REFERENCES dbo.product_batches(id)
-    );
-    PRINT N'   + Đã tạo bảng purchase_receipt_details (COMPUTED subtotal)';
-END
-GO
-
--- 1.9 Cập nhật Schema & Index cho luồng Procurement mới
-IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'purchase_request_id' AND Object_ID = Object_ID('dbo.purchase_proposals') AND is_nullable = 0)
-    ALTER TABLE dbo.purchase_proposals ALTER COLUMN purchase_request_id BIGINT NULL;
-
-IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'supplier_quotation_id' AND Object_ID = Object_ID('dbo.purchase_proposals') AND is_nullable = 0)
-    ALTER TABLE dbo.purchase_proposals ALTER COLUMN supplier_quotation_id BIGINT NULL;
-
-IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = 'UQ_rfq_pr_supplier')
-    ALTER TABLE dbo.rfqs DROP CONSTRAINT UQ_rfq_pr_supplier;
-
-IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'purchase_request_id' AND Object_ID = Object_ID('dbo.rfqs') AND is_nullable = 0)
-BEGIN
-    IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_rfq_pr_supplier_filtered' AND object_id = OBJECT_ID('dbo.rfqs'))
-        DROP INDEX UQ_rfq_pr_supplier_filtered ON dbo.rfqs;
-    IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_rfq_pr_supplier' AND object_id = OBJECT_ID('dbo.rfqs'))
-        DROP INDEX UQ_rfq_pr_supplier ON dbo.rfqs;
-
-    ALTER TABLE dbo.rfqs ALTER COLUMN purchase_request_id BIGINT NULL;
-END
-
-IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'purchase_proposal_id' AND Object_ID = Object_ID('dbo.rfqs'))
-    ALTER TABLE dbo.rfqs ADD purchase_proposal_id BIGINT NULL;
-
-IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'created_by' AND Object_ID = Object_ID('dbo.rfqs') AND is_nullable = 0)
-    ALTER TABLE dbo.rfqs ALTER COLUMN created_by BIGINT NULL;
-
-IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'purchase_proposal_id' AND Object_ID = Object_ID('dbo.purchase_receipts') AND is_nullable = 0)
-    ALTER TABLE dbo.purchase_receipts ALTER COLUMN purchase_proposal_id BIGINT NULL;
-
--- Filtered Indexes cho RFQ
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name IN ('UQ_rfq_pr_supplier', 'UQ_rfq_pr_supplier_filtered') AND object_id = OBJECT_ID('dbo.rfqs'))
-    CREATE UNIQUE NONCLUSTERED INDEX UQ_rfq_pr_supplier ON dbo.rfqs(purchase_request_id, supplier_id) WHERE purchase_request_id IS NOT NULL;
-
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_rfq_proposal_supplier' AND object_id = OBJECT_ID('dbo.rfqs'))
-    CREATE UNIQUE NONCLUSTERED INDEX UQ_rfq_proposal_supplier ON dbo.rfqs(purchase_proposal_id, supplier_id) WHERE purchase_proposal_id IS NOT NULL;
-
--- Default Constraint cho store_id trong purchase_requests
-IF EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'store_id' AND Object_ID = Object_ID('dbo.purchase_requests') AND is_nullable = 0)
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM sys.default_constraints WHERE parent_object_id = OBJECT_ID('dbo.purchase_requests') AND parent_column_id = COLUMNPROPERTY(OBJECT_ID('dbo.purchase_requests'), 'store_id', 'ColumnId'))
-        ALTER TABLE dbo.purchase_requests ADD CONSTRAINT DF_purchase_requests_store_id DEFAULT 1 FOR store_id;
-END
-
--- Default Constraint cho status trong purchase_requests (purchase request không có trạng thái nháp -> mặc định 1 = Đã gửi duyệt)
-IF OBJECT_ID('dbo.purchase_requests', 'U') IS NOT NULL
-BEGIN
-    DECLARE @pr_status_df SYSNAME;
-    SELECT @pr_status_df = dc.name
-    FROM sys.default_constraints dc
-    JOIN sys.columns c ON c.object_id = dc.parent_object_id AND c.column_id = dc.parent_column_id
-    WHERE dc.parent_object_id = OBJECT_ID('dbo.purchase_requests') AND c.name = 'status';
-
-    IF @pr_status_df IS NOT NULL
-        EXEC('ALTER TABLE dbo.purchase_requests DROP CONSTRAINT [' + @pr_status_df + ']');
-
-    IF NOT EXISTS (SELECT 1 FROM sys.default_constraints WHERE parent_object_id = OBJECT_ID('dbo.purchase_requests') AND name = 'DF_purchase_requests_status')
-        ALTER TABLE dbo.purchase_requests ADD CONSTRAINT DF_purchase_requests_status DEFAULT 1 FOR status;
-
-    -- Chuẩn hóa dữ liệu cũ: không còn trạng thái nháp (0)
-    UPDATE dbo.purchase_requests SET status = 1, updated_at = SYSDATETIME() WHERE status = 0;
-END
-GO
-
-/* =========================================================================================
-   PHẦN 2: CẤU HÌNH HỆ THỐNG & CHI NHÁNH / KHO TỔNG (STORES)
-   ========================================================================================= */
-PRINT N'-> [2/12] Nạp cấu hình hệ thống & danh sách chi nhánh / kho...';
 
 IF OBJECT_ID('dbo.system_settings', 'U') IS NOT NULL
 BEGIN
@@ -306,9 +70,8 @@ END;
 GO
 
 /* =========================================================================================
-   PHẦN 3: VAI TRÒ (ROLES), QUYỀN HẠN (PERMISSIONS) & PHÂN QUYỀN
+   PHẦN 2: VAI TRÒ (ROLES), QUYỀN HẠN (PERMISSIONS) & PHÂN QUYỀN
    ========================================================================================= */
-PRINT N'-> [3/12] Nạp vai trò & phân quyền RBAC...';
 
 MERGE INTO dbo.roles AS target
 USING (VALUES
@@ -492,11 +255,10 @@ WHERE NOT EXISTS (
 GO
 
 /* =========================================================================================
-   PHẦN 4: TÀI KHOẢN NGƯỜI DÙNG (ACCOUNTS) & HỒ SƠ NHÂN VIÊN
+   PHẦN 3: TÀI KHOẢN NGƯỜI DÙNG (ACCOUNTS) & HỒ SƠ NHÂN VIÊN
    Mật khẩu chung cho tất cả tài khoản kiểm thử: Password@123
    BCrypt: $2a$10$ciaLqehD6IFox8uNKIggYuaPx/iNYDDq9yn/mmCKHSjWXH3//6//W
    ========================================================================================= */
-PRINT N'-> [4/12] Nạp tài khoản mẫu & thông tin nhân viên...';
 
 DECLARE @AdminRoleId       INT = (SELECT id FROM dbo.roles WHERE code = 'ADMIN');
 DECLARE @StoreManagerRoleId INT = (SELECT id FROM dbo.roles WHERE code = 'STORE_MANAGER');
@@ -509,6 +271,7 @@ DECLARE @GmRoleId           INT = (SELECT id FROM dbo.roles WHERE code = 'GENERA
 DECLARE @WhId   BIGINT = (SELECT id FROM dbo.stores WHERE code = 'WH01');
 DECLARE @St01Id BIGINT = (SELECT id FROM dbo.stores WHERE code = 'ST01');
 
+DECLARE @AccountData TABLE (
 DECLARE @AccountData TABLE (
     username VARCHAR(50),
     email VARCHAR(150),
@@ -572,9 +335,8 @@ WHEN NOT MATCHED THEN
 GO
 
 /* =========================================================================================
-   PHẦN 5: NHÀ CUNG CẤP & VỊ TRÍ Ô KỆ KHO TỔNG (LOCATIONS)
+   PHẦN 4: NHÀ CUNG CẤP & VỊ TRÍ Ô KỆ KHO TỔNG (LOCATIONS)
    ========================================================================================= */
-PRINT N'-> [5/12] Nạp nhà cung cấp dược phẩm & vị trí ô kệ kho WH01...';
 
 MERGE INTO dbo.suppliers AS target
 USING (VALUES
@@ -616,9 +378,8 @@ END;
 GO
 
 /* =========================================================================================
-   PHẦN 6: DANH MỤC NHÓM THUỐC (CATEGORIES) & SẢN PHẨM (PRODUCTS & PRICE HISTORIES)
+   PHẦN 5: DANH MỤC NHÓM THUỐC (CATEGORIES) & SẢN PHẨM (PRODUCTS & PRICE HISTORIES)
    ========================================================================================= */
-PRINT N'-> [6/12] Nạp danh mục nhóm thuốc & sản phẩm y tế thực tế...';
 
 DECLARE @AdminId BIGINT = (SELECT id FROM dbo.accounts WHERE username = 'admin');
 
@@ -743,9 +504,8 @@ WHERE NOT EXISTS (
 GO
 
 /* =========================================================================================
-   PHẦN 7: LÔ THUỐC FEFO & TỒN KHO THỰC TẾ (INVENTORIES)
+   PHẦN 6: LÔ THUỐC FEFO & TỒN KHO THỰC TẾ (INVENTORIES)
    ========================================================================================= */
-PRINT N'-> [7/12] Nạp lô thuốc (Chuẩn, Cận hạn, Đã hết hạn) & tồn kho phân bổ...';
 
 DECLARE @defaultSupplierId BIGINT = (SELECT TOP 1 id FROM dbo.suppliers ORDER BY id);
 
@@ -804,9 +564,8 @@ WHERE NOT EXISTS (
 GO
 
 /* =========================================================================================
-   PHẦN 8: KHÁCH HÀNG & HỒ SƠ DỊ ỨNG (CUSTOMERS & HEALTH PROFILES)
+   PHẦN 7: KHÁCH HÀNG & HỒ SƠ DỊ ỨNG (CUSTOMERS & HEALTH PROFILES)
    ========================================================================================= */
-PRINT N'-> [8/12] Nạp hồ sơ khách hàng & cảnh báo dị ứng...';
 
 DECLARE @AdminId BIGINT = (SELECT TOP 1 id FROM dbo.accounts WHERE username = 'admin');
 IF @AdminId IS NULL SET @AdminId = 1;
@@ -878,9 +637,8 @@ IF NOT EXISTS (SELECT 1 FROM dbo.customers WHERE phone = '0966778899')
 GO
 
 /* =========================================================================================
-   PHẦN 9: BÁN HÀNG TẠI QUẦY POS: CA LÀM VIỆC, HÓA ĐƠN & ĐỔI TRẢ THUỐC
+   PHẦN 8: BÁN HÀNG TẠI QUẦY POS: CA LÀM VIỆC, HÓA ĐƠN & ĐỔI TRẢ THUỐC
    ========================================================================================= */
-PRINT N'-> [9/12] Nạp ca làm việc, hóa đơn bán lẻ POS & đổi trả...';
 
 DECLARE @StoreId BIGINT = (SELECT TOP 1 id FROM dbo.stores WHERE code = 'ST01');
 DECLARE @PharmacistId BIGINT = (SELECT TOP 1 id FROM dbo.accounts WHERE username = 'pharmacist_hn01');
@@ -954,9 +712,8 @@ END
 GO
 
 /* =========================================================================================
-   PHẦN 10: QUY TRÌNH MUA HÀNG & BÁO GIÁ ĐẤU THẦU (PROCUREMENT FLOW)
+   PHẦN 9: QUY TRÌNH MUA HÀNG & BÁO GIÁ ĐẤU THẦU (PROCUREMENT FLOW)
    ========================================================================================= */
-PRINT N'-> [10/12] Nạp quy trình mua hàng: Yêu cầu mua, Đề xuất, RFQ & Báo giá...';
 
 DECLARE @BuyerId BIGINT = (SELECT TOP 1 id FROM dbo.accounts WHERE username = 'purchasing01');
 IF @BuyerId IS NULL SET @BuyerId = 1;
@@ -1045,9 +802,8 @@ END
 GO
 
 /* =========================================================================================
-   PHẦN 11: QUY TRÌNH KHO TRUNG TÂM & ĐIỀU CHUYỂN HÀNG HÓA (ROWS 45-58 - NHẬT HUY)
+   PHẦN 10: QUY TRÌNH KHO TRUNG TÂM & ĐIỀU CHUYỂN HÀNG HÓA (ROWS 45-58 - NHẬT HUY)
    ========================================================================================= */
-PRINT N'-> [11/12] Nạp quy trình kho tổng: Nhập mua, Điều chuyển FEFO, Kiểm kê & Điều chỉnh...';
 
 DECLARE @WhStoreId BIGINT = (SELECT TOP 1 id FROM dbo.stores WHERE code = 'WH01');
 DECLARE @St01StoreId BIGINT = (SELECT TOP 1 id FROM dbo.stores WHERE code = 'ST01');
@@ -1140,9 +896,8 @@ END
 GO
 
 /* =========================================================================================
-   PHẦN 12: ĐỐI SOÁT DOANH THU, THẺ KHO KIỂM TOÁN (STOCK MOVEMENTS) & THÔNG BÁO HỆ THỐNG
+   PHẦN 11: ĐỐI SOÁT DOANH THU, THẺ KHO KIỂM TOÁN (STOCK MOVEMENTS) & THÔNG BÁO HỆ THỐNG
    ========================================================================================= */
-PRINT N'-> [12/12] Nạp đối soát doanh thu ngày, thẻ kho kiểm toán & thông báo...';
 
 DECLARE @St01Id BIGINT = (SELECT TOP 1 id FROM dbo.stores WHERE code = 'ST01');
 DECLARE @Wh01Id BIGINT = (SELECT TOP 1 id FROM dbo.stores WHERE code = 'WH01');
@@ -1214,18 +969,5 @@ BEGIN
 END
 GO
 
-PRINT N'=========================================================================================';
-PRINT N'>>> HOÀN TẤT ĐỒNG BỘ CƠ SỞ DỮ LIỆU PMS THÀNH CÔNG!';
-PRINT N'-----------------------------------------------------------------------------------------';
-PRINT N'BẢNG THÔNG TIN TÀI KHOẢN MẪU (MẬT KHẨU CHUNG: Password@123):';
-PRINT N'1. Quản trị hệ thống:       Username: admin           | Role: ADMIN             | Store: Toàn chuỗi (Global)';
-PRINT N'2. Dược sĩ / Thu ngân:      Username: pharmacist_hn01 | Role: PHARMACIST        | Store: ST01';
-PRINT N'3. Cửa hàng trưởng:         Username: manager_hn01    | Role: STORE_MANAGER     | Store: ST01';
-PRINT N'4. Thủ kho trung tâm:       Username: warehouse01     | Role: WAREHOUSE_STAFF   | Store: WH01';
-PRINT N'5. Quản lý kho tổng:        Username: wh_manager01    | Role: WAREHOUSE_MANAGER | Store: WH01';
-PRINT N'6. Nhân viên thu mua:       Username: purchasing01    | Role: PURCHASING_STAFF  | Store: Toàn chuỗi (Global)';
-PRINT N'7. Ban Giám Đốc điều hành:  Username: gm01            | Role: GENERAL_MANAGER   | Store: Toàn chuỗi (Global)';
-PRINT N'8. Tài khoản bị khóa (Test):Username: locked_user     | Status: LOCKED (2)';
-PRINT N'=========================================================================================';
 GO
 
