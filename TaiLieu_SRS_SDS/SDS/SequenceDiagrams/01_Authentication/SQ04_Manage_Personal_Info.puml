@@ -1,67 +1,109 @@
 @startuml SQ04_Manage_Personal_Info
-title UC04 - Manage Personal Information Sequence Diagram (Pharmacy Management System)
-autonumber
-skinparam BoxPadding 10
-skinparam ParticipantPadding 10
+title UC04 - Manage Personal Information Sequence Diagram
+autonumber "1:"
+skinparam style strictuml
+skinparam sequenceMessageAlign left
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 
-actor User as "Nhân viên"
-participant FE as "Frontend (ProfilePage / React)"
-participant APC as "AccountProfileController"
-participant APS as "AccountProfileServiceImpl"
-participant AR as "AccountRepository"
-participant AIR as "AccountInformationRepository"
-participant ALR as "AuditLogRepository"
-database DB as "SQL Server (PMS DB)"
+skinparam sequence {
+    LifeLineBorderColor #000000
+    LifeLineBackgroundColor #7ACFF5
+    ParticipantBorderColor #000000
+    ParticipantBackgroundColor #7ACFF5
+    ParticipantFontColor #000000
+    ParticipantFontSize 12
+    ActorBorderColor #000000
+    ActorBackgroundColor #7ACFF5
+    ActorFontColor #000000
+    ArrowColor #000000
+    ArrowFontColor #000000
+    GroupBorderColor #000000
+}
 
-== Phase 1: Lấy thông tin cá nhân ==
-User -> FE: Truy cập trang cá nhân (/profile)
-activate FE
-FE -> APC: GET /api/v1/profile (Bearer AT)
-activate APC
-APC -> APS: getProfile(accountId)
-activate APS
-APS -> AR: findById(accountId)
-activate AR
-AR -> DB: SELECT a FROM accounts a LEFT JOIN FETCH a.accountInformation WHERE a.id=?
-DB --> AR: Account + AccountInformation
-AR --> APS: Account
-deactivate AR
-APS --> APC: ProfileResponse (fullName, phone, avatar, role, storeName)
-deactivate APS
-APC --> FE: HTTP 200 OK + ProfileResponse
-deactivate APC
-FE --> User: Hiển thị đầy đủ form hồ sơ cá nhân
+actor "User" as User #7ACFF5
+participant "<<boundary>>\nProfilePage" as ProfilePage #7ACFF5
+participant "<<control>>\nAccountProfileController" as ProfileController #7ACFF5
+participant "<<control>>\nAccountProfileServiceImpl" as ProfileServiceImpl #7ACFF5
+participant "<<entity>>\nAccountRepository" as AccountRepository #7ACFF5
+participant "<<entity>>\nAccountInformationRepository" as AccountInfoRepo #7ACFF5
+participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
+database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
-== Phase 2: Cập nhật thông tin cá nhân ==
-User -> FE: Sửa fullName, phone, tải avatar mới -> Bấm "Lưu thay đổi"
-FE -> FE: Kiểm tra định dạng SĐT (10 chữ số)
-FE -> APC: PUT /api/v1/profile (UpdateProfileRequest, Bearer AT)
-activate APC
-APC -> APS: updateProfile(accountId, UpdateProfileRequest)
-activate APS
-APS -> AIR: findByAccount_Id(accountId)
-activate AIR
-AIR -> DB: SELECT * FROM account_informations WHERE account_id=?
-DB --> AIR: AccountInformation
-deactivate AIR
+== Phase 1: Retrieve Personal Profile ==
+activate User #7ACFF5
+User -> ProfilePage: Navigate to Profile page (/profile)
+activate ProfilePage #7ACFF5
 
-APS -> AIR: Cập nhật fullName, phone, avatar, address
-activate AIR
-AIR -> DB: UPDATE account_informations SET full_name=?, phone=?, avatar=? WHERE id=?
-DB --> AIR: OK
-deactivate AIR
+ProfilePage -> ProfileController: GET /api/v1/profile (Bearer AT)
+activate ProfileController #7ACFF5
 
-APS -> ALR: save(AuditLog 'UPDATE_PROFILE_SUCCESS')
-activate ALR
-ALR -> DB: INSERT INTO audit_logs (...)
-DB --> ALR: OK
-deactivate ALR
+ProfileController -> ProfileServiceImpl: getProfile(accountId)
+activate ProfileServiceImpl #7ACFF5
 
-APS --> APC: ProfileResponse cập nhật
-deactivate APS
-APC --> FE: HTTP 200 OK + ProfileResponse
-deactivate APC
-FE -> FE: Cập nhật avatar trên thanh Header (Global State)
-FE --> User: Hiển thị thông báo "Cập nhật hồ sơ cá nhân thành công!"
-deactivate FE
+ProfileServiceImpl -> AccountRepository: findById(accountId)
+activate AccountRepository #7ACFF5
+AccountRepository -> DB: SELECT a FROM accounts a LEFT JOIN FETCH a.accountInformation WHERE a.id=?
+activate DB #7ACFF5
+DB --> AccountRepository: Account with AccountInformation
+deactivate DB
+AccountRepository --> ProfileServiceImpl: Account
+deactivate AccountRepository
+
+ProfileServiceImpl --> ProfileController: ProfileResponse (fullName, phone, avatar, role, storeName)
+deactivate ProfileServiceImpl
+
+ProfileController --> ProfilePage: HTTP 200 OK + ProfileResponse
+deactivate ProfileController
+
+ProfilePage --> User: Display Profile Form with populated fields
+
+== Phase 2: Update Personal Profile ==
+User -> ProfilePage: Edit fullName, phone, upload avatar, click "Save Changes"
+ProfilePage -> ProfilePage: Validate phone format (10 VN digits)
+
+ProfilePage -> ProfileController: PUT /api/v1/profile (UpdateProfileRequest, Bearer AT)
+activate ProfileController #7ACFF5
+
+ProfileController -> ProfileServiceImpl: updateProfile(accountId, UpdateProfileRequest)
+activate ProfileServiceImpl #7ACFF5
+
+ProfileServiceImpl -> AccountInfoRepo: findByAccount_Id(accountId)
+activate AccountInfoRepo #7ACFF5
+AccountInfoRepo -> DB: SELECT * FROM account_informations WHERE account_id=?
+activate DB #7ACFF5
+DB --> AccountInfoRepo: AccountInformation entity
+deactivate DB
+AccountInfoRepo --> ProfileServiceImpl: AccountInformation
+deactivate AccountInfoRepo
+
+ProfileServiceImpl -> AccountInfoRepo: Update fullName, phone, avatar, address
+activate AccountInfoRepo #7ACFF5
+AccountInfoRepo -> DB: UPDATE account_informations SET full_name=?, phone=?, avatar=? WHERE id=?
+activate DB #7ACFF5
+DB --> AccountInfoRepo: OK
+deactivate DB
+AccountInfoRepo --> ProfileServiceImpl: OK
+deactivate AccountInfoRepo
+
+ProfileServiceImpl -> AuditLogRepo: save(AuditLog 'UPDATE_PROFILE_SUCCESS')
+activate AuditLogRepo #7ACFF5
+AuditLogRepo -> DB: INSERT INTO audit_logs (...)
+activate DB #7ACFF5
+DB --> AuditLogRepo: OK
+deactivate DB
+AuditLogRepo --> ProfileServiceImpl: OK
+deactivate AuditLogRepo
+
+ProfileServiceImpl --> ProfileController: Updated ProfileResponse
+deactivate ProfileServiceImpl
+
+ProfileController --> ProfilePage: HTTP 200 OK + ProfileResponse
+deactivate ProfileController
+
+ProfilePage -> ProfilePage: Synchronize avatar in Header Context State
+ProfilePage --> User: Display Toast "Cập nhật hồ sơ cá nhân thành công!"
+
+deactivate ProfilePage
+deactivate User
 @enduml

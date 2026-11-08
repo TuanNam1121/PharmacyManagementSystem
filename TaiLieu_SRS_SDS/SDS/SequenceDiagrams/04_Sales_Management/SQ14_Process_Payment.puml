@@ -1,84 +1,123 @@
 @startuml SQ14_Process_Payment
-title UC24 - Process Payment Sequence Diagram (Pharmacy Management System)
-autonumber
-skinparam BoxPadding 10
-skinparam ParticipantPadding 10
+title UC24 - Process Payment Sequence Diagram
+autonumber "1:"
+skinparam style strictuml
+skinparam sequenceMessageAlign left
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 
-actor Customer as "Khách hàng"
-actor Cashier as "Dược sĩ / Thu ngân"
-participant FE as "Frontend (PaymentModal)"
-participant PC as "PaymentController"
-participant PPS as "PayOSPaymentServiceImpl"
-participant PayOS as "Cổng Thanh Toán PayOS (VietQR)"
-participant PR as "PaymentRepository"
-participant SIR as "SalesInvoiceRepository"
-database DB as "SQL Server (PMS DB)"
+skinparam sequence {
+    LifeLineBorderColor #000000
+    LifeLineBackgroundColor #7ACFF5
+    ParticipantBorderColor #000000
+    ParticipantBackgroundColor #7ACFF5
+    ParticipantFontColor #000000
+    ParticipantFontSize 12
+    ActorBorderColor #000000
+    ActorBackgroundColor #7ACFF5
+    ActorFontColor #000000
+    ArrowColor #000000
+    ArrowFontColor #000000
+    GroupBorderColor #000000
+}
 
-Cashier -> FE: Bấm "Thanh toán (F9)", chọn tab phương thức
-activate FE
+actor "Pharmacist" as Pharmacist #7ACFF5
+actor "Customer" as Customer #7ACFF5
+participant "<<boundary>>\nPaymentModal" as PaymentModal #7ACFF5
+participant "<<control>>\nPaymentController" as PaymentController #7ACFF5
+participant "<<control>>\nPayOSPaymentServiceImpl" as PaymentService #7ACFF5
+participant "<<boundary>>\nPayOS Gateway (VietQR)" as PayOSGateway #7ACFF5
+participant "<<entity>>\nPaymentRepository" as PaymentRepository #7ACFF5
+participant "<<entity>>\nSalesInvoiceRepository" as InvoiceRepository #7ACFF5
+database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
-alt Nhánh 1: Thanh toán Tiền mặt (CASH)
-    Cashier -> FE: Nhập số tiền khách đưa (VD: 200.000đ)
-    FE -> FE: Tính tiền thừa = 200.000đ - 154.000đ = 46.000đ
-    Cashier -> FE: Bấm "Xác nhận Thanh toán (F10)"
-    FE -> PC: Ghi nhận thanh toán Tiền mặt kèm hóa đơn
-    activate PC
-    PC -> PR: INSERT INTO payments (method=1, status=1, amount=154000)
-    activate PR
-    PR -> DB: OK
-    deactivate PR
-    PC --> FE: HTTP 200 OK
-    deactivate PC
-    FE --> Cashier: Mở ngăn kéo két, in hóa đơn K80
+activate Pharmacist #7ACFF5
+Pharmacist -> PaymentModal: Open payment dialog, select payment method
+activate PaymentModal #7ACFF5
 
-else Nhánh 2: Thanh toán Chuyển khoản QR PayOS
-    FE -> PC: POST /api/v1/payments/payos/create-payment-link (CreatePayOSPaymentRequest)
-    activate PC
-    PC -> PPS: createPaymentLink(request)
-    activate PPS
-    PPS -> PayOS: createPaymentLink(PaymentData: orderCode, amount, description)
-    activate PayOS
-    PayOS --> PPS: CheckoutResponseData (qrCode, paymentLinkId, accountNo)
-    deactivate PayOS
-    PPS --> PC: PayOSPaymentResponse (qrCodeUrl, orderCode)
-    deactivate PPS
-    PC --> FE: HTTP 200 OK + qrCodeUrl
-    deactivate PC
+alt Option 1: Cash Payment (CASH)
+    Pharmacist -> PaymentModal: Input customer given cash (e.g. 200,000 VND)
+    PaymentModal -> PaymentModal: Calculate change = 200,000 - 154,000 = 46,000 VND
+    Pharmacist -> PaymentModal: Click "Xác nhận thanh toán (F10)"
+    
+    PaymentModal -> PaymentController: POST /api/v1/payments (PaymentRequest: method=1, amount=154000)
+    activate PaymentController #7ACFF5
+    PaymentController -> PaymentRepository: save(Payment: method=1, status=1, amount=154000)
+    activate PaymentRepository #7ACFF5
+    PaymentRepository -> DB: INSERT INTO payments (...)
+    activate DB #7ACFF5
+    DB --> PaymentRepository: OK
+    deactivate DB
+    PaymentRepository --> PaymentController: Payment entity
+    deactivate PaymentRepository
+    
+    PaymentController --> PaymentModal: HTTP 200 OK
+    deactivate PaymentController
+    PaymentModal --> Pharmacist: Open cash drawer, trigger receipt printing
 
-    FE --> Customer: Hiển thị mã VietQR động trên màn hình kèm đồng hồ đếm ngược 15 phút
-    Customer -> PayOS: Mở App Ngân hàng quét VietQR và bấm Chuyển khoản
-    PayOS -> PayOS: Xử lý biến động số dư thành công
-
-    PayOS -> PC: POST /api/v1/payments/payos/webhook (PayOSWebhookRequest kèm Signature)
-    activate PC
-    PC -> PPS: processWebhook(PayOSWebhookRequest)
-    activate PPS
-    PPS -> PPS: verifyChecksum(data, signature, CHECKSUM_KEY)
-
-    alt Chữ ký Checksum hợp lệ
-        PPS -> PR: save(Payment: method=2, status=1, transactionCode=orderCode)
-        activate PR
-        PR -> DB: INSERT INTO payments (...)
-        DB --> PR: OK
-        deactivate PR
-
-        PPS -> SIR: updateStatus(invoiceId, status=1 - PAID)
-        activate SIR
-        SIR -> DB: UPDATE sales_invoices SET status=1 WHERE id=?
-        DB --> SIR: OK
-        deactivate SIR
-
-        PPS --> PC: void (Webhook processed)
-        deactivate PPS
-        PC --> PayOS: HTTP 200 OK (Thành công)
-        deactivate PC
-
-        FE -> FE: Nhận tín hiệu thời gian thực: Trạng thái -> "Thanh toán thành công!"
-        FE --> Cashier: Tự động in hóa đơn bán lẻ K80 và đóng Modal thanh toán
-    else Chữ ký giả mạo
-        PPS --> PC: throw InvalidSignatureException
-        PC --> PayOS: HTTP 400 Bad Request (Từ chối)
+else Option 2: VietQR Online Transfer (PayOS)
+    PaymentModal -> PaymentController: POST /api/v1/payments/payos/create-payment-link
+    activate PaymentController #7ACFF5
+    PaymentController -> PaymentService: createPaymentLink(request)
+    activate PaymentService #7ACFF5
+    
+    PaymentService -> PayOSGateway: createPaymentLink(PaymentData: orderCode, amount)
+    activate PayOSGateway #7ACFF5
+    PayOSGateway --> PaymentService: CheckoutResponseData (qrCode, paymentLinkId)
+    deactivate PayOSGateway
+    
+    PaymentService --> PaymentController: PayOSPaymentResponse (qrCodeUrl, orderCode)
+    deactivate PaymentService
+    
+    PaymentController --> PaymentModal: HTTP 200 OK + qrCodeUrl
+    deactivate PaymentController
+    
+    PaymentModal --> Customer: Display dynamic VietQR on screen with 15-minute countdown
+    activate Customer #7ACFF5
+    Customer -> PayOSGateway: Scan QR with Mobile Banking and approve payment
+    deactivate Customer
+    
+    PayOSGateway -> PaymentController: POST /api/v1/payments/payos/webhook (WebhookRequest + Checksum)
+    activate PaymentController #7ACFF5
+    PaymentController -> PaymentService: processWebhook(WebhookRequest)
+    activate PaymentService #7ACFF5
+    
+    PaymentService -> PaymentService: verifyChecksum(data, signature, CHECKSUM_KEY)
+    activate PaymentService #7ACFF5
+    deactivate PaymentService
+    
+    alt Valid Checksum Signature
+        PaymentService -> PaymentRepository: save(Payment: method=2, status=1, code=orderCode)
+        activate PaymentRepository #7ACFF5
+        PaymentRepository -> DB: INSERT INTO payments (...)
+        activate DB #7ACFF5
+        DB --> PaymentRepository: OK
+        deactivate DB
+        PaymentRepository --> PaymentService: OK
+        deactivate PaymentRepository
+        
+        PaymentService -> InvoiceRepository: updateStatus(invoiceId, status=1 - PAID)
+        activate InvoiceRepository #7ACFF5
+        InvoiceRepository -> DB: UPDATE sales_invoices SET status=1 WHERE id=?
+        activate DB #7ACFF5
+        DB --> InvoiceRepository: OK
+        deactivate DB
+        InvoiceRepository --> PaymentService: OK
+        deactivate InvoiceRepository
+        
+        PaymentService --> PaymentController: OK
+        deactivate PaymentService
+        PaymentController --> PayOSGateway: HTTP 200 OK (Webhook confirmed)
+        deactivate PaymentController
+        
+        PaymentModal -> PaymentModal: Real-time event: Payment Successful
+        PaymentModal --> Pharmacist: Auto-close modal, trigger K80 invoice print
+    else Tampered Signature
+        PaymentService --> PaymentController: throw InvalidSignatureException
+        PaymentController --> PayOSGateway: HTTP 400 Bad Request
     end
 end
-deactivate FE
+
+deactivate PaymentModal
+deactivate Pharmacist
 @enduml

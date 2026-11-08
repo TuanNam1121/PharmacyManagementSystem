@@ -1,67 +1,101 @@
 @startuml SQ06_Register_New_Customer
-title UC29 - Register New Customer Sequence Diagram (Pharmacy Management System)
-autonumber
-skinparam BoxPadding 10
-skinparam ParticipantPadding 10
+title UC29 - Register New Customer Sequence Diagram
+autonumber "1:"
+skinparam style strictuml
+skinparam sequenceMessageAlign left
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 
-actor User as "Dược sĩ / Thu ngân"
-participant FE as "Frontend (CustomerFormModal)"
-participant CC as "CustomerController"
-participant CS as "CustomerServiceImpl"
-participant CR as "CustomerRepository"
-participant HR as "CustomerHealthProfileRepository"
-participant ALR as "AuditLogRepository"
-database DB as "SQL Server (PMS DB)"
+skinparam sequence {
+    LifeLineBorderColor #000000
+    LifeLineBackgroundColor #7ACFF5
+    ParticipantBorderColor #000000
+    ParticipantBackgroundColor #7ACFF5
+    ParticipantFontColor #000000
+    ParticipantFontSize 12
+    ActorBorderColor #000000
+    ActorBackgroundColor #7ACFF5
+    ActorFontColor #000000
+    ArrowColor #000000
+    ArrowFontColor #000000
+    GroupBorderColor #000000
+}
 
-User -> FE: Nhập fullName, phone, gender, allergies... -> Bấm "Lưu khách hàng"
-activate FE
-FE -> FE: Client-side Validation (phone 10 số, fullName không rỗng)
-FE -> CC: POST /api/v1/customers (CustomerCreateRequest, Bearer AT)
-activate CC
-CC -> CS: registerCustomer(CustomerCreateRequest)
-activate CS
+actor "Pharmacist" as Pharmacist #7ACFF5
+participant "<<boundary>>\nCustomerFormModal" as CustomerFormModal #7ACFF5
+participant "<<control>>\nCustomerController" as CustomerController #7ACFF5
+participant "<<control>>\nCustomerServiceImpl" as CustomerServiceImpl #7ACFF5
+participant "<<entity>>\nCustomerRepository" as CustomerRepository #7ACFF5
+participant "<<entity>>\nCustomerHealthProfileRepository" as HealthProfileRepo #7ACFF5
+participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
+database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
-CS -> CR: existsByPhone(phone)
-activate CR
-CR -> DB: SELECT COUNT(*) FROM customers WHERE phone=?
-DB --> CR: count
-CR --> CS: boolean (isPhoneExists)
-deactivate CR
+activate Pharmacist #7ACFF5
+Pharmacist -> CustomerFormModal: Input fullName, phone, gender, allergies, click "Lưu khách hàng"
+activate CustomerFormModal #7ACFF5
 
-alt SĐT đã tồn tại
-    CS --> CC: throw DuplicateResourceException("Số điện thoại đã được đăng ký")
-    CC --> FE: HTTP 409 Conflict
-    FE --> User: Hiển thị thông báo "Số điện thoại này đã có trên hệ thống"
-else SĐT hợp lệ
-    CS -> CS: generateCustomerCode() -> 'KH-000108'
-    CS -> CR: save(Customer entity)
-    activate CR
-    CR -> DB: INSERT INTO customers (code, full_name, phone, gender, loyalty_points=0, status=1)
-    DB --> CR: Customer saved (id=108)
-    CR --> CS: savedCustomer
-    deactivate CR
+CustomerFormModal -> CustomerFormModal: Client-side Validation (phone 10 digits, fullName not blank)
 
-    opt Có thông tin sức khỏe (chiều cao, cân nặng, dị ứng...)
-        CS -> HR: save(CustomerHealthProfile)
-        activate HR
-        HR -> DB: INSERT INTO customer_health_profiles (customer_id, allergies, chronic_diseases...)
-        DB --> HR: OK
-        deactivate HR
+CustomerFormModal -> CustomerController: POST /api/v1/customers (CustomerCreateRequest, Bearer AT)
+activate CustomerController #7ACFF5
+
+CustomerController -> CustomerServiceImpl: registerCustomer(CustomerCreateRequest)
+activate CustomerServiceImpl #7ACFF5
+
+CustomerServiceImpl -> CustomerRepository: existsByPhone(phone)
+activate CustomerRepository #7ACFF5
+CustomerRepository -> DB: SELECT COUNT(*) FROM customers WHERE phone=?
+activate DB #7ACFF5
+DB --> CustomerRepository: count
+deactivate DB
+CustomerRepository --> CustomerServiceImpl: boolean (isPhoneExists)
+deactivate CustomerRepository
+
+alt Phone already registered
+    CustomerServiceImpl --> CustomerController: throw DuplicateResourceException("Số điện thoại đã được đăng ký")
+    CustomerController --> CustomerFormModal: HTTP 409 Conflict
+    CustomerFormModal --> Pharmacist: Display warning "Số điện thoại này đã có trên hệ thống"
+else Valid Phone
+    CustomerServiceImpl -> CustomerServiceImpl: generateCustomerCode() -> 'KH-000108'
+    CustomerServiceImpl -> CustomerRepository: save(Customer entity)
+    activate CustomerRepository #7ACFF5
+    CustomerRepository -> DB: INSERT INTO customers (code, full_name, phone, gender, loyalty_points=0, status=1)
+    activate DB #7ACFF5
+    DB --> CustomerRepository: Customer saved (id=108)
+    deactivate DB
+    CustomerRepository --> CustomerServiceImpl: savedCustomer
+    deactivate CustomerRepository
+
+    opt Has Health Profile Data (height, weight, allergies...)
+        CustomerServiceImpl -> HealthProfileRepo: save(CustomerHealthProfile)
+        activate HealthProfileRepo #7ACFF5
+        HealthProfileRepo -> DB: INSERT INTO customer_health_profiles (customer_id, allergies, chronic_diseases...)
+        activate DB #7ACFF5
+        DB --> HealthProfileRepo: OK
+        deactivate DB
+        HealthProfileRepo --> CustomerServiceImpl: OK
+        deactivate HealthProfileRepo
     end
 
-    CS -> ALR: save(AuditLog 'CREATE_CUSTOMER_SUCCESS')
-    activate ALR
-    ALR -> DB: INSERT INTO audit_logs (...)
-    DB --> ALR: OK
-    deactivate ALR
+    CustomerServiceImpl -> AuditLogRepo: save(AuditLog 'CREATE_CUSTOMER_SUCCESS')
+    activate AuditLogRepo #7ACFF5
+    AuditLogRepo -> DB: INSERT INTO audit_logs (...)
+    activate DB #7ACFF5
+    DB --> AuditLogRepo: OK
+    deactivate DB
+    AuditLogRepo --> CustomerServiceImpl: OK
+    deactivate AuditLogRepo
 
-    CS --> CC: CustomerDetailResponse
-    deactivate CS
-    CC --> FE: HTTP 201 Created + CustomerDetailResponse
-    deactivate CC
+    CustomerServiceImpl --> CustomerController: CustomerDetailResponse
+    deactivate CustomerServiceImpl
 
-    FE -> FE: Tự động gán khách hàng mới vào giỏ hàng POS (nếu đang ở màn hình bán hàng)
-    FE --> User: Đóng modal, hiển thị Toast "Tạo hồ sơ khách hàng thành công!"
+    CustomerController --> CustomerFormModal: HTTP 201 Created + CustomerDetailResponse
+    deactivate CustomerController
+
+    CustomerFormModal -> CustomerFormModal: Auto-assign customer to POS Cart if in checkout
+    CustomerFormModal --> Pharmacist: Close modal, display Toast "Tạo hồ sơ khách hàng thành công!"
 end
-deactivate FE
+
+deactivate CustomerFormModal
+deactivate Pharmacist
 @enduml

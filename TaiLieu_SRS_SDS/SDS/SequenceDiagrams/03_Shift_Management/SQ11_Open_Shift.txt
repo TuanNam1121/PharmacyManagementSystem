@@ -1,77 +1,119 @@
 @startuml SQ11_Open_Shift
-title UC21 - Open Shift Sequence Diagram (Pharmacy Management System)
-autonumber
-skinparam BoxPadding 10
-skinparam ParticipantPadding 10
+title UC21 - Open Shift Sequence Diagram
+autonumber "1:"
+skinparam style strictuml
+skinparam sequenceMessageAlign left
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 
-actor User as "Dược sĩ / Thu ngân"
-participant FE as "Frontend (PosCounterPage / OpenShiftModal)"
-participant SC as "ShiftController"
-participant SS as "ShiftServiceImpl"
-participant SR as "ShiftRepository"
-participant AR as "AccountRepository"
-participant ALR as "AuditLogRepository"
-database DB as "SQL Server (PMS DB)"
+skinparam sequence {
+    LifeLineBorderColor #000000
+    LifeLineBackgroundColor #7ACFF5
+    ParticipantBorderColor #000000
+    ParticipantBackgroundColor #7ACFF5
+    ParticipantFontColor #000000
+    ParticipantFontSize 12
+    ActorBorderColor #000000
+    ActorBackgroundColor #7ACFF5
+    ActorFontColor #000000
+    ArrowColor #000000
+    ArrowFontColor #000000
+    GroupBorderColor #000000
+}
 
-User -> FE: Truy cập quầy bán thuốc POS (/pos)
-activate FE
-FE -> SC: GET /api/v1/shifts/current (Bearer AT)
-activate SC
-SC -> SS: getCurrentShift(accountId)
-activate SS
-SS -> SR: findFirstByAccount_IdAndStatus(accountId, 1)
-activate SR
-SR -> DB: SELECT * FROM shifts WHERE account_id=? AND status=1
-DB --> SR: Không có bản ghi (Chưa mở ca)
-SR --> SS: Optional.empty()
-deactivate SR
-SS --> SC: null
-deactivate SS
-SC --> FE: HTTP 200 OK (data: null)
-deactivate SC
+actor "Pharmacist" as Pharmacist #7ACFF5
+participant "<<boundary>>\nPosCounterPage" as PosCounterPage #7ACFF5
+participant "<<boundary>>\nOpenShiftModal" as OpenShiftModal #7ACFF5
+participant "<<control>>\nShiftController" as ShiftController #7ACFF5
+participant "<<control>>\nShiftServiceImpl" as ShiftServiceImpl #7ACFF5
+participant "<<entity>>\nShiftRepository" as ShiftRepository #7ACFF5
+participant "<<entity>>\nAccountRepository" as AccountRepository #7ACFF5
+participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
+database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
-FE -> FE: Phát hiện chưa có ca mở -> Tự động bật OpenShiftModal
-User -> FE: Nhập openingCash (VD: 1.500.000đ), nhập ghi chú -> Bấm "Xác nhận Mở Ca"
-FE -> FE: Client-side Validation (openingCash >= 0 và <= 100.000.000đ)
+activate Pharmacist #7ACFF5
+Pharmacist -> PosCounterPage: Access POS Counter (/pos)
+activate PosCounterPage #7ACFF5
 
-FE -> SC: POST /api/v1/shifts/open (OpenShiftRequest, Bearer AT)
-activate SC
-SC -> SS: openShift(OpenShiftRequest, accountId)
-activate SS
+PosCounterPage -> ShiftController: GET /api/v1/shifts/current (Bearer AT)
+activate ShiftController #7ACFF5
 
-SS -> SR: existsByAccount_IdAndStatus(accountId, 1)
-activate SR
-SR -> DB: SELECT COUNT(*) FROM shifts WHERE account_id=? AND status=1
-DB --> SR: 0
-SR --> SS: false (Hợp lệ)
-deactivate SR
+ShiftController -> ShiftServiceImpl: getCurrentShift(accountId)
+activate ShiftServiceImpl #7ACFF5
 
-SS -> AR: findById(accountId)
-activate AR
-AR -> DB: SELECT * FROM accounts WHERE id=?
-DB --> AR: Account (kèm Store trực thuộc)
-AR --> SS: Account entity
-deactivate AR
+ShiftServiceImpl -> ShiftRepository: findFirstByAccount_IdAndStatus(accountId, 1)
+activate ShiftRepository #7ACFF5
+ShiftRepository -> DB: SELECT * FROM shifts WHERE account_id=? AND status=1
+activate DB #7ACFF5
+DB --> ShiftRepository: No active shift record
+deactivate DB
+ShiftRepository --> ShiftServiceImpl: Optional.empty()
+deactivate ShiftRepository
 
-SS -> SR: save(Shift entity: openingCash, status=1, openingTime=NOW())
-activate SR
-SR -> DB: INSERT INTO shifts (store_id, account_id, opening_time, opening_cash, status=1, note)
-DB --> SR: Shift entity (id=50)
-SR --> SS: savedShift
-deactivate SR
+ShiftServiceImpl --> ShiftController: null
+deactivate ShiftServiceImpl
 
-SS -> ALR: save(AuditLog 'OPEN_SHIFT_SUCCESS', shiftId=50)
-activate ALR
-ALR -> DB: INSERT INTO audit_logs (...)
-DB --> ALR: OK
-deactivate ALR
+ShiftController --> PosCounterPage: HTTP 200 OK (data: null)
+deactivate ShiftController
 
-SS --> SC: ShiftDetailResponse
-deactivate SS
-SC --> FE: HTTP 201 Created + ShiftDetailResponse
-deactivate SC
+PosCounterPage -> OpenShiftModal: Auto-open modal (Shift required)
+activate OpenShiftModal #7ACFF5
 
-FE -> FE: Cập nhật currentShift vào Global State, đóng OpenShiftModal
-FE --> User: Mở khóa quầy POS, hiển thị trạng thái "Ca đang mở" sẵn sàng bán hàng
-deactivate FE
+Pharmacist -> OpenShiftModal: Enter openingCash (e.g. 1,500,000 VND), note, click "Mở Ca"
+OpenShiftModal -> OpenShiftModal: Client validation (openingCash >= 0)
+
+OpenShiftModal -> ShiftController: POST /api/v1/shifts/open (OpenShiftRequest, Bearer AT)
+activate ShiftController #7ACFF5
+
+ShiftController -> ShiftServiceImpl: openShift(OpenShiftRequest, accountId)
+activate ShiftServiceImpl #7ACFF5
+
+ShiftServiceImpl -> ShiftRepository: existsByAccount_IdAndStatus(accountId, 1)
+activate ShiftRepository #7ACFF5
+ShiftRepository -> DB: SELECT COUNT(*) FROM shifts WHERE account_id=? AND status=1
+activate DB #7ACFF5
+DB --> ShiftRepository: 0
+deactivate DB
+ShiftRepository --> ShiftServiceImpl: false (Valid to open)
+deactivate ShiftRepository
+
+ShiftServiceImpl -> AccountRepository: findById(accountId)
+activate AccountRepository #7ACFF5
+AccountRepository -> DB: SELECT * FROM accounts WHERE id=?
+activate DB #7ACFF5
+DB --> AccountRepository: Account (with store info)
+deactivate DB
+AccountRepository --> ShiftServiceImpl: Account entity
+deactivate AccountRepository
+
+ShiftServiceImpl -> ShiftRepository: save(Shift: openingCash, status=1, openingTime=NOW())
+activate ShiftRepository #7ACFF5
+ShiftRepository -> DB: INSERT INTO shifts (store_id, account_id, opening_time, opening_cash, status=1)
+activate DB #7ACFF5
+DB --> ShiftRepository: Shift entity (id=50)
+deactivate DB
+ShiftRepository --> ShiftServiceImpl: savedShift
+deactivate ShiftRepository
+
+ShiftServiceImpl -> AuditLogRepo: save(AuditLog 'OPEN_SHIFT_SUCCESS', shiftId=50)
+activate AuditLogRepo #7ACFF5
+AuditLogRepo -> DB: INSERT INTO audit_logs (...)
+activate DB #7ACFF5
+DB --> AuditLogRepo: OK
+deactivate DB
+AuditLogRepo --> ShiftServiceImpl: OK
+deactivate AuditLogRepo
+
+ShiftServiceImpl --> ShiftController: ShiftDetailResponse
+deactivate ShiftServiceImpl
+
+ShiftController --> OpenShiftModal: HTTP 201 Created + ShiftDetailResponse
+deactivate ShiftController
+
+OpenShiftModal -> PosCounterPage: Store active shift in state, unlock counter
+deactivate OpenShiftModal
+
+PosCounterPage --> Pharmacist: Display POS screen ready for sales transactions
+deactivate PosCounterPage
+deactivate Pharmacist
 @enduml

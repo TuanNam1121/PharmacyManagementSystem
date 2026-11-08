@@ -1,47 +1,83 @@
 @startuml SQ08_View_Customer_Detail
-title UC31 - View Customer Detail Sequence Diagram (Pharmacy Management System)
-autonumber
-skinparam BoxPadding 10
-skinparam ParticipantPadding 10
+title UC31 - View Customer Detail Sequence Diagram
+autonumber "1:"
+skinparam style strictuml
+skinparam sequenceMessageAlign left
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 
-actor User as "Dược sĩ"
-participant FE as "Frontend (CustomerDetailModal)"
-participant CC as "CustomerController"
-participant CS as "CustomerServiceImpl"
-participant CR as "CustomerRepository"
-participant HR as "CustomerHealthProfileRepository"
-database DB as "SQL Server (PMS DB)"
+skinparam sequence {
+    LifeLineBorderColor #000000
+    LifeLineBackgroundColor #7ACFF5
+    ParticipantBorderColor #000000
+    ParticipantBackgroundColor #7ACFF5
+    ParticipantFontColor #000000
+    ParticipantFontSize 12
+    ActorBorderColor #000000
+    ActorBackgroundColor #7ACFF5
+    ActorFontColor #000000
+    ArrowColor #000000
+    ArrowFontColor #000000
+    GroupBorderColor #000000
+}
 
-User -> FE: Bấm vào tên khách hàng hoặc nút "Xem chi tiết" (Icon mắt)
-activate FE
-FE -> CC: GET /api/v1/customers/{id} (Bearer AT)
-activate CC
-CC -> CS: getCustomerDetail(customerId)
-activate CS
+actor "Pharmacist" as Pharmacist #7ACFF5
+participant "<<boundary>>\nCustomerListPage" as CustomerListPage #7ACFF5
+participant "<<boundary>>\nCustomerDetailModal" as CustomerDetailModal #7ACFF5
+participant "<<control>>\nCustomerController" as CustomerController #7ACFF5
+participant "<<control>>\nCustomerServiceImpl" as CustomerServiceImpl #7ACFF5
+participant "<<entity>>\nCustomerRepository" as CustomerRepository #7ACFF5
+participant "<<entity>>\nCustomerHealthProfileRepository" as HealthProfileRepo #7ACFF5
+database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
-CS -> CR: findById(customerId)
-activate CR
-CR -> DB: SELECT * FROM customers WHERE id=?
-DB --> CR: Customer entity
-CR --> CS: Customer
-deactivate CR
+activate Pharmacist #7ACFF5
+Pharmacist -> CustomerListPage: Click "Xem chi tiết" (Eye icon) on customer row
+activate CustomerListPage #7ACFF5
 
-CS -> HR: findByCustomer_Id(customerId)
-activate HR
-HR -> DB: SELECT * FROM customer_health_profiles WHERE customer_id=?
-DB --> HR: CustomerHealthProfile entity
-deactivate HR
+CustomerListPage -> CustomerDetailModal: Open modal with customerId
+activate CustomerDetailModal #7ACFF5
 
-CS -> CS: mapToDetailResponse(customer, healthProfile)
-CS --> CC: CustomerDetailResponse (kèm điểm tích lũy & tiền sử dị ứng)
-deactivate CS
-CC --> FE: HTTP 200 OK + CustomerDetailResponse
-deactivate CC
+CustomerDetailModal -> CustomerController: GET /api/v1/customers/{id} (Bearer AT)
+activate CustomerController #7ACFF5
 
-FE -> FE: Render thông tin cá nhân, chỉ số BMI và lịch sử mua
-opt Có tiền sử dị ứng thuốc
-    FE -> FE: Hiển thị Alert Banner màu đỏ nổi bật: "⚠️ Tiền sử dị ứng: [danh sách thuốc]"
+CustomerController -> CustomerServiceImpl: getCustomerDetail(customerId)
+activate CustomerServiceImpl #7ACFF5
+
+CustomerServiceImpl -> CustomerRepository: findById(customerId)
+activate CustomerRepository #7ACFF5
+CustomerRepository -> DB: SELECT * FROM customers WHERE id=?
+activate DB #7ACFF5
+DB --> CustomerRepository: Customer entity
+deactivate DB
+CustomerRepository --> CustomerServiceImpl: Customer
+deactivate CustomerRepository
+
+CustomerServiceImpl -> HealthProfileRepo: findByCustomer_Id(customerId)
+activate HealthProfileRepo #7ACFF5
+HealthProfileRepo -> DB: SELECT * FROM customer_health_profiles WHERE customer_id=?
+activate DB #7ACFF5
+DB --> HealthProfileRepo: CustomerHealthProfile entity
+deactivate DB
+HealthProfileRepo --> CustomerServiceImpl: CustomerHealthProfile
+deactivate HealthProfileRepo
+
+CustomerServiceImpl -> CustomerServiceImpl: mapToDetailResponse(customer, healthProfile)
+activate CustomerServiceImpl #7ACFF5
+deactivate CustomerServiceImpl
+
+CustomerServiceImpl --> CustomerController: CustomerDetailResponse (points, tier, allergy info)
+deactivate CustomerServiceImpl
+
+CustomerController --> CustomerDetailModal: HTTP 200 OK + CustomerDetailResponse
+deactivate CustomerController
+
+CustomerDetailModal -> CustomerDetailModal: Render personal info, BMI, loyalty points
+opt Patient has drug allergy history
+    CustomerDetailModal -> CustomerDetailModal: Render red Alert Warning: "⚠️ Tiền sử dị ứng: [Allergies list]"
 end
-FE --> User: Hiển thị giao diện Modal chi tiết khách hàng
-deactivate FE
+
+CustomerDetailModal --> Pharmacist: Display detailed Customer Information Modal
+deactivate CustomerDetailModal
+deactivate CustomerListPage
+deactivate Pharmacist
 @enduml

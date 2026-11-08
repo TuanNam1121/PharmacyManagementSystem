@@ -1,75 +1,109 @@
 @startuml SQ01_Login
-title UC01 - Login Sequence Diagram (Pharmacy Management System)
-autonumber
-skinparam BoxPadding 10
-skinparam ParticipantPadding 10
+title UC01 - Login Sequence Diagram
+autonumber "1:"
+skinparam style strictuml
+skinparam sequenceMessageAlign left
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 
-actor User as "Dược sĩ / Nhân viên"
-participant FE as "Frontend (React / LoginPage)"
-participant AC as "AuthController"
-participant AS as "AuthServiceImpl"
-participant AR as "AccountRepository"
-participant PE as "BCryptPasswordEncoder"
-participant JP as "JwtTokenProvider"
-participant RR as "RefreshTokenRepository"
-participant ALR as "AuditLogRepository"
-database DB as "SQL Server (PMS DB)"
+skinparam sequence {
+    LifeLineBorderColor #000000
+    LifeLineBackgroundColor #7ACFF5
+    ParticipantBorderColor #000000
+    ParticipantBackgroundColor #7ACFF5
+    ParticipantFontColor #000000
+    ParticipantFontSize 12
+    ActorBorderColor #000000
+    ActorBackgroundColor #7ACFF5
+    ActorFontColor #000000
+    ArrowColor #000000
+    ArrowFontColor #000000
+    GroupBorderColor #000000
+}
 
-User -> FE: Nhập username/email và password, bấm "Login"
-activate FE
-FE -> FE: Client-side Validation (NotEmpty, trim)
-FE -> AC: POST /api/v1/auth/login (LoginRequest)
-activate AC
-AC -> AS: login(LoginRequest)
-activate AS
-AS -> AR: findByUsernameOrEmail(username, username)
-activate AR
-AR -> DB: SELECT a FROM accounts a WHERE a.username=? OR a.email=?
-DB --> AR: Trả về Account entity
-AR --> AS: Optional<Account>
-deactivate AR
+actor "User" as User #7ACFF5
+participant "<<boundary>>\nLoginPage" as LoginPage #7ACFF5
+participant "<<control>>\nAuthController" as AuthController #7ACFF5
+participant "<<control>>\nAuthServiceImpl" as AuthServiceImpl #7ACFF5
+participant "<<control>>\nBCryptPasswordEncoder" as BCryptEncoder #7ACFF5
+participant "<<control>>\nJwtTokenProvider" as JwtProvider #7ACFF5
+participant "<<entity>>\nAccountRepository" as AccountRepository #7ACFF5
+participant "<<entity>>\nRefreshTokenRepository" as RefreshTokenRepo #7ACFF5
+participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
+database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
-alt Tài khoản không tồn tại hoặc status != 1
-    AS --> AC: throw BadCredentialsException / AccountLockedException
-    AC --> FE: HTTP 401 Unauthorized / 403 Forbidden
-    FE --> User: Hiển thị lỗi "Sai tài khoản hoặc tài khoản đã bị khóa"
-else Tài khoản hợp lệ
-    AS -> PE: matches(rawPassword, account.getPassword())
-    activate PE
-    PE --> AS: true (Khớp mật khẩu)
-    deactivate PE
+activate User #7ACFF5
+User -> LoginPage: Enter username/email and password, click "Login"
+activate LoginPage #7ACFF5
 
-    AS -> JP: generateAccessToken(account)
-    activate JP
-    JP --> AS: accessToken (JWT 15 phút)
-    deactivate JP
+LoginPage -> LoginPage: Client-side Validation (NotEmpty, trim)
 
-    AS -> JP: generateRefreshToken(account)
-    activate JP
-    JP --> AS: refreshToken (UUID/JWT 8 tiếng)
-    deactivate JP
+LoginPage -> AuthController: POST /api/v1/auth/login (LoginRequest)
+activate AuthController #7ACFF5
 
-    AS -> RR: save(RefreshToken entity)
-    activate RR
-    RR -> DB: INSERT INTO refresh_tokens (token, account_id, expiry_date, is_revoked)
-    DB --> RR: OK
-    deactivate RR
+AuthController -> AuthServiceImpl: login(LoginRequest)
+activate AuthServiceImpl #7ACFF5
 
-    AS -> ALR: save(AuditLog 'LOGIN_SUCCESS')
-    activate ALR
-    ALR -> DB: INSERT INTO audit_logs (...)
-    DB --> ALR: OK
-    deactivate ALR
+AuthServiceImpl -> AccountRepository: findByUsernameOrEmail(username, username)
+activate AccountRepository #7ACFF5
 
-    AS --> AC: LoginResponse (accessToken, userProfile)
-    deactivate AS
+AccountRepository -> DB: SELECT a FROM accounts a WHERE a.username=? OR a.email=?
+activate DB #7ACFF5
+DB --> AccountRepository: Account record
+deactivate DB
 
-    AC -> AC: Gắn RefreshToken vào HttpOnly Cookie\n(Set-Cookie: refreshToken=...; HttpOnly; Secure; SameSite=Strict)
-    AC --> FE: HTTP 200 OK + LoginResponse Body + Set-Cookie Header
-    deactivate AC
+AccountRepository --> AuthServiceImpl: Optional<Account>
+deactivate AccountRepository
 
-    FE -> FE: Lưu accessToken vào AuthContext State, đọc role điều hướng
-    FE --> User: Điều hướng vào Dashboard / Màn hình POS tương ứng
+alt Invalid Account or status != 1 (Locked)
+    AuthServiceImpl --> AuthController: throw BadCredentialsException / AccountLockedException
+    AuthController --> LoginPage: HTTP 401 Unauthorized / 403 Forbidden
+    LoginPage --> User: Display error message ("Sai tài khoản hoặc đã bị khóa")
+else Valid Account & Active Status
+    AuthServiceImpl -> BCryptEncoder: matches(rawPassword, account.getPassword())
+    activate BCryptEncoder #7ACFF5
+    BCryptEncoder --> AuthServiceImpl: true (Password matches)
+    deactivate BCryptEncoder
+
+    AuthServiceImpl -> JwtProvider: generateAccessToken(account)
+    activate JwtProvider #7ACFF5
+    JwtProvider --> AuthServiceImpl: accessToken (JWT 15m)
+    deactivate JwtProvider
+
+    AuthServiceImpl -> JwtProvider: generateRefreshToken(account)
+    activate JwtProvider #7ACFF5
+    JwtProvider --> AuthServiceImpl: refreshToken (8h)
+    deactivate JwtProvider
+
+    AuthServiceImpl -> RefreshTokenRepo: save(RefreshToken entity)
+    activate RefreshTokenRepo #7ACFF5
+    RefreshTokenRepo -> DB: INSERT INTO refresh_tokens (token, account_id, expiry_date, is_revoked)
+    activate DB #7ACFF5
+    DB --> RefreshTokenRepo: OK
+    deactivate DB
+    RefreshTokenRepo --> AuthServiceImpl: savedRefreshToken
+    deactivate RefreshTokenRepo
+
+    AuthServiceImpl -> AuditLogRepo: save(AuditLog 'LOGIN_SUCCESS')
+    activate AuditLogRepo #7ACFF5
+    AuditLogRepo -> DB: INSERT INTO audit_logs (...)
+    activate DB #7ACFF5
+    DB --> AuditLogRepo: OK
+    deactivate DB
+    AuditLogRepo --> AuthServiceImpl: OK
+    deactivate AuditLogRepo
+
+    AuthServiceImpl --> AuthController: LoginResponse (accessToken, userProfile)
+    deactivate AuthServiceImpl
+
+    AuthController -> AuthController: Attach RefreshToken to HttpOnly Cookie (Set-Cookie)
+    AuthController --> LoginPage: HTTP 200 OK + LoginResponse Body + Set-Cookie Header
+    deactivate AuthController
+
+    LoginPage -> LoginPage: Store accessToken in AuthContext Memory
+    LoginPage --> User: Redirect to authorized Dashboard / POS Counter
 end
-deactivate FE
+
+deactivate LoginPage
+deactivate User
 @enduml

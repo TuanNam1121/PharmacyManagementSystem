@@ -1,49 +1,85 @@
 @startuml SQ10_Delete_Customer
-title UC33 - Delete Customer Sequence Diagram (Pharmacy Management System)
-autonumber
-skinparam BoxPadding 10
-skinparam ParticipantPadding 10
+title UC33 - Delete Customer Sequence Diagram
+autonumber "1:"
+skinparam style strictuml
+skinparam sequenceMessageAlign left
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 
-actor User as "Quản lý cửa hàng / Admin"
-participant FE as "Frontend (DeleteConfirmDialog)"
-participant CC as "CustomerController"
-participant CS as "CustomerServiceImpl"
-participant CR as "CustomerRepository"
-participant ALR as "AuditLogRepository"
-database DB as "SQL Server (PMS DB)"
+skinparam sequence {
+    LifeLineBorderColor #000000
+    LifeLineBackgroundColor #7ACFF5
+    ParticipantBorderColor #000000
+    ParticipantBackgroundColor #7ACFF5
+    ParticipantFontColor #000000
+    ParticipantFontSize 12
+    ActorBorderColor #000000
+    ActorBackgroundColor #7ACFF5
+    ActorFontColor #000000
+    ArrowColor #000000
+    ArrowFontColor #000000
+    GroupBorderColor #000000
+}
 
-User -> FE: Bấm nút "Xóa" tại dòng khách hàng -> Bấm "Xác nhận xóa"
-activate FE
-FE -> CC: DELETE /api/v1/customers/{id}?reason=Ngừng-liên-hệ (Bearer AT)
-activate CC
-CC -> CS: deleteCustomer(customerId, reason)
-activate CS
+actor "Manager" as Manager #7ACFF5
+participant "<<boundary>>\nCustomerListPage" as CustomerListPage #7ACFF5
+participant "<<boundary>>\nDeleteConfirmModal" as DeleteConfirmModal #7ACFF5
+participant "<<control>>\nCustomerController" as CustomerController #7ACFF5
+participant "<<control>>\nCustomerServiceImpl" as CustomerServiceImpl #7ACFF5
+participant "<<entity>>\nCustomerRepository" as CustomerRepository #7ACFF5
+participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
+database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
-CS -> CR: findById(customerId)
-activate CR
-CR -> DB: SELECT * FROM customers WHERE id=?
-DB --> CR: Customer entity
-CR --> CS: Customer
-deactivate CR
+activate Manager #7ACFF5
+Manager -> CustomerListPage: Click "Xóa" (Trash icon) on customer row
+activate CustomerListPage #7ACFF5
 
-CS -> CR: customer.setStatus((short) 0) -- Soft Delete
-activate CR
-CR -> DB: UPDATE customers SET status=0, updated_at=NOW() WHERE id=?
-DB --> CR: OK (Đánh dấu Inactive, bảo toàn dữ liệu hóa đơn)
-deactivate CR
+CustomerListPage -> DeleteConfirmModal: Open confirmation popup (customerId)
+activate DeleteConfirmModal #7ACFF5
 
-CS -> ALR: save(AuditLog 'DELETE_CUSTOMER_SUCCESS', customerId, reason)
-activate ALR
-ALR -> DB: INSERT INTO audit_logs (...)
-DB --> ALR: OK
-deactivate ALR
+Manager -> DeleteConfirmModal: Click "Xác nhận xóa"
+DeleteConfirmModal -> CustomerController: DELETE /api/v1/customers/{id}?reason=Ngừng-liên-hệ (Bearer AT)
+activate CustomerController #7ACFF5
 
-CS --> CC: void (Thành công)
-deactivate CS
-CC --> FE: HTTP 200 OK ("Xóa khách hàng thành công")
-deactivate CC
+CustomerController -> CustomerServiceImpl: deleteCustomer(customerId, reason)
+activate CustomerServiceImpl #7ACFF5
 
-FE -> FE: Loại bỏ khách hàng khỏi danh sách đang hiển thị
-FE --> User: Hiển thị thông báo "Đã ngừng theo dõi khách hàng!"
-deactivate FE
+CustomerServiceImpl -> CustomerRepository: findById(customerId)
+activate CustomerRepository #7ACFF5
+CustomerRepository -> DB: SELECT * FROM customers WHERE id=?
+activate DB #7ACFF5
+DB --> CustomerRepository: Customer entity
+deactivate DB
+CustomerRepository --> CustomerServiceImpl: Customer
+deactivate CustomerRepository
+
+CustomerServiceImpl -> CustomerRepository: customer.setStatus((short) 0) -- Soft delete
+activate CustomerRepository #7ACFF5
+CustomerRepository -> DB: UPDATE customers SET status=0, updated_at=NOW() WHERE id=?
+activate DB #7ACFF5
+DB --> CustomerRepository: OK (Preserve historical invoices)
+deactivate DB
+CustomerRepository --> CustomerServiceImpl: OK
+deactivate CustomerRepository
+
+CustomerServiceImpl -> AuditLogRepo: save(AuditLog 'DELETE_CUSTOMER_SUCCESS', customerId, reason)
+activate AuditLogRepo #7ACFF5
+AuditLogRepo -> DB: INSERT INTO audit_logs (...)
+activate DB #7ACFF5
+DB --> AuditLogRepo: OK
+deactivate DB
+AuditLogRepo --> CustomerServiceImpl: OK
+deactivate AuditLogRepo
+
+CustomerServiceImpl --> CustomerController: void (Success)
+deactivate CustomerServiceImpl
+
+CustomerController --> DeleteConfirmModal: HTTP 200 OK ("Xóa khách hàng thành công")
+deactivate CustomerController
+
+DeleteConfirmModal -> CustomerListPage: Remove customer record from local state
+CustomerListPage --> Manager: Close modal, show Toast "Đã xóa khách hàng thành công!"
+deactivate DeleteConfirmModal
+deactivate CustomerListPage
+deactivate Manager
 @enduml

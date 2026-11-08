@@ -3,7 +3,19 @@
 
 ---
 
-### 1. HƯỚNG DẪN RENDER & XUẤT ẢNH TRÊN HTTPS://SEQUENCEDIAGRAM.ORG/
+### 1. QUY CHUẨN THIẾT KẾ VISUAL PARADIGM STYLE
+Toàn bộ 16 Sequence Diagrams chi tiết của hệ thống đã được chuẩn hóa theo quy chuẩn thiết kế **Visual Paradigm Enterprise**:
+1. **Bảng màu nhận diện**: Tone xanh dương `#7ACFF5` (RGB: `122, 207, 245`) đặc trưng của Visual Paradigm trên nền viền đen thanh mảnh `#000000`.
+2. **Thanh kích hoạt Lifeline (Activation Bar)**: Hiển thị đầy đủ thanh dọc màu xanh `#7ACFF5` biểu thị thời gian tồn tại và chu kỳ xử lý của từng đối tượng.
+3. **Phân loại Stereotype theo mô hình phân tầng BCE**:
+   - `<<boundary>>`: Đại diện cho các màn hình giao diện, form nhập liệu, modal và dialog (VD: `LoginPage`, `CustomerFormModal`, `PaymentModal`).
+   - `<<control>>`: Đại diện cho các bộ điều khiển logic nghiệp vụ, Controller, Service và cổng thanh toán (VD: `AuthController`, `CustomerServiceImpl`, `ShiftController`).
+   - `<<entity>>`: Đại diện cho tầng lưu trữ dữ liệu, Data Access Object, Repositories và cơ sở dữ liệu vật lý (VD: `AccountRepository`, `SQL Server (PMS DB)`).
+4. **Đánh số thứ tự thông điệp (Hierarchical Numbering)**: Sử dụng định dạng phân cấp `autonumber "1:"` theo chuẩn UML 2.5.
+
+---
+
+### 2. HƯỚNG DẪN RENDER & XUẤT ẢNH TRÊN HTTPS://SEQUENCEDIAGRAM.ORG/
 Toàn bộ 16 Sequence Diagrams chi tiết của 4 cụm chức năng đã được viết chuẩn theo cú pháp **PlantUML / sequencediagram.org** và xuất thành 2 định dạng:
 - **File `.txt`**: Dùng để copy toàn bộ nội dung dán trực tiếp vào khung soạn thảo của [sequencediagram.org](https://sequencediagram.org/).
 - **File `.puml`**: Dùng cho tiện ích mở rộng PlantUML trên VS Code, IntelliJ IDEA hoặc render offline.
@@ -11,14 +23,14 @@ Toàn bộ 16 Sequence Diagrams chi tiết của 4 cụm chức năng đã đư�
 #### Các bước thực hiện:
 1. Truy cập vào trang web: [https://sequencediagram.org/](https://sequencediagram.org/).
 2. Mở file `.txt` (hoặc `.puml`) của chức năng tương ứng, sao chép toàn bộ văn bản (`Ctrl + A`, `Ctrl + C`).
-3. Dán (`Ctrl + V`) vào khung soạn thảo bên trái của `sequencediagram.org`. Biểu đồ Sequence Diagram chuẩn sắc nét sẽ lập tức được render tự động ở khung bên phải.
+3. Dán (`Ctrl + V`) vào khung soạn thảo bên trái của `sequencediagram.org`. Biểu đồ Sequence Diagram chuẩn sắc nét sẽ lập tức được render tự động ở khung bên phải với màu xanh `#7ACFF5` và đầy đủ lifeline activation.
 4. Để xuất file ảnh:
    - Bấm vào menu **Export** trên thanh công cụ của `sequencediagram.org`.
    - Chọn định dạng: **PNG**, **SVG** (vector siêu nét cho báo cáo Word), hoặc **PDF / URL**.
 
 ---
 
-### 2. DANH MỤC 16 SEQUENCE DIAGRAMS CHI TIẾT
+### 3. DANH MỤC 16 SEQUENCE DIAGRAMS CHI TIẾT
 
 #### Cụm 1: Authentication (Xác thực & Bảo mật)
 | Mã | Tên Use Case | File PlantUML (.puml) | File Văn Bản (.txt) |

@@ -1,74 +1,113 @@
 @startuml SQ07_Edit_Customer
-title UC30 - Edit Customer Sequence Diagram (Pharmacy Management System)
-autonumber
-skinparam BoxPadding 10
-skinparam ParticipantPadding 10
+title UC30 - Edit Customer Sequence Diagram
+autonumber "1:"
+skinparam style strictuml
+skinparam sequenceMessageAlign left
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 
-actor User as "Dược sĩ / Quản lý"
-participant FE as "Frontend (CustomerFormModal)"
-participant CC as "CustomerController"
-participant CS as "CustomerServiceImpl"
-participant CR as "CustomerRepository"
-participant HR as "CustomerHealthProfileRepository"
-participant ALR as "AuditLogRepository"
-database DB as "SQL Server (PMS DB)"
+skinparam sequence {
+    LifeLineBorderColor #000000
+    LifeLineBackgroundColor #7ACFF5
+    ParticipantBorderColor #000000
+    ParticipantBackgroundColor #7ACFF5
+    ParticipantFontColor #000000
+    ParticipantFontSize 12
+    ActorBorderColor #000000
+    ActorBackgroundColor #7ACFF5
+    ActorFontColor #000000
+    ArrowColor #000000
+    ArrowFontColor #000000
+    GroupBorderColor #000000
+}
 
-User -> FE: Chỉnh sửa fullName, phone, cập nhật dị ứng mới -> Bấm "Lưu thay đổi"
-activate FE
-FE -> CC: PUT /api/v1/customers/{id} (CustomerUpdateRequest, Bearer AT)
-activate CC
-CC -> CS: updateCustomer(customerId, CustomerUpdateRequest)
-activate CS
+actor "Pharmacist" as Pharmacist #7ACFF5
+participant "<<boundary>>\nCustomerFormModal" as CustomerFormModal #7ACFF5
+participant "<<control>>\nCustomerController" as CustomerController #7ACFF5
+participant "<<control>>\nCustomerServiceImpl" as CustomerServiceImpl #7ACFF5
+participant "<<entity>>\nCustomerRepository" as CustomerRepository #7ACFF5
+participant "<<entity>>\nCustomerHealthProfileRepository" as HealthProfileRepo #7ACFF5
+participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
+database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
-CS -> CR: findById(customerId)
-activate CR
-CR -> DB: SELECT * FROM customers WHERE id=?
-DB --> CR: Customer entity
-CR --> CS: Customer
-deactivate CR
+activate Pharmacist #7ACFF5
+Pharmacist -> CustomerFormModal: Edit fullName, phone, update allergies, click "Lưu thay đổi"
+activate CustomerFormModal #7ACFF5
 
-CS -> CR: existsByPhoneAndIdNot(newPhone, customerId)
-activate CR
-CR -> DB: SELECT COUNT(*) FROM customers WHERE phone=? AND id != ?
-DB --> CR: count
-CR --> CS: boolean (isPhoneDuplicated)
-deactivate CR
+CustomerFormModal -> CustomerController: PUT /api/v1/customers/{id} (CustomerUpdateRequest, Bearer AT)
+activate CustomerController #7ACFF5
 
-alt SĐT bị trùng với khách hàng khác
-    CS --> CC: throw DuplicateResourceException("Số điện thoại đã thuộc về khách hàng khác")
-    CC --> FE: HTTP 409 Conflict
-    FE --> User: Cảnh báo "Số điện thoại đã trùng với khách hàng khác!"
-else Hợp lệ
-    CS -> CR: Cập nhật fullName, phone, email, address, gender
-    activate CR
-    CR -> DB: UPDATE customers SET full_name=?, phone=?, email=? WHERE id=?
-    DB --> CR: OK
-    deactivate CR
+CustomerController -> CustomerServiceImpl: updateCustomer(customerId, CustomerUpdateRequest)
+activate CustomerServiceImpl #7ACFF5
 
-    CS -> HR: findByCustomer_Id(customerId)
-    activate HR
-    HR -> DB: SELECT * FROM customer_health_profiles WHERE customer_id=?
-    DB --> HR: CustomerHealthProfile entity
-    deactivate HR
+CustomerServiceImpl -> CustomerRepository: findById(customerId)
+activate CustomerRepository #7ACFF5
+CustomerRepository -> DB: SELECT * FROM customers WHERE id=?
+activate DB #7ACFF5
+DB --> CustomerRepository: Customer entity
+deactivate DB
+CustomerRepository --> CustomerServiceImpl: Customer
+deactivate CustomerRepository
 
-    CS -> HR: Cập nhật allergies, chronicDiseases, isPregnant, notes...
-    activate HR
-    HR -> DB: UPDATE customer_health_profiles SET allergies=?, chronic_diseases=? WHERE id=?
-    DB --> HR: OK
-    deactivate HR
+CustomerServiceImpl -> CustomerRepository: existsByPhoneAndIdNot(newPhone, customerId)
+activate CustomerRepository #7ACFF5
+CustomerRepository -> DB: SELECT COUNT(*) FROM customers WHERE phone=? AND id != ?
+activate DB #7ACFF5
+DB --> CustomerRepository: count
+deactivate DB
+CustomerRepository --> CustomerServiceImpl: boolean (isPhoneDuplicated)
+deactivate CustomerRepository
 
-    CS -> ALR: save(AuditLog 'UPDATE_CUSTOMER_SUCCESS')
-    activate ALR
-    ALR -> DB: INSERT INTO audit_logs (...)
-    DB --> ALR: OK
-    deactivate ALR
+alt Phone number belongs to another customer
+    CustomerServiceImpl --> CustomerController: throw DuplicateResourceException("Số điện thoại đã thuộc về khách hàng khác")
+    CustomerController --> CustomerFormModal: HTTP 409 Conflict
+    CustomerFormModal --> Pharmacist: Show warning "Số điện thoại đã trùng với khách hàng khác!"
+else Valid Request
+    CustomerServiceImpl -> CustomerRepository: Update fullName, phone, email, address, gender
+    activate CustomerRepository #7ACFF5
+    CustomerRepository -> DB: UPDATE customers SET full_name=?, phone=?, email=? WHERE id=?
+    activate DB #7ACFF5
+    DB --> CustomerRepository: OK
+    deactivate DB
+    CustomerRepository --> CustomerServiceImpl: OK
+    deactivate CustomerRepository
 
-    CS --> CC: CustomerDetailResponse
-    deactivate CS
-    CC --> FE: HTTP 200 OK + CustomerDetailResponse
-    deactivate CC
+    CustomerServiceImpl -> HealthProfileRepo: findByCustomer_Id(customerId)
+    activate HealthProfileRepo #7ACFF5
+    HealthProfileRepo -> DB: SELECT * FROM customer_health_profiles WHERE customer_id=?
+    activate DB #7ACFF5
+    DB --> HealthProfileRepo: CustomerHealthProfile entity
+    deactivate DB
+    HealthProfileRepo --> CustomerServiceImpl: CustomerHealthProfile
+    deactivate HealthProfileRepo
 
-    FE --> User: Đóng modal, cập nhật dữ liệu bảng và báo "Cập nhật thành công!"
+    CustomerServiceImpl -> HealthProfileRepo: Update allergies, chronicDiseases, isPregnant, notes
+    activate HealthProfileRepo #7ACFF5
+    HealthProfileRepo -> DB: UPDATE customer_health_profiles SET allergies=?, chronic_diseases=? WHERE id=?
+    activate DB #7ACFF5
+    DB --> HealthProfileRepo: OK
+    deactivate DB
+    HealthProfileRepo --> CustomerServiceImpl: OK
+    deactivate HealthProfileRepo
+
+    CustomerServiceImpl -> AuditLogRepo: save(AuditLog 'UPDATE_CUSTOMER_SUCCESS')
+    activate AuditLogRepo #7ACFF5
+    AuditLogRepo -> DB: INSERT INTO audit_logs (...)
+    activate DB #7ACFF5
+    DB --> AuditLogRepo: OK
+    deactivate DB
+    AuditLogRepo --> CustomerServiceImpl: OK
+    deactivate AuditLogRepo
+
+    CustomerServiceImpl --> CustomerController: CustomerDetailResponse
+    deactivate CustomerServiceImpl
+
+    CustomerController --> CustomerFormModal: HTTP 200 OK + CustomerDetailResponse
+    deactivate CustomerController
+
+    CustomerFormModal --> Pharmacist: Close modal, refresh table and display Toast "Cập nhật thành công!"
 end
-deactivate FE
+
+deactivate CustomerFormModal
+deactivate Pharmacist
 @enduml

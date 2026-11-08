@@ -1,96 +1,137 @@
 @startuml SQ15_Cancel_Return_Sales_Invoice
-title UC25 - Cancel/Return Sales Invoice Sequence Diagram (Pharmacy Management System)
-autonumber
-skinparam BoxPadding 10
-skinparam ParticipantPadding 10
+title UC25 - Cancel / Return Sales Invoice Sequence Diagram
+autonumber "1:"
+skinparam style strictuml
+skinparam sequenceMessageAlign left
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
 
-actor Pharmacist as "Dược sĩ"
-participant FE as "Frontend (SalesReturnModal)"
-participant SIC as "SalesInvoiceController"
-participant SIS as "SalesInvoiceServiceImpl"
-participant SIR as "SalesInvoiceRepository"
-participant SIDR as "SalesInvoiceDetailRepository"
-participant SRR as "SalesReturnRepository"
-participant SRDR as "SalesReturnDetailRepository"
-participant IR as "InventoryRepository"
-database DB as "SQL Server (PMS DB)"
+skinparam sequence {
+    LifeLineBorderColor #000000
+    LifeLineBackgroundColor #7ACFF5
+    ParticipantBorderColor #000000
+    ParticipantBackgroundColor #7ACFF5
+    ParticipantFontColor #000000
+    ParticipantFontSize 12
+    ActorBorderColor #000000
+    ActorBackgroundColor #7ACFF5
+    ActorFontColor #000000
+    ArrowColor #000000
+    ArrowFontColor #000000
+    GroupBorderColor #000000
+}
 
-Pharmacist -> FE: Bấm nút "Trả hàng" tại dòng hóa đơn trên bảng "Hóa Đơn Bán Lẻ Trong Ngày"
-activate FE
-FE -> SIC: GET /api/v1/sales-invoices/{codeOrId} (Bearer AT)
-activate SIC
-SIC -> SIS: getInvoiceByCodeOrId(codeOrId)
-activate SIS
-SIS --> SIC: SalesInvoiceResponse (chi tiết danh mục thuốc đã mua)
-deactivate SIS
-SIC --> FE: HTTP 200 OK
-deactivate SIC
+actor "Pharmacist" as Pharmacist #7ACFF5
+participant "<<boundary>>\nDailyInvoiceListPage" as DailyInvoiceListPage #7ACFF5
+participant "<<boundary>>\nSalesReturnModal" as SalesReturnModal #7ACFF5
+participant "<<control>>\nSalesInvoiceController" as InvoiceController #7ACFF5
+participant "<<control>>\nSalesInvoiceServiceImpl" as InvoiceServiceImpl #7ACFF5
+participant "<<entity>>\nSalesInvoiceRepository" as InvoiceRepository #7ACFF5
+participant "<<entity>>\nSalesInvoiceDetailRepository" as InvoiceDetailRepo #7ACFF5
+participant "<<entity>>\nSalesReturnRepository" as ReturnRepository #7ACFF5
+participant "<<entity>>\nSalesReturnDetailRepository" as ReturnDetailRepo #7ACFF5
+participant "<<entity>>\nInventoryRepository" as InventoryRepository #7ACFF5
+database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
-FE -> FE: Mở ngay SalesReturnModal, điền sẵn danh mục thuốc và số lượng đã mua
-Pharmacist -> FE: Tích chọn thuốc muốn trả, điều chỉnh SL trả, chọn hình thức hoàn tiền và nhập lý do
-Pharmacist -> FE: Bấm "Xác nhận Trả Hàng"
+activate Pharmacist #7ACFF5
+Pharmacist -> DailyInvoiceListPage: Click "Trả hàng" action button on invoice row
+activate DailyInvoiceListPage #7ACFF5
 
-FE -> SIC: POST /api/v1/sales-invoices/return (SalesReturnRequest, Bearer AT)
-activate SIC
-SIC -> SIS: returnSalesInvoice(SalesReturnRequest, accountId)
-activate SIS
+DailyInvoiceListPage -> InvoiceController: GET /api/v1/sales-invoices/{id} (Bearer AT)
+activate InvoiceController #7ACFF5
 
-SIS -> SIR: findById(invoiceId)
-activate SIR
-SIR --> SIS: SalesInvoice entity
-deactivate SIR
+InvoiceController -> InvoiceServiceImpl: getInvoiceByCodeOrId(invoiceId)
+activate InvoiceServiceImpl #7ACFF5
+InvoiceServiceImpl --> InvoiceController: SalesInvoiceResponse (with item details)
+deactivate InvoiceServiceImpl
 
-%% Tính toán trước returnType và totalRefund
-SIS -> SIS: Tính totalRefund = SUM(returnQty * unitPrice)
-SIS -> SIS: isFullReturn = (totalRefund >= invoice.finalAmount)
-SIS -> SIS: returnType = isFullReturn ? 1 : 2 (1 = FULL, 2 = PARTIAL)
+InvoiceController --> DailyInvoiceListPage: HTTP 200 OK + SalesInvoiceResponse
+deactivate InvoiceController
 
-SIS -> SIS: generateReturnCode() -> 'RET-20261108-0001'
-SIS -> SRR: save(SalesReturn: code, invoiceId, shiftId, returnType, refundAmount, reason)
-activate SRR
-SRR -> DB: INSERT INTO sales_returns (code, return_type, refund_amount, sales_invoice_id, ...)
-DB --> SRR: SalesReturn entity (đầy đủ return_type không bị null)
-SRR --> SIS: savedReturn
-deactivate SRR
+DailyInvoiceListPage -> SalesReturnModal: Open modal pre-populated with items (no invoice code prompt needed)
+activate SalesReturnModal #7ACFF5
 
-%% Hoàn trả tồn kho theo đơn vị cơ bản
-loop Từng mặt hàng trả lại
-    SIS -> SIDR: findById(salesInvoiceDetailId)
-    activate SIDR
-    SIDR --> SIS: SalesInvoiceDetail
-    deactivate SIDR
+Pharmacist -> SalesReturnModal: Check items to return, adjust return quantities, select refund method, input reason
+Pharmacist -> SalesReturnModal: Click "Xác nhận Trả Hàng"
 
-    SIS -> IR: findByStoreIdAndProductIdAndBatchId(...)
-    activate IR
-    IR -> DB: SELECT * FROM inventories WHERE store_id=? AND product_id=? AND batch_id=?
-    DB --> IR: Inventory entity
-    deactivate IR
+SalesReturnModal -> InvoiceController: POST /api/v1/sales-invoices/return (SalesReturnRequest, Bearer AT)
+activate InvoiceController #7ACFF5
 
-    SIS -> IR: inv.setQuantity(inv.getQuantity() + item.quantity * conversionFactor)
-    activate IR
-    IR -> DB: UPDATE inventories SET quantity=?, updated_at=NOW() WHERE id=?
-    DB --> IR: OK
-    deactivate IR
+InvoiceController -> InvoiceServiceImpl: returnSalesInvoice(SalesReturnRequest, accountId)
+activate InvoiceServiceImpl #7ACFF5
 
-    SIS -> SRDR: save(SalesReturnDetail)
-    activate SRDR
-    SRDR -> DB: INSERT INTO sales_return_details (...)
-    DB --> SRDR: OK
-    deactivate SRDR
+InvoiceServiceImpl -> InvoiceRepository: findById(invoiceId)
+activate InvoiceRepository #7ACFF5
+InvoiceRepository --> InvoiceServiceImpl: SalesInvoice entity
+deactivate InvoiceRepository
+
+InvoiceServiceImpl -> InvoiceServiceImpl: Calculate totalRefund = SUM(returnQty * unitPrice)
+InvoiceServiceImpl -> InvoiceServiceImpl: isFullReturn = (totalRefund >= invoice.finalAmount)
+InvoiceServiceImpl -> InvoiceServiceImpl: returnType = isFullReturn ? 1 : 2 (1=FULL, 2=PARTIAL)
+InvoiceServiceImpl -> InvoiceServiceImpl: generateReturnCode() -> 'RET-20261108-0001'
+
+InvoiceServiceImpl -> ReturnRepository: save(SalesReturn: code, invoiceId, shiftId, returnType, refundAmount, reason)
+activate ReturnRepository #7ACFF5
+ReturnRepository -> DB: INSERT INTO sales_returns (code, return_type, refund_amount, sales_invoice_id, shift_id, ...)
+activate DB #7ACFF5
+DB --> ReturnRepository: SalesReturn entity (non-null return_type constraint satisfied)
+deactivate DB
+ReturnRepository --> InvoiceServiceImpl: savedReturn
+deactivate ReturnRepository
+
+loop For each returned item (Restock inventory)
+    InvoiceServiceImpl -> InvoiceDetailRepo: findById(salesInvoiceDetailId)
+    activate InvoiceDetailRepo #7ACFF5
+    InvoiceDetailRepo --> InvoiceServiceImpl: SalesInvoiceDetail
+    deactivate InvoiceDetailRepo
+    
+    InvoiceServiceImpl -> InventoryRepository: findByStoreIdAndProductIdAndBatchId(...)
+    activate InventoryRepository #7ACFF5
+    InventoryRepository -> DB: SELECT * FROM inventories WHERE store_id=? AND product_id=? AND batch_id=?
+    activate DB #7ACFF5
+    DB --> InventoryRepository: Inventory entity
+    deactivate DB
+    InventoryRepository --> InvoiceServiceImpl: Inventory
+    deactivate InventoryRepository
+    
+    InvoiceServiceImpl -> InventoryRepository: inv.setQuantity(inv.quantity + returnQuantity * conversionFactor)
+    activate InventoryRepository #7ACFF5
+    InventoryRepository -> DB: UPDATE inventories SET quantity=?, updated_at=NOW() WHERE id=?
+    activate DB #7ACFF5
+    DB --> InventoryRepository: OK
+    deactivate DB
+    InventoryRepository --> InvoiceServiceImpl: OK
+    deactivate InventoryRepository
+    
+    InvoiceServiceImpl -> ReturnDetailRepo: save(SalesReturnDetail)
+    activate ReturnDetailRepo #7ACFF5
+    ReturnDetailRepo -> DB: INSERT INTO sales_return_details (...)
+    activate DB #7ACFF5
+    DB --> ReturnDetailRepo: OK
+    deactivate DB
+    ReturnDetailRepo --> InvoiceServiceImpl: OK
+    deactivate ReturnDetailRepo
 end
 
-%% Cập nhật trạng thái hóa đơn gốc
-SIS -> SIR: invoice.setStatus(isFullReturn ? 4 : 3) -- 4=FULLY_RETURNED, 3=PARTIALLY_RETURNED
-activate SIR
-SIR -> DB: UPDATE sales_invoices SET status=?, cancel_reason=? WHERE id=?
-DB --> SIR: OK
-deactivate SIR
+InvoiceServiceImpl -> InvoiceRepository: invoice.setStatus(isFullReturn ? 4 : 3) -- 4=FULLY_RETURNED, 3=PARTIALLY_RETURNED
+activate InvoiceRepository #7ACFF5
+InvoiceRepository -> DB: UPDATE sales_invoices SET status=?, cancel_reason=? WHERE id=?
+activate DB #7ACFF5
+DB --> InvoiceRepository: OK
+deactivate DB
+InvoiceRepository --> InvoiceServiceImpl: OK
+deactivate InvoiceRepository
 
-SIS --> SIC: SalesReturnResponse (returnCode, refundAmount)
-deactivate SIS
-SIC --> FE: HTTP 200 OK + SalesReturnResponse
-deactivate SIC
+InvoiceServiceImpl --> InvoiceController: SalesReturnResponse (returnCode, refundAmount)
+deactivate InvoiceServiceImpl
 
-FE --> Pharmacist: Hiển thị màn hình thành công "Hoàn Trả Thuốc Thành Công!", tự động làm mới bảng hóa đơn
-deactivate FE
+InvoiceController --> SalesReturnModal: HTTP 200 OK + SalesReturnResponse
+deactivate InvoiceController
+
+SalesReturnModal -> DailyInvoiceListPage: Close modal, refresh invoice table status
+deactivate SalesReturnModal
+
+DailyInvoiceListPage --> Pharmacist: Show success Toast "Hoàn trả hàng thành công!"
+deactivate DailyInvoiceListPage
+deactivate Pharmacist
 @enduml
