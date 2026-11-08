@@ -1,0 +1,55 @@
+@startuml SQ09_View_Customer_List
+title UC32 - View Customer List Sequence Diagram (Pharmacy Management System)
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor User as "Nhân viên"
+participant FE as "Frontend (CustomerDirectoryPage)"
+participant CC as "CustomerController"
+participant CS as "CustomerServiceImpl"
+participant CR as "CustomerRepository"
+database DB as "SQL Server (PMS DB)"
+
+== Phase 1: Tải danh sách trang đầu tiên ==
+User -> FE: Truy cập trang Danh bạ Khách hàng (/customers)
+activate FE
+FE -> CC: GET /api/v1/customers?page=0&size=10&sortBy=id&sortDir=desc (Bearer AT)
+activate CC
+CC -> CS: getCustomers(keyword="", status=null, 0, 10, "id", "desc")
+activate CS
+
+CS -> CR: findWithFilter(keyword, status, Pageable)
+activate CR
+CR -> DB: SELECT c FROM customers c WHERE c.status=1 ORDER BY c.id DESC OFFSET 0 ROWS FETCH NEXT 10 ROWS
+DB --> CR: Page<Customer> + TotalElements
+CR --> CS: Page<Customer>
+deactivate CR
+
+CS --> CC: PageResponse<CustomerResponse> (content, page, totalElements, totalPages)
+deactivate CS
+CC --> FE: HTTP 200 OK + PageResponse
+deactivate CC
+
+FE --> User: Hiển thị bảng danh bạ khách hàng kèm phân trang
+
+== Phase 2: Tìm kiếm thời gian thực theo Số điện thoại ==
+User -> FE: Gõ số điện thoại "0987123456" vào ô tìm kiếm
+FE -> FE: Chờ 300ms Debounce
+FE -> CC: GET /api/v1/customers?keyword=0987123456&page=0&size=10
+activate CC
+CC -> CS: getCustomers("0987123456", null, 0, 10, "id", "desc")
+activate CS
+CS -> CR: findWithFilter("0987123456", null, Pageable)
+activate CR
+CR -> DB: SELECT c FROM customers c WHERE (c.phone LIKE '%0987123456%' OR c.fullName LIKE ...)
+DB --> CR: Kết quả lọc
+CR --> CS: Page<Customer>
+deactivate CR
+CS --> CC: PageResponse<CustomerResponse>
+deactivate CS
+CC --> FE: HTTP 200 OK (Kết quả tìm kiếm)
+deactivate CC
+FE --> User: Cập nhật danh sách bảng khớp với số điện thoại vừa tìm
+deactivate FE
+@enduml

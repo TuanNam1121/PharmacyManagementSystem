@@ -21,3 +21,4 @@
    - Luồng sự kiện chính (`Main flows`).
    - Các luồng rẽ nhánh / ngoại lệ (`Alternative flows`: AT01, AT02...).
    - Các quy tắc nghiệp vụ cốt lõi (`Business Rules`: BR-01, BR-02...).
+

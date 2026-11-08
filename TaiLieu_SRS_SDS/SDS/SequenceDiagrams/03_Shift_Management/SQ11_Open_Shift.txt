@@ -1,0 +1,77 @@
+@startuml SQ11_Open_Shift
+title UC21 - Open Shift Sequence Diagram (Pharmacy Management System)
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor User as "Dược sĩ / Thu ngân"
+participant FE as "Frontend (PosCounterPage / OpenShiftModal)"
+participant SC as "ShiftController"
+participant SS as "ShiftServiceImpl"
+participant SR as "ShiftRepository"
+participant AR as "AccountRepository"
+participant ALR as "AuditLogRepository"
+database DB as "SQL Server (PMS DB)"
+
+User -> FE: Truy cập quầy bán thuốc POS (/pos)
+activate FE
+FE -> SC: GET /api/v1/shifts/current (Bearer AT)
+activate SC
+SC -> SS: getCurrentShift(accountId)
+activate SS
+SS -> SR: findFirstByAccount_IdAndStatus(accountId, 1)
+activate SR
+SR -> DB: SELECT * FROM shifts WHERE account_id=? AND status=1
+DB --> SR: Không có bản ghi (Chưa mở ca)
+SR --> SS: Optional.empty()
+deactivate SR
+SS --> SC: null
+deactivate SS
+SC --> FE: HTTP 200 OK (data: null)
+deactivate SC
+
+FE -> FE: Phát hiện chưa có ca mở -> Tự động bật OpenShiftModal
+User -> FE: Nhập openingCash (VD: 1.500.000đ), nhập ghi chú -> Bấm "Xác nhận Mở Ca"
+FE -> FE: Client-side Validation (openingCash >= 0 và <= 100.000.000đ)
+
+FE -> SC: POST /api/v1/shifts/open (OpenShiftRequest, Bearer AT)
+activate SC
+SC -> SS: openShift(OpenShiftRequest, accountId)
+activate SS
+
+SS -> SR: existsByAccount_IdAndStatus(accountId, 1)
+activate SR
+SR -> DB: SELECT COUNT(*) FROM shifts WHERE account_id=? AND status=1
+DB --> SR: 0
+SR --> SS: false (Hợp lệ)
+deactivate SR
+
+SS -> AR: findById(accountId)
+activate AR
+AR -> DB: SELECT * FROM accounts WHERE id=?
+DB --> AR: Account (kèm Store trực thuộc)
+AR --> SS: Account entity
+deactivate AR
+
+SS -> SR: save(Shift entity: openingCash, status=1, openingTime=NOW())
+activate SR
+SR -> DB: INSERT INTO shifts (store_id, account_id, opening_time, opening_cash, status=1, note)
+DB --> SR: Shift entity (id=50)
+SR --> SS: savedShift
+deactivate SR
+
+SS -> ALR: save(AuditLog 'OPEN_SHIFT_SUCCESS', shiftId=50)
+activate ALR
+ALR -> DB: INSERT INTO audit_logs (...)
+DB --> ALR: OK
+deactivate ALR
+
+SS --> SC: ShiftDetailResponse
+deactivate SS
+SC --> FE: HTTP 201 Created + ShiftDetailResponse
+deactivate SC
+
+FE -> FE: Cập nhật currentShift vào Global State, đóng OpenShiftModal
+FE --> User: Mở khóa quầy POS, hiển thị trạng thái "Ca đang mở" sẵn sàng bán hàng
+deactivate FE
+@enduml

@@ -280,3 +280,4 @@ Cụm chức năng **Sales Management** (Quản lý Bán lẻ & Thanh toán POS)
 | :---: | :--- |
 | **BR-01** | Danh sách hóa đơn bán lẻ trong ngày luôn hiển thị cột Khách hàng (Họ tên & SĐT) và 2 nút hành động trực tiếp: "Chi tiết" và "Trả hàng" trên từng dòng. |
 | **BR-02** | Nút "Trả hàng" chỉ được kích hoạt (Enable) đối với các hóa đơn có trạng thái hợp lệ (`canReturn = true`). Nếu hóa đơn đã bị trả toàn bộ (`status = 4`), nút trả hàng bị vô hiệu hóa để bảo vệ tính toàn vẹn dữ liệu. |
+

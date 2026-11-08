@@ -348,3 +348,4 @@ Cụm chức năng **Authentication** chịu trách nhiệm quản lý xác th�
 | **BR-01** | Mã xác thực OTP bao gồm đúng 6 chữ số ngẫu nhiên, chỉ có giá trị sử dụng một lần duy nhất (One-time use) và tự động hết hạn sau 15 phút kể từ thời điểm gửi. |
 | **BR-02** | Hệ thống áp dụng cơ chế Rate Limiting: một địa chỉ email chỉ được phép yêu cầu gửi lại mã OTP tối đa 3 lần trong vòng 10 phút để tránh bị spam thư rác. |
 | **BR-03** | Mật khẩu mới đặt lại phải tuân thủ nghiêm ngặt chuẩn độ phức tạp (tối thiểu 8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt). |
+

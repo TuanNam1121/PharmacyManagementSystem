@@ -483,3 +483,4 @@ sequenceDiagram
     FE->>FE: Loại bỏ khách hàng khỏi danh sách đang hiển thị
     FE-->>User: Hiển thị thông báo "Đã ngừng theo dõi khách hàng!"
 ```
+

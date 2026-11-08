@@ -47,3 +47,4 @@ TaiLieu_SRS_SDS/
    - `Process Payment`: Thanh toán Tiền mặt (tính tiền thừa) và Chuyển khoản QR PayOS tự động nhận diện thanh toán qua Webhook.
    - `Cancel/Return Sales Invoice`: Tiếp nhận trả hàng trực tiếp từ danh sách hóa đơn trong ngày, tự động tính toán `return_type` và hoàn nhập tồn kho.
    - `View Customer Purchase History`: Tra cứu lịch sử mua thuốc, danh sách hóa đơn bán lẻ trong ngày kèm tìm kiếm đa tiêu chí và nút thao tác Chi tiết / Trả hàng trực tiếp.
+

@@ -1,0 +1,95 @@
+@startuml SQ12_Close_Shift
+title UC22 - Close Shift Sequence Diagram (Pharmacy Management System)
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor User as "Dược sĩ / Thu ngân"
+participant FE as "Frontend (CloseShiftModal)"
+participant SC as "ShiftController"
+participant SS as "ShiftServiceImpl"
+participant SR as "ShiftRepository"
+participant SIR as "SalesInvoiceRepository"
+participant SRR as "SalesReturnRepository"
+participant ALR as "AuditLogRepository"
+database DB as "SQL Server (PMS DB)"
+
+== Phase 1: Tải số liệu doanh thu trong ca ==
+User -> FE: Bấm nút "Chốt ca làm việc" tại quầy POS
+activate FE
+FE -> SC: GET /api/v1/shifts/current/summary (Bearer AT)
+activate SC
+SC -> SS: getCurrentShiftSummary(accountId)
+activate SS
+
+SS -> SR: findFirstByAccount_IdAndStatus(accountId, 1)
+activate SR
+SR -> DB: SELECT * FROM shifts WHERE account_id=? AND status=1
+DB --> SR: Shift entity (openShift)
+SR --> SS: Shift
+deactivate SR
+
+SS -> SIR: sumCashRevenueByShiftId(shift.getId())
+activate SIR
+SIR -> DB: SELECT SUM(p.amount) FROM payments p JOIN sales_invoices i ON p.sales_invoice_id = i.id WHERE i.shift_id=? AND p.payment_method=1
+DB --> SIR: totalCashSales (VD: 8.500.000đ)
+SIR --> SS: BigDecimal
+deactivate SIR
+
+SS -> SIR: sumTransferRevenueByShiftId(shift.getId())
+activate SIR
+SIR -> DB: SELECT SUM(p.amount) FROM payments p JOIN sales_invoices i ON p.sales_invoice_id = i.id WHERE i.shift_id=? AND p.payment_method=2
+DB --> SIR: totalTransferSales (VD: 3.200.000đ)
+SIR --> SS: BigDecimal
+deactivate SIR
+
+SS -> SRR: sumRefundAmountByShiftId(shift.getId())
+activate SRR
+SRR -> DB: SELECT SUM(refund_amount) FROM sales_returns WHERE shift_id=? AND refund_method=1
+DB --> SRR: totalRefunds (VD: 200.000đ)
+SRR --> SS: BigDecimal
+deactivate SRR
+
+SS -> SS: expectedCash = openingCash + totalCashSales - totalRefunds (1.5M + 8.5M - 0.2M = 9.8M)
+SS --> SC: ShiftSummaryResponse
+deactivate SS
+SC --> FE: HTTP 200 OK + ShiftSummaryResponse
+deactivate SC
+
+FE --> User: Hiển thị CloseShiftModal với số tiền dự kiến trong két: 9.800.000đ
+
+== Phase 2: Nhập tiền thực tế và chốt ca ==
+User -> FE: Kiểm đếm tiền két, nhập actualCash = 9.800.000đ -> Bấm "Xác nhận Chốt Ca"
+FE -> FE: Tính discrepancy = actualCash - expectedCash (0đ -> Cân bằng)
+FE -> SC: POST /api/v1/shifts/close (CloseShiftRequest, Bearer AT)
+activate SC
+SC -> SS: closeShift(CloseShiftRequest, accountId)
+activate SS
+
+SS -> SR: findFirstByAccount_IdAndStatus(accountId, 1)
+activate SR
+SR --> SS: Shift entity
+deactivate SR
+
+SS -> SS: Cập nhật: closingTime=NOW(), closingCash=actualCash, calculatedCash=expectedCash, discrepancy=0, status=2 (CLOSED)
+SS -> SR: save(Shift)
+activate SR
+SR -> DB: UPDATE shifts SET closing_time=NOW(), closing_cash=?, calculated_cash=?, discrepancy=?, status=2 WHERE id=?
+DB --> SR: OK
+deactivate SR
+
+SS -> ALR: save(AuditLog 'CLOSE_SHIFT_SUCCESS', shiftId)
+activate ALR
+ALR -> DB: INSERT INTO audit_logs (...)
+DB --> ALR: OK
+deactivate ALR
+
+SS --> SC: ShiftDetailResponse
+deactivate SS
+SC --> FE: HTTP 200 OK + ShiftDetailResponse
+deactivate SC
+
+FE -> FE: Reset currentShift state, khóa quyền quầy POS
+FE --> User: Hiển thị thông báo "Chốt ca thành công!", bật Modal In Phiếu Bàn Giao Ca K80
+deactivate FE
+@enduml

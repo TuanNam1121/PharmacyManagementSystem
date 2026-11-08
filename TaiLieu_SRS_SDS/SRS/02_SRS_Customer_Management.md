@@ -298,3 +298,4 @@ Cụm chức năng **Customer Management** (Quản lý Khách hàng) phục vụ
 | :---: | :--- |
 | **BR-01** | Tuyệt đối không xóa vật lý (Hard Delete) bản ghi khách hàng đã có liên kết hóa đơn bán lẻ trong bảng `sales_invoices` nhằm đảm bảo nguyên tắc toàn vẹn dữ liệu kế toán và sổ sách dược GPP. |
 | **BR-02** | Dược sĩ bán thuốc thông thường (Pharmacist) không có quyền xóa khách hàng, chỉ có Store Manager và Admin mới có quyền thực hiện thao tác này. |
+

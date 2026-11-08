@@ -1,0 +1,96 @@
+@startuml SQ15_Cancel_Return_Sales_Invoice
+title UC25 - Cancel/Return Sales Invoice Sequence Diagram (Pharmacy Management System)
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor Pharmacist as "Dược sĩ"
+participant FE as "Frontend (SalesReturnModal)"
+participant SIC as "SalesInvoiceController"
+participant SIS as "SalesInvoiceServiceImpl"
+participant SIR as "SalesInvoiceRepository"
+participant SIDR as "SalesInvoiceDetailRepository"
+participant SRR as "SalesReturnRepository"
+participant SRDR as "SalesReturnDetailRepository"
+participant IR as "InventoryRepository"
+database DB as "SQL Server (PMS DB)"
+
+Pharmacist -> FE: Bấm nút "Trả hàng" tại dòng hóa đơn trên bảng "Hóa Đơn Bán Lẻ Trong Ngày"
+activate FE
+FE -> SIC: GET /api/v1/sales-invoices/{codeOrId} (Bearer AT)
+activate SIC
+SIC -> SIS: getInvoiceByCodeOrId(codeOrId)
+activate SIS
+SIS --> SIC: SalesInvoiceResponse (chi tiết danh mục thuốc đã mua)
+deactivate SIS
+SIC --> FE: HTTP 200 OK
+deactivate SIC
+
+FE -> FE: Mở ngay SalesReturnModal, điền sẵn danh mục thuốc và số lượng đã mua
+Pharmacist -> FE: Tích chọn thuốc muốn trả, điều chỉnh SL trả, chọn hình thức hoàn tiền và nhập lý do
+Pharmacist -> FE: Bấm "Xác nhận Trả Hàng"
+
+FE -> SIC: POST /api/v1/sales-invoices/return (SalesReturnRequest, Bearer AT)
+activate SIC
+SIC -> SIS: returnSalesInvoice(SalesReturnRequest, accountId)
+activate SIS
+
+SIS -> SIR: findById(invoiceId)
+activate SIR
+SIR --> SIS: SalesInvoice entity
+deactivate SIR
+
+%% Tính toán trước returnType và totalRefund
+SIS -> SIS: Tính totalRefund = SUM(returnQty * unitPrice)
+SIS -> SIS: isFullReturn = (totalRefund >= invoice.finalAmount)
+SIS -> SIS: returnType = isFullReturn ? 1 : 2 (1 = FULL, 2 = PARTIAL)
+
+SIS -> SIS: generateReturnCode() -> 'RET-20261108-0001'
+SIS -> SRR: save(SalesReturn: code, invoiceId, shiftId, returnType, refundAmount, reason)
+activate SRR
+SRR -> DB: INSERT INTO sales_returns (code, return_type, refund_amount, sales_invoice_id, ...)
+DB --> SRR: SalesReturn entity (đầy đủ return_type không bị null)
+SRR --> SIS: savedReturn
+deactivate SRR
+
+%% Hoàn trả tồn kho theo đơn vị cơ bản
+loop Từng mặt hàng trả lại
+    SIS -> SIDR: findById(salesInvoiceDetailId)
+    activate SIDR
+    SIDR --> SIS: SalesInvoiceDetail
+    deactivate SIDR
+
+    SIS -> IR: findByStoreIdAndProductIdAndBatchId(...)
+    activate IR
+    IR -> DB: SELECT * FROM inventories WHERE store_id=? AND product_id=? AND batch_id=?
+    DB --> IR: Inventory entity
+    deactivate IR
+
+    SIS -> IR: inv.setQuantity(inv.getQuantity() + item.quantity * conversionFactor)
+    activate IR
+    IR -> DB: UPDATE inventories SET quantity=?, updated_at=NOW() WHERE id=?
+    DB --> IR: OK
+    deactivate IR
+
+    SIS -> SRDR: save(SalesReturnDetail)
+    activate SRDR
+    SRDR -> DB: INSERT INTO sales_return_details (...)
+    DB --> SRDR: OK
+    deactivate SRDR
+end
+
+%% Cập nhật trạng thái hóa đơn gốc
+SIS -> SIR: invoice.setStatus(isFullReturn ? 4 : 3) -- 4=FULLY_RETURNED, 3=PARTIALLY_RETURNED
+activate SIR
+SIR -> DB: UPDATE sales_invoices SET status=?, cancel_reason=? WHERE id=?
+DB --> SIR: OK
+deactivate SIR
+
+SIS --> SIC: SalesReturnResponse (returnCode, refundAmount)
+deactivate SIS
+SIC --> FE: HTTP 200 OK + SalesReturnResponse
+deactivate SIC
+
+FE --> Pharmacist: Hiển thị màn hình thành công "Hoàn Trả Thuốc Thành Công!", tự động làm mới bảng hóa đơn
+deactivate FE
+@enduml

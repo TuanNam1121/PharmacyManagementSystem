@@ -338,3 +338,4 @@ sequenceDiagram
     FE->>FE: Reset currentShift state, khóa quyền quầy POS
     FE-->>User: Hiển thị thông báo "Chốt ca thành công!", bật Modal In Phiếu Bàn Giao Ca K80
 ```
+

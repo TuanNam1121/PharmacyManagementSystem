@@ -1,0 +1,86 @@
+@startuml SQ13_Create_Sales_Invoice
+title UC23 - Create Sales Invoice Sequence Diagram (Pharmacy Management System)
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor Pharmacist as "Dược sĩ"
+participant FE as "Frontend (PosCounterPage)"
+participant SIC as "SalesInvoiceController"
+participant SIS as "SalesInvoiceServiceImpl"
+participant CR as "CustomerRepository"
+participant SR as "ShiftRepository"
+participant IR as "InventoryRepository"
+participant SIR as "SalesInvoiceRepository"
+participant SIDR as "SalesInvoiceDetailRepository"
+database DB as "SQL Server (PMS DB)"
+
+Pharmacist -> FE: Quét mã vạch thuốc, chọn ĐVT (Viên/Vỉ/Hộp)
+activate FE
+FE -> FE: Kiểm tra hồ sơ dị ứng của khách hàng với thành phần thuốc
+opt Phát hiện hoạt chất dị ứng
+    FE --> Pharmacist: Bật Alert đỏ: "Khách hàng dị ứng với hoạt chất [X]!"
+end
+Pharmacist -> FE: Chọn Khách hàng (SĐT), nhập đơn thuốc, bấm "Thanh toán (F9)"
+
+alt Thiếu khách hàng định danh (customerId == null)
+    FE --> Pharmacist: Chặn submit, tự động mở CustomerSelectModal
+else Có đầy đủ khách hàng và mặt hàng
+    FE -> SIC: POST /api/v1/sales-invoices (CreateSalesInvoiceRequest, Bearer AT)
+    activate SIC
+    SIC -> SIS: createSalesInvoice(CreateSalesInvoiceRequest, accountId)
+    activate SIS
+
+    SIS -> SR: findFirstByAccount_IdAndStatus(accountId, 1)
+    activate SR
+    SR --> SIS: Shift entity (openShift)
+    deactivate SR
+
+    SIS -> CR: findById(request.getCustomerId())
+    activate CR
+    CR --> SIS: Customer entity
+    deactivate CR
+
+    loop Với từng mặt hàng thuốc (Trừ kho FEFO)
+        SIS -> IR: findByStoreIdAndProductIdAndBatchId(...)
+        activate IR
+        IR -> DB: SELECT * FROM inventories WHERE store_id=? AND product_id=? AND batch_id=?
+        DB --> IR: Inventory entity (lô thuốc hạn dùng gần nhất)
+        deactivate IR
+        SIS -> IR: inv.setQuantity(inv.getQuantity() - baseQuantity)
+        activate IR
+        IR -> DB: UPDATE inventories SET quantity=?, updated_at=NOW() WHERE id=?
+        DB --> IR: OK
+        deactivate IR
+    end
+
+    SIS -> SIS: generateInvoiceCode() -> 'INV-20261108-3910'
+    SIS -> SIR: save(SalesInvoice: status=1, finalAmount, shiftId, customerId)
+    activate SIR
+    SIR -> DB: INSERT INTO sales_invoices (...)
+    DB --> SIR: SalesInvoice entity (id=3910)
+    SIR --> SIS: savedInvoice
+    deactivate SIR
+
+    SIS -> SIDR: saveAll(SalesInvoiceDetails)
+    activate SIDR
+    SIDR -> DB: INSERT INTO sales_invoice_details (...)
+    DB --> SIDR: OK
+    deactivate SIDR
+
+    SIS -> CR: Cộng điểm tích lũy: customer.setLoyaltyPoints(points + finalAmount/100000)
+    activate CR
+    CR -> DB: UPDATE customers SET loyalty_points=? WHERE id=?
+    DB --> CR: OK
+    deactivate CR
+
+    SIS --> SIC: SalesInvoiceResponse
+    deactivate SIS
+    SIC --> FE: HTTP 201 Created + SalesInvoiceResponse
+    deactivate SIC
+
+    FE -> FE: Tự động bật Modal Xem & In Hóa Đơn K80
+    FE --> Pharmacist: Hoàn tất hóa đơn, xóa giỏ hàng sẵn sàng cho đơn tiếp theo
+end
+deactivate FE
+@enduml

@@ -1,0 +1,74 @@
+@startuml SQ07_Edit_Customer
+title UC30 - Edit Customer Sequence Diagram (Pharmacy Management System)
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor User as "Dược sĩ / Quản lý"
+participant FE as "Frontend (CustomerFormModal)"
+participant CC as "CustomerController"
+participant CS as "CustomerServiceImpl"
+participant CR as "CustomerRepository"
+participant HR as "CustomerHealthProfileRepository"
+participant ALR as "AuditLogRepository"
+database DB as "SQL Server (PMS DB)"
+
+User -> FE: Chỉnh sửa fullName, phone, cập nhật dị ứng mới -> Bấm "Lưu thay đổi"
+activate FE
+FE -> CC: PUT /api/v1/customers/{id} (CustomerUpdateRequest, Bearer AT)
+activate CC
+CC -> CS: updateCustomer(customerId, CustomerUpdateRequest)
+activate CS
+
+CS -> CR: findById(customerId)
+activate CR
+CR -> DB: SELECT * FROM customers WHERE id=?
+DB --> CR: Customer entity
+CR --> CS: Customer
+deactivate CR
+
+CS -> CR: existsByPhoneAndIdNot(newPhone, customerId)
+activate CR
+CR -> DB: SELECT COUNT(*) FROM customers WHERE phone=? AND id != ?
+DB --> CR: count
+CR --> CS: boolean (isPhoneDuplicated)
+deactivate CR
+
+alt SĐT bị trùng với khách hàng khác
+    CS --> CC: throw DuplicateResourceException("Số điện thoại đã thuộc về khách hàng khác")
+    CC --> FE: HTTP 409 Conflict
+    FE --> User: Cảnh báo "Số điện thoại đã trùng với khách hàng khác!"
+else Hợp lệ
+    CS -> CR: Cập nhật fullName, phone, email, address, gender
+    activate CR
+    CR -> DB: UPDATE customers SET full_name=?, phone=?, email=? WHERE id=?
+    DB --> CR: OK
+    deactivate CR
+
+    CS -> HR: findByCustomer_Id(customerId)
+    activate HR
+    HR -> DB: SELECT * FROM customer_health_profiles WHERE customer_id=?
+    DB --> HR: CustomerHealthProfile entity
+    deactivate HR
+
+    CS -> HR: Cập nhật allergies, chronicDiseases, isPregnant, notes...
+    activate HR
+    HR -> DB: UPDATE customer_health_profiles SET allergies=?, chronic_diseases=? WHERE id=?
+    DB --> HR: OK
+    deactivate HR
+
+    CS -> ALR: save(AuditLog 'UPDATE_CUSTOMER_SUCCESS')
+    activate ALR
+    ALR -> DB: INSERT INTO audit_logs (...)
+    DB --> ALR: OK
+    deactivate ALR
+
+    CS --> CC: CustomerDetailResponse
+    deactivate CS
+    CC --> FE: HTTP 200 OK + CustomerDetailResponse
+    deactivate CC
+
+    FE --> User: Đóng modal, cập nhật dữ liệu bảng và báo "Cập nhật thành công!"
+end
+deactivate FE
+@enduml

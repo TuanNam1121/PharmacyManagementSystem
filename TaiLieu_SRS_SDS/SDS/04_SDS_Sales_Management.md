@@ -606,3 +606,4 @@ sequenceDiagram
     deactivate SIC
     FE-->>Pharmacist: Mở Drawer hiển thị danh mục các lần mua cũ và nút "Sao chép đơn cũ vào giỏ POS"
 ```
+

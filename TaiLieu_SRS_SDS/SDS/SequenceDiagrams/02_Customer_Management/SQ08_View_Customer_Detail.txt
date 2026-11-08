@@ -1,0 +1,47 @@
+@startuml SQ08_View_Customer_Detail
+title UC31 - View Customer Detail Sequence Diagram (Pharmacy Management System)
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor User as "Dược sĩ"
+participant FE as "Frontend (CustomerDetailModal)"
+participant CC as "CustomerController"
+participant CS as "CustomerServiceImpl"
+participant CR as "CustomerRepository"
+participant HR as "CustomerHealthProfileRepository"
+database DB as "SQL Server (PMS DB)"
+
+User -> FE: Bấm vào tên khách hàng hoặc nút "Xem chi tiết" (Icon mắt)
+activate FE
+FE -> CC: GET /api/v1/customers/{id} (Bearer AT)
+activate CC
+CC -> CS: getCustomerDetail(customerId)
+activate CS
+
+CS -> CR: findById(customerId)
+activate CR
+CR -> DB: SELECT * FROM customers WHERE id=?
+DB --> CR: Customer entity
+CR --> CS: Customer
+deactivate CR
+
+CS -> HR: findByCustomer_Id(customerId)
+activate HR
+HR -> DB: SELECT * FROM customer_health_profiles WHERE customer_id=?
+DB --> HR: CustomerHealthProfile entity
+deactivate HR
+
+CS -> CS: mapToDetailResponse(customer, healthProfile)
+CS --> CC: CustomerDetailResponse (kèm điểm tích lũy & tiền sử dị ứng)
+deactivate CS
+CC --> FE: HTTP 200 OK + CustomerDetailResponse
+deactivate CC
+
+FE -> FE: Render thông tin cá nhân, chỉ số BMI và lịch sử mua
+opt Có tiền sử dị ứng thuốc
+    FE -> FE: Hiển thị Alert Banner màu đỏ nổi bật: "⚠️ Tiền sử dị ứng: [danh sách thuốc]"
+end
+FE --> User: Hiển thị giao diện Modal chi tiết khách hàng
+deactivate FE
+@enduml

@@ -1,0 +1,49 @@
+@startuml SQ10_Delete_Customer
+title UC33 - Delete Customer Sequence Diagram (Pharmacy Management System)
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor User as "Quản lý cửa hàng / Admin"
+participant FE as "Frontend (DeleteConfirmDialog)"
+participant CC as "CustomerController"
+participant CS as "CustomerServiceImpl"
+participant CR as "CustomerRepository"
+participant ALR as "AuditLogRepository"
+database DB as "SQL Server (PMS DB)"
+
+User -> FE: Bấm nút "Xóa" tại dòng khách hàng -> Bấm "Xác nhận xóa"
+activate FE
+FE -> CC: DELETE /api/v1/customers/{id}?reason=Ngừng-liên-hệ (Bearer AT)
+activate CC
+CC -> CS: deleteCustomer(customerId, reason)
+activate CS
+
+CS -> CR: findById(customerId)
+activate CR
+CR -> DB: SELECT * FROM customers WHERE id=?
+DB --> CR: Customer entity
+CR --> CS: Customer
+deactivate CR
+
+CS -> CR: customer.setStatus((short) 0) -- Soft Delete
+activate CR
+CR -> DB: UPDATE customers SET status=0, updated_at=NOW() WHERE id=?
+DB --> CR: OK (Đánh dấu Inactive, bảo toàn dữ liệu hóa đơn)
+deactivate CR
+
+CS -> ALR: save(AuditLog 'DELETE_CUSTOMER_SUCCESS', customerId, reason)
+activate ALR
+ALR -> DB: INSERT INTO audit_logs (...)
+DB --> ALR: OK
+deactivate ALR
+
+CS --> CC: void (Thành công)
+deactivate CS
+CC --> FE: HTTP 200 OK ("Xóa khách hàng thành công")
+deactivate CC
+
+FE -> FE: Loại bỏ khách hàng khỏi danh sách đang hiển thị
+FE --> User: Hiển thị thông báo "Đã ngừng theo dõi khách hàng!"
+deactivate FE
+@enduml

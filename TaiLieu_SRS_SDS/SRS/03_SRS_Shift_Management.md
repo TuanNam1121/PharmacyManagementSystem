@@ -155,3 +155,4 @@ Cụm chức năng **Shift Management** (Quản lý Ca Làm Việc) kiểm soát
 $$\text{Expected Cash} = \text{Opening Cash} + \text{Cash Sales} - \text{Cash Refunds}$$
 Doanh thu chuyển khoản PayOS chỉ được ghi nhận vào báo cáo doanh thu tài khoản ngân hàng, không được cộng vào tiền mặt trong két. |
 | **BR-03** | Mọi trường hợp chênh lệch tiền két (dù thừa hay thiếu) đều bắt buộc phải nhập lý do giải trình để phục vụ công tác thanh tra kiểm toán nội bộ của Quản lý cửa hàng. |
+

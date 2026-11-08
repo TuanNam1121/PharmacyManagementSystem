@@ -1,0 +1,84 @@
+@startuml SQ14_Process_Payment
+title UC24 - Process Payment Sequence Diagram (Pharmacy Management System)
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor Customer as "Khách hàng"
+actor Cashier as "Dược sĩ / Thu ngân"
+participant FE as "Frontend (PaymentModal)"
+participant PC as "PaymentController"
+participant PPS as "PayOSPaymentServiceImpl"
+participant PayOS as "Cổng Thanh Toán PayOS (VietQR)"
+participant PR as "PaymentRepository"
+participant SIR as "SalesInvoiceRepository"
+database DB as "SQL Server (PMS DB)"
+
+Cashier -> FE: Bấm "Thanh toán (F9)", chọn tab phương thức
+activate FE
+
+alt Nhánh 1: Thanh toán Tiền mặt (CASH)
+    Cashier -> FE: Nhập số tiền khách đưa (VD: 200.000đ)
+    FE -> FE: Tính tiền thừa = 200.000đ - 154.000đ = 46.000đ
+    Cashier -> FE: Bấm "Xác nhận Thanh toán (F10)"
+    FE -> PC: Ghi nhận thanh toán Tiền mặt kèm hóa đơn
+    activate PC
+    PC -> PR: INSERT INTO payments (method=1, status=1, amount=154000)
+    activate PR
+    PR -> DB: OK
+    deactivate PR
+    PC --> FE: HTTP 200 OK
+    deactivate PC
+    FE --> Cashier: Mở ngăn kéo két, in hóa đơn K80
+
+else Nhánh 2: Thanh toán Chuyển khoản QR PayOS
+    FE -> PC: POST /api/v1/payments/payos/create-payment-link (CreatePayOSPaymentRequest)
+    activate PC
+    PC -> PPS: createPaymentLink(request)
+    activate PPS
+    PPS -> PayOS: createPaymentLink(PaymentData: orderCode, amount, description)
+    activate PayOS
+    PayOS --> PPS: CheckoutResponseData (qrCode, paymentLinkId, accountNo)
+    deactivate PayOS
+    PPS --> PC: PayOSPaymentResponse (qrCodeUrl, orderCode)
+    deactivate PPS
+    PC --> FE: HTTP 200 OK + qrCodeUrl
+    deactivate PC
+
+    FE --> Customer: Hiển thị mã VietQR động trên màn hình kèm đồng hồ đếm ngược 15 phút
+    Customer -> PayOS: Mở App Ngân hàng quét VietQR và bấm Chuyển khoản
+    PayOS -> PayOS: Xử lý biến động số dư thành công
+
+    PayOS -> PC: POST /api/v1/payments/payos/webhook (PayOSWebhookRequest kèm Signature)
+    activate PC
+    PC -> PPS: processWebhook(PayOSWebhookRequest)
+    activate PPS
+    PPS -> PPS: verifyChecksum(data, signature, CHECKSUM_KEY)
+
+    alt Chữ ký Checksum hợp lệ
+        PPS -> PR: save(Payment: method=2, status=1, transactionCode=orderCode)
+        activate PR
+        PR -> DB: INSERT INTO payments (...)
+        DB --> PR: OK
+        deactivate PR
+
+        PPS -> SIR: updateStatus(invoiceId, status=1 - PAID)
+        activate SIR
+        SIR -> DB: UPDATE sales_invoices SET status=1 WHERE id=?
+        DB --> SIR: OK
+        deactivate SIR
+
+        PPS --> PC: void (Webhook processed)
+        deactivate PPS
+        PC --> PayOS: HTTP 200 OK (Thành công)
+        deactivate PC
+
+        FE -> FE: Nhận tín hiệu thời gian thực: Trạng thái -> "Thanh toán thành công!"
+        FE --> Cashier: Tự động in hóa đơn bán lẻ K80 và đóng Modal thanh toán
+    else Chữ ký giả mạo
+        PPS --> PC: throw InvalidSignatureException
+        PC --> PayOS: HTTP 400 Bad Request (Từ chối)
+    end
+end
+deactivate FE
+@enduml

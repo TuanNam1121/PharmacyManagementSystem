@@ -619,3 +619,4 @@ sequenceDiagram
         FE-->>User: Thông báo thành công và chuyển hướng về trang /login
     end
 ```
+

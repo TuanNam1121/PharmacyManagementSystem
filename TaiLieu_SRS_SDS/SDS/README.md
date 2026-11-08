@@ -23,3 +23,4 @@
    - Mọi mật khẩu băm bằng thuật toán `BCrypt`.
    - Cơ chế xác thực hai lớp Token: Access Token 15 phút và Refresh Token 8 tiếng lưu trong `HttpOnly Cookie`.
    - Ghi nhật ký kiểm toán (`audit_logs`) đối với mọi tác vụ nhạy cảm và quan trọng.
+

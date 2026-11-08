@@ -1,0 +1,75 @@
+@startuml SQ01_Login
+title UC01 - Login Sequence Diagram (Pharmacy Management System)
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor User as "Dược sĩ / Nhân viên"
+participant FE as "Frontend (React / LoginPage)"
+participant AC as "AuthController"
+participant AS as "AuthServiceImpl"
+participant AR as "AccountRepository"
+participant PE as "BCryptPasswordEncoder"
+participant JP as "JwtTokenProvider"
+participant RR as "RefreshTokenRepository"
+participant ALR as "AuditLogRepository"
+database DB as "SQL Server (PMS DB)"
+
+User -> FE: Nhập username/email và password, bấm "Login"
+activate FE
+FE -> FE: Client-side Validation (NotEmpty, trim)
+FE -> AC: POST /api/v1/auth/login (LoginRequest)
+activate AC
+AC -> AS: login(LoginRequest)
+activate AS
+AS -> AR: findByUsernameOrEmail(username, username)
+activate AR
+AR -> DB: SELECT a FROM accounts a WHERE a.username=? OR a.email=?
+DB --> AR: Trả về Account entity
+AR --> AS: Optional<Account>
+deactivate AR
+
+alt Tài khoản không tồn tại hoặc status != 1
+    AS --> AC: throw BadCredentialsException / AccountLockedException
+    AC --> FE: HTTP 401 Unauthorized / 403 Forbidden
+    FE --> User: Hiển thị lỗi "Sai tài khoản hoặc tài khoản đã bị khóa"
+else Tài khoản hợp lệ
+    AS -> PE: matches(rawPassword, account.getPassword())
+    activate PE
+    PE --> AS: true (Khớp mật khẩu)
+    deactivate PE
+
+    AS -> JP: generateAccessToken(account)
+    activate JP
+    JP --> AS: accessToken (JWT 15 phút)
+    deactivate JP
+
+    AS -> JP: generateRefreshToken(account)
+    activate JP
+    JP --> AS: refreshToken (UUID/JWT 8 tiếng)
+    deactivate JP
+
+    AS -> RR: save(RefreshToken entity)
+    activate RR
+    RR -> DB: INSERT INTO refresh_tokens (token, account_id, expiry_date, is_revoked)
+    DB --> RR: OK
+    deactivate RR
+
+    AS -> ALR: save(AuditLog 'LOGIN_SUCCESS')
+    activate ALR
+    ALR -> DB: INSERT INTO audit_logs (...)
+    DB --> ALR: OK
+    deactivate ALR
+
+    AS --> AC: LoginResponse (accessToken, userProfile)
+    deactivate AS
+
+    AC -> AC: Gắn RefreshToken vào HttpOnly Cookie\n(Set-Cookie: refreshToken=...; HttpOnly; Secure; SameSite=Strict)
+    AC --> FE: HTTP 200 OK + LoginResponse Body + Set-Cookie Header
+    deactivate AC
+
+    FE -> FE: Lưu accessToken vào AuthContext State, đọc role điều hướng
+    FE --> User: Điều hướng vào Dashboard / Màn hình POS tương ứng
+end
+deactivate FE
+@enduml
