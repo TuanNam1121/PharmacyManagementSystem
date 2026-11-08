@@ -120,6 +120,14 @@ export default function PosCounterPage() {
             return;
         }
 
+        // Bắt buộc phải có thông tin khách hàng định danh
+        const customerId = customer?.customerId || customer?.id;
+        if (!customerId) {
+            alert('Hóa đơn bán lẻ bắt buộc phải có thông tin khách hàng định danh. Vui lòng nhập số điện thoại khách hàng!');
+            setCustomerModalOpen(true);
+            return;
+        }
+
         // Nếu chọn chuyển khoản PayOS mà chưa mở mã QR để nhận thanh toán, mở Modal PayOS
         if (!paymentOverride && quickMethod === 'BANK_TRANSFER') {
             setPaymentModalOpen(true);
@@ -505,8 +513,27 @@ export default function PosCounterPage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div style={{ fontSize: 12, color: '#64748b' }}>
-                                        Khách vãng lai (Không tích điểm thưởng thành viên)
+                                    <div style={{
+                                        fontSize: 12,
+                                        color: '#b91c1c',
+                                        background: '#fef2f2',
+                                        padding: '8px 12px',
+                                        borderRadius: 8,
+                                        border: '1px solid #fecaca',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: 8
+                                    }}>
+                                        <span>⚠️ Chưa có khách hàng (Bắt buộc)</span>
+                                        <button
+                                            type="button"
+                                            className="btn-pms btn-pms-primary"
+                                            style={{ fontSize: 11, padding: '3px 8px', height: 24, fontWeight: 700 }}
+                                            onClick={() => setCustomerModalOpen(true)}
+                                        >
+                                            + Nhập SĐT
+                                        </button>
                                     </div>
                                 )}
                             </div>

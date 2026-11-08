@@ -73,6 +73,7 @@ class SalesInvoiceServiceTest {
     private Account account;
     private Product product;
     private ProductBatch batch;
+    private Customer customer;
 
     @BeforeEach
     void setUp() {
@@ -83,6 +84,11 @@ class SalesInvoiceServiceTest {
         account = new Account();
         account.setId(10L);
         account.setUsername("pharmacist");
+
+        customer = new Customer();
+        customer.setId(101L);
+        customer.setFullName("Trần Thị Lan");
+        customer.setPhone("0987123456");
 
         openShift = new Shift();
         openShift.setId(50L);
@@ -108,6 +114,7 @@ class SalesInvoiceServiceTest {
     void testCreateSalesInvoiceSuccess() {
         CreateSalesInvoiceRequest request = CreateSalesInvoiceRequest.builder()
                 .shiftId(50L)
+                .customerId(101L)
                 .discount(BigDecimal.valueOf(10000))
                 .items(List.of(
                         InvoiceItemRequest.builder()
@@ -127,6 +134,7 @@ class SalesInvoiceServiceTest {
 
         when(shiftRepository.findById(50L)).thenReturn(Optional.of(openShift));
         when(accountRepository.findById(10L)).thenReturn(Optional.of(account));
+        when(customerRepository.findById(101L)).thenReturn(Optional.of(customer));
         when(productRepository.findById(201L)).thenReturn(Optional.of(product));
         when(productBatchRepository.findById(301L)).thenReturn(Optional.of(batch));
 
@@ -184,6 +192,28 @@ class SalesInvoiceServiceTest {
         when(shiftRepository.findFirstByAccount_IdAndStatus(10L, (short) 1)).thenReturn(Optional.empty());
 
         assertThrows(NoOpenShiftException.class, () -> {
+            salesInvoiceService.createSalesInvoice(request, 10L);
+        });
+    }
+
+    @Test
+    @DisplayName("TC-INV-03: Báo lỗi IllegalArgumentException nếu thiếu thông tin khách hàng định danh")
+    void testCreateSalesInvoiceMissingCustomerThrowsException() {
+        CreateSalesInvoiceRequest request = CreateSalesInvoiceRequest.builder()
+                .shiftId(50L)
+                .customerId(null) // Thiếu khách hàng
+                .items(List.of(
+                        InvoiceItemRequest.builder()
+                                .productId(201L)
+                                .quantity(1)
+                                .unitPrice(BigDecimal.valueOf(50000))
+                                .build()
+                ))
+                .build();
+
+        when(shiftRepository.findById(50L)).thenReturn(Optional.of(openShift));
+
+        assertThrows(IllegalArgumentException.class, () -> {
             salesInvoiceService.createSalesInvoice(request, 10L);
         });
     }

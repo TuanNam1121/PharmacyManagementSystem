@@ -397,6 +397,7 @@ export default function DailySalesPage({ defaultTab = 'overview' }) {
                     page={invPage}
                     size={invSize}
                     onPage={setInvPage}
+                    onRefresh={reloadAll}
                 />
             )}
 

@@ -8,6 +8,8 @@ import com.pharmacy.exception.NoOpenShiftException;
 import com.pharmacy.exception.ResourceNotFoundException;
 import com.pharmacy.repository.*;
 import com.pharmacy.service.SalesInvoiceService;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,11 +69,12 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
         Store store = shift.getStore();
         Account cashier = accountRepository.findById(accountId).orElse(shift.getAccount());
 
-        // 2. Customer (Optional)
-        Customer customer = null;
-        if (request.getCustomerId() != null) {
-            customer = customerRepository.findById(request.getCustomerId()).orElse(null);
+        // 2. Customer (Bắt buộc theo quy định nghiệp vụ)
+        if (request.getCustomerId() == null) {
+            throw new IllegalArgumentException("Hóa đơn bán lẻ bắt buộc phải có thông tin khách hàng định danh!");
         }
+        Customer customer = customerRepository.findById(request.getCustomerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin khách hàng ID: " + request.getCustomerId()));
 
         // 3. Compute totals
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -222,8 +225,9 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             if (shiftId != null) {
                 predicates.add(cb.equal(root.get("shift").get("id"), shiftId));
             }
+            Join<SalesInvoice, Customer> customerJoin = root.join("customer", JoinType.LEFT);
             if (customerId != null) {
-                predicates.add(cb.equal(root.get("customer").get("id"), customerId));
+                predicates.add(cb.equal(customerJoin.get("id"), customerId));
             }
             if (status != null) {
                 predicates.add(cb.equal(root.get("status"), status));
@@ -231,8 +235,9 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = "%" + keyword.trim().toLowerCase() + "%";
                 Predicate codePred = cb.like(cb.lower(root.get("code")), kw);
-                Predicate custPred = cb.like(cb.lower(root.get("customer").get("fullName")), kw);
-                predicates.add(cb.or(codePred, custPred));
+                Predicate custPred = cb.like(cb.lower(customerJoin.get("fullName")), kw);
+                Predicate phonePred = cb.like(cb.lower(customerJoin.get("phone")), kw);
+                predicates.add(cb.or(codePred, custPred, phonePred));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

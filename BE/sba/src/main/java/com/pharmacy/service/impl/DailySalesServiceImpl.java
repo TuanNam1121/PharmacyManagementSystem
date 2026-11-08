@@ -140,10 +140,19 @@ public class DailySalesServiceImpl implements DailySalesService {
                                                 }
                                         }
 
+                                        String customerName = inv.getCustomer() != null ? inv.getCustomer().getFullName() : null;
+                                        String customerPhone = inv.getCustomer() != null ? inv.getCustomer().getPhone() : null;
+                                        Long customerId = inv.getCustomer() != null ? inv.getCustomer().getId() : null;
+                                        boolean canReturn = inv.getStatus() != null && (inv.getStatus() == 1 || inv.getStatus() == 3);
+
                                         return SalesInvoiceSummaryDto.builder()
                                                         .id(inv.getId())
                                                         .code(inv.getCode())
                                                         .prescriptionCode(inv.getPrescriptionCode())
+                                                        .customerId(customerId)
+                                                        .customerName(customerName)
+                                                        .customerPhone(customerPhone)
+                                                        .canReturn(canReturn)
                                                         .totalAmount(inv.getTotalAmount())
                                                         .discount(inv.getDiscount())
                                                         .finalAmount(inv.getFinalAmount())
