@@ -1,5 +1,5 @@
 @startuml SQ04_Manage_Personal_Info
-title UC04 - Manage Personal Information Sequence Diagram
+title UC04 - Manage Personal Information Sequence Diagram (Code-based Flow)
 autonumber "1:"
 skinparam style strictuml
 skinparam sequenceMessageAlign left
@@ -22,71 +22,86 @@ skinparam sequence {
 }
 
 actor "User" as User #7ACFF5
-participant "<<boundary>>\nProfilePage" as ProfilePage #7ACFF5
+participant "<<boundary>>\nProfilePage.jsx" as ProfilePage #7ACFF5
+participant "<<control>>\nprofileApi.js" as ProfileApi #7ACFF5
 participant "<<control>>\nAccountProfileController" as ProfileController #7ACFF5
-participant "<<control>>\nAccountProfileServiceImpl" as ProfileServiceImpl #7ACFF5
+participant "<<control>>\nProfileServiceImpl" as ProfileServiceImpl #7ACFF5
 participant "<<entity>>\nAccountRepository" as AccountRepository #7ACFF5
 participant "<<entity>>\nAccountInformationRepository" as AccountInfoRepo #7ACFF5
 participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
 database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
-== Phase 1: Retrieve Personal Profile ==
 activate User #7ACFF5
-User -> ProfilePage: Navigate to Profile page (/profile)
+== Phase 1: Fetch Profile Details ==
+User -> ProfilePage: Access Personal Profile page (/profile)
 activate ProfilePage #7ACFF5
 
-ProfilePage -> ProfileController: GET /api/v1/profile (Bearer AT)
+ProfilePage -> ProfileApi: getProfile()
+activate ProfileApi #7ACFF5
+
+ProfileApi -> ProfileController: GET /api/v1/profile (Bearer AT)
 activate ProfileController #7ACFF5
 
 ProfileController -> ProfileServiceImpl: getProfile(accountId)
 activate ProfileServiceImpl #7ACFF5
 
-ProfileServiceImpl -> AccountRepository: findById(accountId)
+ProfileServiceImpl -> AccountRepository: findByIdWithDetails(accountId)
 activate AccountRepository #7ACFF5
-AccountRepository -> DB: SELECT a FROM accounts a LEFT JOIN FETCH a.accountInformation WHERE a.id=?
+AccountRepository -> DB: SELECT a FROM Account a LEFT JOIN FETCH a.accountInformation LEFT JOIN FETCH a.role WHERE a.id=?
 activate DB #7ACFF5
-DB --> AccountRepository: Account with AccountInformation
+DB --> AccountRepository: Account entity
 deactivate DB
 AccountRepository --> ProfileServiceImpl: Account
 deactivate AccountRepository
 
-ProfileServiceImpl --> ProfileController: ProfileResponse (fullName, phone, avatar, role, storeName)
+ProfileServiceImpl --> ProfileController: UserProfileResponse (fullName, email, phone, gender, dob, avatarUrl)
 deactivate ProfileServiceImpl
 
-ProfileController --> ProfilePage: HTTP 200 OK + ProfileResponse
+ProfileController --> ProfileApi: HTTP 200 OK + ApiResponse.success(response)
 deactivate ProfileController
 
-ProfilePage --> User: Display Profile Form with populated fields
+ProfileApi --> ProfilePage: UserProfileResponse
+deactivate ProfileApi
 
-== Phase 2: Update Personal Profile ==
-User -> ProfilePage: Edit fullName, phone, upload avatar, click "Save Changes"
-ProfilePage -> ProfilePage: Validate phone format (10 VN digits)
+ProfilePage --> User: Display personal profile form pre-populated with user data
 
-ProfilePage -> ProfileController: PUT /api/v1/profile (UpdateProfileRequest, Bearer AT)
+== Phase 2: Update Profile Information ==
+User -> ProfilePage: Edit fullName, phone, address, gender, dateOfBirth, click "Lưu thông tin"
+ProfilePage -> ProfilePage: Validate phone format and mandatory fields
+
+ProfilePage -> ProfileApi: updateProfile(ProfileUpdateRequest)
+activate ProfileApi #7ACFF5
+
+ProfileApi -> ProfileController: PUT /api/v1/profile (ProfileUpdateRequest, Bearer AT)
 activate ProfileController #7ACFF5
 
-ProfileController -> ProfileServiceImpl: updateProfile(accountId, UpdateProfileRequest)
+ProfileController -> ProfileServiceImpl: updateProfile(accountId, ProfileUpdateRequest, clientIp)
 activate ProfileServiceImpl #7ACFF5
 
-ProfileServiceImpl -> AccountInfoRepo: findByAccount_Id(accountId)
+ProfileServiceImpl -> AccountRepository: findByIdWithDetails(accountId)
+activate AccountRepository #7ACFF5
+AccountRepository --> ProfileServiceImpl: Account entity
+deactivate AccountRepository
+
+ProfileServiceImpl -> AccountInfoRepo: findByAccountId(accountId)
 activate AccountInfoRepo #7ACFF5
-AccountInfoRepo -> DB: SELECT * FROM account_informations WHERE account_id=?
+AccountInfoRepo -> DB: SELECT * FROM account_information WHERE account_id=?
 activate DB #7ACFF5
-DB --> AccountInfoRepo: AccountInformation entity
+DB --> AccountInfoRepo: AccountInformation entity (or empty)
 deactivate DB
 AccountInfoRepo --> ProfileServiceImpl: AccountInformation
 deactivate AccountInfoRepo
 
-ProfileServiceImpl -> AccountInfoRepo: Update fullName, phone, avatar, address
+ProfileServiceImpl -> AccountInfoRepo: Update fullName, phone, address, gender, dob, avatarUrl
 activate AccountInfoRepo #7ACFF5
-AccountInfoRepo -> DB: UPDATE account_informations SET full_name=?, phone=?, avatar=? WHERE id=?
+AccountInfoRepo -> DB: UPDATE account_information SET full_name=?, phone=?, address=?, gender=?, date_of_birth=? WHERE id=?
 activate DB #7ACFF5
 DB --> AccountInfoRepo: OK
 deactivate DB
 AccountInfoRepo --> ProfileServiceImpl: OK
 deactivate AccountInfoRepo
 
-ProfileServiceImpl -> AuditLogRepo: save(AuditLog 'UPDATE_PROFILE_SUCCESS')
+ProfileServiceImpl -> AuditLogRepo: recordAuditLog(account, 'UPDATE_PROFILE_SUCCESS', clientIp)
 activate AuditLogRepo #7ACFF5
 AuditLogRepo -> DB: INSERT INTO audit_logs (...)
 activate DB #7ACFF5
@@ -95,15 +110,17 @@ deactivate DB
 AuditLogRepo --> ProfileServiceImpl: OK
 deactivate AuditLogRepo
 
-ProfileServiceImpl --> ProfileController: Updated ProfileResponse
+ProfileServiceImpl --> ProfileController: UserProfileResponse (Updated profile)
 deactivate ProfileServiceImpl
 
-ProfileController --> ProfilePage: HTTP 200 OK + ProfileResponse
+ProfileController --> ProfileApi: HTTP 200 OK + ApiResponse.success(response)
 deactivate ProfileController
 
-ProfilePage -> ProfilePage: Synchronize avatar in Header Context State
-ProfilePage --> User: Display Toast "Cập nhật hồ sơ cá nhân thành công!"
+ProfileApi --> ProfilePage: Updated UserProfileResponse
+deactivate ProfileApi
 
+ProfilePage -> ProfilePage: Update user info in local state and AuthContext
+ProfilePage --> User: Show Toast notification "Cập nhật hồ sơ thành công!"
 deactivate ProfilePage
 deactivate User
 @enduml

@@ -1,5 +1,5 @@
 @startuml SQ14_Process_Payment
-title UC24 - Process Payment Sequence Diagram
+title UC22 - Process Payment Sequence Diagram (Code-based Flow)
 autonumber "1:"
 skinparam style strictuml
 skinparam sequenceMessageAlign left
@@ -23,97 +23,104 @@ skinparam sequence {
 
 actor "Pharmacist" as Pharmacist #7ACFF5
 actor "Customer" as Customer #7ACFF5
-participant "<<boundary>>\nPaymentModal" as PaymentModal #7ACFF5
+participant "<<boundary>>\nPaymentModal.jsx" as PaymentModal #7ACFF5
+participant "<<control>>\npaymentApi.js" as PaymentApi #7ACFF5
 participant "<<control>>\nPaymentController" as PaymentController #7ACFF5
 participant "<<control>>\nPayOSPaymentServiceImpl" as PaymentService #7ACFF5
-participant "<<boundary>>\nPayOS Gateway (VietQR)" as PayOSGateway #7ACFF5
+participant "<<boundary>>\nPayOS VietQR Gateway" as PayOSGateway #7ACFF5
 participant "<<entity>>\nPaymentRepository" as PaymentRepository #7ACFF5
 participant "<<entity>>\nSalesInvoiceRepository" as InvoiceRepository #7ACFF5
 database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
 activate Pharmacist #7ACFF5
-Pharmacist -> PaymentModal: Open payment dialog, select payment method
+Pharmacist -> PaymentModal: Select payment method tab
 activate PaymentModal #7ACFF5
 
-alt Option 1: Cash Payment (CASH)
-    Pharmacist -> PaymentModal: Input customer given cash (e.g. 200,000 VND)
-    PaymentModal -> PaymentModal: Calculate change = 200,000 - 154,000 = 46,000 VND
+alt Method 1: Cash Payment (Tiền mặt - CASH)
+    Pharmacist -> PaymentModal: Enter tenderedCash (e.g. 200,000 VND)
+    PaymentModal -> PaymentModal: Calculate changeAmount = 200,000 - 154,000 = 46,000 VND
     Pharmacist -> PaymentModal: Click "Xác nhận thanh toán (F10)"
-    
-    PaymentModal -> PaymentController: POST /api/v1/payments (PaymentRequest: method=1, amount=154000)
-    activate PaymentController #7ACFF5
-    PaymentController -> PaymentRepository: save(Payment: method=1, status=1, amount=154000)
-    activate PaymentRepository #7ACFF5
-    PaymentRepository -> DB: INSERT INTO payments (...)
-    activate DB #7ACFF5
-    DB --> PaymentRepository: OK
-    deactivate DB
-    PaymentRepository --> PaymentController: Payment entity
-    deactivate PaymentRepository
-    
-    PaymentController --> PaymentModal: HTTP 200 OK
-    deactivate PaymentController
-    PaymentModal --> Pharmacist: Open cash drawer, trigger receipt printing
+    PaymentModal --> Pharmacist: Pass payment details { method: 1, tenderedCash, changeAmount } to checkout flow
 
-else Option 2: VietQR Online Transfer (PayOS)
-    PaymentModal -> PaymentController: POST /api/v1/payments/payos/create-payment-link
+else Method 2: Dynamic VietQR Online Transfer (PayOS)
+    PaymentModal -> PaymentApi: createPayOSLink({ amount, description })
+    activate PaymentApi #7ACFF5
+
+    PaymentApi -> PaymentController: POST /api/v1/sales/payments/payos/create-link (CreatePayOSPaymentRequest)
     activate PaymentController #7ACFF5
-    PaymentController -> PaymentService: createPaymentLink(request)
+
+    PaymentController -> PaymentService: createPaymentLink(CreatePayOSPaymentRequest)
     activate PaymentService #7ACFF5
-    
-    PaymentService -> PayOSGateway: createPaymentLink(PaymentData: orderCode, amount)
+
+    PaymentService -> PayOSGateway: createPaymentLink(PaymentData: orderCode, amount, returnUrl, cancelUrl)
     activate PayOSGateway #7ACFF5
-    PayOSGateway --> PaymentService: CheckoutResponseData (qrCode, paymentLinkId)
+    PayOSGateway --> PaymentService: CheckoutResponseData (qrCode, paymentLinkId, accountNumber)
     deactivate PayOSGateway
-    
-    PaymentService --> PaymentController: PayOSPaymentResponse (qrCodeUrl, orderCode)
+
+    PaymentService --> PaymentController: PayOSPaymentResponse (orderCode, qrCodeUrl, amount)
     deactivate PaymentService
-    
-    PaymentController --> PaymentModal: HTTP 200 OK + qrCodeUrl
+
+    PaymentController --> PaymentApi: HTTP 200 OK + ApiResponse.success(response)
     deactivate PaymentController
-    
-    PaymentModal --> Customer: Display dynamic VietQR on screen with 15-minute countdown
+
+    PaymentApi --> PaymentModal: PayOSPaymentResponse
+    deactivate PaymentApi
+
+    PaymentModal --> Customer: Display dynamic VietQR image with countdown timer (15 mins)
     activate Customer #7ACFF5
-    Customer -> PayOSGateway: Scan QR with Mobile Banking and approve payment
+    Customer -> PayOSGateway: Scan VietQR with Mobile Banking app & approve transfer
     deactivate Customer
-    
-    PayOSGateway -> PaymentController: POST /api/v1/payments/payos/webhook (WebhookRequest + Checksum)
+
+    == PayOS Webhook Notification ==
+    PayOSGateway -> PaymentController: POST /api/v1/sales/payments/payos/webhook (PayOSWebhookRequest + Signature)
     activate PaymentController #7ACFF5
-    PaymentController -> PaymentService: processWebhook(WebhookRequest)
+
+    PaymentController -> PaymentService: handleWebhook(PayOSWebhookRequest)
     activate PaymentService #7ACFF5
-    
-    PaymentService -> PaymentService: verifyChecksum(data, signature, CHECKSUM_KEY)
+
+    PaymentService -> PaymentService: verifySignature(webhookData, CHECKSUM_KEY)
     activate PaymentService #7ACFF5
     deactivate PaymentService
-    
+
     alt Valid Checksum Signature
-        PaymentService -> PaymentRepository: save(Payment: method=2, status=1, code=orderCode)
+        PaymentService -> PaymentRepository: save(Payment: method=3, amount, status=1, transactionCode=orderCode)
         activate PaymentRepository #7ACFF5
-        PaymentRepository -> DB: INSERT INTO payments (...)
+        PaymentRepository -> DB: INSERT INTO payments (payment_method=3, status=1, ...)
         activate DB #7ACFF5
         DB --> PaymentRepository: OK
         deactivate DB
         PaymentRepository --> PaymentService: OK
         deactivate PaymentRepository
-        
+
         PaymentService -> InvoiceRepository: updateStatus(invoiceId, status=1 - PAID)
         activate InvoiceRepository #7ACFF5
-        InvoiceRepository -> DB: UPDATE sales_invoices SET status=1 WHERE id=?
+        InvoiceRepository -> DB: UPDATE sales_invoices SET status=1, paid_at=NOW() WHERE id=?
         activate DB #7ACFF5
         DB --> InvoiceRepository: OK
         deactivate DB
         InvoiceRepository --> PaymentService: OK
         deactivate InvoiceRepository
-        
-        PaymentService --> PaymentController: OK
+
+        PaymentService --> PaymentController: boolean (true)
         deactivate PaymentService
-        PaymentController --> PayOSGateway: HTTP 200 OK (Webhook confirmed)
+
+        PaymentController --> PayOSGateway: HTTP 200 OK { code: "00", desc: "success" }
         deactivate PaymentController
-        
-        PaymentModal -> PaymentModal: Real-time event: Payment Successful
-        PaymentModal --> Pharmacist: Auto-close modal, trigger K80 invoice print
-    else Tampered Signature
-        PaymentService --> PaymentController: throw InvalidSignatureException
+
+        == Real-time Frontend Polling ==
+        PaymentModal -> PaymentApi: checkPayOSStatus(orderCode)
+        activate PaymentApi #7ACFF5
+        PaymentApi -> PaymentController: GET /api/v1/sales/payments/payos/status/{orderCode}
+        activate PaymentController #7ACFF5
+        PaymentController --> PaymentApi: HTTP 200 OK (status: "PAID")
+        deactivate PaymentController
+        PaymentApi --> PaymentModal: Status PAID
+        deactivate PaymentApi
+
+        PaymentModal -> PaymentModal: Trigger onPaymentSuccess()
+        PaymentModal --> Pharmacist: Close payment modal, trigger print template
+    else Invalid Signature
+        PaymentService --> PaymentController: false
         PaymentController --> PayOSGateway: HTTP 400 Bad Request
     end
 end

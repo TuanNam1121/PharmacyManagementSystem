@@ -1,5 +1,5 @@
 @startuml SQ08_View_Customer_Detail
-title UC31 - View Customer Detail Sequence Diagram
+title UC29 - View Customer Detail Sequence Diagram (Code-based Flow)
 autonumber "1:"
 skinparam style strictuml
 skinparam sequenceMessageAlign left
@@ -22,22 +22,27 @@ skinparam sequence {
 }
 
 actor "Pharmacist" as Pharmacist #7ACFF5
-participant "<<boundary>>\nCustomerListPage" as CustomerListPage #7ACFF5
-participant "<<boundary>>\nCustomerDetailModal" as CustomerDetailModal #7ACFF5
+participant "<<boundary>>\nCustomerDirectoryPage.jsx" as DirectoryPage #7ACFF5
+participant "<<boundary>>\nCustomerDetailModal.jsx" as DetailModal #7ACFF5
+participant "<<control>>\ncustomerApi.js" as CustomerApi #7ACFF5
 participant "<<control>>\nCustomerController" as CustomerController #7ACFF5
 participant "<<control>>\nCustomerServiceImpl" as CustomerServiceImpl #7ACFF5
 participant "<<entity>>\nCustomerRepository" as CustomerRepository #7ACFF5
 participant "<<entity>>\nCustomerHealthProfileRepository" as HealthProfileRepo #7ACFF5
+participant "<<entity>>\nSalesInvoiceRepository" as InvoiceRepo #7ACFF5
 database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
 activate Pharmacist #7ACFF5
-Pharmacist -> CustomerListPage: Click "Xem chi tiết" (Eye icon) on customer row
-activate CustomerListPage #7ACFF5
+Pharmacist -> DirectoryPage: Click "Xem chi tiết" icon on customer row
+activate DirectoryPage #7ACFF5
 
-CustomerListPage -> CustomerDetailModal: Open modal with customerId
-activate CustomerDetailModal #7ACFF5
+DirectoryPage -> DetailModal: Set selectedCustomerId and open modal
+activate DetailModal #7ACFF5
 
-CustomerDetailModal -> CustomerController: GET /api/v1/customers/{id} (Bearer AT)
+DetailModal -> CustomerApi: getCustomerById(customerId)
+activate CustomerApi #7ACFF5
+
+CustomerApi -> CustomerController: GET /api/v1/customers/{id} (Bearer AT)
 activate CustomerController #7ACFF5
 
 CustomerController -> CustomerServiceImpl: getCustomerDetail(customerId)
@@ -52,32 +57,44 @@ deactivate DB
 CustomerRepository --> CustomerServiceImpl: Customer
 deactivate CustomerRepository
 
-CustomerServiceImpl -> HealthProfileRepo: findByCustomer_Id(customerId)
+CustomerServiceImpl -> HealthProfileRepo: findByCustomerId(customerId)
 activate HealthProfileRepo #7ACFF5
 HealthProfileRepo -> DB: SELECT * FROM customer_health_profiles WHERE customer_id=?
 activate DB #7ACFF5
 DB --> HealthProfileRepo: CustomerHealthProfile entity
 deactivate DB
-HealthProfileRepo --> CustomerServiceImpl: CustomerHealthProfile
+HealthProfileRepo --> CustomerServiceImpl: Optional<CustomerHealthProfile>
 deactivate HealthProfileRepo
 
-CustomerServiceImpl -> CustomerServiceImpl: mapToDetailResponse(customer, healthProfile)
+CustomerServiceImpl -> InvoiceRepo: countByCustomerIdAndStatus(customerId, 1)
+activate InvoiceRepo #7ACFF5
+InvoiceRepo -> DB: SELECT COUNT(*), SUM(final_amount) FROM sales_invoices WHERE customer_id=? AND status=1
+activate DB #7ACFF5
+DB --> InvoiceRepo: totalInvoices, totalSpent
+deactivate DB
+InvoiceRepo --> CustomerServiceImpl: Purchase summary metrics
+deactivate InvoiceRepo
+
+CustomerServiceImpl -> CustomerServiceImpl: mapToCustomerDetailResponse(customer, healthProfile, metrics)
 activate CustomerServiceImpl #7ACFF5
 deactivate CustomerServiceImpl
 
-CustomerServiceImpl --> CustomerController: CustomerDetailResponse (points, tier, allergy info)
+CustomerServiceImpl --> CustomerController: CustomerDetailResponse (personal info, allergy notes, totalSpent, loyaltyPoints)
 deactivate CustomerServiceImpl
 
-CustomerController --> CustomerDetailModal: HTTP 200 OK + CustomerDetailResponse
+CustomerController --> CustomerApi: HTTP 200 OK + ApiResponse.success(response)
 deactivate CustomerController
 
-CustomerDetailModal -> CustomerDetailModal: Render personal info, BMI, loyalty points
-opt Patient has drug allergy history
-    CustomerDetailModal -> CustomerDetailModal: Render red Alert Warning: "⚠️ Tiền sử dị ứng: [Allergies list]"
+CustomerApi --> DetailModal: CustomerDetailResponse
+deactivate CustomerApi
+
+DetailModal -> DetailModal: Render profile tabs (Thông tin cá nhân, Hồ sơ sức khỏe, Lịch sử mua)
+opt Has active drug allergy notes
+    DetailModal -> DetailModal: Render prominent red Alert Box: "⚠️ Cảnh báo tiền sử dị ứng thuốc: [Danh sách]"
 end
 
-CustomerDetailModal --> Pharmacist: Display detailed Customer Information Modal
-deactivate CustomerDetailModal
-deactivate CustomerListPage
+DetailModal --> Pharmacist: Display detailed Customer Modal dialog
+deactivate DetailModal
+deactivate DirectoryPage
 deactivate Pharmacist
 @enduml

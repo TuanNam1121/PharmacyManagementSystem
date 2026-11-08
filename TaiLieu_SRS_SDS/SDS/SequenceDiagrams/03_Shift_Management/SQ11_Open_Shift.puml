@@ -1,5 +1,5 @@
 @startuml SQ11_Open_Shift
-title UC21 - Open Shift Sequence Diagram
+title UC19 - Open Shift Sequence Diagram (Code-based Flow)
 autonumber "1:"
 skinparam style strictuml
 skinparam sequenceMessageAlign left
@@ -22,20 +22,24 @@ skinparam sequence {
 }
 
 actor "Pharmacist" as Pharmacist #7ACFF5
-participant "<<boundary>>\nPosCounterPage" as PosCounterPage #7ACFF5
-participant "<<boundary>>\nOpenShiftModal" as OpenShiftModal #7ACFF5
+participant "<<boundary>>\nPosCounterPage.jsx" as PosCounterPage #7ACFF5
+participant "<<boundary>>\nOpenShiftModal.jsx" as OpenShiftModal #7ACFF5
+participant "<<control>>\nshiftApi.js" as ShiftApi #7ACFF5
 participant "<<control>>\nShiftController" as ShiftController #7ACFF5
 participant "<<control>>\nShiftServiceImpl" as ShiftServiceImpl #7ACFF5
 participant "<<entity>>\nShiftRepository" as ShiftRepository #7ACFF5
+participant "<<entity>>\nStoreRepository" as StoreRepository #7ACFF5
 participant "<<entity>>\nAccountRepository" as AccountRepository #7ACFF5
-participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
 database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
 activate Pharmacist #7ACFF5
 Pharmacist -> PosCounterPage: Access POS Counter (/pos)
 activate PosCounterPage #7ACFF5
 
-PosCounterPage -> ShiftController: GET /api/v1/shifts/current (Bearer AT)
+PosCounterPage -> ShiftApi: getCurrentShift()
+activate ShiftApi #7ACFF5
+
+ShiftApi -> ShiftController: GET /api/v1/shifts/current (Bearer AT)
 activate ShiftController #7ACFF5
 
 ShiftController -> ShiftServiceImpl: getCurrentShift(accountId)
@@ -45,7 +49,7 @@ ShiftServiceImpl -> ShiftRepository: findFirstByAccount_IdAndStatus(accountId, 1
 activate ShiftRepository #7ACFF5
 ShiftRepository -> DB: SELECT * FROM shifts WHERE account_id=? AND status=1
 activate DB #7ACFF5
-DB --> ShiftRepository: No active shift record
+DB --> ShiftRepository: No active shift record (null)
 deactivate DB
 ShiftRepository --> ShiftServiceImpl: Optional.empty()
 deactivate ShiftRepository
@@ -53,16 +57,22 @@ deactivate ShiftRepository
 ShiftServiceImpl --> ShiftController: null
 deactivate ShiftServiceImpl
 
-ShiftController --> PosCounterPage: HTTP 200 OK (data: null)
+ShiftController --> ShiftApi: HTTP 200 OK + ApiResponse(data=null)
 deactivate ShiftController
 
-PosCounterPage -> OpenShiftModal: Auto-open modal (Shift required)
+ShiftApi --> PosCounterPage: null
+deactivate ShiftApi
+
+PosCounterPage -> OpenShiftModal: Auto-open modal (Working shift is required)
 activate OpenShiftModal #7ACFF5
 
 Pharmacist -> OpenShiftModal: Enter openingCash (e.g. 1,500,000 VND), note, click "Mở Ca"
 OpenShiftModal -> OpenShiftModal: Client validation (openingCash >= 0)
 
-OpenShiftModal -> ShiftController: POST /api/v1/shifts/open (OpenShiftRequest, Bearer AT)
+OpenShiftModal -> ShiftApi: openShift({ storeId, openingCash, note })
+activate ShiftApi #7ACFF5
+
+ShiftApi -> ShiftController: POST /api/v1/shifts/open (OpenShiftRequest, Bearer AT)
 activate ShiftController #7ACFF5
 
 ShiftController -> ShiftServiceImpl: openShift(OpenShiftRequest, accountId)
@@ -77,40 +87,43 @@ deactivate DB
 ShiftRepository --> ShiftServiceImpl: false (Valid to open)
 deactivate ShiftRepository
 
+ShiftServiceImpl -> StoreRepository: findById(storeId)
+activate StoreRepository #7ACFF5
+StoreRepository -> DB: SELECT * FROM stores WHERE id=?
+activate DB #7ACFF5
+DB --> StoreRepository: Store entity
+deactivate DB
+StoreRepository --> ShiftServiceImpl: Store
+deactivate StoreRepository
+
 ShiftServiceImpl -> AccountRepository: findById(accountId)
 activate AccountRepository #7ACFF5
 AccountRepository -> DB: SELECT * FROM accounts WHERE id=?
 activate DB #7ACFF5
-DB --> AccountRepository: Account (with store info)
+DB --> AccountRepository: Account entity
 deactivate DB
-AccountRepository --> ShiftServiceImpl: Account entity
+AccountRepository --> ShiftServiceImpl: Account
 deactivate AccountRepository
 
-ShiftServiceImpl -> ShiftRepository: save(Shift: openingCash, status=1, openingTime=NOW())
+ShiftServiceImpl -> ShiftRepository: save(Shift: store, account, openingCash, status=1, openedAt=NOW())
 activate ShiftRepository #7ACFF5
-ShiftRepository -> DB: INSERT INTO shifts (store_id, account_id, opening_time, opening_cash, status=1)
+ShiftRepository -> DB: INSERT INTO shifts (store_id, account_id, opening_time, opening_cash, status=1, ...)
 activate DB #7ACFF5
 DB --> ShiftRepository: Shift entity (id=50)
 deactivate DB
 ShiftRepository --> ShiftServiceImpl: savedShift
 deactivate ShiftRepository
 
-ShiftServiceImpl -> AuditLogRepo: save(AuditLog 'OPEN_SHIFT_SUCCESS', shiftId=50)
-activate AuditLogRepo #7ACFF5
-AuditLogRepo -> DB: INSERT INTO audit_logs (...)
-activate DB #7ACFF5
-DB --> AuditLogRepo: OK
-deactivate DB
-AuditLogRepo --> ShiftServiceImpl: OK
-deactivate AuditLogRepo
-
 ShiftServiceImpl --> ShiftController: ShiftDetailResponse
 deactivate ShiftServiceImpl
 
-ShiftController --> OpenShiftModal: HTTP 201 Created + ShiftDetailResponse
+ShiftController --> ShiftApi: HTTP 201 Created + ApiResponse.success(response)
 deactivate ShiftController
 
-OpenShiftModal -> PosCounterPage: Store active shift in state, unlock counter
+ShiftApi --> OpenShiftModal: ShiftDetailResponse
+deactivate ShiftApi
+
+OpenShiftModal -> PosCounterPage: Set currentShift state, unlock POS sales counter
 deactivate OpenShiftModal
 
 PosCounterPage --> Pharmacist: Display POS screen ready for sales transactions

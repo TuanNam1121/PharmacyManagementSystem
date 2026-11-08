@@ -1,5 +1,5 @@
 @startuml SQ06_Register_New_Customer
-title UC29 - Register New Customer Sequence Diagram
+title UC27 - Register New Customer Sequence Diagram (Code-based Flow)
 autonumber "1:"
 skinparam style strictuml
 skinparam sequenceMessageAlign left
@@ -22,21 +22,23 @@ skinparam sequence {
 }
 
 actor "Pharmacist" as Pharmacist #7ACFF5
-participant "<<boundary>>\nCustomerFormModal" as CustomerFormModal #7ACFF5
+participant "<<boundary>>\nCustomerFormModal.jsx" as CustomerFormModal #7ACFF5
+participant "<<control>>\ncustomerApi.js" as CustomerApi #7ACFF5
 participant "<<control>>\nCustomerController" as CustomerController #7ACFF5
 participant "<<control>>\nCustomerServiceImpl" as CustomerServiceImpl #7ACFF5
 participant "<<entity>>\nCustomerRepository" as CustomerRepository #7ACFF5
 participant "<<entity>>\nCustomerHealthProfileRepository" as HealthProfileRepo #7ACFF5
-participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
 database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
 activate Pharmacist #7ACFF5
-Pharmacist -> CustomerFormModal: Input fullName, phone, gender, allergies, click "Lưu khách hàng"
+Pharmacist -> CustomerFormModal: Open modal, enter fullName, phone, gender, dob, allergies, click "Lưu khách hàng"
 activate CustomerFormModal #7ACFF5
 
-CustomerFormModal -> CustomerFormModal: Client-side Validation (phone 10 digits, fullName not blank)
+CustomerFormModal -> CustomerFormModal: Client validation (fullName != empty, valid Vietnamese phone 10 digits)
+CustomerFormModal -> CustomerApi: createCustomer(CustomerCreateRequest)
+activate CustomerApi #7ACFF5
 
-CustomerFormModal -> CustomerController: POST /api/v1/customers (CustomerCreateRequest, Bearer AT)
+CustomerApi -> CustomerController: POST /api/v1/customers (CustomerCreateRequest, Bearer AT)
 activate CustomerController #7ACFF5
 
 CustomerController -> CustomerServiceImpl: registerCustomer(CustomerCreateRequest)
@@ -51,25 +53,25 @@ deactivate DB
 CustomerRepository --> CustomerServiceImpl: boolean (isPhoneExists)
 deactivate CustomerRepository
 
-alt Phone already registered
-    CustomerServiceImpl --> CustomerController: throw DuplicateResourceException("Số điện thoại đã được đăng ký")
-    CustomerController --> CustomerFormModal: HTTP 409 Conflict
-    CustomerFormModal --> Pharmacist: Display warning "Số điện thoại này đã có trên hệ thống"
-else Valid Phone
-    CustomerServiceImpl -> CustomerServiceImpl: generateCustomerCode() -> 'KH-000108'
-    CustomerServiceImpl -> CustomerRepository: save(Customer entity)
+alt Phone number already exists
+    CustomerServiceImpl --> CustomerController: throw CustomerPhoneAlreadyExistsException("Số điện thoại đã tồn tại trong hệ thống")
+    CustomerController --> CustomerApi: HTTP 409 Conflict
+    CustomerApi --> CustomerFormModal: Error response
+    CustomerFormModal --> Pharmacist: Display error banner "Số điện thoại đã được đăng ký!"
+else Phone number is unique
+    CustomerServiceImpl -> CustomerRepository: save(Customer: fullName, phone, gender, email, address, status=1)
     activate CustomerRepository #7ACFF5
-    CustomerRepository -> DB: INSERT INTO customers (code, full_name, phone, gender, loyalty_points=0, status=1)
+    CustomerRepository -> DB: INSERT INTO customers (full_name, phone, gender, email, address, status=1, ...)
     activate DB #7ACFF5
-    DB --> CustomerRepository: Customer saved (id=108)
+    DB --> CustomerRepository: Customer entity (id=105)
     deactivate DB
     CustomerRepository --> CustomerServiceImpl: savedCustomer
     deactivate CustomerRepository
 
-    opt Has Health Profile Data (height, weight, allergies...)
-        CustomerServiceImpl -> HealthProfileRepo: save(CustomerHealthProfile)
+    opt Health profile details provided (allergies, chronic diseases, notes)
+        CustomerServiceImpl -> HealthProfileRepo: save(CustomerHealthProfile: customer, allergies, chronicDiseases, notes)
         activate HealthProfileRepo #7ACFF5
-        HealthProfileRepo -> DB: INSERT INTO customer_health_profiles (customer_id, allergies, chronic_diseases...)
+        HealthProfileRepo -> DB: INSERT INTO customer_health_profiles (...)
         activate DB #7ACFF5
         DB --> HealthProfileRepo: OK
         deactivate DB
@@ -77,23 +79,17 @@ else Valid Phone
         deactivate HealthProfileRepo
     end
 
-    CustomerServiceImpl -> AuditLogRepo: save(AuditLog 'CREATE_CUSTOMER_SUCCESS')
-    activate AuditLogRepo #7ACFF5
-    AuditLogRepo -> DB: INSERT INTO audit_logs (...)
-    activate DB #7ACFF5
-    DB --> AuditLogRepo: OK
-    deactivate DB
-    AuditLogRepo --> CustomerServiceImpl: OK
-    deactivate AuditLogRepo
-
-    CustomerServiceImpl --> CustomerController: CustomerDetailResponse
+    CustomerServiceImpl --> CustomerController: CustomerDetailResponse (id, fullName, phone, allergyInfo)
     deactivate CustomerServiceImpl
 
-    CustomerController --> CustomerFormModal: HTTP 201 Created + CustomerDetailResponse
+    CustomerController --> CustomerApi: HTTP 201 Created + ApiResponse.success(response)
     deactivate CustomerController
 
-    CustomerFormModal -> CustomerFormModal: Auto-assign customer to POS Cart if in checkout
-    CustomerFormModal --> Pharmacist: Close modal, display Toast "Tạo hồ sơ khách hàng thành công!"
+    CustomerApi --> CustomerFormModal: CustomerDetailResponse
+    deactivate CustomerApi
+
+    CustomerFormModal -> CustomerFormModal: Close modal, trigger onCustomerCreated callback
+    CustomerFormModal --> Pharmacist: Show Toast "Đăng ký khách hàng mới thành công!"
 end
 
 deactivate CustomerFormModal

@@ -1,5 +1,5 @@
 @startuml SQ02_Logout
-title UC02 - Logout Sequence Diagram
+title UC02 - User Logout Sequence Diagram (Code-based Flow)
 autonumber "1:"
 skinparam style strictuml
 skinparam sequenceMessageAlign left
@@ -22,7 +22,9 @@ skinparam sequence {
 }
 
 actor "User" as User #7ACFF5
-participant "<<boundary>>\nMainLayout (Header)" as MainLayout #7ACFF5
+participant "<<boundary>>\nSidebar / Header" as Header #7ACFF5
+participant "<<control>>\nAuthContext.jsx" as AuthContext #7ACFF5
+participant "<<control>>\nauthApi.js" as AuthApi #7ACFF5
 participant "<<control>>\nAuthController" as AuthController #7ACFF5
 participant "<<control>>\nAuthServiceImpl" as AuthServiceImpl #7ACFF5
 participant "<<entity>>\nRefreshTokenRepository" as RefreshTokenRepo #7ACFF5
@@ -30,28 +32,34 @@ participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
 database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
 activate User #7ACFF5
-User -> MainLayout: Click "Logout" from Avatar Dropdown
-activate MainLayout #7ACFF5
+User -> Header: Click "Đăng xuất"
+activate Header #7ACFF5
 
-MainLayout -> AuthController: POST /api/v1/auth/logout (Bearer accessToken, Cookie: refreshToken)
+Header -> AuthContext: logout()
+activate AuthContext #7ACFF5
+
+AuthContext -> AuthApi: logout()
+activate AuthApi #7ACFF5
+
+AuthApi -> AuthController: POST /api/v1/auth/logout (Bearer AT, Cookie: refreshToken)
 activate AuthController #7ACFF5
 
-AuthController -> AuthServiceImpl: logout(refreshToken, accountId, response)
+AuthController -> AuthServiceImpl: logout(authHeader, requestRefreshToken, clientIp)
 activate AuthServiceImpl #7ACFF5
 
-opt refreshToken exists
-    AuthServiceImpl -> RefreshTokenRepo: findByToken(refreshToken)
+opt Refresh Token present in Cookie
+    AuthServiceImpl -> RefreshTokenRepo: findByToken(requestRefreshToken)
     activate RefreshTokenRepo #7ACFF5
     RefreshTokenRepo -> DB: SELECT * FROM refresh_tokens WHERE token=?
     activate DB #7ACFF5
     DB --> RefreshTokenRepo: RefreshToken entity
     deactivate DB
-    RefreshTokenRepo --> AuthServiceImpl: RefreshToken
+    RefreshTokenRepo --> AuthServiceImpl: Optional<RefreshToken>
     deactivate RefreshTokenRepo
 
-    AuthServiceImpl -> RefreshTokenRepo: revoke(token)
+    AuthServiceImpl -> RefreshTokenRepo: token.setRevoked(true)
     activate RefreshTokenRepo #7ACFF5
-    RefreshTokenRepo -> DB: UPDATE refresh_tokens SET is_revoked=1 WHERE token=?
+    RefreshTokenRepo -> DB: UPDATE refresh_tokens SET revoked=1 WHERE id=?
     activate DB #7ACFF5
     DB --> RefreshTokenRepo: OK
     deactivate DB
@@ -59,7 +67,7 @@ opt refreshToken exists
     deactivate RefreshTokenRepo
 end
 
-AuthServiceImpl -> AuditLogRepo: save(AuditLog 'LOGOUT_SUCCESS')
+AuthServiceImpl -> AuditLogRepo: recordAuditLog(account, 'LOGOUT_SUCCESS', clientIp)
 activate AuditLogRepo #7ACFF5
 AuditLogRepo -> DB: INSERT INTO audit_logs (...)
 activate DB #7ACFF5
@@ -68,15 +76,21 @@ deactivate DB
 AuditLogRepo --> AuthServiceImpl: OK
 deactivate AuditLogRepo
 
-AuthServiceImpl -> AuthController: Set-Cookie: refreshToken=; Max-Age=0; Path=/api/v1/auth
+AuthServiceImpl --> AuthController: void
 deactivate AuthServiceImpl
 
-AuthController --> MainLayout: HTTP 200 OK (Logged out successfully)
+AuthController -> AuthController: Expire Set-Cookie: refreshToken (maxAge=0)
+AuthController --> AuthApi: HTTP 200 OK + ApiResponse.success("Đăng xuất thành công")
 deactivate AuthController
 
-MainLayout -> MainLayout: Clear accessToken in Memory, reset Auth State
-MainLayout --> User: Redirect to Login Page (/login)
+AuthApi --> AuthContext: Resolve promise
+deactivate AuthApi
 
-deactivate MainLayout
+AuthContext -> AuthContext: localStorage.removeItem('token'), clear user state
+AuthContext --> Header: Updated session state
+deactivate AuthContext
+
+Header --> User: Redirect to Login Page (/login)
+deactivate Header
 deactivate User
 @enduml

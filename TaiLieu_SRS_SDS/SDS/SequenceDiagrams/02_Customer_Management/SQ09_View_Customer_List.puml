@@ -1,5 +1,5 @@
 @startuml SQ09_View_Customer_List
-title UC32 - View Customer List Sequence Diagram
+title UC30 - View Customer List Sequence Diagram (Code-based Flow)
 autonumber "1:"
 skinparam style strictuml
 skinparam sequenceMessageAlign left
@@ -22,70 +22,79 @@ skinparam sequence {
 }
 
 actor "Pharmacist" as Pharmacist #7ACFF5
-participant "<<boundary>>\nCustomerListPage" as CustomerListPage #7ACFF5
+participant "<<boundary>>\nCustomerDirectoryPage.jsx" as DirectoryPage #7ACFF5
+participant "<<control>>\ncustomerApi.js" as CustomerApi #7ACFF5
 participant "<<control>>\nCustomerController" as CustomerController #7ACFF5
 participant "<<control>>\nCustomerServiceImpl" as CustomerServiceImpl #7ACFF5
 participant "<<entity>>\nCustomerRepository" as CustomerRepository #7ACFF5
 database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
 activate Pharmacist #7ACFF5
-== Phase 1: Load Initial Customer List ==
-Pharmacist -> CustomerListPage: Navigate to Customer Directory (/customers)
-activate CustomerListPage #7ACFF5
+== Phase 1: Load Initial Customer Directory ==
+Pharmacist -> DirectoryPage: Navigate to Customer Directory (/customers)
+activate DirectoryPage #7ACFF5
 
-CustomerListPage -> CustomerController: GET /api/v1/customers?page=0&size=10&sortBy=id&sortDir=desc (Bearer AT)
+DirectoryPage -> CustomerApi: getCustomers({ page: 0, size: 10, sortBy: 'createdAt', sortDir: 'desc' })
+activate CustomerApi #7ACFF5
+
+CustomerApi -> CustomerController: GET /api/v1/customers?page=0&size=10&sortBy=createdAt&sortDir=desc (Bearer AT)
 activate CustomerController #7ACFF5
 
-CustomerController -> CustomerServiceImpl: getCustomers(keyword="", status=null, 0, 10, "id", "desc")
+CustomerController -> CustomerServiceImpl: getCustomers(keyword=null, status=null, 0, 10, "createdAt", "desc")
 activate CustomerServiceImpl #7ACFF5
 
-CustomerServiceImpl -> CustomerRepository: findWithFilter(keyword, status, Pageable)
+CustomerServiceImpl -> CustomerRepository: findAll(Specification<Customer>, Pageable)
 activate CustomerRepository #7ACFF5
-
-CustomerRepository -> DB: SELECT c FROM customers c WHERE c.status=1 ORDER BY c.id DESC OFFSET 0 ROWS FETCH NEXT 10 ROWS
+CustomerRepository -> DB: SELECT * FROM customers ORDER BY created_at DESC OFFSET 0 ROWS FETCH NEXT 10 ROWS
 activate DB #7ACFF5
-DB --> CustomerRepository: Page<Customer> + TotalElements
+DB --> CustomerRepository: Page<Customer> + totalElements
 deactivate DB
-
 CustomerRepository --> CustomerServiceImpl: Page<Customer>
 deactivate CustomerRepository
 
-CustomerServiceImpl --> CustomerController: PageResponse<CustomerResponse> (content, totalElements, totalPages)
+CustomerServiceImpl --> CustomerController: PageResponse<CustomerResponse> (content, totalElements, totalPages, pageNo)
 deactivate CustomerServiceImpl
 
-CustomerController --> CustomerListPage: HTTP 200 OK + PageResponse
+CustomerController --> CustomerApi: HTTP 200 OK + ApiResponse.success(response)
 deactivate CustomerController
 
-CustomerListPage --> Pharmacist: Render customer table with pagination
+CustomerApi --> DirectoryPage: PageResponse<CustomerResponse>
+deactivate CustomerApi
 
-== Phase 2: Live Search by Customer Phone/Name ==
-Pharmacist -> CustomerListPage: Type phone "0987123456" into search input
-CustomerListPage -> CustomerListPage: Debounce timer 300ms
+DirectoryPage --> Pharmacist: Render customer table with pagination controls
 
-CustomerListPage -> CustomerController: GET /api/v1/customers?keyword=0987123456&page=0&size=10
+== Phase 2: Search by Phone / Name ==
+Pharmacist -> DirectoryPage: Type phone number "0987123456" into search input
+DirectoryPage -> DirectoryPage: Debounce 300ms
+
+DirectoryPage -> CustomerApi: getCustomers({ keyword: '0987123456', page: 0, size: 10 })
+activate CustomerApi #7ACFF5
+
+CustomerApi -> CustomerController: GET /api/v1/customers?keyword=0987123456&page=0&size=10
 activate CustomerController #7ACFF5
 
-CustomerController -> CustomerServiceImpl: getCustomers("0987123456", null, 0, 10, "id", "desc")
+CustomerController -> CustomerServiceImpl: getCustomers("0987123456", null, 0, 10, "createdAt", "desc")
 activate CustomerServiceImpl #7ACFF5
 
-CustomerServiceImpl -> CustomerRepository: findWithFilter("0987123456", null, Pageable)
+CustomerServiceImpl -> CustomerRepository: findAll(Specification<Customer> with phone/name LIKE, Pageable)
 activate CustomerRepository #7ACFF5
-
-CustomerRepository -> DB: SELECT c FROM customers c WHERE (c.phone LIKE '%0987123456%' OR c.fullName LIKE '%0987123456%')
+CustomerRepository -> DB: SELECT * FROM customers WHERE phone LIKE '%0987123456%' OR LOWER(full_name) LIKE '%0987123456%'
 activate DB #7ACFF5
 DB --> CustomerRepository: Filtered Page<Customer>
 deactivate DB
-
 CustomerRepository --> CustomerServiceImpl: Page<Customer>
 deactivate CustomerRepository
 
 CustomerServiceImpl --> CustomerController: PageResponse<CustomerResponse>
 deactivate CustomerServiceImpl
 
-CustomerController --> CustomerListPage: HTTP 200 OK + Filtered PageResponse
+CustomerController --> CustomerApi: HTTP 200 OK + Filtered PageResponse
 deactivate CustomerController
 
-CustomerListPage --> Pharmacist: Re-render customer table with matching records
-deactivate CustomerListPage
+CustomerApi --> DirectoryPage: Filtered PageResponse
+deactivate CustomerApi
+
+DirectoryPage --> Pharmacist: Update customer table with matching search results
+deactivate DirectoryPage
 deactivate Pharmacist
 @enduml

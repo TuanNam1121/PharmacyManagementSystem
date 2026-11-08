@@ -1,5 +1,5 @@
 @startuml SQ12_Close_Shift
-title UC22 - Close Shift Sequence Diagram
+title UC20 - Close Shift Sequence Diagram (Code-based Flow)
 autonumber "1:"
 skinparam style strictuml
 skinparam sequenceMessageAlign left
@@ -22,22 +22,28 @@ skinparam sequence {
 }
 
 actor "Pharmacist" as Pharmacist #7ACFF5
-participant "<<boundary>>\nPosCounterPage" as PosCounterPage #7ACFF5
-participant "<<boundary>>\nCloseShiftModal" as CloseShiftModal #7ACFF5
+participant "<<boundary>>\nPosCounterPage.jsx" as PosCounterPage #7ACFF5
+participant "<<boundary>>\nCloseShiftModal.jsx" as CloseShiftModal #7ACFF5
+participant "<<control>>\nshiftApi.js" as ShiftApi #7ACFF5
 participant "<<control>>\nShiftController" as ShiftController #7ACFF5
 participant "<<control>>\nShiftServiceImpl" as ShiftServiceImpl #7ACFF5
 participant "<<entity>>\nShiftRepository" as ShiftRepository #7ACFF5
-participant "<<entity>>\nSalesInvoiceRepository" as SalesInvoiceRepo #7ACFF5
+participant "<<entity>>\nPaymentRepository" as PaymentRepository #7ACFF5
 participant "<<entity>>\nSalesReturnRepository" as SalesReturnRepo #7ACFF5
-participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
 database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
 activate Pharmacist #7ACFF5
 == Phase 1: Retrieve Shift Revenue Summary ==
-Pharmacist -> PosCounterPage: Click "Chốt ca làm việc" button
+Pharmacist -> PosCounterPage: Click "Chốt ca làm việc"
 activate PosCounterPage #7ACFF5
 
-PosCounterPage -> ShiftController: GET /api/v1/shifts/current/summary (Bearer AT)
+PosCounterPage -> CloseShiftModal: Open close shift modal
+activate CloseShiftModal #7ACFF5
+
+CloseShiftModal -> ShiftApi: getCurrentShiftSummary()
+activate ShiftApi #7ACFF5
+
+ShiftApi -> ShiftController: GET /api/v1/shifts/current/summary (Bearer AT)
 activate ShiftController #7ACFF5
 
 ShiftController -> ShiftServiceImpl: getCurrentShiftSummary(accountId)
@@ -52,93 +58,92 @@ deactivate DB
 ShiftRepository --> ShiftServiceImpl: Shift
 deactivate ShiftRepository
 
-ShiftServiceImpl -> SalesInvoiceRepo: sumCashRevenueByShiftId(shift.getId())
-activate SalesInvoiceRepo #7ACFF5
-SalesInvoiceRepo -> DB: SELECT SUM(p.amount) FROM payments p JOIN sales_invoices i ON p.sales_invoice_id=i.id WHERE i.shift_id=? AND p.payment_method=1
+ShiftServiceImpl -> PaymentRepository: sumAmountByShiftAndMethod(shift.getId(), method=1) -- CASH
+activate PaymentRepository #7ACFF5
+PaymentRepository -> DB: SELECT SUM(p.amount) FROM payments p JOIN sales_invoices i ON p.sales_invoice_id=i.id WHERE i.shift_id=? AND p.payment_method=1
 activate DB #7ACFF5
-DB --> SalesInvoiceRepo: totalCashSales (e.g. 8,500,000 VND)
+DB --> PaymentRepository: cashSales (e.g. 8,500,000 VND)
 deactivate DB
-SalesInvoiceRepo --> ShiftServiceImpl: BigDecimal
-deactivate SalesInvoiceRepo
+PaymentRepository --> ShiftServiceImpl: BigDecimal
+deactivate PaymentRepository
 
-ShiftServiceImpl -> SalesInvoiceRepo: sumTransferRevenueByShiftId(shift.getId())
-activate SalesInvoiceRepo #7ACFF5
-SalesInvoiceRepo -> DB: SELECT SUM(p.amount) FROM payments p JOIN sales_invoices i ON p.sales_invoice_id=i.id WHERE i.shift_id=? AND p.payment_method=2
+ShiftServiceImpl -> PaymentRepository: sumAmountByShiftAndMethod(shift.getId(), method=3) -- VIETQR
+activate PaymentRepository #7ACFF5
+PaymentRepository -> DB: SELECT SUM(p.amount) FROM payments p JOIN sales_invoices i ON p.sales_invoice_id=i.id WHERE i.shift_id=? AND p.payment_method=3
 activate DB #7ACFF5
-DB --> SalesInvoiceRepo: totalTransferSales (e.g. 3,200,000 VND)
+DB --> PaymentRepository: qrSales (e.g. 3,200,000 VND)
 deactivate DB
-SalesInvoiceRepo --> ShiftServiceImpl: BigDecimal
-deactivate SalesInvoiceRepo
+PaymentRepository --> ShiftServiceImpl: BigDecimal
+deactivate PaymentRepository
 
-ShiftServiceImpl -> SalesReturnRepo: sumRefundAmountByShiftId(shift.getId())
+ShiftServiceImpl -> SalesReturnRepo: sumCashRefundsByShift(shift.getId())
 activate SalesReturnRepo #7ACFF5
 SalesReturnRepo -> DB: SELECT SUM(refund_amount) FROM sales_returns WHERE shift_id=? AND refund_method=1
 activate DB #7ACFF5
-DB --> SalesReturnRepo: totalRefunds (e.g. 200,000 VND)
+DB --> SalesReturnRepo: cashRefunds (e.g. 200,000 VND)
 deactivate DB
 SalesReturnRepo --> ShiftServiceImpl: BigDecimal
 deactivate SalesReturnRepo
 
-ShiftServiceImpl -> ShiftServiceImpl: expectedCash = openingCash + totalCashSales - totalRefunds
+ShiftServiceImpl -> ShiftServiceImpl: Calculate expectedCash = openingCash + cashSales - cashRefunds
 activate ShiftServiceImpl #7ACFF5
 deactivate ShiftServiceImpl
 
-ShiftServiceImpl --> ShiftController: ShiftSummaryResponse (openingCash, cashSales, transferSales, expectedCash)
+ShiftServiceImpl --> ShiftController: ShiftSummaryResponse (openingCash, cashSales, qrSales, cashRefunds, expectedCash)
 deactivate ShiftServiceImpl
 
-ShiftController --> PosCounterPage: HTTP 200 OK + ShiftSummaryResponse
+ShiftController --> ShiftApi: HTTP 200 OK + ApiResponse.success(response)
 deactivate ShiftController
 
-PosCounterPage -> CloseShiftModal: Open modal with calculated expectedCash (9,800,000 VND)
-activate CloseShiftModal #7ACFF5
+ShiftApi --> CloseShiftModal: ShiftSummaryResponse
+deactivate ShiftApi
 
-== Phase 2: Enter Actual Cash and Finalize Close Shift ==
-Pharmacist -> CloseShiftModal: Count drawer cash, input actualCash = 9,800,000 VND, click "Xác nhận chốt ca"
-CloseShiftModal -> CloseShiftModal: Calculate discrepancy = actualCash - expectedCash (0 VND)
+CloseShiftModal --> Pharmacist: Display shift revenue metrics and expected cash in drawer (9,800,000 VND)
 
-CloseShiftModal -> ShiftController: POST /api/v1/shifts/close (CloseShiftRequest, Bearer AT)
+== Phase 2: Enter Actual Cash & Finalize Close Shift ==
+Pharmacist -> CloseShiftModal: Count drawer cash, input actualCash (9,800,000 VND), note, click "Xác nhận chốt ca"
+CloseShiftModal -> CloseShiftModal: Compute difference = actualCash - expectedCash (0 VND)
+
+CloseShiftModal -> ShiftApi: closeShift({ shiftId, actualCash, note })
+activate ShiftApi #7ACFF5
+
+ShiftApi -> ShiftController: POST /api/v1/shifts/close (CloseShiftRequest, Bearer AT)
 activate ShiftController #7ACFF5
 
 ShiftController -> ShiftServiceImpl: closeShift(CloseShiftRequest, accountId)
 activate ShiftServiceImpl #7ACFF5
 
-ShiftServiceImpl -> ShiftRepository: findFirstByAccount_IdAndStatus(accountId, 1)
+ShiftServiceImpl -> ShiftRepository: findById(shiftId)
 activate ShiftRepository #7ACFF5
 ShiftRepository --> ShiftServiceImpl: Shift entity
 deactivate ShiftRepository
 
-ShiftServiceImpl -> ShiftServiceImpl: Set closingTime=NOW(), closingCash, calculatedCash, status=2 (CLOSED)
+ShiftServiceImpl -> ShiftServiceImpl: Set closedAt=NOW(), actualCash, difference, status=2 (CLOSED)
 activate ShiftServiceImpl #7ACFF5
 deactivate ShiftServiceImpl
 
 ShiftServiceImpl -> ShiftRepository: save(Shift)
 activate ShiftRepository #7ACFF5
-ShiftRepository -> DB: UPDATE shifts SET closing_time=NOW(), closing_cash=?, calculated_cash=?, discrepancy=0, status=2 WHERE id=?
+ShiftRepository -> DB: UPDATE shifts SET closed_at=NOW(), closing_cash=?, difference=0, status=2 WHERE id=?
 activate DB #7ACFF5
 DB --> ShiftRepository: OK
 deactivate DB
 ShiftRepository --> ShiftServiceImpl: OK
 deactivate ShiftRepository
 
-ShiftServiceImpl -> AuditLogRepo: save(AuditLog 'CLOSE_SHIFT_SUCCESS', shiftId)
-activate AuditLogRepo #7ACFF5
-AuditLogRepo -> DB: INSERT INTO audit_logs (...)
-activate DB #7ACFF5
-DB --> AuditLogRepo: OK
-deactivate DB
-AuditLogRepo --> ShiftServiceImpl: OK
-deactivate AuditLogRepo
-
 ShiftServiceImpl --> ShiftController: ShiftDetailResponse
 deactivate ShiftServiceImpl
 
-ShiftController --> CloseShiftModal: HTTP 200 OK + ShiftDetailResponse
+ShiftController --> ShiftApi: HTTP 200 OK + ApiResponse.success(response)
 deactivate ShiftController
 
-CloseShiftModal -> PosCounterPage: Reset currentShift state, lock POS counter
+ShiftApi --> CloseShiftModal: ShiftDetailResponse
+deactivate ShiftApi
+
+CloseShiftModal -> PosCounterPage: Clear currentShift state, lock POS terminal
 deactivate CloseShiftModal
 
-PosCounterPage --> Pharmacist: Close modal, show Toast "Chốt ca thành công!", display K80 Shift Report
+PosCounterPage --> Pharmacist: Show Toast "Chốt ca thành công!", display K80 Shift Handover Report
 deactivate PosCounterPage
 deactivate Pharmacist
 @enduml

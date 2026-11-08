@@ -1,5 +1,5 @@
 @startuml SQ01_Login
-title UC01 - Login Sequence Diagram
+title UC01 - User Login Sequence Diagram (Code-based Flow)
 autonumber "1:"
 skinparam style strictuml
 skinparam sequenceMessageAlign left
@@ -22,69 +22,47 @@ skinparam sequence {
 }
 
 actor "User" as User #7ACFF5
-participant "<<boundary>>\nLoginPage" as LoginPage #7ACFF5
+participant "<<boundary>>\nLoginPage.jsx" as LoginPage #7ACFF5
+participant "<<control>>\nauthApi.js" as AuthApi #7ACFF5
 participant "<<control>>\nAuthController" as AuthController #7ACFF5
 participant "<<control>>\nAuthServiceImpl" as AuthServiceImpl #7ACFF5
-participant "<<control>>\nBCryptPasswordEncoder" as BCryptEncoder #7ACFF5
-participant "<<control>>\nJwtTokenProvider" as JwtProvider #7ACFF5
+participant "<<control>>\nPasswordEncoder" as PasswordEncoder #7ACFF5
+participant "<<control>>\nJwtTokenProvider" as JwtTokenProvider #7ACFF5
 participant "<<entity>>\nAccountRepository" as AccountRepository #7ACFF5
-participant "<<entity>>\nRefreshTokenRepository" as RefreshTokenRepo #7ACFF5
+participant "<<entity>>\nRefreshTokenRepository" as RefreshTokenRepository #7ACFF5
 participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
 database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
 activate User #7ACFF5
-User -> LoginPage: Enter username/email and password, click "Login"
+User -> LoginPage: Input username/email and password, click "Đăng nhập"
 activate LoginPage #7ACFF5
 
-LoginPage -> LoginPage: Client-side Validation (NotEmpty, trim)
+LoginPage -> LoginPage: Client validation (required fields)
+LoginPage -> AuthApi: login({ username, password })
+activate AuthApi #7ACFF5
 
-LoginPage -> AuthController: POST /api/v1/auth/login (LoginRequest)
+AuthApi -> AuthController: POST /api/v1/auth/login (LoginRequest)
 activate AuthController #7ACFF5
 
-AuthController -> AuthServiceImpl: login(LoginRequest)
+AuthController -> AuthServiceImpl: login(LoginRequest, clientIp)
 activate AuthServiceImpl #7ACFF5
 
-AuthServiceImpl -> AccountRepository: findByUsernameOrEmail(username, username)
+AuthServiceImpl -> AccountRepository: findByUsernameOrEmailWithDetails(keyword)
 activate AccountRepository #7ACFF5
-
-AccountRepository -> DB: SELECT a FROM accounts a WHERE a.username=? OR a.email=?
+AccountRepository -> DB: SELECT a FROM Account a LEFT JOIN FETCH a.role LEFT JOIN FETCH a.store WHERE a.username=? OR a.email=?
 activate DB #7ACFF5
-DB --> AccountRepository: Account record
+DB --> AccountRepository: Account entity (or empty)
 deactivate DB
-
 AccountRepository --> AuthServiceImpl: Optional<Account>
 deactivate AccountRepository
 
-alt Invalid Account or status != 1 (Locked)
-    AuthServiceImpl --> AuthController: throw BadCredentialsException / AccountLockedException
-    AuthController --> LoginPage: HTTP 401 Unauthorized / 403 Forbidden
-    LoginPage --> User: Display error message ("Sai tài khoản hoặc đã bị khóa")
-else Valid Account & Active Status
-    AuthServiceImpl -> BCryptEncoder: matches(rawPassword, account.getPassword())
-    activate BCryptEncoder #7ACFF5
-    BCryptEncoder --> AuthServiceImpl: true (Password matches)
-    deactivate BCryptEncoder
-
-    AuthServiceImpl -> JwtProvider: generateAccessToken(account)
-    activate JwtProvider #7ACFF5
-    JwtProvider --> AuthServiceImpl: accessToken (JWT 15m)
-    deactivate JwtProvider
-
-    AuthServiceImpl -> JwtProvider: generateRefreshToken(account)
-    activate JwtProvider #7ACFF5
-    JwtProvider --> AuthServiceImpl: refreshToken (8h)
-    deactivate JwtProvider
-
-    AuthServiceImpl -> RefreshTokenRepo: save(RefreshToken entity)
-    activate RefreshTokenRepo #7ACFF5
-    RefreshTokenRepo -> DB: INSERT INTO refresh_tokens (token, account_id, expiry_date, is_revoked)
-    activate DB #7ACFF5
-    DB --> RefreshTokenRepo: OK
-    deactivate DB
-    RefreshTokenRepo --> AuthServiceImpl: savedRefreshToken
-    deactivate RefreshTokenRepo
-
-    AuthServiceImpl -> AuditLogRepo: save(AuditLog 'LOGIN_SUCCESS')
+alt Account not found
+    AuthServiceImpl --> AuthController: throw BadCredentialsException("Tên đăng nhập hoặc mật khẩu không chính xác")
+    AuthController --> AuthApi: HTTP 401 Unauthorized
+    AuthApi --> LoginPage: Promise rejection (error message)
+    LoginPage --> User: Display error "Tên đăng nhập hoặc mật khẩu không chính xác"
+else Account is Inactive / Locked
+    AuthServiceImpl -> AuditLogRepo: recordAuditLog(account, 'LOGIN_BLOCKED_ACCOUNT_INACTIVE')
     activate AuditLogRepo #7ACFF5
     AuditLogRepo -> DB: INSERT INTO audit_logs (...)
     activate DB #7ACFF5
@@ -92,16 +70,83 @@ else Valid Account & Active Status
     deactivate DB
     AuditLogRepo --> AuthServiceImpl: OK
     deactivate AuditLogRepo
+    AuthServiceImpl --> AuthController: throw AccountLockedException("Tài khoản của bạn đã bị vô hiệu hóa")
+    AuthController --> AuthApi: HTTP 403 Forbidden
+    AuthApi --> LoginPage: Promise rejection
+    LoginPage --> User: Display error "Tài khoản của bạn đã bị vô hiệu hóa"
+else Account Active
+    AuthServiceImpl -> PasswordEncoder: matches(rawPassword, account.getPassword())
+    activate PasswordEncoder #7ACFF5
+    PasswordEncoder --> AuthServiceImpl: boolean (isPasswordMatch)
+    deactivate PasswordEncoder
 
-    AuthServiceImpl --> AuthController: LoginResponse (accessToken, userProfile)
-    deactivate AuthServiceImpl
+    alt Password mismatch
+        AuthServiceImpl -> AccountRepository: account.setFailedLoginCount(failed + 1)
+        opt failedCount >= 5
+            AuthServiceImpl -> AccountRepository: account.setStatus(AccountStatus.LOCKED)
+        end
+        activate AccountRepository #7ACFF5
+        AccountRepository -> DB: UPDATE accounts SET failed_login_count=?, status=? WHERE id=?
+        activate DB #7ACFF5
+        DB --> AccountRepository: OK
+        deactivate DB
+        AccountRepository --> AuthServiceImpl: OK
+        deactivate AccountRepository
+        AuthServiceImpl --> AuthController: throw BadCredentialsException
+        AuthController --> AuthApi: HTTP 401 Unauthorized
+        AuthApi --> LoginPage: Error response
+        LoginPage --> User: Display "Tên đăng nhập hoặc mật khẩu không chính xác"
+    else Password matches
+        AuthServiceImpl -> AccountRepository: Reset failedLoginCount = 0
+        activate AccountRepository #7ACFF5
+        AccountRepository -> DB: UPDATE accounts SET failed_login_count=0 WHERE id=?
+        activate DB #7ACFF5
+        DB --> AccountRepository: OK
+        deactivate DB
+        AccountRepository --> AuthServiceImpl: OK
+        deactivate AccountRepository
 
-    AuthController -> AuthController: Attach RefreshToken to HttpOnly Cookie (Set-Cookie)
-    AuthController --> LoginPage: HTTP 200 OK + LoginResponse Body + Set-Cookie Header
-    deactivate AuthController
+        AuthServiceImpl -> JwtTokenProvider: generateAccessToken(account)
+        activate JwtTokenProvider #7ACFF5
+        JwtTokenProvider --> AuthServiceImpl: accessToken (JWT 15m)
+        deactivate JwtTokenProvider
 
-    LoginPage -> LoginPage: Store accessToken in AuthContext Memory
-    LoginPage --> User: Redirect to authorized Dashboard / POS Counter
+        AuthServiceImpl -> JwtTokenProvider: generateRefreshToken(account)
+        activate JwtTokenProvider #7ACFF5
+        JwtTokenProvider --> AuthServiceImpl: refreshToken (UUID 7d)
+        deactivate JwtTokenProvider
+
+        AuthServiceImpl -> RefreshTokenRepository: save(RefreshToken: token, account, expiryDate, revoked=false)
+        activate RefreshTokenRepository #7ACFF5
+        RefreshTokenRepository -> DB: INSERT INTO refresh_tokens (...)
+        activate DB #7ACFF5
+        DB --> RefreshTokenRepository: OK
+        deactivate DB
+        RefreshTokenRepository --> AuthServiceImpl: OK
+        deactivate RefreshTokenRepository
+
+        AuthServiceImpl -> AuditLogRepo: recordAuditLog(account, 'LOGIN_SUCCESS', clientIp)
+        activate AuditLogRepo #7ACFF5
+        AuditLogRepo -> DB: INSERT INTO audit_logs (...)
+        activate DB #7ACFF5
+        DB --> AuditLogRepo: OK
+        deactivate DB
+        AuditLogRepo --> AuthServiceImpl: OK
+        deactivate AuditLogRepo
+
+        AuthServiceImpl --> AuthController: LoginResult(accessToken, refreshToken, userDetails)
+        deactivate AuthServiceImpl
+
+        AuthController -> AuthController: Build Set-Cookie: refreshToken (HttpOnly, Path=/api/v1/auth)
+        AuthController --> AuthApi: HTTP 200 OK + ApiResponse<LoginResponse>
+        deactivate AuthController
+
+        AuthApi --> LoginPage: LoginResponse (accessToken, userProfile)
+        deactivate AuthApi
+
+        LoginPage -> LoginPage: Save accessToken to localStorage, set user state in AuthContext
+        LoginPage --> User: Redirect to Dashboard based on Role
+    end
 end
 
 deactivate LoginPage

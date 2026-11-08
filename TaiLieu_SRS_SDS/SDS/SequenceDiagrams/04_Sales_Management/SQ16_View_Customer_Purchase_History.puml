@@ -1,5 +1,5 @@
 @startuml SQ16_View_Customer_Purchase_History
-title UC26 - View Customer Purchase History Sequence Diagram
+title UC23 - View Customer Purchase History & Daily Invoices Sequence Diagram (Code-based Flow)
 autonumber "1:"
 skinparam style strictuml
 skinparam sequenceMessageAlign left
@@ -22,75 +22,89 @@ skinparam sequence {
 }
 
 actor "Pharmacist" as Pharmacist #7ACFF5
-participant "<<boundary>>\nDailyInvoiceListPage" as DailyInvoiceListPage #7ACFF5
-participant "<<boundary>>\nCustomerHistoryDrawer" as CustomerHistoryDrawer #7ACFF5
+participant "<<boundary>>\nDailySalesPage.jsx" as DailySalesPage #7ACFF5
+participant "<<boundary>>\nCustomerHistoryDrawer.jsx" as HistoryDrawer #7ACFF5
+participant "<<control>>\nDailySalesAPI.js" as DailySalesApi #7ACFF5
+participant "<<control>>\nsalesApi.js" as SalesApi #7ACFF5
 participant "<<control>>\nDailySalesController" as DailySalesController #7ACFF5
 participant "<<control>>\nSalesInvoiceController" as InvoiceController #7ACFF5
-participant "<<control>>\nDailySalesServiceImpl" as DailySalesServiceImpl #7ACFF5
-participant "<<control>>\nSalesInvoiceServiceImpl" as InvoiceServiceImpl #7ACFF5
+participant "<<control>>\nDailySalesServiceImpl" as DailySalesService #7ACFF5
+participant "<<control>>\nSalesInvoiceServiceImpl" as InvoiceService #7ACFF5
 participant "<<entity>>\nSalesInvoiceRepository" as InvoiceRepository #7ACFF5
 database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
 activate Pharmacist #7ACFF5
-== Flow 1: Retrieve Daily Retail Invoices ==
-Pharmacist -> DailyInvoiceListPage: Navigate to "Hóa Đơn Bán Lẻ Trong Ngày" tab
-activate DailyInvoiceListPage #7ACFF5
+== Flow 1: Retrieve Daily Retail Invoices List ==
+Pharmacist -> DailySalesPage: Navigate to "Hóa Đơn Bán Lẻ Trong Ngày" tab
+activate DailySalesPage #7ACFF5
 
-DailyInvoiceListPage -> DailySalesController: GET /api/v1/daily-sales/invoices?storeId=1&page=0&size=10
+DailySalesPage -> DailySalesApi: getDailyInvoices({ storeId: 1, date: '2026-11-08', page: 0, size: 10 })
+activate DailySalesApi #7ACFF5
+
+DailySalesApi -> DailySalesController: GET /api/daily-sales/invoices?storeId=1&page=0&size=10
 activate DailySalesController #7ACFF5
 
-DailySalesController -> DailySalesServiceImpl: getDailyInvoices(storeId, today, pageable)
-activate DailySalesServiceImpl #7ACFF5
+DailySalesController -> DailySalesService: getDailyInvoices(storeId, today, pageable)
+activate DailySalesService #7ACFF5
 
-DailySalesServiceImpl -> InvoiceRepository: findDailyInvoicesByStore(...)
+DailySalesService -> InvoiceRepository: findDailyInvoicesByStore(storeId, startOfDay, endOfDay, pageable)
 activate InvoiceRepository #7ACFF5
-InvoiceRepository -> DB: SELECT i.id, i.code, c.full_name, c.phone, i.final_amount, i.status FROM sales_invoices i LEFT JOIN customers c ON i.customer_id=c.id
+InvoiceRepository -> DB: SELECT i.id, i.code, c.full_name, c.phone, i.final_amount, i.status FROM sales_invoices i LEFT JOIN customers c ON i.customer_id=c.id WHERE i.store_id=? AND i.created_at BETWEEN ? AND ?
 activate DB #7ACFF5
 DB --> InvoiceRepository: Page<SalesInvoiceSummaryDto>
 deactivate DB
-InvoiceRepository --> DailySalesServiceImpl: Page<SalesInvoiceSummaryDto>
+InvoiceRepository --> DailySalesService: Page<SalesInvoiceSummaryDto>
 deactivate InvoiceRepository
 
-DailySalesServiceImpl --> DailySalesController: Page<SalesInvoiceSummaryDto> (with customer name, phone, action buttons)
-deactivate DailySalesServiceImpl
+DailySalesService --> DailySalesController: Page<SalesInvoiceSummaryDto> (includes customer info, final amount, status)
+deactivate DailySalesService
 
-DailySalesController --> DailyInvoiceListPage: HTTP 200 OK + PageResponse
+DailySalesController --> DailySalesApi: HTTP 200 OK + ApiResponse.success(page)
 deactivate DailySalesController
 
-DailyInvoiceListPage --> Pharmacist: Render invoice table with Action buttons: "Chi tiết" & "Trả hàng"
+DailySalesApi --> DailySalesPage: Page<SalesInvoiceSummaryDto>
+deactivate DailySalesApi
+
+DailySalesPage --> Pharmacist: Render invoices table with customer name, phone, and Action buttons ("Chi tiết", "Trả hàng")
 
 == Flow 2: Live Search by Invoice Code, Customer Name, or Phone ==
-Pharmacist -> DailyInvoiceListPage: Type "3910" or "Lê Hoàng Long" into search bar
-DailyInvoiceListPage -> DailyInvoiceListPage: Execute real-time client filter (codeMatch, nameMatch, phoneMatch)
-DailyInvoiceListPage --> Pharmacist: Instant update table view matching search query
+Pharmacist -> DailySalesPage: Type "3910" or "Lê Hoàng Long" into search bar
+DailySalesPage -> DailySalesPage: Execute instantaneous client-side filter (matching code, customerName, or phone)
+DailySalesPage --> Pharmacist: Real-time update table rows with matching invoices
 
 == Flow 3: Look Up Customer Past Purchase History at POS (F7) ==
-Pharmacist -> CustomerHistoryDrawer: Click "Lịch sử mua hàng (F7)" for active customer (ID=101)
-activate CustomerHistoryDrawer #7ACFF5
+Pharmacist -> HistoryDrawer: Press "Lịch sử mua hàng (F7)" while customer is selected (ID=101)
+activate HistoryDrawer #7ACFF5
 
-CustomerHistoryDrawer -> InvoiceController: GET /api/v1/sales-invoices/customer/101 (Bearer AT)
+HistoryDrawer -> SalesApi: getCustomerPurchaseHistory(101)
+activate SalesApi #7ACFF5
+
+SalesApi -> InvoiceController: GET /api/v1/sales/invoices/customer/101 (Bearer AT)
 activate InvoiceController #7ACFF5
 
-InvoiceController -> InvoiceServiceImpl: getCustomerPurchaseHistory(101)
-activate InvoiceServiceImpl #7ACFF5
+InvoiceController -> InvoiceService: getCustomerPurchaseHistory(101)
+activate InvoiceService #7ACFF5
 
-InvoiceServiceImpl -> InvoiceRepository: findByCustomer_IdOrderByCreatedAtDesc(101)
+InvoiceService -> InvoiceRepository: findByCustomer_IdOrderByCreatedAtDesc(101)
 activate InvoiceRepository #7ACFF5
 InvoiceRepository -> DB: SELECT * FROM sales_invoices WHERE customer_id=101 ORDER BY created_at DESC
 activate DB #7ACFF5
 DB --> InvoiceRepository: List<SalesInvoice>
 deactivate DB
-InvoiceRepository --> InvoiceServiceImpl: invoices
+InvoiceRepository --> InvoiceService: List<SalesInvoice>
 deactivate InvoiceRepository
 
-InvoiceServiceImpl --> InvoiceController: List<SalesInvoiceResponse>
-deactivate InvoiceServiceImpl
+InvoiceService --> InvoiceController: List<SalesInvoiceResponse>
+deactivate InvoiceService
 
-InvoiceController --> CustomerHistoryDrawer: HTTP 200 OK + List<SalesInvoiceResponse>
+InvoiceController --> SalesApi: HTTP 200 OK + ApiResponse.success(list)
 deactivate InvoiceController
 
-CustomerHistoryDrawer --> Pharmacist: Open drawer with historical medicine list & "Sao chép đơn cũ vào giỏ POS" button
-deactivate CustomerHistoryDrawer
-deactivate DailyInvoiceListPage
+SalesApi --> HistoryDrawer: List<SalesInvoiceResponse>
+deactivate SalesApi
+
+HistoryDrawer --> Pharmacist: Open drawer sliding from right, display historical medicine items and "Sao chép đơn cũ vào giỏ POS" button
+deactivate HistoryDrawer
+deactivate DailySalesPage
 deactivate Pharmacist
 @enduml

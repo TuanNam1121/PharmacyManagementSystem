@@ -1,5 +1,5 @@
 @startuml SQ07_Edit_Customer
-title UC30 - Edit Customer Sequence Diagram
+title UC28 - Edit Customer Sequence Diagram (Code-based Flow)
 autonumber "1:"
 skinparam style strictuml
 skinparam sequenceMessageAlign left
@@ -22,19 +22,23 @@ skinparam sequence {
 }
 
 actor "Pharmacist" as Pharmacist #7ACFF5
-participant "<<boundary>>\nCustomerFormModal" as CustomerFormModal #7ACFF5
+participant "<<boundary>>\nCustomerFormModal.jsx" as CustomerFormModal #7ACFF5
+participant "<<control>>\ncustomerApi.js" as CustomerApi #7ACFF5
 participant "<<control>>\nCustomerController" as CustomerController #7ACFF5
 participant "<<control>>\nCustomerServiceImpl" as CustomerServiceImpl #7ACFF5
 participant "<<entity>>\nCustomerRepository" as CustomerRepository #7ACFF5
 participant "<<entity>>\nCustomerHealthProfileRepository" as HealthProfileRepo #7ACFF5
-participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
 database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
 activate Pharmacist #7ACFF5
-Pharmacist -> CustomerFormModal: Edit fullName, phone, update allergies, click "Lưu thay đổi"
+Pharmacist -> CustomerFormModal: Open modal in edit mode, modify fullName, phone, allergy notes, click "Lưu thay đổi"
 activate CustomerFormModal #7ACFF5
 
-CustomerFormModal -> CustomerController: PUT /api/v1/customers/{id} (CustomerUpdateRequest, Bearer AT)
+CustomerFormModal -> CustomerFormModal: Validate form input
+CustomerFormModal -> CustomerApi: updateCustomer(customerId, CustomerUpdateRequest)
+activate CustomerApi #7ACFF5
+
+CustomerApi -> CustomerController: PUT /api/v1/customers/{id} (CustomerUpdateRequest, Bearer AT)
 activate CustomerController #7ACFF5
 
 CustomerController -> CustomerServiceImpl: updateCustomer(customerId, CustomerUpdateRequest)
@@ -58,54 +62,50 @@ deactivate DB
 CustomerRepository --> CustomerServiceImpl: boolean (isPhoneDuplicated)
 deactivate CustomerRepository
 
-alt Phone number belongs to another customer
-    CustomerServiceImpl --> CustomerController: throw DuplicateResourceException("Số điện thoại đã thuộc về khách hàng khác")
-    CustomerController --> CustomerFormModal: HTTP 409 Conflict
-    CustomerFormModal --> Pharmacist: Show warning "Số điện thoại đã trùng với khách hàng khác!"
+alt New phone number belongs to another customer
+    CustomerServiceImpl --> CustomerController: throw CustomerPhoneAlreadyExistsException("Số điện thoại đã thuộc về một khách hàng khác")
+    CustomerController --> CustomerApi: HTTP 409 Conflict
+    CustomerApi --> CustomerFormModal: Error response
+    CustomerFormModal --> Pharmacist: Show error message "Số điện thoại đã trùng với khách hàng khác!"
 else Valid Request
-    CustomerServiceImpl -> CustomerRepository: Update fullName, phone, email, address, gender
+    CustomerServiceImpl -> CustomerRepository: Update fullName, phone, gender, dateOfBirth, email, address, updatedAt=NOW()
     activate CustomerRepository #7ACFF5
-    CustomerRepository -> DB: UPDATE customers SET full_name=?, phone=?, email=? WHERE id=?
+    CustomerRepository -> DB: UPDATE customers SET full_name=?, phone=?, email=?, address=?, updated_at=NOW() WHERE id=?
     activate DB #7ACFF5
     DB --> CustomerRepository: OK
     deactivate DB
     CustomerRepository --> CustomerServiceImpl: OK
     deactivate CustomerRepository
 
-    CustomerServiceImpl -> HealthProfileRepo: findByCustomer_Id(customerId)
+    CustomerServiceImpl -> HealthProfileRepo: findByCustomerId(customerId)
     activate HealthProfileRepo #7ACFF5
     HealthProfileRepo -> DB: SELECT * FROM customer_health_profiles WHERE customer_id=?
     activate DB #7ACFF5
-    DB --> HealthProfileRepo: CustomerHealthProfile entity
+    DB --> HealthProfileRepo: CustomerHealthProfile entity (or empty)
     deactivate DB
-    HealthProfileRepo --> CustomerServiceImpl: CustomerHealthProfile
+    HealthProfileRepo --> CustomerServiceImpl: Optional<CustomerHealthProfile>
     deactivate HealthProfileRepo
 
-    CustomerServiceImpl -> HealthProfileRepo: Update allergies, chronicDiseases, isPregnant, notes
+    CustomerServiceImpl -> HealthProfileRepo: save(CustomerHealthProfile: allergies, chronicDiseases, notes)
     activate HealthProfileRepo #7ACFF5
-    HealthProfileRepo -> DB: UPDATE customer_health_profiles SET allergies=?, chronic_diseases=? WHERE id=?
+    HealthProfileRepo -> DB: UPDATE / INSERT INTO customer_health_profiles (...)
     activate DB #7ACFF5
     DB --> HealthProfileRepo: OK
     deactivate DB
     HealthProfileRepo --> CustomerServiceImpl: OK
     deactivate HealthProfileRepo
 
-    CustomerServiceImpl -> AuditLogRepo: save(AuditLog 'UPDATE_CUSTOMER_SUCCESS')
-    activate AuditLogRepo #7ACFF5
-    AuditLogRepo -> DB: INSERT INTO audit_logs (...)
-    activate DB #7ACFF5
-    DB --> AuditLogRepo: OK
-    deactivate DB
-    AuditLogRepo --> CustomerServiceImpl: OK
-    deactivate AuditLogRepo
-
     CustomerServiceImpl --> CustomerController: CustomerDetailResponse
     deactivate CustomerServiceImpl
 
-    CustomerController --> CustomerFormModal: HTTP 200 OK + CustomerDetailResponse
+    CustomerController --> CustomerApi: HTTP 200 OK + ApiResponse.success(response)
     deactivate CustomerController
 
-    CustomerFormModal --> Pharmacist: Close modal, refresh table and display Toast "Cập nhật thành công!"
+    CustomerApi --> CustomerFormModal: CustomerDetailResponse
+    deactivate CustomerApi
+
+    CustomerFormModal -> CustomerFormModal: Close modal, refresh customer list table
+    CustomerFormModal --> Pharmacist: Show Toast notification "Cập nhật thông tin khách hàng thành công!"
 end
 
 deactivate CustomerFormModal

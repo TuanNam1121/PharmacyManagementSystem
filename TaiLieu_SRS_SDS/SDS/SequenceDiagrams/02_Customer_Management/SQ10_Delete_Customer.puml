@@ -1,5 +1,5 @@
 @startuml SQ10_Delete_Customer
-title UC33 - Delete Customer Sequence Diagram
+title UC31 - Delete Customer Sequence Diagram (Code-based Flow)
 autonumber "1:"
 skinparam style strictuml
 skinparam sequenceMessageAlign left
@@ -22,23 +22,26 @@ skinparam sequence {
 }
 
 actor "Manager" as Manager #7ACFF5
-participant "<<boundary>>\nCustomerListPage" as CustomerListPage #7ACFF5
-participant "<<boundary>>\nDeleteConfirmModal" as DeleteConfirmModal #7ACFF5
+participant "<<boundary>>\nCustomerDirectoryPage.jsx" as DirectoryPage #7ACFF5
+participant "<<boundary>>\nConfirmDeleteModal.jsx" as ConfirmModal #7ACFF5
+participant "<<control>>\ncustomerApi.js" as CustomerApi #7ACFF5
 participant "<<control>>\nCustomerController" as CustomerController #7ACFF5
 participant "<<control>>\nCustomerServiceImpl" as CustomerServiceImpl #7ACFF5
 participant "<<entity>>\nCustomerRepository" as CustomerRepository #7ACFF5
-participant "<<entity>>\nAuditLogRepository" as AuditLogRepo #7ACFF5
 database "<<entity>>\nSQL Server (PMS DB)" as DB #7ACFF5
 
 activate Manager #7ACFF5
-Manager -> CustomerListPage: Click "Xóa" (Trash icon) on customer row
-activate CustomerListPage #7ACFF5
+Manager -> DirectoryPage: Click "Xóa" (Trash icon) on customer row
+activate DirectoryPage #7ACFF5
 
-CustomerListPage -> DeleteConfirmModal: Open confirmation popup (customerId)
-activate DeleteConfirmModal #7ACFF5
+DirectoryPage -> ConfirmModal: Open confirmation popup (customerId, customerName)
+activate ConfirmModal #7ACFF5
 
-Manager -> DeleteConfirmModal: Click "Xác nhận xóa"
-DeleteConfirmModal -> CustomerController: DELETE /api/v1/customers/{id}?reason=Ngừng-liên-hệ (Bearer AT)
+Manager -> ConfirmModal: Input deactivation reason, click "Xác nhận xóa"
+ConfirmModal -> CustomerApi: deleteCustomer(customerId, reason)
+activate CustomerApi #7ACFF5
+
+CustomerApi -> CustomerController: DELETE /api/v1/customers/{id}?reason=... (Bearer AT)
 activate CustomerController #7ACFF5
 
 CustomerController -> CustomerServiceImpl: deleteCustomer(customerId, reason)
@@ -53,33 +56,36 @@ deactivate DB
 CustomerRepository --> CustomerServiceImpl: Customer
 deactivate CustomerRepository
 
-CustomerServiceImpl -> CustomerRepository: customer.setStatus((short) 0) -- Soft delete
-activate CustomerRepository #7ACFF5
-CustomerRepository -> DB: UPDATE customers SET status=0, updated_at=NOW() WHERE id=?
-activate DB #7ACFF5
-DB --> CustomerRepository: OK (Preserve historical invoices)
-deactivate DB
-CustomerRepository --> CustomerServiceImpl: OK
-deactivate CustomerRepository
+alt Customer already inactive (status == 0)
+    CustomerServiceImpl --> CustomerController: throw IllegalStateException("Khách hàng này đã ở trạng thái ngừng hoạt động")
+    CustomerController --> CustomerApi: HTTP 400 Bad Request
+    CustomerApi --> ConfirmModal: Error response
+    ConfirmModal --> Manager: Show warning message
+else Customer is Active
+    CustomerServiceImpl -> CustomerRepository: customer.setStatus((short) 0), customer.setUpdatedAt(NOW())
+    activate CustomerRepository #7ACFF5
+    CustomerRepository -> DB: UPDATE customers SET status=0, updated_at=NOW() WHERE id=?
+    activate DB #7ACFF5
+    DB --> CustomerRepository: OK (Preserve historical transaction integrity)
+    deactivate DB
+    CustomerRepository --> CustomerServiceImpl: OK
+    deactivate CustomerRepository
 
-CustomerServiceImpl -> AuditLogRepo: save(AuditLog 'DELETE_CUSTOMER_SUCCESS', customerId, reason)
-activate AuditLogRepo #7ACFF5
-AuditLogRepo -> DB: INSERT INTO audit_logs (...)
-activate DB #7ACFF5
-DB --> AuditLogRepo: OK
-deactivate DB
-AuditLogRepo --> CustomerServiceImpl: OK
-deactivate AuditLogRepo
+    CustomerServiceImpl --> CustomerController: void
+    deactivate CustomerServiceImpl
 
-CustomerServiceImpl --> CustomerController: void (Success)
-deactivate CustomerServiceImpl
+    CustomerController --> CustomerApi: HTTP 200 OK + ApiResponse.success("Vô hiệu hóa khách hàng thành công")
+    deactivate CustomerController
 
-CustomerController --> DeleteConfirmModal: HTTP 200 OK ("Xóa khách hàng thành công")
-deactivate CustomerController
+    CustomerApi --> ConfirmModal: Success response
+    deactivate CustomerApi
 
-DeleteConfirmModal -> CustomerListPage: Remove customer record from local state
-CustomerListPage --> Manager: Close modal, show Toast "Đã xóa khách hàng thành công!"
-deactivate DeleteConfirmModal
-deactivate CustomerListPage
+    ConfirmModal -> DirectoryPage: Remove/update customer row in local state
+    deactivate ConfirmModal
+
+    DirectoryPage --> Manager: Close modal, show Toast "Đã ngừng theo dõi khách hàng thành công!"
+end
+
+deactivate DirectoryPage
 deactivate Manager
 @enduml
