@@ -22,3 +22,4 @@ public class CreatePayOSPaymentRequest {
 
     private String description;
 }
+

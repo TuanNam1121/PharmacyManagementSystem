@@ -20,3 +20,4 @@ public class PayOSPaymentResponse {
     private String checkoutUrl;
     private String status;
 }
+

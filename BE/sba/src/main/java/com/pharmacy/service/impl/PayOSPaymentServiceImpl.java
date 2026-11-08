@@ -251,3 +251,4 @@ public class PayOSPaymentServiceImpl implements PayOSPaymentService {
         return Long.parseLong(String.format("%07d%04d", timestampPart, randomPart));
     }
 }
+

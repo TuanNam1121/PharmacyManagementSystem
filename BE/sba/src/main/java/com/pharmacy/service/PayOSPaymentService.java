@@ -10,3 +10,4 @@ public interface PayOSPaymentService {
     boolean handleWebhook(PayOSWebhookRequest request);
     PayOSStatusResponse getPaymentStatus(Long orderCode);
 }
+
