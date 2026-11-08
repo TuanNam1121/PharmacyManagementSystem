@@ -1,0 +1,325 @@
+@startuml Common_Design_Class_Diagram
+title Common Design - Complete Class Diagram (Error Handling, Logging, and Messages Processing)
+skinparam style strictuml
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+
+skinparam class {
+    BorderColor #000000
+    BackgroundColor #7ACFF5
+    HeaderBackgroundColor #7ACFF5
+    FontColor #000000
+    FontSize 11
+    StereotypeFontColor #000000
+    StereotypeFontSize 10
+    ArrowColor #000000
+}
+
+skinparam package {
+    BorderColor #000000
+    BackgroundColor #FFFFFF
+    FontColor #000000
+    FontSize 12
+}
+
+' ==============================================================================
+' 1. ERROR HANDLING SUBSYSTEM
+' ==============================================================================
+package "com.pharmacy.exception" <<Error Handling Subsystem>> {
+
+    class RuntimeException <<Standard>> {
+        + RuntimeException(message: String)
+        + RuntimeException(message: String, cause: Throwable)
+        + getMessage(): String
+    }
+
+    class BadCredentialsException <<entity>> {
+        + BadCredentialsException(message: String)
+    }
+
+    class AccountLockedException <<entity>> {
+        + AccountLockedException(message: String)
+    }
+
+    class TokenRefreshException <<entity>> {
+        + TokenRefreshException(message: String)
+    }
+
+    class InvalidTokenException <<entity>> {
+        + InvalidTokenException(message: String)
+    }
+
+    class ResourceNotFoundException <<entity>> {
+        + ResourceNotFoundException(message: String)
+    }
+
+    class DuplicateResourceException <<entity>> {
+        + DuplicateResourceException(message: String)
+    }
+
+    class CustomerPhoneAlreadyExistsException <<entity>> {
+        + CustomerPhoneAlreadyExistsException(message: String)
+    }
+
+    class InsufficientStockException <<entity>> {
+        + InsufficientStockException(message: String)
+    }
+
+    class NoOpenShiftException <<entity>> {
+        + NoOpenShiftException(message: String)
+    }
+
+    class ShiftAlreadyOpenException <<entity>> {
+        + ShiftAlreadyOpenException(message: String)
+    }
+
+    class InvalidOperationException <<entity>> {
+        + InvalidOperationException(message: String)
+    }
+
+    class GlobalExceptionHandler <<control>> {
+        + handleCustomBadCredentialsException(ex: BadCredentialsException): ResponseEntity<ApiResponse<Void>>
+        + handleSpringBadCredentialsException(ex: org.springframework.security.authentication.BadCredentialsException): ResponseEntity<ApiResponse<Void>>
+        + handleAccountLockedException(ex: AccountLockedException): ResponseEntity<ApiResponse<Void>>
+        + handleTokenRefreshException(ex: TokenRefreshException): ResponseEntity<ApiResponse<Void>>
+        + handleInvalidTokenException(ex: InvalidTokenException): ResponseEntity<ApiResponse<Void>>
+        + handleResourceNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ApiResponse<Void>>
+        + handleDuplicateResourceException(ex: DuplicateResourceException): ResponseEntity<ApiResponse<Void>>
+        + handleValidationException(ex: MethodArgumentNotValidException): ResponseEntity<ApiResponse<Map<String, String>>>
+        + handleIllegalArgumentException(ex: IllegalArgumentException): ResponseEntity<ApiResponse<Void>>
+        + handleIllegalStateException(ex: IllegalStateException): ResponseEntity<ApiResponse<Void>>
+        + handleInvalidOperation(ex: InvalidOperationException): ResponseEntity<ApiResponse<Void>>
+        + handleNotFound(ex: EntityNotFoundException): ResponseEntity<ApiResponse<Void>>
+        + handleGeneralException(ex: Exception): ResponseEntity<ApiResponse<Void>>
+    }
+
+    RuntimeException <|-- BadCredentialsException
+    RuntimeException <|-- AccountLockedException
+    RuntimeException <|-- TokenRefreshException
+    RuntimeException <|-- InvalidTokenException
+    RuntimeException <|-- ResourceNotFoundException
+    RuntimeException <|-- DuplicateResourceException
+    DuplicateResourceException <|-- CustomerPhoneAlreadyExistsException
+    RuntimeException <|-- InsufficientStockException
+    RuntimeException <|-- NoOpenShiftException
+    RuntimeException <|-- ShiftAlreadyOpenException
+    RuntimeException <|-- InvalidOperationException
+
+    GlobalExceptionHandler ..> BadCredentialsException : intercepts (401)
+    GlobalExceptionHandler ..> AccountLockedException : intercepts (403)
+    GlobalExceptionHandler ..> TokenRefreshException : intercepts (401)
+    GlobalExceptionHandler ..> InvalidTokenException : intercepts (400)
+    GlobalExceptionHandler ..> ResourceNotFoundException : intercepts (404)
+    GlobalExceptionHandler ..> DuplicateResourceException : intercepts (409)
+    GlobalExceptionHandler ..> CustomerPhoneAlreadyExistsException : intercepts (409)
+    GlobalExceptionHandler ..> InsufficientStockException : intercepts (400)
+    GlobalExceptionHandler ..> NoOpenShiftException : intercepts (400)
+    GlobalExceptionHandler ..> ShiftAlreadyOpenException : intercepts (409)
+}
+
+' ==============================================================================
+' 2. LOGGING SUBSYSTEM
+' ==============================================================================
+package "com.pharmacy.logging" <<Logging & Auditing Subsystem>> {
+
+    package "org.slf4j" <<Standard Logging>> {
+        interface Logger {
+            + info(format: String, arg: Object): void
+            + warn(format: String, arg: Object): void
+            + error(msg: String, t: Throwable): void
+            + debug(format: String, arg: Object): void
+        }
+
+        class LoggerFactory {
+            + {static} getLogger(clazz: Class<?>): Logger
+        }
+
+        LoggerFactory ..> Logger : creates
+    }
+
+    class AuditLog <<entity>> {
+        - id: Long
+        - account: Account
+        - action: Short
+        - entityName: String
+        - entityId: Long
+        - oldValue: String
+        - newValue: String
+        - ipAddress: String
+        - createdAt: LocalDateTime
+        + getId(): Long
+        + getAccount(): Account
+        + getAction(): Short
+        + getEntityName(): String
+        + getEntityId(): Long
+        + getOldValue(): String
+        + getNewValue(): String
+        + getIpAddress(): String
+        + getCreatedAt(): LocalDateTime
+        + setAccount(account: Account): void
+        + setAction(action: Short): void
+        + setEntityName(name: String): void
+        + setEntityId(id: Long): void
+        + setOldValue(oldVal: String): void
+        + setNewValue(newVal: String): void
+        + setIpAddress(ip: String): void
+        + setCreatedAt(time: LocalDateTime): void
+    }
+
+    class AuditLogDto <<boundary>> {
+        - id: Long
+        - accountId: Long
+        - accountUsername: String
+        - accountFullName: String
+        - action: Short
+        - actionName: String
+        - entityName: String
+        - entityId: Long
+        - oldValue: String
+        - newValue: String
+        - ipAddress: String
+        - createdAt: LocalDateTime
+        + getId(): Long
+        + getAccountUsername(): String
+        + getActionName(): String
+    }
+
+    interface AuditLogRepository <<entity>> {
+        + findAll(spec: Specification<AuditLog>, pageable: Pageable): Page<AuditLog>
+        + findByEntityNameAndEntityId(entityName: String, entityId: Long): List<AuditLog>
+    }
+
+    interface AuditLogService <<control>> {
+        + getAuditLogs(search: String, action: Short, entityName: String, pageable: Pageable): Page<AuditLogDto>
+    }
+
+    class AuditLogServiceImpl <<control>> {
+        - auditLogRepository: AuditLogRepository
+        + getAuditLogs(search: String, action: Short, entityName: String, pageable: Pageable): Page<AuditLogDto>
+        - mapToDto(log: AuditLog): AuditLogDto
+        - resolveActionName(action: Short): String
+    }
+
+    class AuditLogController <<control>> {
+        - auditLogService: AuditLogService
+        + getAuditLogs(search: String, action: Short, entityName: String, page: int, size: int): ResponseEntity<ApiResponse<Page<AuditLogDto>>>
+    }
+
+    AuditLogService <|.. AuditLogServiceImpl
+    AuditLogServiceImpl --> AuditLogRepository : invokes
+    AuditLogRepository ..> AuditLog : persists
+    AuditLogServiceImpl ..> AuditLogDto : transforms
+    AuditLogController --> AuditLogService : calls
+}
+
+' ==============================================================================
+' 3. MESSAGES PROCESSING SUBSYSTEM
+' ==============================================================================
+package "com.pharmacy.messages" <<Messages Processing Subsystem>> {
+
+    class "ApiResponse<T>" as ApiResponse <<boundary>> {
+        - status: int
+        - message: String
+        - data: T
+        - timestamp: LocalDateTime
+        + {static} success(data: T): ApiResponse<T>
+        + {static} success(message: String, data: T): ApiResponse<T>
+        + {static} error(status: int, message: String): ApiResponse<T>
+        + getStatus(): int
+        + getMessage(): String
+        + getData(): T
+        + getTimestamp(): LocalDateTime
+    }
+
+    class "PageResponse<T>" as PageResponse <<boundary>> {
+        - content: List<T>
+        - pageNumber: int
+        - pageSize: int
+        - totalElements: long
+        - totalPages: int
+        - last: boolean
+        + {static} from(page: Page<T>): PageResponse<T>
+        + getContent(): List<T>
+        + getTotalElements(): long
+        + getTotalPages(): int
+        + isLast(): boolean
+    }
+
+    package "org.springframework.mail" <<Email Dispatcher>> {
+        interface JavaMailSender {
+            + createMimeMessage(): MimeMessage
+            + send(mimeMessage: MimeMessage): void
+        }
+
+        class MimeMessageHelper {
+            - mimeMessage: MimeMessage
+            + setFrom(from: String): void
+            + setTo(to: String): void
+            + setSubject(subject: String): void
+            + setText(text: String, html: boolean): void
+        }
+
+        MimeMessageHelper --> JavaMailSender : configures
+    }
+
+    class EmailLog <<entity>> {
+        - id: Long
+        - toEmail: String
+        - subject: String
+        - body: String
+        - refType: String
+        - refId: Long
+        - status: Short
+        - errorMessage: String
+        - sentAt: LocalDateTime
+        + getId(): Long
+        + getToEmail(): String
+        + getSubject(): String
+        + getStatus(): Short
+        + setToEmail(email: String): void
+        + setSubject(subject: String): void
+        + setBody(html: String): void
+        + setStatus(status: Short): void
+        + setSentAt(time: LocalDateTime): void
+    }
+
+    interface EmailLogRepository <<entity>> {
+        + save(emailLog: EmailLog): EmailLog
+        + findByToEmail(email: String): List<EmailLog>
+    }
+
+    interface EmailService <<control>> {
+        + sendRfqEmail(rfq: Rfq, supplier: Supplier, rawToken: String, frontendUrl: String): boolean
+        + sendQuotationConfirmationEmail(supplier: Supplier, rfqCode: String): boolean
+        + sendPasswordResetEmail(toEmail: String, username: String, resetToken: String): boolean
+    }
+
+    class EmailServiceImpl <<control>> {
+        - mailSender: JavaMailSender
+        - emailLogRepository: EmailLogRepository
+        - fromEmail: String
+        - frontendUrl: String
+        + sendRfqEmail(rfq: Rfq, supplier: Supplier, rawToken: String, frontendUrl: String): boolean
+        + sendQuotationConfirmationEmail(supplier: Supplier, rfqCode: String): boolean
+        + sendPasswordResetEmail(toEmail: String, username: String, resetToken: String): boolean
+        - isValidEmail(email: String): boolean
+        - logEmail(to: String, subject: String, body: String, refType: String, refId: Long, status: Short, error: String): void
+    }
+
+    EmailService <|.. EmailServiceImpl
+    EmailServiceImpl --> JavaMailSender : sends email
+    EmailServiceImpl --> EmailLogRepository : logs status
+    EmailLogRepository ..> EmailLog : manages
+    EmailServiceImpl ..> MimeMessageHelper : builds HTML mail
+}
+
+' ==============================================================================
+' CROSS-CUTTING INTEGRATIONS
+' ==============================================================================
+GlobalExceptionHandler ..> ApiResponse : packages error into unified format
+AuditLogController ..> ApiResponse : wraps audit log response
+AuditLogServiceImpl ..> Logger : writes system log
+
+@enduml

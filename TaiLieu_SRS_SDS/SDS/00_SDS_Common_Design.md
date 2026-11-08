@@ -1,4 +1,4 @@
-# TÀI LIỆU THIẾT KẾ CHI TIẾT CÁC THÀNH PHẦN DÙNG CHUNG (COMMON DESIGN)
+# TÀI LIỆU THIẾT KẾ CHI TIẾT CÁC THÀNH PHẦN DÙNG CHUNG (COMMON DESIGN SPECIFICATION)
 ## HỆ THỐNG QUẢN LÝ CHUỖI NHÀ THUỐC (PHARMACY CHAIN MANAGEMENT SYSTEM)
 
 ---
@@ -9,9 +9,16 @@ Trong hệ thống Quản lý Chuỗi Nhà thuốc (PMS), **Common Design** đ�
 2. **Logging (Ghi nhật ký hệ thống & Kiểm toán nghiệp vụ - Auditing)**: Kết hợp giữa Logging kỹ thuật (SLF4J/Logback) để phục vụ giám sát vận hành (debugging, profiling) và Audit Logging lưu vết vào cơ sở dữ liệu (`audit_logs`) để phục vụ thanh tra, truy vết trách nhiệm người dùng theo tiêu chuẩn an toàn dược phẩm.
 3. **Messages Processing (Xử lý thông điệp, Phản hồi API & Gửi Email)**: Đóng gói toàn bộ kết quả trả về của hệ thống theo định dạng chuẩn (`ApiResponse<T>`, `PageResponse<T>`), xử lý thông báo lỗi xác thực đa trường (Bean Validation), và quản lý hệ thống phát thông điệp thông báo (Email Dispatcher, EmailLog).
 
+### Sơ đồ Class Diagram Hợp nhất Toàn bộ Common Design:
+- File PlantUML (.puml): [Common_Design_Class_Diagram.puml](./CommonDesign/Common_Design_Class_Diagram.puml)
+- File Sơ đồ chuyên biệt:
+  * Error Handling: [CD01_Error_Handling.puml](./CommonDesign/CD01_Error_Handling.puml)
+  * Logging: [CD02_Logging.puml](./CommonDesign/CD02_Logging.puml)
+  * Messages Processing: [CD03_Messages_Processing.puml](./CommonDesign/CD03_Messages_Processing.puml)
+
 ---
 
-## 2. PHẦN 1: ERROR HANDLING DESIGN (XỬ LÝ LỖI & NGOẠI LỆ)
+## 2. PHẦN 1: ERROR HANDLING DESIGN (XỬ LÝ LỖI & NGOẠI LỆ TẬP TRUNG)
 
 ### 2.1. Class Diagram - Error Handling
 Biểu đồ lớp chi tiết được lưu trữ tại file: [`CD01_Error_Handling.puml`](./CommonDesign/CD01_Error_Handling.puml).
@@ -70,7 +77,7 @@ package "com.pharmacy.exception" {
     RuntimeException <|-- InvalidTokenException
     RuntimeException <|-- ResourceNotFoundException
     RuntimeException <|-- DuplicateResourceException
-    RuntimeException <|-- CustomerPhoneAlreadyExistsException
+    DuplicateResourceException <|-- CustomerPhoneAlreadyExistsException
     RuntimeException <|-- InsufficientStockException
     RuntimeException <|-- NoOpenShiftException
     RuntimeException <|-- ShiftAlreadyOpenException
@@ -102,59 +109,38 @@ package "com.pharmacy.exception" {
 | Tên phương thức | Ngoại lệ bắt chặn | HTTP Status | Cấu trúc dữ liệu phản hồi | Mô tả nghiệp vụ |
 | :--- | :--- | :---: | :--- | :--- |
 | `handleCustomBadCredentialsException` | `BadCredentialsException` | `401 UNAUTHORIZED` | `ApiResponse<Void>` (status=401, message=ex.getMessage()) | Đăng nhập thất bại do sai username hoặc mật khẩu. |
-| `handleSpringBadCredentialsException` | `org.springframework.security...BadCredentialsException` | `401 UNAUTHORIZED` | `ApiResponse<Void>` (status=401) | Bắt chặn ngoại lệ xác thực mật khẩu từ Spring Security filter. |
-| `handleAccountLockedException` | `AccountLockedException` | `403 FORBIDDEN` | `ApiResponse<Void>` (status=403, message="Tài khoản bị khóa...") | Ngăn chặn truy cập khi tài khoản bị khóa do đăng nhập sai quá 5 lần hoặc ngưng hoạt động. |
+| `handleSpringBadCredentialsException` | `org.springframework.security...BadCredentialsException` | `401 UNAUTHORIZED` | `ApiResponse<Void>` (status=401) | Bắt chặn ngoại lệ xác thực mật khẩu từ Spring Security filter chain. |
+| `handleAccountLockedException` | `AccountLockedException` | `403 FORBIDDEN` | `ApiResponse<Void>` (status=403, message="Tài khoản bị khóa...") | Ngăn chặn truy cập khi tài khoản bị khóa do đăng nhập sai quá 5 lần hoặc bị ngưng hoạt động. |
 | `handleTokenRefreshException` | `TokenRefreshException` | `401 UNAUTHORIZED` | `ApiResponse<Void>` (status=401) | Refresh Token trong cookie bị hết hạn, bị thu hồi hoặc giả mạo. |
-| `handleInvalidTokenException` | `InvalidTokenException` | `400 BAD_REQUEST` | `ApiResponse<Void>` (status=400) | Token đặt lại mật khẩu không hợp lệ hoặc đã qua sử dụng. |
+| `handleInvalidTokenException` | `InvalidTokenException` | `400 BAD_REQUEST` | `ApiResponse<Void>` (status=400) | Token đặt lại mật khẩu không hợp lệ, không tồn tại hoặc đã qua sử dụng. |
 | `handleResourceNotFoundException` | `ResourceNotFoundException` | `404 NOT_FOUND` | `ApiResponse<Void>` (status=404, message="Không tìm thấy...") | Không tìm thấy bản ghi Entity theo ID hoặc điều kiện truy vấn. |
-| `handleDuplicateResourceException` | `DuplicateResourceException` | `409 CONFLICT` | `ApiResponse<Void>` (status=409, message="Dữ liệu đã tồn tại...") | Trùng lặp khóa duy nhất (Số điện thoại, Mã vạch thuốc, Mã đơn). |
-| `handleValidationException` | `MethodArgumentNotValidException` | `400 BAD_REQUEST` | `ApiResponse<Map<String, String>>` (status=400, data=errorsMap) | Lỗi vi phạm các ràng buộc dữ liệu đầu vào (`@Valid`, `@NotNull`, `@Size`). |
-| `handleIllegalArgumentException` | `IllegalArgumentException` | `400 BAD_REQUEST` | `ApiResponse<Void>` (status=400) | Lỗi đối số truyền vào không hợp lệ (ví dụ: thiếu khách hàng, tiền thanh toán âm). |
-| `handleIllegalStateException` | `IllegalStateException` | `409 CONFLICT` | `ApiResponse<Void>` (status=409) | Trạng thái đối tượng không phù hợp để thực thi thao tác (ví dụ: ca đã đóng, hóa đơn đã hủy). |
-| `handleInvalidOperation` | `InvalidOperationException` | `400 BAD_REQUEST` | `ApiResponse<Void>` (status=400) | Thao tác logic nghiệp vụ không được phép. |
-| `handleGeneralException` | `Exception` | `500 INTERNAL_SERVER_ERROR` | `ApiResponse<Void>` (status=500, message="Lỗi máy chủ nội bộ: ...") | Điểm chốt an toàn cuối cùng bắt chặn toàn bộ lỗi không mong muốn, tránh lộ StackTrace ra ngoài. |
+| `handleDuplicateResourceException` | `DuplicateResourceException` | `409 CONFLICT` | `ApiResponse<Void>` (status=409, message="Dữ liệu đã tồn tại...") | Trùng lặp khóa duy nhất (Số điện thoại, Mã vạch thuốc, Mã hóa đơn). |
+| `handleValidationException` | `MethodArgumentNotValidException` | `400 BAD_REQUEST` | `ApiResponse<Map<String, String>>` (status=400, data=errorsMap) | Lỗi vi phạm các ràng buộc dữ liệu đầu vào (`@Valid`, `@NotNull`, `@Size`, `@NotBlank`). |
+| `handleIllegalArgumentException` | `IllegalArgumentException` | `400 BAD_REQUEST` | `ApiResponse<Void>` (status=400) | Lỗi đối số truyền vào không hợp lệ (ví dụ: thiếu khách hàng bắt buộc, số tiền âm). |
+| `handleIllegalStateException` | `IllegalStateException` | `409 CONFLICT` | `ApiResponse<Void>` (status=409) | Trạng thái đối tượng không phù hợp để thực thi thao tác (ví dụ: ca đã đóng, đơn đã hủy). |
+| `handleInvalidOperation` | `InvalidOperationException` | `400 BAD_REQUEST` | `ApiResponse<Void>` (status=400) | Thao tác logic nghiệp vụ không được phép thực thi. |
+| `handleNotFound` | `EntityNotFoundException` | `404 NOT_FOUND` | `ApiResponse<Void>` (status=404) | JPA Entity không tồn tại trong DB. |
+| `handleGeneralException` | `Exception` | `500 INTERNAL_SERVER_ERROR` | `ApiResponse<Void>` (status=500, message="Lỗi máy chủ nội bộ: ...") | Điểm chốt an toàn cuối cùng bắt chặn toàn bộ lỗi không mong muốn, tránh rò rỉ StackTrace. |
 
 ---
 
 ### 2.3. Class Specification - Danh mục Custom Exceptions
 
-#### 1. `BadCredentialsException`
-- **Gói**: `com.pharmacy.exception`
-- **Kế thừa**: `java.lang.RuntimeException`
-- **Mục đích**: Ném ra khi thông tin xác thực (Username / Email / Password) không trùng khớp trong DB.
-- **Constructor**: `public BadCredentialsException(String message)`
+#### Bảng tổng hợp các lớp Exception nghiệp vụ:
 
-#### 2. `AccountLockedException`
-- **Gói**: `com.pharmacy.exception`
-- **Kế thừa**: `java.lang.RuntimeException`
-- **Mục đích**: Ném ra khi tài khoản có `status != 1 (ACTIVE)`, ví dụ: `LOCKED` (2) do brute-force hoặc `INACTIVE` (0) do bị thu hồi quyền.
-- **Constructor**: `public AccountLockedException(String message)`
-
-#### 3. `ResourceNotFoundException`
-- **Gói**: `com.pharmacy.exception`
-- **Kế thừa**: `java.lang.RuntimeException`
-- **Mục đích**: Ném ra khi truy vấn ID không tồn tại trên các bảng nghiệp vụ: Khách hàng, Thuốc, Lô thuốc, Ca làm việc, Đơn hàng.
-- **Constructor**: `public ResourceNotFoundException(String message)`
-
-#### 4. `DuplicateResourceException` & `CustomerPhoneAlreadyExistsException`
-- **Gói**: `com.pharmacy.exception`
-- **Kế thừa**: `java.lang.RuntimeException`
-- **Mục đích**: Ném ra khi cố tình đăng ký số điện thoại, mã vạch hoặc username đã tồn tại trên hệ thống.
-- **Constructor**: `public DuplicateResourceException(String message)`
-
-#### 5. `InsufficientStockException`
-- **Gói**: `com.pharmacy.exception`
-- **Kế thừa**: `java.lang.RuntimeException`
-- **Mục đích**: Ném ra khi trừ kho bán lẻ POS mà số lượng tồn khả dụng của lô thuốc theo đơn vị cơ bản không đủ đáp ứng.
-- **Constructor**: `public InsufficientStockException(String message)`
-
-#### 6. `NoOpenShiftException` & `ShiftAlreadyOpenException`
-- **Gói**: `com.pharmacy.exception`
-- **Kế thừa**: `java.lang.RuntimeException`
-- **Mục đích**: 
-  - `NoOpenShiftException`: Thu ngân cố tình bán hàng khi chưa thực hiện thủ tục "Mở Ca".
-  - `ShiftAlreadyOpenException`: Thu ngân cố tình mở thêm ca mới khi ca hiện tại chưa được "Chốt Ca".
-- **Constructor**: `public NoOpenShiftException(String message)`, `public ShiftAlreadyOpenException(String message)`
+| Tên lớp Exception | Kế thừa | Điều kiện kích hoạt (Trigger) | HTTP Code | Thông điệp mẫu |
+| :--- | :--- | :--- | :---: | :--- |
+| **`BadCredentialsException`** | `RuntimeException` | Sai username hoặc password khi đăng nhập | `401` | "Tên đăng nhập hoặc mật khẩu không chính xác" |
+| **`AccountLockedException`** | `RuntimeException` | Tài khoản có status = 0 (Inactive) hoặc 2 (Locked) | `403` | "Tài khoản của bạn đã bị vô hiệu hóa / khóa" |
+| **`TokenRefreshException`** | `RuntimeException` | Refresh Token hết hạn hoặc revoked = true | `401` | "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" |
+| **`InvalidTokenException`** | `RuntimeException` | Reset password token hết hạn (>15m) hoặc đã dùng | `400` | "Liên kết khôi phục mật khẩu không hợp lệ" |
+| **`ResourceNotFoundException`** | `RuntimeException` | Không tìm thấy Customer, Product, Shift, Invoice | `404` | "Không tìm thấy khách hàng với ID: 105" |
+| **`DuplicateResourceException`**| `RuntimeException` | Trùng mã vạch, trùng username, trùng số điện thoại | `409` | "Dữ liệu đã tồn tại trong hệ thống" |
+| **`CustomerPhoneAlreadyExistsException`** | `DuplicateResourceException` | Số điện thoại đã được đăng ký bởi khách hàng khác | `409` | "Số điện thoại đã tồn tại trong hệ thống" |
+| **`InsufficientStockException`**| `RuntimeException` | Tồn kho khả dụng của lô thuốc không đủ bán lẻ | `400` | "Sản phẩm [Amoxicillin] chỉ còn tồn 5 viên" |
+| **`NoOpenShiftException`** | `RuntimeException` | Thu ngân cố tạo đơn hàng khi chưa mở ca | `400` | "Bạn chưa mở ca làm việc. Vui lòng mở ca trước" |
+| **`ShiftAlreadyOpenException`** | `RuntimeException` | Thu ngân cố mở ca mới khi đang có ca chưa chốt | `409` | "Bạn đang có một ca làm việc chưa kết thúc!" |
+| **`InvalidOperationException`** | `RuntimeException` | Thao tác sai quy trình nghiệp vụ | `400` | "Ca làm việc này đã được chốt trước đó!" |
 
 ---
 
@@ -253,16 +239,41 @@ AuditLogController --> AuditLogService
 
 ---
 
-### 3.3. Class Specification - AuditLogService & AuditLogServiceImpl
+### 3.3. Class Specification - AuditLogRepository
 
-| Phương thức | Tham số đầu vào | Kiểu trả về | Mô tả nghiệp vụ |
-| :--- | :--- | :---: | :--- |
-| `getAuditLogs` | `String search`, `Short action`, `String entityName`, `Pageable pageable` | `Page<AuditLogDto>` | Tra cứu và lọc lịch sử kiểm toán toàn hệ thống với bộ lọc từ khóa, loại hành động và phân trang. |
-| `recordAuditLog` *(Helper method)* | `Account acc`, `Short action`, `String entity`, `Long entityId`, `String details`, `String ip` | `void` | Ghi trực tiếp một bản ghi kiểm toán mới vào bảng `audit_logs` một cách độc lập thông qua `AuditLogRepository.save()`. |
+| Mục | Chi tiết đặc tả |
+| :--- | :--- |
+| **Package** | `com.pharmacy.repository` |
+| **Interface Name** | `AuditLogRepository` |
+| **Kế thừa** | `JpaRepository<AuditLog, Long>`, `JpaSpecificationExecutor<AuditLog>` |
+| **Mục đích** | Cung cấp các thao tác truy vấn động (Spring Data JPA Specification) cho phép tìm kiếm đa tiêu chí trên bảng `audit_logs` kết hợp phân trang và sắp xếp. |
+
+#### Các phương thức chính:
+- `Page<AuditLog> findAll(Specification<AuditLog> spec, Pageable pageable)`: Tìm kiếm và lọc log theo từ khóa, loại hành động, thời gian và phân trang.
+- `List<AuditLog> findByEntityNameAndEntityId(String entityName, Long entityId)`: Lấy toàn bộ lịch sử biến động dữ liệu của một thực thể cụ thể.
 
 ---
 
-### 3.4. Framework Logging (SLF4J / Logback)
+### 3.4. Class Specification - AuditLogService & AuditLogServiceImpl
+
+| Mục | Chi tiết đặc tả |
+| :--- | :--- |
+| **Package** | `com.pharmacy.service` / `com.pharmacy.service.impl` |
+| **Interface / Class** | `AuditLogService` (Interface), `AuditLogServiceImpl` (Class) |
+| **Stereotype** | `<<control>>`, `@Service` |
+| **Mục đích** | Thực thi nghiệp vụ tra cứu nhật ký kiểm toán, chuyển đổi dữ liệu Entity sang DTO và hỗ trợ ghi log kiểm toán độc lập. |
+
+#### Danh sách phương thức:
+
+| Tên phương thức | Tham số | Kiểu trả về | Mô tả chi tiết |
+| :--- | :--- | :---: | :--- |
+| `getAuditLogs` | `String search`, `Short action`, `String entityName`, `Pageable pageable` | `Page<AuditLogDto>` | Xây dựng `Specification` động, truy vấn DB và ánh xạ danh sách `AuditLog` thành `AuditLogDto`. |
+| `mapToDto` *(private)* | `AuditLog log` | `AuditLogDto` | Chuyển đổi mã số `action` thành tên hiển thị người dùng (CREATE -> "Thêm mới", v.v.). |
+| `recordAuditLog` *(Helper)* | `Account acc`, `Short action`, `String entity`, `Long entityId`, `String details`, `String ip` | `void` | Ghi trực tiếp một bản ghi kiểm toán mới vào DB một cách an toàn không làm ảnh hưởng luồng chính. |
+
+---
+
+### 3.5. Framework Logging (SLF4J / Logback)
 - **Quy chuẩn log level**:
   - `DEBUG`: Dùng để theo dõi chi tiết quá trình tính toán chiết khấu, phân rã đơn vị thuốc (`conversionFactor`), các query Hibernate trong môi trường dev.
   - `INFO`: Dùng để ghi lại các mốc nghiệp vụ hoàn tất thành công (User login thành công, Tạo đơn hàng `INV-xxx`, Mở ca ID `xxx`, Chốt ca).
@@ -412,6 +423,28 @@ EmailServiceImpl ..> EmailLog : creates & logs
    - Gửi thư mời chào giá đến Nhà cung cấp kèm token bảo mật truy cập trang portal đối tác.
 3. `logEmail(to, subject, body, refType, refId, status, error)`:
    - Phương thức helper lưu trữ lịch sử tin nhắn email vào cơ sở dữ liệu.
+
+---
+
+### 4.5. Class Specification - EmailLog (Entity)
+
+| Mục | Chi tiết đặc tả |
+| :--- | :--- |
+| **Package** | `com.pharmacy.entity` |
+| **Class Name** | `EmailLog` |
+| **Stereotype** | `<<entity>>`, `@Entity`, `@Table(name = "email_logs")` |
+| **Mục đích** | Lưu trữ toàn bộ lịch sử gửi email thông điệp hệ thống để đối soát và xử lý sự cố. |
+
+#### Danh sách thuộc tính:
+- `id: Long`: Khóa chính tự tăng.
+- `toEmail: String (150)`: Địa chỉ email người nhận.
+- `subject: String (300)`: Tiêu đề email.
+- `body: String (NVARCHAR(MAX))`: Nội dung thư dạng HTML.
+- `refType: String (40)`: Loại nghiệp vụ (`AUTH_RESET_PASSWORD`, `RFQ_INVITATION`).
+- `refId: Long`: ID tham chiếu đối tượng nghiệp vụ.
+- `status: Short`: Trạng thái gửi (`1: SENT`, `2: FAILED`).
+- `errorMessage: String`: Chi tiết lỗi ném ra từ máy chủ SMTP nếu gửi thất bại.
+- `sentAt: LocalDateTime`: Thời điểm thực hiện gửi thư.
 
 ---
 
