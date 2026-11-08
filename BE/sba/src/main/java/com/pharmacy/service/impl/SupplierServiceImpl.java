@@ -8,6 +8,7 @@ import org.springframework.util.StringUtils;
 
 import com.pharmacy.dto.supplier.CreateSupplierRequest;
 import com.pharmacy.dto.supplier.SupplierResponse;
+import com.pharmacy.dto.supplier.SupplierStatsResponse;
 import com.pharmacy.dto.supplier.UpdateSupplierRequest;
 import com.pharmacy.entity.Supplier;
 import com.pharmacy.entity.enums.SupplierStatus;
@@ -115,6 +116,17 @@ public class SupplierServiceImpl implements SupplierService {
         supplier.setDeleteReason(reason != null && !reason.trim().isEmpty() ? reason.trim() : null);
         Supplier savedSupplier = supplierRepository.save(supplier);
         return SupplierResponse.fromEntityToDelete(savedSupplier);
+    }
+
+    @Override
+    public SupplierStatsResponse viewSupplierStatistics() {
+        return SupplierStatsResponse.builder()
+                .total(supplierRepository.count())
+                .active(supplierRepository.countByStatus(SupplierStatus.ACTIVE))
+                .inactive(supplierRepository.countByStatus(SupplierStatus.INACTIVE))
+                .pending(supplierRepository.countByStatus(SupplierStatus.PENDING))
+                .withTaxCode(supplierRepository.countWithTaxCode())
+                .build();
     }
 
 }

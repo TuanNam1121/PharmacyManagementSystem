@@ -17,6 +17,7 @@ import com.pharmacy.repository.ProductRepository;
 import com.pharmacy.repository.PurchaseProposalRepository;
 import com.pharmacy.repository.PurchaseProposalRequestRepository;
 import com.pharmacy.repository.PurchaseRequestRepository;
+import com.pharmacy.repository.SupplierQuotationDetailRepository;
 import com.pharmacy.repository.SupplierQuotationRepository;
 import com.pharmacy.service.PurchaseProposalService;
 import jakarta.persistence.EntityNotFoundException;
@@ -50,6 +51,7 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
     private final AccountRepository accountRepository;
     private final ProductRepository productRepository;
     private final SupplierQuotationRepository supplierQuotationRepository;
+    private final SupplierQuotationDetailRepository supplierQuotationDetailRepository;
 
     @Override
     @Transactional
@@ -262,6 +264,17 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
         }
 
         pp.setSupplierQuotation(quotation);
+
+        // Đồng bộ tổng tiền theo báo giá thực tế của nhà cung cấp được chọn.
+        // total_amount ban đầu chỉ là tạm tính theo giá vốn danh mục lúc tạo đề xuất,
+        // nên phải tính lại để tổng đơn đặt hàng khớp các dòng hàng báo giá.
+        BigDecimal quotedTotal = supplierQuotationDetailRepository
+                .findBySupplierQuotationId(quotation.getId())
+                .stream()
+                .map(d -> d.getSubtotal() != null ? d.getSubtotal() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        pp.setTotalAmount(quotedTotal);
+
         pp.setStatus(PurchaseProposalStatus.PENDING_APPROVAL.getCode());
 
         return PurchaseProposalResponse.fromEntity(purchaseProposalRepository.save(pp));

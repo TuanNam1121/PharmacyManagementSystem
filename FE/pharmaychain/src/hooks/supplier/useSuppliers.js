@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { viewSupplierList, viewSupplierDetail, createSupplier, updateSupplier, deleteSupplier } from '../../api/SupplierAPI';
+import { viewSupplierList, viewSupplierDetail, createSupplier, updateSupplier, deleteSupplier, viewSupplierStats } from '../../api/SupplierAPI';
 
 export const useSuppliers = () => {
   const [data, setData] = useState([]);
@@ -14,6 +14,7 @@ export const useSuppliers = () => {
   const [successMsg, setSuccessMsg] = useState(null);
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [stats, setStats] = useState(null);
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -36,6 +37,15 @@ export const useSuppliers = () => {
     }
   }, [page, size, sort, search, statusFilter]);
 
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await viewSupplierStats();
+      setStats(res);
+    } catch {
+      // Giữ nguyên số liệu KPI đã có nếu API thống kê gặp lỗi
+    }
+  }, []);
+
   const fetchDetail = useCallback(async (id) => {
     setDetailLoading(true);
     try {
@@ -56,12 +66,13 @@ export const useSuppliers = () => {
       await createSupplier(payload);
       setSuccessMsg('Supplier partner added successfully!');
       await fetchList();
+      await fetchStats();
       return true;
     } catch (err) {
       setError(err.message || 'Failed to create supplier');
       throw err;
     }
-  }, [fetchList]);
+  }, [fetchList, fetchStats]);
 
   const handleUpdate = useCallback(async (id, payload) => {
     try {
@@ -69,6 +80,7 @@ export const useSuppliers = () => {
       await updateSupplier(id, payload);
       setSuccessMsg('Supplier partner updated successfully!');
       await fetchList();
+      await fetchStats();
       if (detail && detail.id === id) {
         await fetchDetail(id);
       }
@@ -77,7 +89,7 @@ export const useSuppliers = () => {
       setError(err.message || 'Failed to update supplier');
       throw err;
     }
-  }, [fetchList, detail, fetchDetail]);
+  }, [fetchList, fetchStats, detail, fetchDetail]);
 
   const handleDelete = useCallback(async (id, reason = '') => {
     try {
@@ -85,12 +97,13 @@ export const useSuppliers = () => {
       await deleteSupplier(id, reason);
       setSuccessMsg('Supplier partner deactivated successfully!');
       await fetchList();
+      await fetchStats();
       return true;
     } catch (err) {
       setError(err.message || 'Failed to delete supplier');
       throw err;
     }
-  }, [fetchList]);
+  }, [fetchList, fetchStats]);
 
   return {
     data,
@@ -118,5 +131,7 @@ export const useSuppliers = () => {
     detail,
     detailLoading,
     setDetail,
+    stats,
+    fetchStats,
   };
 };

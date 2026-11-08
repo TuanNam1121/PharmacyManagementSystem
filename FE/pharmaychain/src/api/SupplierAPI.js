@@ -53,10 +53,16 @@ export const viewSupplierDetail = async (id) => {
   return unwrapApiResponse(json);
 };
 
+export const viewSupplierStats = async () => {
+  const json = await get(`${SUPPLIER_BASE_URL}/stats`);
+  return unwrapApiResponse(json);
+};
+
 export default {
   createSupplier,
   updateSupplier,
   deleteSupplier,
   viewSupplierList,
   viewSupplierDetail,
+  viewSupplierStats,
 };

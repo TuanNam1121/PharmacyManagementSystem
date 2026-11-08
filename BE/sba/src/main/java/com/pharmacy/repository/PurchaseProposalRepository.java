@@ -1,6 +1,7 @@
 package com.pharmacy.repository;
 
 import com.pharmacy.entity.PurchaseProposal;
+import com.pharmacy.entity.PurchaseProposalDetail;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -91,4 +93,11 @@ public interface PurchaseProposalRepository extends JpaRepository<PurchasePropos
     Optional<PurchaseProposal> findByIdWithDetails(@Param("id") Long id);
 
     boolean existsByCode(String code);
+
+    /**
+     * Lấy chi tiết đề xuất kèm sản phẩm cho nhiều đề xuất trong 1 truy vấn
+     * (dùng để tạm tính tổng tiền đơn PO chưa có báo giá, tránh N+1).
+     */
+    @Query("SELECT d FROM PurchaseProposalDetail d JOIN FETCH d.product WHERE d.purchaseProposal.id IN :ids")
+    List<PurchaseProposalDetail> findDetailsWithProductByProposalIds(@Param("ids") Collection<Long> ids);
 }

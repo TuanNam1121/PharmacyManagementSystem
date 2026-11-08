@@ -324,6 +324,11 @@ export default function PurchaseOrdersPage() {
                                             <td className="fw-600">{po.supplierName || '—'}</td>
                                             <td style={{ textAlign: 'right', fontWeight: 700, color: '#059669' }}>
                                                 {Number(po.totalAmount || 0).toLocaleString('vi-VN')}
+                                                {!po.supplierQuotationCode && (
+                                                    <div style={{ fontSize: 10.5, fontWeight: 600, color: '#94a3b8' }}>
+                                                        tạm tính
+                                                    </div>
+                                                )}
                                             </td>
                                             <td>
                                                 {getPoStatusBadge(po.status, po.statusText)}

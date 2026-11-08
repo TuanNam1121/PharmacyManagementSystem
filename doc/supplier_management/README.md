@@ -54,16 +54,17 @@ erDiagram
 ### 3.1. Phía Backend (Spring Boot 3 - Java 21)
 | Phân loại | Tên File / Class | Package | Mục đích & Mô tả |
 | :--- | :--- | :--- | :--- |
-| **Controller** | `SupplierController.java` | `com.pharmacy.controller` | Tiếp nhận toàn bộ REST API `/api/v1/supplier` (list, detail, create, update, delete) |
-| **Service (Interface)** | `SupplierService.java` | `com.pharmacy.service` | Khai báo các nghiệp vụ CRUD nhà cung cấp |
-| **Service (Impl)** | `SupplierServiceImpl.java` | `com.pharmacy.service.impl` | Cài đặt logic nghiệp vụ, tìm kiếm động, soft-delete |
-| **Repository** | `SupplierRepository.java` | `com.pharmacy.repository` | `JpaRepository<Supplier, Long>` + tìm theo tên/trạng thái |
+| **Controller** | `SupplierController.java` | `com.pharmacy.controller` | Tiếp nhận toàn bộ REST API `/api/v1/supplier` (list, detail, statistics, create, update, delete) |
+| **Service (Interface)** | `SupplierService.java` | `com.pharmacy.service` | Khai báo các nghiệp vụ CRUD nhà cung cấp + thống kê KPI |
+| **Service (Impl)** | `SupplierServiceImpl.java` | `com.pharmacy.service.impl` | Cài đặt logic nghiệp vụ, tìm kiếm động, soft-delete, thống kê KPI |
+| **Repository** | `SupplierRepository.java` | `com.pharmacy.repository` | `JpaRepository<Supplier, Long>` + tìm theo tên/trạng thái + `countByStatus`, `countWithTaxCode` |
 | **Entity** | `Supplier.java` | `com.pharmacy.entity` | Ánh xạ bảng `suppliers` |
 | **Enum** | `SupplierStatus.java` | `com.pharmacy.entity.enums` | Trạng thái: ACTIVE / INACTIVE / PENDING |
 | **Converter** | `SupplierStatusConverter.java` | `com.pharmacy.entity.converter` | Chuyển đổi enum ↔ TINYINT |
 | **DTO** | `CreateSupplierRequest.java` | `com.pharmacy.dto.supplier` | Payload tạo mới (record + Bean Validation) |
 | **DTO** | `UpdateSupplierRequest.java` | `com.pharmacy.dto.supplier` | Payload cập nhật (record, không có `code`) |
 | **DTO** | `SupplierResponse.java` | `com.pharmacy.dto.supplier` | Factory method: `fromEntityToList`, `fromEntityToDetail`, `fromEntityToCreate`, `fromEntityToUpdate`, `fromEntityToDelete` |
+| **DTO** | `SupplierStatsResponse.java` | `com.pharmacy.dto.supplier` | Số liệu KPI: `total`, `active`, `inactive`, `pending`, `withTaxCode` |
 | **DTO chung** | `ApiResponse.java`, `PageResponse.java` | `com.pharmacy.dto` | Bọc kết quả chuẩn & phân trang |
 
 ### 3.2. Phía Frontend (React + Vite)
@@ -123,6 +124,7 @@ Base URL: `http://localhost:8080/api/v1/supplier`
 | 3 | `POST` | `/api/v1/supplier` | `Purchasing Staff` | Tạo mới nhà cung cấp (trả về HTTP 201) |
 | 4 | `PATCH` | `/api/v1/supplier/{id}` | `Purchasing Staff` | Cập nhật thông tin nhà cung cấp |
 | 5 | `DELETE` | `/api/v1/supplier/{id}?reason=` | `Purchasing Staff` | Ngừng hoạt động (xóa mềm) nhà cung cấp |
+| 6 | `GET` | `/api/v1/supplier/stats` | `Purchasing Staff` | Số liệu KPI: tổng, đang hợp tác, tạm ngừng, chờ duyệt, đầy đủ MST |
 
 > **Xử lý ngoại lệ tại Controller**: `SupplierController` có `@ExceptionHandler(EntityNotFoundException.class)` → **HTTP 404** và `@ExceptionHandler(IllegalArgumentException.class)` → **HTTP 400**.
 

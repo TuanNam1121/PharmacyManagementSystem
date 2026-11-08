@@ -1,12 +1,26 @@
-export default function SupplierStats({ total = 0, suppliers = [] }) {
-  const activeCount = suppliers.filter((s) => String(s.status) === '1').length;
-  const inactiveCount = suppliers.filter((s) => String(s.status) === '0').length;
-  const withTaxCodeCount = suppliers.filter((s) => Boolean(s.taxCode)).length;
+import { isInactiveStatus } from '../../utils/format';
 
-  const stats = [
+/**
+ * Trạng thái "Đang hợp tác" của nhà cung cấp.
+ * Backend trả về tên enum SupplierStatus (ACTIVE/INACTIVE/PENDING), hỗ trợ thêm dạng số (1/2/3).
+ */
+const isActiveStatus = (status) => {
+  const s = String(status ?? '').toUpperCase();
+  return s === 'ACTIVE' || s === '1';
+};
+
+export default function SupplierStats({ total = 0, stats = null, suppliers = [] }) {
+  // Ưu tiên số liệu KPI đếm từ backend (GET /api/v1/supplier/stats).
+  // Fallback: đếm tại trang hiện tại nếu API thống kê chưa sẵn sàng / gặp lỗi.
+  const activeCount = stats?.active ?? suppliers.filter((s) => isActiveStatus(s?.status)).length;
+  const inactiveCount = stats?.inactive ?? suppliers.filter((s) => isInactiveStatus(s?.status)).length;
+  const withTaxCodeCount = stats?.withTaxCode ?? suppliers.filter((s) => Boolean(s.taxCode)).length;
+  const totalCount = stats?.total ?? total;
+
+  const statCards = [
     {
       label: 'Tổng Nhà Cung Cấp',
-      value: total,
+      value: totalCount,
       sub: 'đối tác trong hệ thống',
       iconColor: 'emerald',
       icon: (
@@ -60,7 +74,7 @@ export default function SupplierStats({ total = 0, suppliers = [] }) {
 
   return (
     <div className="pms-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-      {stats.map((s) => (
+      {statCards.map((s) => (
         <div className="pms-stat-card" key={s.label}>
           <div className={`pms-stat-icon ${s.iconColor}`}>{s.icon}</div>
           <div>

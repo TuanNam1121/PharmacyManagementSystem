@@ -1,6 +1,7 @@
 package com.pharmacy.service;
 
 import com.pharmacy.dto.supplier.SupplierResponse;
+import com.pharmacy.dto.supplier.SupplierStatsResponse;
 import com.pharmacy.dto.supplier.UpdateSupplierRequest;
 import com.pharmacy.entity.Supplier;
 import com.pharmacy.entity.enums.SupplierStatus;
@@ -129,5 +130,24 @@ class SupplierServiceTest {
         assertThrows(EntityNotFoundException.class,
                 () -> supplierService.updateSupplierInformation(99L, updateRequest));
         verify(supplierRepository, never()).save(any(Supplier.class));
+    }
+
+    @Test
+    @DisplayName("Thống kê KPI nhà cung cấp trả về số lượng theo từng trạng thái")
+    void viewSupplierStatistics_returnsCountsByStatus() {
+        when(supplierRepository.count()).thenReturn(21L);
+        when(supplierRepository.countByStatus(SupplierStatus.ACTIVE)).thenReturn(18L);
+        when(supplierRepository.countByStatus(SupplierStatus.INACTIVE)).thenReturn(2L);
+        when(supplierRepository.countByStatus(SupplierStatus.PENDING)).thenReturn(1L);
+        when(supplierRepository.countWithTaxCode()).thenReturn(15L);
+
+        SupplierStatsResponse stats = supplierService.viewSupplierStatistics();
+
+        assertNotNull(stats);
+        assertEquals(21L, stats.total());
+        assertEquals(18L, stats.active());
+        assertEquals(2L, stats.inactive());
+        assertEquals(1L, stats.pending());
+        assertEquals(15L, stats.withTaxCode());
     }
 }

@@ -61,6 +61,8 @@ export default function SupplierPage() {
     detail,
     detailLoading,
     setDetail,
+    stats,
+    fetchStats,
   } = useSuppliers();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -74,7 +76,8 @@ export default function SupplierPage() {
 
   useEffect(() => {
     fetchList();
-  }, [fetchList]);
+    fetchStats();
+  }, [fetchList, fetchStats]);
 
   const handleView = async (id) => {
     setModalOpen(true);
@@ -176,7 +179,7 @@ export default function SupplierPage() {
       )}
 
       {/* ── Stats Grid ── */}
-      <SupplierStats total={total} suppliers={data} />
+      <SupplierStats total={stats?.total ?? total} stats={stats} suppliers={data} />
 
       {/* ── Filters Bar ── */}
       <SupplierFilters
