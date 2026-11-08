@@ -1,9 +1,7 @@
 export default function CustomerFilters({
   keyword,
-  membershipTier,
   statusFilter,
   onKeywordChange,
-  onTierChange,
   onStatusChange,
   onAddNew,
   onExport,
@@ -50,20 +48,6 @@ export default function CustomerFilters({
           </button>
         )}
       </div>
-
-      {/* Membership Tier Filter */}
-      <select
-        className="pms-select"
-        value={membershipTier}
-        onChange={(e) => onTierChange(e.target.value)}
-        style={{ minWidth: 150 }}
-      >
-        <option value="">Tất cả hạng thẻ</option>
-        <option value="STANDARD">Chuẩn (Standard)</option>
-        <option value="SILVER">Bạc (Silver)</option>
-        <option value="GOLD">Vàng (Gold)</option>
-        <option value="DIAMOND">Kim Cương (Diamond)</option>
-      </select>
 
       {/* Status Filter */}
       <select

@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
@@ -44,7 +43,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<CustomerResponse> getCustomers(String keyword, String membershipTier, Short status,
+    public PageResponse<CustomerResponse> getCustomers(String keyword, Short status,
                                                         int page, int size, String sortBy, String sortDir) {
         String sortProperty = resolveSortProperty(sortBy);
         Sort sort = "asc".equalsIgnoreCase(sortDir)
@@ -112,12 +111,6 @@ public class CustomerServiceImpl implements CustomerService {
         List<CustomerResponse> content = customers.stream()
                 .map(c -> mapToCustomerResponse(c, spentMap.getOrDefault(c.getId(), BigDecimal.ZERO)))
                 .collect(Collectors.toList());
-
-        if (membershipTier != null && !membershipTier.trim().isEmpty() && !"ALL".equalsIgnoreCase(membershipTier)) {
-            content = content.stream()
-                    .filter(c -> membershipTier.equalsIgnoreCase(c.getMembershipTier()))
-                    .collect(Collectors.toList());
-        }
 
         return new PageResponse<>(
                 content,
@@ -281,9 +274,6 @@ public class CustomerServiceImpl implements CustomerService {
             age = Period.between(customer.getDateOfBirth(), LocalDate.now()).getYears();
         }
 
-        String membershipTier = calculateTier(totalSpent);
-        int loyaltyPoints = totalSpent.divide(BigDecimal.valueOf(10000), 0, RoundingMode.DOWN).intValue();
-
         CustomerHealthProfileDto healthDto = null;
         if (health != null) {
             healthDto = CustomerHealthProfileDto.builder()
@@ -322,8 +312,6 @@ public class CustomerServiceImpl implements CustomerService {
                 .age(age)
                 .email(customer.getEmail())
                 .address(customer.getAddress())
-                .membershipTier(membershipTier)
-                .loyaltyPoints(loyaltyPoints)
                 .totalSpent(totalSpent)
                 .totalOrders((int) totalOrders)
                 .status(customer.getStatus())
@@ -332,14 +320,6 @@ public class CustomerServiceImpl implements CustomerService {
                 .healthProfile(healthDto)
                 .recentInvoices(invoiceDtos)
                 .build();
-    }
-
-    private String calculateTier(BigDecimal totalSpent) {
-        if (totalSpent == null) return "STANDARD";
-        if (totalSpent.compareTo(BigDecimal.valueOf(10_000_000)) >= 0) return "DIAMOND";
-        if (totalSpent.compareTo(BigDecimal.valueOf(5_000_000)) >= 0) return "GOLD";
-        if (totalSpent.compareTo(BigDecimal.valueOf(1_000_000)) >= 0) return "SILVER";
-        return "STANDARD";
     }
 
     private String mapInvoiceStatus(Short status) {
@@ -371,8 +351,6 @@ public class CustomerServiceImpl implements CustomerService {
         String customerCode = String.format("KH-%06d", customer.getId());
 
         BigDecimal safeSpent = totalSpent != null ? totalSpent : BigDecimal.ZERO;
-        String membershipTier = calculateTier(safeSpent);
-        Integer loyaltyPoints = safeSpent.divide(BigDecimal.valueOf(10000), 0, RoundingMode.DOWN).intValue();
 
         return CustomerResponse.builder()
                 .customerId(customer.getId())
@@ -384,8 +362,6 @@ public class CustomerServiceImpl implements CustomerService {
                 .gender(genderLabel)
                 .genderCode(customer.getGender())
                 .address(customer.getAddress())
-                .membershipTier(membershipTier)
-                .loyaltyPoints(loyaltyPoints)
                 .totalSpent(safeSpent)
                 .status(customer.getStatus())
                 .hasAllergies(hasAllergies)

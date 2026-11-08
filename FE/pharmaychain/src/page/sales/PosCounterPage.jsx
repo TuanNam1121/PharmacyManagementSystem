@@ -468,13 +468,9 @@ export default function PosCounterPage() {
                                     <div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <strong style={{ fontSize: 14, color: '#0f172a' }}>{customer.fullName}</strong>
-                                            <span className="pms-badge pms-badge-success" style={{ fontSize: 10, padding: '1px 6px' }}>
-                                                {customer.membershipTier || 'Thành viên'}
-                                            </span>
                                         </div>
-                                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2, display: 'flex', justifyContent: 'space-between' }}>
+                                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
                                             <span>SĐT: <strong>{customer.phone}</strong></span>
-                                            <span>Điểm tích lũy: <strong style={{ color: 'var(--brand-primary)' }}>{(customer.loyaltyPoints ?? customer.rewardPoints ?? customer.points ?? 0)} điểm</strong></span>
                                         </div>
                                         {customer.allergies && (
                                             <div style={{ fontSize: 11, color: '#dc2626', marginTop: 4, fontWeight: 600 }}>

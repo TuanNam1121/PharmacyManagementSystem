@@ -5,41 +5,6 @@ function formatCurrency(amount) {
   return Number(amount).toLocaleString('vi-VN') + ' ₫';
 }
 
-function getTierBadge(tier) {
-  const code = (tier || 'STANDARD').toUpperCase();
-  switch (code) {
-    case 'DIAMOND':
-      return {
-        bg: 'rgba(168, 85, 247, 0.15)',
-        text: '#c084fc',
-        border: 'rgba(168, 85, 247, 0.3)',
-        label: 'Kim Cương',
-      };
-    case 'GOLD':
-      return {
-        bg: 'rgba(245, 158, 11, 0.15)',
-        text: '#fbbf24',
-        border: 'rgba(245, 158, 11, 0.3)',
-        label: 'Vàng',
-      };
-    case 'SILVER':
-      return {
-        bg: 'rgba(59, 130, 246, 0.15)',
-        text: '#60a5fa',
-        border: 'rgba(59, 130, 246, 0.3)',
-        label: 'Bạc',
-      };
-    case 'STANDARD':
-    default:
-      return {
-        bg: 'rgba(148, 163, 184, 0.15)',
-        text: '#94a3b8',
-        border: 'rgba(148, 163, 184, 0.3)',
-        label: 'Chuẩn',
-      };
-  }
-}
-
 function getGenderDisplay(gender) {
   const g = String(gender).toUpperCase();
   if (g === '1' || g === 'MALE' || g === 'NAM') return 'Nam';
@@ -109,8 +74,6 @@ export default function CustomerTable({
               <th>Khách hàng</th>
               <th>Số điện thoại</th>
               <th>Giới tính</th>
-              <th>Hạng thẻ</th>
-              <th className="text-right">Điểm tích lũy</th>
               <th className="text-right">Tổng chi tiêu</th>
               <th>Dị ứng thuốc</th>
               <th>Trạng thái</th>
@@ -120,7 +83,6 @@ export default function CustomerTable({
           <tbody>
             {customers.map((c, idx) => {
               const isActive = Number(c.status) === 1;
-              const tier = getTierBadge(c.membershipTier);
               const genderText = getGenderDisplay(c.gender ?? c.genderCode);
 
               return (
@@ -192,33 +154,6 @@ export default function CustomerTable({
                     <span style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
                       {genderText}
                     </span>
-                  </td>
-                  <td>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        padding: '2px 8px',
-                        borderRadius: 6,
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        backgroundColor: tier.bg,
-                        color: tier.text,
-                        border: `1px solid ${tier.border}`,
-                      }}
-                    >
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                      </svg>
-                      {tier.label}
-                    </span>
-                  </td>
-                  <td className="text-right">
-                    <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
-                      {(c.loyaltyPoints ?? 0).toLocaleString('vi-VN')}
-                    </span>
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 3 }}>pts</span>
                   </td>
                   <td className="text-right">
                     <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--brand-primary)' }}>

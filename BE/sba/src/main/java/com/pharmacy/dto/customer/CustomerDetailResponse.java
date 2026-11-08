@@ -25,8 +25,6 @@ public class CustomerDetailResponse {
     private Integer age;
     private String email;
     private String address;
-    private String membershipTier;
-    private Integer loyaltyPoints;
     private BigDecimal totalSpent;
     private Integer totalOrders;
     private Short status;

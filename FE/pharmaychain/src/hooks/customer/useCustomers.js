@@ -9,7 +9,6 @@ export function useCustomers() {
   const [size, setSize] = useState(10);
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
-  const [membershipTier, setMembershipTier] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortDir, setSortDir] = useState('desc');
@@ -34,7 +33,7 @@ export function useCustomers() {
       return;
     }
     setPage(0);
-  }, [debouncedKeyword, membershipTier, statusFilter]);
+  }, [debouncedKeyword, statusFilter]);
 
   // Fetch customers list
   const loadCustomers = useCallback(async () => {
@@ -43,7 +42,6 @@ export function useCustomers() {
       setError(null);
       const res = await fetchCustomers({
         keyword: debouncedKeyword,
-        membershipTier,
         status: statusFilter,
         page,
         size,
@@ -67,7 +65,7 @@ export function useCustomers() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedKeyword, membershipTier, statusFilter, page, size, sortBy, sortDir]);
+  }, [debouncedKeyword, statusFilter, page, size, sortBy, sortDir]);
 
   // Load when dependencies change
   useEffect(() => {
@@ -78,7 +76,6 @@ export function useCustomers() {
   const resetFilters = useCallback(() => {
     setKeyword('');
     setDebouncedKeyword('');
-    setMembershipTier('');
     setStatusFilter('');
     setPage(0);
   }, []);
@@ -93,8 +90,6 @@ export function useCustomers() {
     setSize,
     keyword,
     setKeyword,
-    membershipTier,
-    setMembershipTier,
     statusFilter,
     setStatusFilter,
     sortBy,
