@@ -8,7 +8,6 @@ export default function SupplierTable({
   onView,
   onEdit,
   onDelete,
-  onSendRfq,
 }) {
   if (loading) {
     return (
@@ -175,7 +174,7 @@ export default function SupplierTable({
                         </svg>
                       </button>
 
-                      {/* Chỉnh sửa / Gửi RFQ / Ngừng hoạt động: chỉ hiển thị với NCC đang hoạt động */}
+                      {/* Chỉnh sửa / Ngừng hoạt động: chỉ hiển thị với NCC đang hoạt động */}
                       {!inactive && (<>
                       {/* Edit Supplier */}
                       <button
@@ -186,19 +185,6 @@ export default function SupplierTable({
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                      </button>
-
-                      {/* Send RFQ */}
-                      <button
-                        className="btn-pms btn-pms-ghost btn-pms-sm"
-                        style={{ color: 'var(--brand-primary)' }}
-                        title="Gửi email báo giá (RFQ)"
-                        onClick={() => onSendRfq && onSendRfq(row)}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                          <polyline points="22,6 12,13 2,6"/>
                         </svg>
                       </button>
 

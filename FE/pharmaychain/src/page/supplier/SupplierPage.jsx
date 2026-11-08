@@ -7,7 +7,6 @@ import SupplierTable from '../../component/supplier/SupplierTable';
 import SupplierDetailModal from '../../component/supplier/SupplierDetailModal';
 import SupplierCreateModal from '../../component/supplier/SupplierCreateModal';
 import SupplierDeleteModal from '../../component/supplier/SupplierDeleteModal';
-import SendRfqModal from '../../component/supplier/SendRfqModal';
 
 const INACTIVE_ACTION_MESSAGE = 'Nhà cung cấp đã ngừng hoạt động, không thể thực hiện thao tác này.';
 
@@ -68,8 +67,6 @@ export default function SupplierPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState('create'); // 'create' | 'edit'
   const [selectedSupplier, setSelectedSupplier] = useState(null);
-  const [rfqModalOpen, setRfqModalOpen] = useState(false);
-  const [rfqSupplier, setRfqSupplier] = useState(null);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteReason, setDeleteReason] = useState('');
@@ -102,15 +99,6 @@ export default function SupplierPage() {
     setFormMode('edit');
     setSelectedSupplier(supplier);
     setFormOpen(true);
-  };
-
-  const handleSendRfq = (supplier) => {
-    if (isInactiveStatus(supplier?.status)) {
-      setError(INACTIVE_ACTION_MESSAGE);
-      return;
-    }
-    setRfqSupplier(supplier);
-    setRfqModalOpen(true);
   };
 
   const handleFormSuccess = async () => {
@@ -209,7 +197,6 @@ export default function SupplierPage() {
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDeleteRequest}
-        onSendRfq={handleSendRfq}
       />
 
       {/* ── Pagination ── */}
@@ -247,13 +234,6 @@ export default function SupplierPage() {
         onReasonChange={setDeleteReason}
         onSubmit={handleConfirmDelete}
         submitting={deleteSubmitting}
-      />
-
-      {/* ── Send RFQ Modal ── */}
-      <SendRfqModal
-        show={rfqModalOpen}
-        onHide={() => { setRfqModalOpen(false); setRfqSupplier(null); }}
-        supplier={rfqSupplier}
       />
     </div>
   );
