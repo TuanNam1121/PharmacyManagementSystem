@@ -57,6 +57,7 @@ export default function PosCounterPage() {
         lastCompletedInvoice,
         setLastCompletedInvoice,
         addToCart,
+        updateUnit,
         updateQuantity,
         updateDosage,
         removeFromCart,
@@ -141,6 +142,8 @@ export default function PosCounterPage() {
                 items: cartItems.map((item) => ({
                     productId: item.productId,
                     batchId: item.batchId,
+                    unitId: item.unitId || null,
+                    unitName: item.unit,
                     quantity: item.quantity,
                     unitPrice: item.unitPrice,
                     dosageInstruction: item.dosageInstruction || null,
@@ -379,6 +382,7 @@ export default function PosCounterPage() {
                     {/* Cart Items Table */}
                     <PosCartTable
                         items={cartItems}
+                        onUpdateUnit={updateUnit}
                         onUpdateQuantity={updateQuantity}
                         onUpdateDosage={updateDosage}
                         onRemoveItem={removeFromCart}

@@ -11,10 +11,12 @@ function unwrap(json) {
 
 export const authApi = {
   login: async ({ username, password }) => {
+    console.log(username, password);
     const res = await post(`${BASE_URL}/login`, {
       username: username?.trim(),
       password,
     });
+    console.log(res);
     return unwrap(res);
   },
 

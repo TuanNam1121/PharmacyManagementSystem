@@ -29,3 +29,4 @@ class JwtAuthenticationEntryPointTest {
         assertTrue(body.contains("Unauthorized"));
     }
 }
+

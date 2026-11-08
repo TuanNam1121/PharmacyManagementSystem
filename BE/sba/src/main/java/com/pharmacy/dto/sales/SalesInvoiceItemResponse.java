@@ -21,7 +21,9 @@ public class SalesInvoiceItemResponse {
     private String batchNumber;
     private LocalDate expiryDate;
     private String unit;
+    private Integer conversionFactor;
     private Integer quantity;
+    private Integer baseQuantity;
     private BigDecimal unitPrice;
     private BigDecimal lineTotal;
     private String dosageInstruction;

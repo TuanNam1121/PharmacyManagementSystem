@@ -37,8 +37,7 @@ public class CustomerController {
             @RequestParam(defaultValue = "desc") String sortDir) {
 
         PageResponse<CustomerResponse> response = customerService.getCustomers(
-                keyword, status, page, size, sortBy, sortDir
-        );
+                keyword, status, page, size, sortBy, sortDir);
 
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách khách hàng thành công", response));
     }

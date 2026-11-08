@@ -988,4 +988,45 @@ BEGIN
 END
 GO
 
+-- 12.8 Bảng quy đổi đơn vị bán lẻ thuốc (Product Multi-Unit Conversion)
+IF OBJECT_ID('dbo.product_units', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.product_units (
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        product_id BIGINT NOT NULL,
+        unit_name NVARCHAR(50) NOT NULL,
+        conversion_factor INT NOT NULL DEFAULT 1,
+        selling_price DECIMAL(18,2) NOT NULL,
+        is_base_unit BIT NOT NULL DEFAULT 0,
+        barcode VARCHAR(50) NULL,
+        created_at DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+        CONSTRAINT FK_product_units_products FOREIGN KEY (product_id) REFERENCES dbo.products(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IX_product_units_product_id ON dbo.product_units(product_id);
+    CREATE INDEX IX_product_units_barcode ON dbo.product_units(barcode);
+END
+GO
+
+-- Bổ sung cột quy đổi vào sales_invoice_details nếu chưa có
+IF COL_LENGTH('dbo.sales_invoice_details', 'unit_name') IS NULL
+    ALTER TABLE dbo.sales_invoice_details ADD unit_name NVARCHAR(50) NULL;
+IF COL_LENGTH('dbo.sales_invoice_details', 'conversion_factor') IS NULL
+    ALTER TABLE dbo.sales_invoice_details ADD conversion_factor INT NOT NULL DEFAULT 1;
+IF COL_LENGTH('dbo.sales_invoice_details', 'base_quantity') IS NULL
+    ALTER TABLE dbo.sales_invoice_details ADD base_quantity INT NULL;
+GO
+
+-- Seed dữ liệu mẫu quy đổi đơn vị cho thuốc Panadol Extra (barcode: 8934567890123)
+DECLARE @PanadolId BIGINT = (SELECT TOP 1 id FROM dbo.products WHERE barcode = '8934567890123');
+IF @PanadolId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM dbo.product_units WHERE product_id = @PanadolId)
+BEGIN
+    INSERT INTO dbo.product_units (product_id, unit_name, conversion_factor, selling_price, is_base_unit, barcode, created_at)
+    VALUES 
+    (@PanadolId, N'Viên', 1, 1500.00, 1, '8934567890123-V', SYSDATETIME()),
+    (@PanadolId, N'Vỉ', 12, 17000.00, 0, '8934567890123-VI', SYSDATETIME()),
+    (@PanadolId, N'Hộp', 180, 245000.00, 0, '8934567890123', SYSDATETIME());
+END
+GO
+
 

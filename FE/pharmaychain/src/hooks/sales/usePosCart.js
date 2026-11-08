@@ -55,7 +55,13 @@ export function usePosCart() {
                 };
                 return updated;
             } else {
-                const price = Number(item.sellingPrice) || 0;
+                const units = item.units || [];
+                const defaultUnit = units.find((u) => u.isBaseUnit) || units[0] || null;
+                const price = defaultUnit ? Number(defaultUnit.sellingPrice) : (Number(item.sellingPrice) || 0);
+                const unitName = defaultUnit ? defaultUnit.unitName : (item.unit || 'Hộp');
+                const unitId = defaultUnit ? defaultUnit.id : null;
+                const conversionFactor = defaultUnit ? (defaultUnit.conversionFactor || 1) : 1;
+
                 const newItem = {
                     productId: item.productId,
                     productName: item.productName || item.name,
@@ -63,7 +69,10 @@ export function usePosCart() {
                     batchId: item.batchId,
                     batchNumber: item.batchNumber || 'N/A',
                     expiryDate: item.expiryDate || null,
-                    unit: item.unit || 'Hộp',
+                    unit: unitName,
+                    unitId: unitId,
+                    units: units,
+                    conversionFactor: conversionFactor,
                     unitPrice: price,
                     quantity: 1,
                     availableQuantity: item.availableQuantity || item.quantity || 999,
@@ -103,6 +112,28 @@ export function usePosCart() {
                         ...item,
                         quantity: qty,
                         lineTotal: qty * item.unitPrice,
+                    };
+                }
+                return item;
+            })
+        );
+    }, []);
+
+    // Update selected unit of measurement
+    const updateUnit = useCallback((productId, batchId, unitId) => {
+        setCartItems((prev) =>
+            prev.map((item) => {
+                if (item.productId === productId && item.batchId === batchId) {
+                    const targetUnit = item.units?.find((u) => String(u.id) === String(unitId));
+                    if (!targetUnit) return item;
+                    const newPrice = Number(targetUnit.sellingPrice) || item.unitPrice;
+                    return {
+                        ...item,
+                        unitId: targetUnit.id,
+                        unit: targetUnit.unitName,
+                        conversionFactor: targetUnit.conversionFactor || 1,
+                        unitPrice: newPrice,
+                        lineTotal: item.quantity * newPrice,
                     };
                 }
                 return item;
@@ -235,6 +266,7 @@ export function usePosCart() {
         lastCompletedInvoice,
         setLastCompletedInvoice,
         addToCart,
+        updateUnit,
         updateQuantity,
         updateDosage,
         removeFromCart,

@@ -4,6 +4,7 @@ import com.pharmacy.dto.inventory.BranchInventoryResponse;
 import com.pharmacy.dto.inventory.BranchInventorySummaryDto;
 import com.pharmacy.dto.inventory.StockAuditCheckRequest;
 import com.pharmacy.dto.inventory.UpdateStockThresholdRequest;
+import com.pharmacy.dto.product.ProductUnitDto;
 import com.pharmacy.entity.*;
 import com.pharmacy.entity.enums.ExpiryStatus;
 import com.pharmacy.entity.enums.StockStatus;
@@ -22,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +35,7 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
     private final AuditLogRepository auditLogRepository;
+    private final ProductUnitRepository productUnitRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -187,6 +190,20 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
         BigDecimal sell = (p != null && p.getSellingPrice() != null) ? p.getSellingPrice() : BigDecimal.ZERO;
         BigDecimal totalVal = sell.multiply(BigDecimal.valueOf(qty));
 
+        List<ProductUnitDto> unitDtos = Collections.emptyList();
+        if (p != null) {
+            unitDtos = productUnitRepository.findByProduct_IdOrderByConversionFactorAsc(p.getId()).stream()
+                    .map(u -> ProductUnitDto.builder()
+                            .id(u.getId())
+                            .unitName(u.getUnitName())
+                            .conversionFactor(u.getConversionFactor())
+                            .sellingPrice(u.getSellingPrice())
+                            .isBaseUnit(u.getIsBaseUnit())
+                            .barcode(u.getBarcode())
+                            .build())
+                    .collect(Collectors.toList());
+        }
+
         return BranchInventoryResponse.builder()
                 .id(i.getId())
                 .storeId(s != null ? s.getId() : null)
@@ -213,6 +230,7 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
                 .warningLevel(warningLevel)
                 .locationCode(l != null ? l.getCode() : "Main Counter")
                 .updatedAt(i.getUpdatedAt())
+                .units(unitDtos)
                 .build();
     }
 }

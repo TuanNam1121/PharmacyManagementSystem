@@ -44,7 +44,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<CustomerResponse> getCustomers(String keyword, Short status,
-                                                        int page, int size, String sortBy, String sortDir) {
+            int page, int size, String sortBy, String sortDir) {
         String sortProperty = resolveSortProperty(sortBy);
         Sort sort = "asc".equalsIgnoreCase(sortDir)
                 ? Sort.by(sortProperty).ascending()
@@ -68,12 +68,14 @@ public class CustomerServiceImpl implements CustomerService {
                     try {
                         Long idVal = Long.parseLong(trimmed.substring(3).trim());
                         kwPred = cb.or(kwPred, cb.equal(root.get("id"), idVal));
-                    } catch (NumberFormatException ignored) {}
+                    } catch (NumberFormatException ignored) {
+                    }
                 } else if (trimmed.matches("^\\d+$") && trimmed.length() <= 8) {
                     try {
                         Long idVal = Long.parseLong(trimmed);
                         kwPred = cb.or(kwPred, cb.equal(root.get("id"), idVal));
-                    } catch (NumberFormatException ignored) {}
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
 
                 predicates.add(kwPred);
@@ -118,8 +120,7 @@ public class CustomerServiceImpl implements CustomerService {
                 customerPage.getSize(),
                 customerPage.getTotalElements(),
                 customerPage.getTotalPages(),
-                customerPage.isLast()
-        );
+                customerPage.isLast());
     }
 
     @Override
@@ -133,10 +134,12 @@ public class CustomerServiceImpl implements CustomerService {
             healthProfile = healthProfileRepository.findByCustomer_Id(customerId).orElse(null);
         }
 
-        List<SalesInvoice> recentInvoices = salesInvoiceRepository.findTop5ByCustomer_IdOrderByCreatedAtDesc(customerId);
+        List<SalesInvoice> recentInvoices = salesInvoiceRepository
+                .findTop5ByCustomer_IdOrderByCreatedAtDesc(customerId);
         long totalOrders = salesInvoiceRepository.countByCustomerId(customerId);
         BigDecimal totalSpent = salesInvoiceRepository.sumFinalAmountByCustomerId(customerId);
-        if (totalSpent == null) totalSpent = BigDecimal.ZERO;
+        if (totalSpent == null)
+            totalSpent = BigDecimal.ZERO;
 
         return buildCustomerDetailResponse(customer, healthProfile, recentInvoices, totalOrders, totalSpent);
     }
@@ -154,8 +157,10 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setPhone(phone);
         customer.setGender(parseGenderCode(request.getGender()));
         customer.setDateOfBirth(request.getDateOfBirth());
-        customer.setEmail(request.getEmail() != null && !request.getEmail().isBlank() ? request.getEmail().trim() : null);
-        customer.setAddress(request.getAddress() != null && !request.getAddress().isBlank() ? request.getAddress().trim() : null);
+        customer.setEmail(
+                request.getEmail() != null && !request.getEmail().isBlank() ? request.getEmail().trim() : null);
+        customer.setAddress(
+                request.getAddress() != null && !request.getAddress().isBlank() ? request.getAddress().trim() : null);
         customer.setStatus((short) 1);
         customer.setCreatedAt(LocalDateTime.now());
         customer.setUpdatedAt(LocalDateTime.now());
@@ -187,16 +192,20 @@ public class CustomerServiceImpl implements CustomerService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khách hàng với ID: " + customerId));
 
         String newPhone = request.getPhone() != null ? request.getPhone().trim() : "";
-        if (!newPhone.equalsIgnoreCase(customer.getPhone()) && customerRepository.existsByPhoneAndIdNot(newPhone, customerId)) {
-            throw new CustomerPhoneAlreadyExistsException("Số điện thoại " + newPhone + " đã thuộc về một khách hàng khác trong hệ thống");
+        if (!newPhone.equalsIgnoreCase(customer.getPhone())
+                && customerRepository.existsByPhoneAndIdNot(newPhone, customerId)) {
+            throw new CustomerPhoneAlreadyExistsException(
+                    "Số điện thoại " + newPhone + " đã thuộc về một khách hàng khác trong hệ thống");
         }
 
         customer.setFullName(request.getFullName().trim());
         customer.setPhone(newPhone);
         customer.setGender(parseGenderCode(request.getGender()));
         customer.setDateOfBirth(request.getDateOfBirth());
-        customer.setEmail(request.getEmail() != null && !request.getEmail().isBlank() ? request.getEmail().trim() : null);
-        customer.setAddress(request.getAddress() != null && !request.getAddress().isBlank() ? request.getAddress().trim() : null);
+        customer.setEmail(
+                request.getEmail() != null && !request.getEmail().isBlank() ? request.getEmail().trim() : null);
+        customer.setAddress(
+                request.getAddress() != null && !request.getAddress().isBlank() ? request.getAddress().trim() : null);
         customer.setUpdatedAt(LocalDateTime.now());
 
         Customer savedCustomer = customerRepository.save(customer);
@@ -249,22 +258,27 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     private Short parseGenderCode(String gender) {
-        if (gender == null) return 2;
+        if (gender == null)
+            return 2;
         String g = gender.trim().toUpperCase();
-        if (g.equals("MALE") || g.equals("1") || g.equals("NAM")) return 1;
-        if (g.equals("FEMALE") || g.equals("0") || g.equals("NỮ") || g.equals("NU")) return 0;
+        if (g.equals("MALE") || g.equals("1") || g.equals("NAM"))
+            return 1;
+        if (g.equals("FEMALE") || g.equals("0") || g.equals("NỮ") || g.equals("NU"))
+            return 0;
         return 2;
     }
 
     private CustomerDetailResponse buildCustomerDetailResponse(Customer customer,
-                                                               CustomerHealthProfile health,
-                                                               List<SalesInvoice> recentInvoices,
-                                                               long totalOrders,
-                                                               BigDecimal totalSpent) {
+            CustomerHealthProfile health,
+            List<SalesInvoice> recentInvoices,
+            long totalOrders,
+            BigDecimal totalSpent) {
         String genderLabel = "OTHER";
         if (customer.getGender() != null) {
-            if (customer.getGender() == 1) genderLabel = "MALE";
-            else if (customer.getGender() == 0) genderLabel = "FEMALE";
+            if (customer.getGender() == 1)
+                genderLabel = "MALE";
+            else if (customer.getGender() == 0)
+                genderLabel = "FEMALE";
         }
 
         String customerCode = String.format("KH-%06d", customer.getId());
@@ -323,7 +337,8 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     private String mapInvoiceStatus(Short status) {
-        if (status == null) return "PENDING";
+        if (status == null)
+            return "PENDING";
         return switch (status) {
             case 1 -> "COMPLETED";
             case 2 -> "CANCELLED";
@@ -344,8 +359,10 @@ public class CustomerServiceImpl implements CustomerService {
 
         String genderLabel = "OTHER";
         if (customer.getGender() != null) {
-            if (customer.getGender() == 1) genderLabel = "MALE";
-            else if (customer.getGender() == 0) genderLabel = "FEMALE";
+            if (customer.getGender() == 1)
+                genderLabel = "MALE";
+            else if (customer.getGender() == 0)
+                genderLabel = "FEMALE";
         }
 
         String customerCode = String.format("KH-%06d", customer.getId());

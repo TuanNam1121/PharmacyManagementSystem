@@ -46,6 +46,7 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
     private final ProductRepository productRepository;
     private final ProductBatchRepository productBatchRepository;
     private final InventoryRepository inventoryRepository;
+    private final ProductUnitRepository productUnitRepository;
 
     @Override
     @Transactional
@@ -106,6 +107,19 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm ID: " + item.getProductId()));
 
+            // Resolve unit & conversion factor with Backward Compatibility (Default Convention: factor = 1)
+            ProductUnit unit = item.getUnitId() != null
+                    ? productUnitRepository.findById(item.getUnitId()).orElse(null)
+                    : null;
+            String unitName = (unit != null) ? unit.getUnitName() : (item.getUnitName() != null ? item.getUnitName() : product.getUnit());
+            int conversionFactor = (unit != null && unit.getConversionFactor() != null && unit.getConversionFactor() > 0)
+                    ? unit.getConversionFactor()
+                    : 1;
+            BigDecimal unitPrice = (unit != null && unit.getSellingPrice() != null)
+                    ? unit.getSellingPrice()
+                    : (item.getUnitPrice() != null ? item.getUnitPrice() : product.getSellingPrice());
+            int baseQuantityToDeduct = item.getQuantity() * conversionFactor;
+
             // Find Batch (FEFO if batchId not specified)
             ProductBatch batch = null;
             if (item.getBatchId() != null) {
@@ -118,15 +132,15 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
                 }
             }
 
-            // Deduct store inventory if inventory record exists
+            // Deduct store inventory by base quantity (smallest unit)
             if (batch != null && store != null) {
                 Inventory inv = inventoryRepository.findByStoreIdAndProductIdAndBatchId(store.getId(), product.getId(), batch.getId())
                         .orElse(null);
                 if (inv != null) {
-                    if (inv.getQuantity() < item.getQuantity()) {
-                        throw new InsufficientStockException("Sản phẩm [" + product.getName() + "] chỉ còn tồn " + inv.getQuantity() + " đơn vị tại chi nhánh!");
+                    if (inv.getQuantity() < baseQuantityToDeduct) {
+                        throw new InsufficientStockException("Sản phẩm [" + product.getName() + "] chỉ còn tồn " + inv.getQuantity() + " " + product.getUnit() + " (yêu cầu " + baseQuantityToDeduct + ")!");
                     }
-                    inv.setQuantity(inv.getQuantity() - item.getQuantity());
+                    inv.setQuantity(inv.getQuantity() - baseQuantityToDeduct);
                     inv.setUpdatedAt(LocalDateTime.now());
                     inventoryRepository.save(inv);
                 }
@@ -137,7 +151,10 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             detail.setProduct(product);
             detail.setBatch(batch);
             detail.setQuantity(item.getQuantity());
-            detail.setUnitPrice(item.getUnitPrice());
+            detail.setUnitName(unitName);
+            detail.setConversionFactor(conversionFactor);
+            detail.setBaseQuantity(baseQuantityToDeduct);
+            detail.setUnitPrice(unitPrice);
             BigDecimal costPrice = product.getCostPrice() != null ? product.getCostPrice() : BigDecimal.ZERO;
             detail.setUnitCost(costPrice);
             detail.setDosageInstruction(item.getDosageInstruction());
@@ -275,7 +292,7 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             BigDecimal lineRefund = invoiceDetail.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
             totalRefund = totalRefund.add(lineRefund);
 
-            // Return stock to branch inventory
+            // Return stock to branch inventory by base quantity
             if (invoiceDetail.getBatch() != null && invoice.getStore() != null) {
                 Inventory inv = inventoryRepository.findByStoreIdAndProductIdAndBatchId(
                         invoice.getStore().getId(),
@@ -284,7 +301,11 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
                 ).orElse(null);
 
                 if (inv != null) {
-                    inv.setQuantity(inv.getQuantity() + item.getQuantity());
+                    int factor = (invoiceDetail.getConversionFactor() != null && invoiceDetail.getConversionFactor() > 0)
+                            ? invoiceDetail.getConversionFactor()
+                            : 1;
+                    int baseQtyToReturn = item.getQuantity() * factor;
+                    inv.setQuantity(inv.getQuantity() + baseQtyToReturn);
                     inv.setUpdatedAt(LocalDateTime.now());
                     inventoryRepository.save(inv);
                 }
@@ -374,7 +395,9 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
                 if (d == null) continue;
                 String pName = d.getProduct() != null ? d.getProduct().getName() : "Sản phẩm";
                 String pCode = d.getProduct() != null ? (d.getProduct().getBarcode() != null ? d.getProduct().getBarcode() : "PRD-" + d.getProduct().getId()) : null;
-                String unit = d.getProduct() != null ? d.getProduct().getUnit() : "Hộp";
+                String unit = d.getUnitName() != null ? d.getUnitName() : (d.getProduct() != null ? d.getProduct().getUnit() : "Hộp");
+                int factor = (d.getConversionFactor() != null && d.getConversionFactor() > 0) ? d.getConversionFactor() : 1;
+                int baseQty = d.getBaseQuantity() != null ? d.getBaseQuantity() : (d.getQuantity() * factor);
                 String batchNum = d.getBatch() != null ? d.getBatch().getBatchNumber() : null;
                 LocalDate expDate = d.getBatch() != null ? d.getBatch().getExpiryDate() : null;
                 BigDecimal lineTot = d.getUnitPrice().multiply(BigDecimal.valueOf(d.getQuantity()));
@@ -388,7 +411,9 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
                         .batchNumber(batchNum)
                         .expiryDate(expDate)
                         .unit(unit)
+                        .conversionFactor(factor)
                         .quantity(d.getQuantity())
+                        .baseQuantity(baseQty)
                         .unitPrice(d.getUnitPrice())
                         .lineTotal(lineTot)
                         .dosageInstruction(d.getDosageInstruction())

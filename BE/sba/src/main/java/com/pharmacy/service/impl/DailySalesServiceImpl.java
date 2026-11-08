@@ -4,7 +4,6 @@ import com.pharmacy.dto.sales.*;
 import com.pharmacy.entity.*;
 import com.pharmacy.entity.enums.DailySalesReconciliationStatus;
 import com.pharmacy.entity.enums.PaymentMethod;
-import com.pharmacy.entity.enums.SalesInvoiceStatus;
 import com.pharmacy.exception.InvalidOperationException;
 import com.pharmacy.exception.ResourceNotFoundException;
 import com.pharmacy.repository.*;
@@ -28,232 +27,235 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class DailySalesServiceImpl implements DailySalesService {
 
-    private final DailySalesReconciliationRepository reconciliationRepository;
-    private final SalesInvoiceRepository invoiceRepository;
-    private final ShiftRepository shiftRepository;
-    private final AuditLogRepository auditLogRepository;
-    private final StoreRepository storeRepository;
-    private final AccountRepository accountRepository;
-    private final PaymentRepository paymentRepository;
+        private final DailySalesReconciliationRepository reconciliationRepository;
+        private final SalesInvoiceRepository invoiceRepository;
+        private final ShiftRepository shiftRepository;
+        private final AuditLogRepository auditLogRepository;
+        private final StoreRepository storeRepository;
+        private final AccountRepository accountRepository;
+        private final PaymentRepository paymentRepository;
 
-    @Override
-    @Transactional(readOnly = true)
-    public DailySalesOverviewDto getDailySalesOverview(Long storeId, LocalDate businessDate) {
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Store not found with ID: " + storeId));
+        @Override
+        @Transactional(readOnly = true)
+        public DailySalesOverviewDto getDailySalesOverview(Long storeId, LocalDate businessDate) {
+                Store store = storeRepository.findById(storeId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Store not found with ID: " + storeId));
 
-        LocalDateTime startOfDay = businessDate.atStartOfDay();
-        LocalDateTime endOfDay = businessDate.atTime(LocalTime.MAX);
+                LocalDateTime startOfDay = businessDate.atStartOfDay();
+                LocalDateTime endOfDay = businessDate.atTime(LocalTime.MAX);
 
-        // Retrieve daily invoices
-        List<SalesInvoice> invoices = invoiceRepository.findInvoicesByDateRange(storeId, startOfDay, endOfDay);
-        List<Shift> shifts = shiftRepository.findShiftsByStoreAndDateRange(storeId, startOfDay, endOfDay);
+                // Retrieve daily invoices
+                List<SalesInvoice> invoices = invoiceRepository.findInvoicesByDateRange(storeId, startOfDay, endOfDay);
+                List<Shift> shifts = shiftRepository.findShiftsByStoreAndDateRange(storeId, startOfDay, endOfDay);
 
-        // Calculate revenue by payment method (system)
-//        BigDecimal systemTotal = invoices.stream()
-//                .filter(i -> i.getStatus() != null
-//                        && i.getStatus().equals(SalesInvoiceStatus.PAID.getCode())) // PAID
-//                .map(SalesInvoice::getFinalAmount)
-//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                // Calculate revenue by payment method (system)
+                // BigDecimal systemTotal = invoices.stream()
+                // .filter(i -> i.getStatus() != null
+                // && i.getStatus().equals(SalesInvoiceStatus.PAID.getCode())) // PAID
+                // .map(SalesInvoice::getFinalAmount)
+                // .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Map<Short, BigDecimal> byMethod = new HashMap<>();
-        for (Object[] row : paymentRepository.sumAmountByMethod(store.getId(), startOfDay, endOfDay)) {
-            byMethod.put((Short) row[0], (BigDecimal) row[1]);
+                Map<Short, BigDecimal> byMethod = new HashMap<>();
+                for (Object[] row : paymentRepository.sumAmountByMethod(store.getId(), startOfDay, endOfDay)) {
+                        byMethod.put((Short) row[0], (BigDecimal) row[1]);
+                }
+
+                BigDecimal systemCash = byMethod.getOrDefault(PaymentMethod.CASH.getCode(), BigDecimal.ZERO);
+                BigDecimal systemBank = byMethod.getOrDefault(PaymentMethod.BANK_TRANSFER.getCode(), BigDecimal.ZERO);
+                BigDecimal systemVnpay = byMethod.getOrDefault(PaymentMethod.VNPAY.getCode(), BigDecimal.ZERO);
+                BigDecimal systemTotal = systemCash.add(systemBank).add(systemVnpay);
+
+                // // System breakdown by payment method (Cash ~40%, Bank ~40%, VNPay ~20%)
+                // BigDecimal systemCash = systemTotal.multiply(new BigDecimal("0.40"));
+                // BigDecimal systemBank = systemTotal.multiply(new BigDecimal("0.40"));
+                // BigDecimal systemVnpay =
+                // systemTotal.subtract(systemCash).subtract(systemBank);
+
+                // Check if reconciliation record already exists in database
+                Optional<DailySalesReconciliation> existing = reconciliationRepository
+                                .findByStoreIdAndBusinessDate(storeId, businessDate);
+
+                BigDecimal actualCash = existing.map(DailySalesReconciliation::getActualCash).orElse(systemCash);
+                BigDecimal difference = existing.map(DailySalesReconciliation::getDifference)
+                                .orElse(actualCash.subtract(systemCash));
+                Short status = existing.map(DailySalesReconciliation::getStatus)
+                                .orElse(DailySalesReconciliationStatus.OPEN.getCode());
+                String note = existing.map(DailySalesReconciliation::getNote).orElse("");
+                String reconciledByName = existing.flatMap(r -> Optional.ofNullable(r.getReconciledBy()))
+                                .map(Account::getUsername).orElse(null);
+                LocalDateTime reconciledAt = existing.map(DailySalesReconciliation::getReconciledAt).orElse(null);
+
+                return DailySalesOverviewDto.builder()
+                                .storeId(store.getId())
+                                .storeName(store.getName())
+                                .storeCode(store.getCode())
+                                .businessDate(businessDate)
+                                .systemCash(systemCash)
+                                .systemBank(systemBank)
+                                .systemVnpay(systemVnpay)
+                                .systemTotal(systemTotal)
+                                .actualCash(actualCash)
+                                .difference(difference)
+                                .status(status)
+                                .note(note)
+                                .reconciledByName(reconciledByName)
+                                .reconciledAt(reconciledAt)
+                                .totalInvoices(invoices.size())
+                                .totalShifts(shifts.size())
+                                .growthPercentageVsYesterday(12.5) // demo delta
+                                .build();
         }
 
-        BigDecimal systemCash = byMethod.getOrDefault(PaymentMethod.CASH.getCode(), BigDecimal.ZERO);
-        BigDecimal systemBank = byMethod.getOrDefault(PaymentMethod.BANK_TRANSFER.getCode(), BigDecimal.ZERO);
-        BigDecimal systemVnpay = byMethod.getOrDefault(PaymentMethod.VNPAY.getCode(), BigDecimal.ZERO);
-        BigDecimal systemTotal = systemCash.add(systemBank).add(systemVnpay);
+        @Override
+        @Transactional(readOnly = true)
+        public Page<SalesInvoiceSummaryDto> getDailyInvoices(Long storeId, LocalDate businessDate, Pageable pageable) {
+                LocalDateTime startOfDay = businessDate.atStartOfDay();
+                LocalDateTime endOfDay = businessDate.atTime(LocalTime.MAX);
 
-//        // System breakdown by payment method (Cash ~40%, Bank ~40%, VNPay ~20%)
-//        BigDecimal systemCash = systemTotal.multiply(new BigDecimal("0.40"));
-//        BigDecimal systemBank = systemTotal.multiply(new BigDecimal("0.40"));
-//        BigDecimal systemVnpay = systemTotal.subtract(systemCash).subtract(systemBank);
+                return invoiceRepository.findInvoicesByDateRangePaged(storeId, startOfDay, endOfDay, pageable)
+                                .map(inv -> {
+                                        String paymentMethod = "CASH";
+                                        if (inv.getPayments() != null && !inv.getPayments().isEmpty()) {
+                                                Short m = inv.getPayments().get(0).getMethod();
+                                                if (m != null) {
+                                                        paymentMethod = switch (m) {
+                                                                case 2 -> "BANK_TRANSFER";
+                                                                case 3 -> "VNPAY_QR";
+                                                                default -> "CASH";
+                                                        };
+                                                }
+                                        } else {
+                                                List<Payment> payments = paymentRepository
+                                                                .findBySalesInvoice_Id(inv.getId());
+                                                if (payments != null && !payments.isEmpty()) {
+                                                        Short m = payments.get(0).getMethod();
+                                                        if (m != null) {
+                                                                paymentMethod = switch (m) {
+                                                                        case 2 -> "BANK_TRANSFER";
+                                                                        case 3 -> "VNPAY_QR";
+                                                                        default -> "CASH";
+                                                                };
+                                                        }
+                                                }
+                                        }
 
-        // Check if reconciliation record already exists in database
-        Optional<DailySalesReconciliation> existing = reconciliationRepository
-                .findByStoreIdAndBusinessDate(storeId, businessDate);
+                                        return SalesInvoiceSummaryDto.builder()
+                                                        .id(inv.getId())
+                                                        .code(inv.getCode())
+                                                        .prescriptionCode(inv.getPrescriptionCode())
+                                                        .totalAmount(inv.getTotalAmount())
+                                                        .discount(inv.getDiscount())
+                                                        .finalAmount(inv.getFinalAmount())
+                                                        .status(inv.getStatus())
+                                                        .createdAt(inv.getCreatedAt())
+                                                        .paidAt(inv.getPaidAt())
+                                                        .paymentMethod(paymentMethod)
+                                                        .build();
+                                });
+        }
 
-        BigDecimal actualCash = existing.map(DailySalesReconciliation::getActualCash).orElse(systemCash);
-        BigDecimal difference = existing.map(DailySalesReconciliation::getDifference)
-                .orElse(actualCash.subtract(systemCash));
-        Short status = existing.map(DailySalesReconciliation::getStatus)
-                .orElse(DailySalesReconciliationStatus.OPEN.getCode());
-        String note = existing.map(DailySalesReconciliation::getNote).orElse("");
-        String reconciledByName = existing.flatMap(r -> Optional.ofNullable(r.getReconciledBy()))
-                .map(Account::getUsername).orElse(null);
-        LocalDateTime reconciledAt = existing.map(DailySalesReconciliation::getReconciledAt).orElse(null);
+        @Override
+        @Transactional(readOnly = true)
+        public List<ShiftSummaryDto> getDailyShifts(Long storeId, LocalDate businessDate) {
+                LocalDateTime startOfDay = businessDate.atStartOfDay();
+                LocalDateTime endOfDay = businessDate.atTime(LocalTime.MAX);
 
-        return DailySalesOverviewDto.builder()
-                .storeId(store.getId())
-                .storeName(store.getName())
-                .storeCode(store.getCode())
-                .businessDate(businessDate)
-                .systemCash(systemCash)
-                .systemBank(systemBank)
-                .systemVnpay(systemVnpay)
-                .systemTotal(systemTotal)
-                .actualCash(actualCash)
-                .difference(difference)
-                .status(status)
-                .note(note)
-                .reconciledByName(reconciledByName)
-                .reconciledAt(reconciledAt)
-                .totalInvoices(invoices.size())
-                .totalShifts(shifts.size())
-                .growthPercentageVsYesterday(12.5) // demo delta
-                .build();
-    }
+                return shiftRepository.findShiftsByStoreAndDateRange(storeId, startOfDay, endOfDay)
+                                .stream()
+                                .map(s -> ShiftSummaryDto.builder()
+                                                .id(s.getId())
+                                                .cashierUsername(s.getAccount() != null ? s.getAccount().getUsername()
+                                                                : "N/A")
+                                                .openedAt(s.getOpenedAt())
+                                                .closedAt(s.getClosedAt())
+                                                .openingCash(s.getOpeningCash())
+                                                .closingCash(s.getClosingCash())
+                                                .expectedCash(s.getExpectedCash())
+                                                .difference(s.getDifference())
+                                                .status(s.getStatus())
+                                                .note(s.getNote())
+                                                .build())
+                                .toList();
+        }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Page<SalesInvoiceSummaryDto> getDailyInvoices(Long storeId, LocalDate businessDate, Pageable pageable) {
-        LocalDateTime startOfDay = businessDate.atStartOfDay();
-        LocalDateTime endOfDay = businessDate.atTime(LocalTime.MAX);
+        @Override
+        @Transactional
+        public DailySalesOverviewDto reconcileDailySales(DailySalesReconcileRequest request, String currentUsername,
+                        String clientIp) {
+                Store store = storeRepository.findById(request.getStoreId())
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Store not found with ID: " + request.getStoreId()));
 
-        return invoiceRepository.findInvoicesByDateRangePaged(storeId, startOfDay, endOfDay, pageable)
-                .map(inv -> {
-                    String paymentMethod = "CASH";
-                    if (inv.getPayments() != null && !inv.getPayments().isEmpty()) {
-                        Short m = inv.getPayments().get(0).getMethod();
-                        if (m != null) {
-                            paymentMethod = switch (m) {
-                                case 2 -> "BANK_TRANSFER";
-                                case 3 -> "VNPAY_QR";
-                                default -> "CASH";
-                            };
+                Account actor = accountRepository.findByUsername(currentUsername)
+                                .orElseThrow(() -> new ResourceNotFoundException("Account not found!"));
+
+                if (actor != null) {
+                        if ((actor.getStore().getId()) != store.getId()) {
+                                throw new InvalidOperationException(
+                                                "You don't have permission to reconcile this store");
                         }
-                    } else {
-                        List<Payment> payments = paymentRepository.findBySalesInvoice_Id(inv.getId());
-                        if (payments != null && !payments.isEmpty()) {
-                            Short m = payments.get(0).getMethod();
-                            if (m != null) {
-                                paymentMethod = switch (m) {
-                                    case 2 -> "BANK_TRANSFER";
-                                    case 3 -> "VNPAY_QR";
-                                    default -> "CASH";
-                                };
-                            }
-                        }
-                    }
+                }
 
-                    return SalesInvoiceSummaryDto.builder()
-                            .id(inv.getId())
-                            .code(inv.getCode())
-                            .prescriptionCode(inv.getPrescriptionCode())
-                            .totalAmount(inv.getTotalAmount())
-                            .discount(inv.getDiscount())
-                            .finalAmount(inv.getFinalAmount())
-                            .status(inv.getStatus())
-                            .createdAt(inv.getCreatedAt())
-                            .paidAt(inv.getPaidAt())
-                            .paymentMethod(paymentMethod)
-                            .build();
-                });
-    }
+                // Fetch or create new DailySalesReconciliation record
+                DailySalesReconciliation reconciliation = reconciliationRepository
+                                .findByStoreIdAndBusinessDate(request.getStoreId(), request.getBusinessDate())
+                                .orElseGet(() -> {
+                                        DailySalesReconciliation newRecord = new DailySalesReconciliation();
+                                        newRecord.setStore(store);
+                                        newRecord.setBusinessDate(request.getBusinessDate());
+                                        return newRecord;
+                                });
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<ShiftSummaryDto> getDailyShifts(Long storeId, LocalDate businessDate) {
-        LocalDateTime startOfDay = businessDate.atStartOfDay();
-        LocalDateTime endOfDay = businessDate.atTime(LocalTime.MAX);
+                // Calculate system revenues
+                LocalDateTime startOfDay = request.getBusinessDate().atStartOfDay();
+                LocalDateTime endOfDay = request.getBusinessDate().atTime(LocalTime.MAX);
+                List<SalesInvoice> invoices = invoiceRepository.findInvoicesByDateRange(store.getId(), startOfDay,
+                                endOfDay);
+                Map<Short, BigDecimal> byMethod = new HashMap<>();
+                for (Object[] row : paymentRepository.sumAmountByMethod(store.getId(), startOfDay, endOfDay)) {
+                        byMethod.put((Short) row[0], (BigDecimal) row[1]);
+                }
 
-        return shiftRepository.findShiftsByStoreAndDateRange(storeId, startOfDay, endOfDay)
-                .stream()
-                .map(s -> ShiftSummaryDto.builder()
-                        .id(s.getId())
-                        .cashierUsername(s.getAccount() != null ? s.getAccount().getUsername()
-                                : "N/A")
-                        .openedAt(s.getOpenedAt())
-                        .closedAt(s.getClosedAt())
-                        .openingCash(s.getOpeningCash())
-                        .closingCash(s.getClosingCash())
-                        .expectedCash(s.getExpectedCash())
-                        .difference(s.getDifference())
-                        .status(s.getStatus())
-                        .note(s.getNote())
-                        .build())
-                .toList();
-    }
+                BigDecimal systemCash = byMethod.getOrDefault(PaymentMethod.CASH.getCode(), BigDecimal.ZERO);
+                BigDecimal systemBank = byMethod.getOrDefault(PaymentMethod.BANK_TRANSFER.getCode(), BigDecimal.ZERO);
+                BigDecimal systemVnpay = byMethod.getOrDefault(PaymentMethod.VNPAY.getCode(), BigDecimal.ZERO);
+                BigDecimal systemTotal = systemCash.add(systemBank).add(systemVnpay);
 
-    @Override
-    @Transactional
-    public DailySalesOverviewDto reconcileDailySales(DailySalesReconcileRequest request, String currentUsername,
-                                                     String clientIp) {
-        Store store = storeRepository.findById(request.getStoreId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Store not found with ID: " + request.getStoreId()));
+                reconciliation.setReconciledBy(actor);
+                reconciliation.setSystemCash(systemCash);
+                reconciliation.setSystemBank(systemBank);
+                reconciliation.setSystemVnpay(systemVnpay);
+                reconciliation.setSystemTotal(systemTotal);
 
-        Account actor = accountRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found!"));
+                String oldValue = String.format("actualCash=%s, difference=%s, status=%s",
+                                reconciliation.getActualCash(), reconciliation.getDifference(),
+                                reconciliation.getStatus());
 
-        if (actor != null) {
-            if ((actor.getStore().getId()) != store.getId()) {
-                throw new InvalidOperationException("You don't have permission to reconcile this store");
-            }
+                // Update actual values
+                reconciliation.setActualCash(request.getActualCash());
+                // reconciliation.setDifference(request.getActualCash().subtract(systemCash));
+                reconciliation.setNote(request.getNote());
+                reconciliation.setStatus(DailySalesReconciliationStatus.RECONCILED.getCode()); // Reconciled
+                // reconciliation.setReconciledBy(actor);
+                reconciliation.setReconciledAt(LocalDateTime.now());
+
+                reconciliation = reconciliationRepository.save(reconciliation);
+
+                // Record AuditLog
+                AuditLog auditLog = new AuditLog();
+                // auditLog.setAccount(actor);
+                auditLog.setAction((short) 2); // 2: UPDATE / RECONCILE
+                auditLog.setEntityName("DailySalesReconciliation");
+                auditLog.setEntityId(reconciliation.getId());
+                auditLog.setAccount(actor);
+                auditLog.setOldValue(oldValue);
+                auditLog.setNewValue(String.format("actualCash=%s, difference=%s, status=1, note=%s",
+                                request.getActualCash(), reconciliation.getDifference(), request.getNote()));
+                auditLog.setIpAddress(clientIp);
+                auditLog.setCreatedAt(LocalDateTime.now());
+                auditLogRepository.save(auditLog);
+
+                return getDailySalesOverview(request.getStoreId(), request.getBusinessDate());
         }
-
-        // Fetch or create new DailySalesReconciliation record
-        DailySalesReconciliation reconciliation = reconciliationRepository
-                .findByStoreIdAndBusinessDate(request.getStoreId(), request.getBusinessDate())
-                .orElseGet(() -> {
-                    DailySalesReconciliation newRecord = new DailySalesReconciliation();
-                    newRecord.setStore(store);
-                    newRecord.setBusinessDate(request.getBusinessDate());
-                    return newRecord;
-                });
-
-        // Calculate system revenues
-        LocalDateTime startOfDay = request.getBusinessDate().atStartOfDay();
-        LocalDateTime endOfDay = request.getBusinessDate().atTime(LocalTime.MAX);
-        List<SalesInvoice> invoices = invoiceRepository.findInvoicesByDateRange(store.getId(), startOfDay,
-                endOfDay);
-        Map<Short, BigDecimal> byMethod = new HashMap<>();
-        for (Object[] row : paymentRepository.sumAmountByMethod(store.getId(), startOfDay, endOfDay)) {
-            byMethod.put((Short) row[0], (BigDecimal) row[1]);
-        }
-
-        BigDecimal systemCash = byMethod.getOrDefault(PaymentMethod.CASH.getCode(), BigDecimal.ZERO);
-        BigDecimal systemBank = byMethod.getOrDefault(PaymentMethod.BANK_TRANSFER.getCode(), BigDecimal.ZERO);
-        BigDecimal systemVnpay = byMethod.getOrDefault(PaymentMethod.VNPAY.getCode(), BigDecimal.ZERO);
-        BigDecimal systemTotal = systemCash.add(systemBank).add(systemVnpay);
-
-        reconciliation.setReconciledBy(actor);
-        reconciliation.setSystemCash(systemCash);
-        reconciliation.setSystemBank(systemBank);
-        reconciliation.setSystemVnpay(systemVnpay);
-        reconciliation.setSystemTotal(systemTotal);
-
-        String oldValue = String.format("actualCash=%s, difference=%s, status=%s",
-                reconciliation.getActualCash(), reconciliation.getDifference(),
-                reconciliation.getStatus());
-
-        // Update actual values
-        reconciliation.setActualCash(request.getActualCash());
-        // reconciliation.setDifference(request.getActualCash().subtract(systemCash));
-        reconciliation.setNote(request.getNote());
-        reconciliation.setStatus(DailySalesReconciliationStatus.RECONCILED.getCode()); // Reconciled
-        // reconciliation.setReconciledBy(actor);
-        reconciliation.setReconciledAt(LocalDateTime.now());
-
-        reconciliation = reconciliationRepository.save(reconciliation);
-
-        // Record AuditLog
-        AuditLog auditLog = new AuditLog();
-        // auditLog.setAccount(actor);
-        auditLog.setAction((short) 2); // 2: UPDATE / RECONCILE
-        auditLog.setEntityName("DailySalesReconciliation");
-        auditLog.setEntityId(reconciliation.getId());
-        auditLog.setAccount(actor);
-        auditLog.setOldValue(oldValue);
-        auditLog.setNewValue(String.format("actualCash=%s, difference=%s, status=1, note=%s",
-                request.getActualCash(), reconciliation.getDifference(), request.getNote()));
-        auditLog.setIpAddress(clientIp);
-        auditLog.setCreatedAt(LocalDateTime.now());
-        auditLogRepository.save(auditLog);
-
-        return getDailySalesOverview(request.getStoreId(), request.getBusinessDate());
-    }
 }

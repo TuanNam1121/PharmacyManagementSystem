@@ -3,7 +3,6 @@ package com.pharmacy.service.impl;
 import com.pharmacy.dto.auth.*;
 import com.pharmacy.entity.Account;
 import com.pharmacy.entity.AuditLog;
-import com.pharmacy.entity.EmailLog;
 import com.pharmacy.entity.PasswordResetToken;
 import com.pharmacy.entity.RefreshToken;
 import com.pharmacy.entity.enums.AccountStatus;
@@ -14,7 +13,6 @@ import com.pharmacy.exception.ResourceNotFoundException;
 import com.pharmacy.exception.TokenRefreshException;
 import com.pharmacy.repository.AccountRepository;
 import com.pharmacy.repository.AuditLogRepository;
-import com.pharmacy.repository.EmailLogRepository;
 import com.pharmacy.repository.PasswordResetTokenRepository;
 import com.pharmacy.repository.RefreshTokenRepository;
 import com.pharmacy.security.JwtTokenProvider;
@@ -40,7 +38,6 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final AuditLogRepository auditLogRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
-    private final EmailLogRepository emailLogRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
@@ -90,7 +87,8 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = jwtTokenProvider.generateRefreshToken(account);
 
         // 6. Lưu Refresh Token vào Database
-        LocalDateTime expiryDate = LocalDateTime.now().plusSeconds(jwtTokenProvider.getRefreshTokenExpirationInSeconds());
+        LocalDateTime expiryDate = LocalDateTime.now()
+                .plusSeconds(jwtTokenProvider.getRefreshTokenExpirationInSeconds());
         RefreshToken refreshTokenEntity = RefreshToken.builder()
                 .account(account)
                 .token(refreshToken)
@@ -133,8 +131,10 @@ public class AuthServiceImpl implements AuthService {
         if (tokenEntity.isRevoked()) {
             refreshTokenRepository.revokeAllByAccountId(account.getId());
             recordAuditLog(account, (short) 1, "AUTH", account.getId(), null, "TOKEN_REUSE_DETECTED", ipAddress);
-            log.warn("Security Alert: Reused revoked refresh token detected for account ID {}. All tokens revoked.", account.getId());
-            throw new TokenRefreshException("Cảnh báo bảo mật: Phát hiện Token tái sử dụng trái phép. Phiên làm việc đã bị hủy");
+            log.warn("Security Alert: Reused revoked refresh token detected for account ID {}. All tokens revoked.",
+                    account.getId());
+            throw new TokenRefreshException(
+                    "Cảnh báo bảo mật: Phát hiện Token tái sử dụng trái phép. Phiên làm việc đã bị hủy");
         }
 
         // 4. Kiểm tra thời hạn hết hạn (Expiry)
@@ -144,7 +144,8 @@ public class AuthServiceImpl implements AuthService {
             throw new TokenRefreshException("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại");
         }
 
-        // 5. Áp dụng Refresh Token Rotation (RTR): Vô hiệu hóa token cũ, sinh cặp AT + RT mới
+        // 5. Áp dụng Refresh Token Rotation (RTR): Vô hiệu hóa token cũ, sinh cặp AT +
+        // RT mới
         tokenEntity.setRevoked(true);
 
         String newAccessToken = jwtTokenProvider.generateAccessToken(account);
@@ -153,7 +154,8 @@ public class AuthServiceImpl implements AuthService {
         tokenEntity.setReplacedByToken(newRefreshToken);
         refreshTokenRepository.save(tokenEntity);
 
-        LocalDateTime newExpiryDate = LocalDateTime.now().plusSeconds(jwtTokenProvider.getRefreshTokenExpirationInSeconds());
+        LocalDateTime newExpiryDate = LocalDateTime.now()
+                .plusSeconds(jwtTokenProvider.getRefreshTokenExpirationInSeconds());
         RefreshToken newRtEntity = RefreshToken.builder()
                 .account(account)
                 .token(newRefreshToken)
@@ -213,7 +215,8 @@ public class AuthServiceImpl implements AuthService {
         String email = request.getEmail().trim().toLowerCase();
         Optional<Account> accountOpt = accountRepository.findByEmail(email);
 
-        // Chống user enumeration: luôn hoàn thành âm thầm nếu email không tồn tại hoặc tài khoản bị khóa
+        // Chống user enumeration: luôn hoàn thành âm thầm nếu email không tồn tại hoặc
+        // tài khoản bị khóa
         if (accountOpt.isEmpty()) {
             log.info("Forgot password requested for non-existent email '{}' from IP {}", email, clientIp);
             return;

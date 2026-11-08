@@ -213,32 +213,14 @@ export default function ResetPasswordPage() {
 
             <form onSubmit={handleSubmit}>
               {/* Token field */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Mã Token Xác Thực <span style={{ color: '#ef4444' }}>*</span>
-                </label>
                 <input
                   type="text"
                   name="token"
+                  readOnly={true}
+                  style={{display: 'none'}}
                   value={formData.token}
                   onChange={handleChange}
-                  placeholder="Nhập mã token từ email..."
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    border: `1.5px solid ${fieldErrors.token ? '#ef4444' : '#cbd5e1'}`,
-                    fontSize: '13px',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
                 />
-                {fieldErrors.token && (
-                  <div style={{ fontSize: '12px', color: '#ef4444', marginTop: '4px' }}>
-                    {fieldErrors.token}
-                  </div>
-                )}
-              </div>
 
               {/* New Password */}
               <div style={{ marginBottom: '16px' }}>
