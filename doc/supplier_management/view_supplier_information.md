@@ -48,8 +48,8 @@ Màn hình chính: `SupplierPage.jsx` (route `/supplier`) gồm 4 vùng: **Stats
 | # | Thẻ KPI | Nguồn dữ liệu | Mô tả |
 | :--: | :--- | :--- | :--- |
 | 1 | **Tổng Nhà Cung Cấp** | `total` (tổng bản ghi phân trang) | Số đối tác trong hệ thống |
-| 2 | **Đang Hợp Tác** | đếm `status === '1'` trong trang hiện tại | Sẵn sàng giao dịch |
-| 3 | **Tạm Ngừng** | đếm `status === '0'` trong trang hiện tại | Tạm ngưng hoặc khóa |
+| 2 | **Đang Hợp Tác** | đếm `status === 'ACTIVE'` (hỗ trợ thêm dạng số `'1'`) trong trang hiện tại | Sẵn sàng giao dịch |
+| 3 | **Tạm Ngừng** | đếm `status === 'INACTIVE'` (hỗ trợ thêm dạng số `'2'`) trong trang hiện tại | Tạm ngưng hoặc khóa |
 | 4 | **Đầy Đủ MST** | đếm bản ghi có `taxCode` | Đã xác thực mã số thuế |
 
 ### 3.2. Bảng Điều Khiển Bộ Lọc (`SupplierFilters.jsx`)

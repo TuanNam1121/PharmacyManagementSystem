@@ -1,6 +1,17 @@
+import { isInactiveStatus } from '../../utils/format';
+
+/**
+ * Trạng thái "Đang hợp tác" của nhà cung cấp.
+ * Backend trả về tên enum SupplierStatus (ACTIVE/INACTIVE/PENDING), hỗ trợ thêm dạng số (1/2/3).
+ */
+const isActiveStatus = (status) => {
+  const s = String(status ?? '').toUpperCase();
+  return s === 'ACTIVE' || s === '1';
+};
+
 export default function SupplierStats({ total = 0, suppliers = [] }) {
-  const activeCount = suppliers.filter((s) => String(s.status) === '1').length;
-  const inactiveCount = suppliers.filter((s) => String(s.status) === '0').length;
+  const activeCount = suppliers.filter((s) => isActiveStatus(s?.status)).length;
+  const inactiveCount = suppliers.filter((s) => isInactiveStatus(s?.status)).length;
   const withTaxCodeCount = suppliers.filter((s) => Boolean(s.taxCode)).length;
 
   const stats = [
