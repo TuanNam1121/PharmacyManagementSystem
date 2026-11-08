@@ -40,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuditLogRepository auditLogRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailLogRepository emailLogRepository;
+    private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final ProfileService profileService;
@@ -234,27 +235,11 @@ public class AuthServiceImpl implements AuthService {
         tokenEntity.setCreatedAt(LocalDateTime.now());
         passwordResetTokenRepository.save(tokenEntity);
 
-        // Tạo bản ghi email giả lập (EmailLog)
-        String resetLink = "http://localhost:5173/reset-password?token=" + resetToken;
-        String emailBody = String.format(
-                "Xin chào %s,\n\nBạn đã yêu cầu đặt lại mật khẩu cho tài khoản hệ thống PharmaChain.\n" +
-                        "Vui lòng nhấn vào liên kết bên dưới để tạo mật khẩu mới (Liên kết có hiệu lực trong 15 phút):\n%s\n\n"
-                        +
-                        "Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.",
-                account.getUsername(), resetLink);
-
-        EmailLog emailLog = new EmailLog();
-        emailLog.setToEmail(account.getEmail());
-        emailLog.setSubject("Khôi phục mật khẩu - PharmaChain Management System");
-        emailLog.setBody(emailBody);
-        emailLog.setRefType("PASSWORD_RESET");
-        emailLog.setRefId(tokenEntity.getId());
-        emailLog.setStatus((short) 1); // 1: Sent / Queued
-        emailLogRepository.save(emailLog);
+        // Gửi email khôi phục mật khẩu thông qua EmailService
+        emailService.sendPasswordResetEmail(account.getEmail(), account.getUsername(), resetToken);
 
         recordAuditLog(account, (short) 1, "AUTH", account.getId(), null, "FORGOT_PASSWORD_REQUEST", clientIp);
-        log.info("Password reset token generated for account '{}': {} (Link: {})", account.getUsername(), resetToken,
-                resetLink);
+        log.info("Password reset token generated for account '{}': {}", account.getUsername(), resetToken);
     }
 
     @Override

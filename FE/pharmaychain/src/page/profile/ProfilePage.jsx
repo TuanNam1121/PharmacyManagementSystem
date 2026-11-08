@@ -78,6 +78,7 @@ export default function ProfilePage() {
     if (formData.dateOfBirth) {
       const dob = new Date(formData.dateOfBirth);
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
       if (dob >= today) {
         errors.dateOfBirth = 'Ngày sinh phải là một ngày trong quá khứ';
       }
@@ -125,7 +126,13 @@ export default function ProfilePage() {
 
       setTimeout(() => setSuccessToast(''), 4000);
     } catch (err) {
-      setServerError(err.message || 'Cập nhật thất bại. Vui lòng kiểm tra lại');
+      if (err.data && typeof err.data === 'object' && Object.keys(err.data).length > 0) {
+        setFieldErrors(err.data);
+        const details = Object.values(err.data).join('; ');
+        setServerError(`${err.message || 'Dữ liệu không hợp lệ'}: ${details}`);
+      } else {
+        setServerError(err.message || 'Cập nhật thất bại. Vui lòng kiểm tra lại');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -297,19 +304,9 @@ export default function ProfilePage() {
 
             <div>
               <div style={{ color: 'var(--text-secondary)', marginBottom: '2px' }}>Chi nhánh / Kho làm việc</div>
-              <div
-                style={{
-                  fontWeight: 600,
-                  color: 'var(--text-primary)',
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  padding: '7px 10px',
-                  borderRadius: '6px',
-                  marginTop: '2px',
-                }}
-              >
+              <span className="pms-badge pms-badge-success" style={{ marginTop: '2px' }}>
                 {profile?.storeName || 'Hội sở chính / Chưa phân bổ'}
-              </div>
+              </span>
             </div>
 
             <div>
