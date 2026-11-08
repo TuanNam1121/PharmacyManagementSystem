@@ -70,7 +70,7 @@ const NAV_MODULES = [
       { to: "/procurement/proposals", label: "Đề xuất mua hàng", roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"] },
       { to: "/supplier", label: "Nhà cung cấp", roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"] },
       { to: "/procurement/rfq", label: "RFQ & Báo giá", roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"] },
-      { to: "/procurement/orders", label: "Đơn đặt hàng PO", roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"] },
+      { to: "/procurement/orders", label: "Đơn đặt hàng PO", roles: ["GENERAL_MANAGER"] },
     ],
   },
   {
