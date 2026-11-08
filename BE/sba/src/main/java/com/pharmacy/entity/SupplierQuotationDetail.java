@@ -7,10 +7,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.Generated;
-import org.hibernate.generator.EventType;
 import java.math.BigDecimal;
 
 @Builder 
@@ -45,9 +44,7 @@ public class SupplierQuotationDetail {
     @Column(name = "tax_rate", nullable = false, precision = 5, scale = 2)
     private BigDecimal taxRate;
 
-    @ColumnDefault("CONVERT([decimal](18,2),[quantity]*[unit_price]*(1+[tax_rate]/100.0))")
-    @Generated(event = { EventType.INSERT, EventType.UPDATE })
-    @Column(name = "subtotal", precision = 18, scale = 2, insertable = false, updatable = false)
+    @Formula("CAST(quantity * unit_price * (1 + tax_rate / 100.0) AS DECIMAL(18,2))")
     private BigDecimal subtotal;
 
 }
