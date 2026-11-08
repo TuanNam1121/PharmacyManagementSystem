@@ -54,8 +54,8 @@ public class RfqServiceImpl implements RfqService {
     private final EmailService emailService;
     private final SupplierQuotationRepository supplierQuotationRepository;
 
-    @Value("${app.frontend-url:http://localhost:5173}")
-    private String frontendUrl;
+    @Value("${app.rfq.frontend-url:http://localhost:5173}")
+    private String rfqFrontendUrl;
 
     @Override
     public List<PurchaseProposalResponse> getEligiblePurchaseProposals() {
@@ -161,7 +161,7 @@ public class RfqServiceImpl implements RfqService {
         }
 
         // Send email to supplier
-        boolean emailSent = emailService.sendRfqEmail(savedRfq, supplier, rawToken, frontendUrl);
+        boolean emailSent = emailService.sendRfqEmail(savedRfq, supplier, rawToken, rfqFrontendUrl);
         if (!emailSent) {
             log.error("Failed to send email for RFQ {}, but RFQ is saved", savedRfq.getId());
         }
