@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.pharmacy.dto.supplier.CreateSupplierRequest;
 import com.pharmacy.dto.supplier.SupplierResponse;
+import com.pharmacy.dto.supplier.SupplierStatsResponse;
 import com.pharmacy.dto.supplier.UpdateSupplierRequest;
 import com.pharmacy.entity.enums.SupplierStatus;
 
@@ -14,6 +15,8 @@ public interface SupplierService {
 
     Page<SupplierResponse> viewSupplierList(String keyword, SupplierStatus status ,Pageable pageable);
     SupplierResponse viewSupplierDetail(Long id);
+
+    SupplierStatsResponse viewSupplierStatistics();
     SupplierResponse updateSupplierInformation(Long id, UpdateSupplierRequest request);
     SupplierResponse deleteSupplier(Long id, String reason); 
 }

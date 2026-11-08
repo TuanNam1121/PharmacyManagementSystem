@@ -25,6 +25,7 @@ import com.pharmacy.dto.ApiResponse;
 import com.pharmacy.dto.PageResponse;
 import com.pharmacy.dto.supplier.CreateSupplierRequest;
 import com.pharmacy.dto.supplier.SupplierResponse;
+import com.pharmacy.dto.supplier.SupplierStatsResponse;
 import com.pharmacy.dto.supplier.UpdateSupplierRequest;
 import com.pharmacy.entity.enums.SupplierStatus;
 import com.pharmacy.service.SupplierService;
@@ -49,6 +50,13 @@ public class SupplierController {
                 PageResponse<SupplierResponse> pageResponse = PageResponse.from(page);
                 return ResponseEntity.ok(
                                 ApiResponse.success("Suppliers retrieved successfully", pageResponse));
+        }
+
+        @GetMapping("/stats")
+        public ResponseEntity<ApiResponse<SupplierStatsResponse>> viewSupplierStatistics() {
+                SupplierStatsResponse data = supplierService.viewSupplierStatistics();
+                return ResponseEntity.ok(
+                                ApiResponse.success("Supplier statistics retrieved successfully", data));
         }
 
         @GetMapping("/{id}")

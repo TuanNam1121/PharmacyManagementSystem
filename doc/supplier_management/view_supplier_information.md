@@ -47,10 +47,13 @@ Màn hình chính: `SupplierPage.jsx` (route `/supplier`) gồm 4 vùng: **Stats
 ### 3.1. Vùng Thẻ KPI (`SupplierStats.jsx`)
 | # | Thẻ KPI | Nguồn dữ liệu | Mô tả |
 | :--: | :--- | :--- | :--- |
-| 1 | **Tổng Nhà Cung Cấp** | `total` (tổng bản ghi phân trang) | Số đối tác trong hệ thống |
-| 2 | **Đang Hợp Tác** | đếm `status === 'ACTIVE'` (hỗ trợ thêm dạng số `'1'`) trong trang hiện tại | Sẵn sàng giao dịch |
-| 3 | **Tạm Ngừng** | đếm `status === 'INACTIVE'` (hỗ trợ thêm dạng số `'2'`) trong trang hiện tại | Tạm ngưng hoặc khóa |
-| 4 | **Đầy Đủ MST** | đếm bản ghi có `taxCode` | Đã xác thực mã số thuế |
+| 1 | **Tổng Nhà Cung Cấp** | `total` từ `GET /api/v1/supplier/stats` | Số đối tác trong hệ thống |
+| 2 | **Đang Hợp Tác** | `active` từ `GET /api/v1/supplier/stats` | Sẵn sàng giao dịch |
+| 3 | **Tạm Ngừng** | `inactive` từ `GET /api/v1/supplier/stats` | Tạm ngưng hoặc khóa |
+| 4 | **Đầy Đủ MST** | `withTaxCode` từ `GET /api/v1/supplier/stats` | Đã xác thực mã số thuế |
+
+> **Cách lấy số liệu**: `SupplierPage.jsx` gọi `GET /api/v1/supplier/stats` khi mở trang (và gọi lại sau mỗi thao tác tạo / cập nhật / ngừng hoạt động) để lấy số liệu **đếm toàn hệ thống** — không phụ thuộc phân trang hay bộ lọc đang chọn. Nếu API thống kê gặp lỗi, `SupplierStats.jsx` tự fallback sang đếm cục bộ theo `status` (`ACTIVE`/`INACTIVE`) và `taxCode` của trang hiện tại.
+> API còn trả sẵn trường `pending` (NCC `PENDING` — chờ duyệt) để dùng khi bổ sung thẻ KPI thứ 5.
 
 ### 3.2. Bảng Điều Khiển Bộ Lọc (`SupplierFilters.jsx`)
 | STT | Field Name | Loại điều khiển | Bắt buộc | Max Length | Mô tả |
@@ -272,6 +275,38 @@ public SupplierResponse viewSupplierDetail(Long id) {
 | 2 | Hồ sơ chi tiết hiển thị **Payment Terms, Catalog/khả năng phân phối, lịch sử RFQ/báo giá/PO** | `SupplierResponse` chưa gồm các khối này | Bổ sung DTO tổng hợp hoặc gọi API RFQ/PO riêng khi mở chi tiết |
 | 3 | SRS chỉ mô tả status Active/Inactive | Enum có thêm `PENDING` | Đồng bộ nhãn dropdown `Chờ duyệt` |
 
+### 4.6. RESTful API Contract — Thống kê KPI nhà cung cấp
+- **Endpoint**: `GET /api/v1/supplier/stats`
+- **Handler**: `SupplierController.viewSupplierStatistics()`
+- **Mức độ truy cập**: `Purchasing Staff`
+- **Mục đích**: Trả số liệu KPI cho vùng thẻ `SupplierStats.jsx`; đếm **toàn hệ thống** bằng truy vấn `COUNT` nên không phụ thuộc `page`/`size`/`keyword`/`status`.
+
+#### Response Payload (HTTP 200 OK):
+```json
+{
+  "status": 200,
+  "message": "Supplier statistics retrieved successfully",
+  "data": {
+    "total": 21,
+    "active": 18,
+    "inactive": 2,
+    "pending": 1,
+    "withTaxCode": 15
+  }
+}
+```
+
+#### Truy vấn tương ứng tại Repository:
+| Trường | Ý nghĩa | Repository method |
+| :--- | :--- | :--- |
+| `total` | Tổng số NCC (bao gồm cả `INACTIVE`, vì hệ thống chỉ xóa mềm) | `JpaRepository.count()` |
+| `active` | NCC `ACTIVE` (đang hợp tác) | `countByStatus(SupplierStatus.ACTIVE)` |
+| `inactive` | NCC `INACTIVE` (tạm ngừng) | `countByStatus(SupplierStatus.INACTIVE)` |
+| `pending` | NCC `PENDING` (chờ duyệt) | `countByStatus(SupplierStatus.PENDING)` |
+| `withTaxCode` | NCC có `tax_code` khác `NULL` và khác chuỗi rỗng | `countWithTaxCode()` (`@Query`) |
+
+> **Định tuyến**: `stats` là literal segment nên được ưu tiên hơn `/{id}` (PathPattern literal-precedence) → không bị lỗi chuyển đổi `Long`, không ảnh hưởng API chi tiết.
+
 ---
 
 ## 5. Kịch Bản Kiểm Thử (Test Cases)
@@ -286,4 +321,6 @@ public SupplierResponse viewSupplierDetail(Long id) {
 | **TC-VSU-07** | Xem chi tiết NCC hợp lệ | `GET /api/v1/supplier/21` | HTTP 200, đầy đủ trường chi tiết, `createdAt` định dạng `dd/MM/yyyy` |
 | **TC-VSU-08** | Xem chi tiết NCC không tồn tại | `GET /api/v1/supplier/999` | HTTP 404 "Supplier not found with id: 999", modal báo không tìm thấy |
 | **TC-VSU-09** | NCC ngừng hoạt động hiển thị badge | Bản ghi `INACTIVE` | Hiển thị badge "Ngừng hoạt động", ẩn nút Sửa/Xóa |
+| **TC-VSU-10** | Thống kê KPI nhà cung cấp | `GET /api/v1/supplier/stats` | HTTP 200, trả `total`/`active`/`inactive`/`pending`/`withTaxCode` khớp dữ liệu **toàn hệ thống** (không phụ thuộc trang) |
+| **TC-VSU-11** | KPI cập nhật sau khi ngừng hoạt động NCC | Ngừng hoạt động 1 NCC `ACTIVE` | Thẻ "Đang Hợp Tác" giảm 1, "Tạm Ngừng" tăng 1 ngay sau thao tác |
 
