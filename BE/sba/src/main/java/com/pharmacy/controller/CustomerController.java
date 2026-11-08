@@ -30,7 +30,6 @@ public class CustomerController {
     @Operation(summary = "Lấy danh sách khách hàng có tìm kiếm, lọc và phân trang (UC30)")
     public ResponseEntity<ApiResponse<PageResponse<CustomerResponse>>> getCustomers(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String membershipTier,
             @RequestParam(required = false) Short status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -38,8 +37,7 @@ public class CustomerController {
             @RequestParam(defaultValue = "desc") String sortDir) {
 
         PageResponse<CustomerResponse> response = customerService.getCustomers(
-                keyword, membershipTier, status, page, size, sortBy, sortDir
-        );
+                keyword, status, page, size, sortBy, sortDir);
 
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách khách hàng thành công", response));
     }

@@ -16,7 +16,9 @@ export const profileApi = {
   },
 
   updateProfile: async (payload) => {
+    console.log(payload);
     const res = await put(BASE_URL, payload);
+    console.log(res);
     return unwrap(res);
   },
 };

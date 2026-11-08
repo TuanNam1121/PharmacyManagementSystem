@@ -28,8 +28,6 @@ export default function CustomerDirectoryPage() {
     setSize,
     keyword,
     setKeyword,
-    membershipTier,
-    setMembershipTier,
     statusFilter,
     setStatusFilter,
     loading,
@@ -170,8 +168,6 @@ export default function CustomerDirectoryPage() {
       id: customer.customerId || customer.id,
       fullName: customer.fullName,
       phone: customer.phone,
-      membershipTier: customer.membershipTier,
-      rewardPoints: customer.loyaltyPoints || customer.rewardPoints || 0,
       allergies: customer.allergies,
       hasAllergies: customer.hasAllergies,
     };
@@ -219,7 +215,7 @@ export default function CustomerDirectoryPage() {
         <div>
           <h1 className="pms-page-title">Quản Lý Khách Hàng</h1>
           <p className="pms-page-subtitle">
-            Danh sách khách hàng, điểm tích lũy, phân hạng thành viên và cảnh báo tiền sử dị ứng thuốc
+            Danh sách hồ sơ khách hàng, lịch sử mua thuốc và cảnh báo tiền sử dị ứng y tế
           </p>
         </div>
       </div>
@@ -255,10 +251,8 @@ export default function CustomerDirectoryPage() {
       {/* Filter and Action Bar */}
       <CustomerFilters
         keyword={keyword}
-        membershipTier={membershipTier}
         statusFilter={statusFilter}
         onKeywordChange={setKeyword}
-        onTierChange={setMembershipTier}
         onStatusChange={setStatusFilter}
         onAddNew={handleAddNew}
         onExport={handleExport}

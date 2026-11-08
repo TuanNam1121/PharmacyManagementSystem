@@ -60,11 +60,18 @@ export default function BranchInventoryDetailModal({ show, onHide, item }) {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, textAlign: 'center' }}>
                             <div>
                                 <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>Tồn thực tế</div>
-                                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--brand-primary)' }}>{item.quantity} {item.unit}</div>
+                                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--brand-primary)' }}>
+                                    {item.quantity?.toLocaleString()} {item.baseUnitName || item.unit}
+                                </div>
+                                {item.packagingBreakdown && (
+                                    <div style={{ fontSize: 11, color: '#0284c7', fontWeight: 600, marginTop: 2 }}>
+                                        (~ {item.packagingBreakdown})
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>Định mức tối thiểu</div>
-                                <div style={{ fontSize: 18, fontWeight: 700 }}>{item.minQuantity} {item.unit}</div>
+                                <div style={{ fontSize: 18, fontWeight: 700 }}>{item.minQuantity} {item.baseUnitName || item.unit}</div>
                             </div>
                             <div>
                                 <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>Giá bán lẻ</div>
@@ -76,6 +83,51 @@ export default function BranchInventoryDetailModal({ show, onHide, item }) {
                             </div>
                         </div>
                     </div>
+
+                    {item.units && item.units.length > 0 && (
+                        <div className="pms-card" style={{ padding: 14, marginTop: 14 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: 10 }}>
+                                Bảng Quy Đổi Đơn Vị & Tồn Khả Dụng
+                            </div>
+                            <div className="pms-table-wrap">
+                                <table className="pms-table" style={{ fontSize: 12.5 }}>
+                                    <thead>
+                                        <tr>
+                                            <th>Đơn Vị Bán</th>
+                                            <th style={{ textAlign: 'center' }}>Hệ Số Quy Đổi</th>
+                                            <th style={{ textAlign: 'right' }}>Giá Bán</th>
+                                            <th style={{ textAlign: 'right' }}>Tồn Tối Đa Có Thể Bán</th>
+                                            <th style={{ textAlign: 'center' }}>Loại Đơn Vị</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {item.units.map((u) => {
+                                            const maxStock = Math.floor((item.quantity || 0) / (u.conversionFactor || 1));
+                                            return (
+                                                <tr key={u.id || u.unitName}>
+                                                    <td style={{ fontWeight: 600 }}>{u.unitName}</td>
+                                                    <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>
+                                                        1 {u.unitName} = {u.conversionFactor} {item.baseUnitName || 'đơn vị'}
+                                                    </td>
+                                                    <td style={{ textAlign: 'right', fontWeight: 600 }}>{money(u.sellingPrice)}</td>
+                                                    <td style={{ textAlign: 'right', fontWeight: 700, color: maxStock > 0 ? 'var(--brand-primary)' : 'var(--color-danger)' }}>
+                                                        {maxStock.toLocaleString()} {u.unitName}
+                                                    </td>
+                                                    <td style={{ textAlign: 'center' }}>
+                                                        {u.isBaseUnit || u.conversionFactor === 1 ? (
+                                                            <span className="pms-badge pms-badge-success" style={{ fontSize: 11 }}>Đơn vị cơ bản</span>
+                                                        ) : (
+                                                            <span className="pms-badge pms-badge-neutral" style={{ fontSize: 11 }}>Đơn vị quy đổi</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="pms-modal-footer">

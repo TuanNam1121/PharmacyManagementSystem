@@ -20,6 +20,9 @@ public class InvoiceItemRequest {
 
     private Long batchId; // if null, system selects nearest expiring batch (FEFO)
 
+    private Long unitId; // ID đơn vị quy đổi (nếu có, null nếu là đơn vị mặc định)
+    private String unitName; // "Hộp", "Vỉ", "Viên"
+
     @NotNull(message = "Số lượng không được để trống")
     @Min(value = 1, message = "Số lượng phải lớn hơn hoặc bằng 1")
     private Integer quantity;

@@ -3,6 +3,7 @@ import { money, formatDate } from '../../utils/format';
 
 export default function PosCartTable({
     items,
+    onUpdateUnit,
     onUpdateQuantity,
     onUpdateDosage,
     onRemoveItem,
@@ -131,9 +132,35 @@ export default function PosCartTable({
                                     </div>
                                 </td>
                                 <td style={{ textAlign: 'center', padding: '10px 8px' }}>
-                                    <span className="pms-badge pms-badge-secondary" style={{ fontSize: 11 }}>
-                                        {item.unit}
-                                    </span>
+                                    {item.units && item.units.length > 0 ? (
+                                        <select
+                                            value={item.unitId || ''}
+                                            onChange={(e) => onUpdateUnit && onUpdateUnit(item.productId, item.batchId, e.target.value)}
+                                            style={{
+                                                fontSize: 11.5,
+                                                padding: '2px 4px',
+                                                height: 28,
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                borderRadius: 6,
+                                                background: '#f0fdf4',
+                                                border: '1px solid #86efac',
+                                                color: '#166534',
+                                                outline: 'none',
+                                            }}
+                                            title="Bấm để đổi đơn vị tính (Viên / Vỉ / Hộp)"
+                                        >
+                                            {item.units.map((u) => (
+                                                <option key={u.id} value={u.id}>
+                                                    {u.unitName}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <span className="pms-badge pms-badge-secondary" style={{ fontSize: 11 }}>
+                                            {item.unit}
+                                        </span>
+                                    )}
                                 </td>
                                 <td style={{ textAlign: 'right', fontWeight: 600, padding: '10px 12px', color: '#334155' }}>
                                     {money(item.unitPrice)}

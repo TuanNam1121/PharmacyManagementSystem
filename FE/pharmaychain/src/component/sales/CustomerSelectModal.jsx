@@ -126,9 +126,6 @@ export default function CustomerSelectModal({
                                         <span className="pms-badge pms-badge-info" style={{ fontSize: 11 }}>
                                             {c.phone}
                                         </span>
-                                        <span className="pms-badge pms-badge-secondary" style={{ fontSize: 10 }}>
-                                            {c.membershipTier || 'Thành viên'}
-                                        </span>
                                     </div>
 
                                     {c.allergies && (
@@ -138,10 +135,7 @@ export default function CustomerSelectModal({
                                     )}
                                 </div>
 
-                                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                                    <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--brand-primary, #059669)' }}>
-                                        {(c.loyaltyPoints ?? c.rewardPoints ?? c.points ?? 0)} điểm
-                                    </div>
+                                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
                                     <button
                                         type="button"
                                         className="btn-pms btn-pms-primary"

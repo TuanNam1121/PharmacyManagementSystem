@@ -37,41 +37,6 @@ function formatDateTime(iso) {
   }
 }
 
-function getTierBadge(tier) {
-  const code = (tier || 'STANDARD').toUpperCase();
-  switch (code) {
-    case 'DIAMOND':
-      return {
-        bg: 'rgba(168, 85, 247, 0.15)',
-        text: '#c084fc',
-        border: 'rgba(168, 85, 247, 0.3)',
-        label: 'Kim Cương',
-      };
-    case 'GOLD':
-      return {
-        bg: 'rgba(245, 158, 11, 0.15)',
-        text: '#fbbf24',
-        border: 'rgba(245, 158, 11, 0.3)',
-        label: 'Vàng',
-      };
-    case 'SILVER':
-      return {
-        bg: 'rgba(59, 130, 246, 0.15)',
-        text: '#60a5fa',
-        border: 'rgba(59, 130, 246, 0.3)',
-        label: 'Bạc',
-      };
-    case 'STANDARD':
-    default:
-      return {
-        bg: 'rgba(148, 163, 184, 0.15)',
-        text: '#94a3b8',
-        border: 'rgba(148, 163, 184, 0.3)',
-        label: 'Chuẩn',
-      };
-  }
-}
-
 function getGenderDisplay(gender) {
   const g = String(gender).toUpperCase();
   if (g === '1' || g === 'MALE' || g === 'NAM') return 'Nam';
@@ -109,7 +74,6 @@ export default function CustomerDetailModal({
   if (!show) return null;
 
   const isActive = Number(customer?.status) === 1;
-  const tier = getTierBadge(customer?.membershipTier);
   const health = customer?.healthProfile;
   const hasAllergies = Boolean(health?.allergies && health.allergies.trim().length > 0);
   const bmiInfo = health ? calculateBmi(health.heightCm, health.weightKg) : null;
@@ -212,25 +176,6 @@ export default function CustomerDetailModal({
                       <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>
                         {customer.fullName || '—'}
                       </span>
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          padding: '2px 8px',
-                          borderRadius: 6,
-                          fontSize: 11.5,
-                          fontWeight: 600,
-                          backgroundColor: tier.bg,
-                          color: tier.text,
-                          border: `1px solid ${tier.border}`,
-                        }}
-                      >
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                        </svg>
-                        Thẻ {tier.label}
-                      </span>
                     </div>
                     <div style={{ display: 'flex', gap: 16, marginTop: 4, fontSize: 13, color: 'var(--text-secondary)' }}>
                       <span>SĐT: <strong style={{ color: 'var(--text-primary)' }}>{customer.phone || '—'}</strong></span>
@@ -267,7 +212,7 @@ export default function CustomerDetailModal({
                   marginBottom: 20,
                 }}
               >
-                {/* Column 1: Thông tin cá nhân & Thẻ thành viên */}
+                {/* Column 1: Thông tin cá nhân cơ bản */}
                 <div
                   style={{
                     padding: 18,
@@ -318,21 +263,6 @@ export default function CustomerDetailModal({
 
                     <div style={{ height: 1, background: 'var(--border-color)', margin: '4px 0' }} />
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>Điểm tích lũy:</span>
-                      <span style={{ fontWeight: 700, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                        </svg>
-                        {(customer.loyaltyPoints ?? 0).toLocaleString('vi-VN')} điểm
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>Giá trị quy đổi:</span>
-                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {formatCurrency((customer.loyaltyPoints ?? 0) * 1000)}
-                      </span>
-                    </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ color: 'var(--text-muted)' }}>Tổng chi tiêu tích lũy:</span>
                       <span style={{ fontWeight: 700, color: 'var(--brand-primary)', fontSize: 13.5 }}>

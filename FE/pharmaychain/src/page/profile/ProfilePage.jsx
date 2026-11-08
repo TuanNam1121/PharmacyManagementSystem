@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import profileApi from '../../api/profileApi';
 import { useAuth } from '../../hooks/useAuth';
 import ChangePasswordModal from '../../component/auth/ChangePasswordModal';
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [profile, setProfile] = useState(null);
@@ -13,7 +15,6 @@ export default function ProfilePage() {
     dateOfBirth: '',
     gender: 'MALE',
     address: '',
-    avatarUrl: '',
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -35,7 +36,6 @@ export default function ProfilePage() {
         dateOfBirth: data.dateOfBirth || '',
         gender: data.gender || 'MALE',
         address: data.address || '',
-        avatarUrl: data.avatarUrl || '',
       });
     } catch (err) {
       setServerError(err.message || 'Không thể tải thông tin hồ sơ');
@@ -78,6 +78,7 @@ export default function ProfilePage() {
     if (formData.dateOfBirth) {
       const dob = new Date(formData.dateOfBirth);
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
       if (dob >= today) {
         errors.dateOfBirth = 'Ngày sinh phải là một ngày trong quá khứ';
       }
@@ -102,7 +103,6 @@ export default function ProfilePage() {
         dateOfBirth: formData.dateOfBirth || null,
         gender: formData.gender,
         address: formData.address.trim(),
-        avatarUrl: formData.avatarUrl.trim(),
       });
 
       setProfile(updated);
@@ -114,7 +114,6 @@ export default function ProfilePage() {
         try {
           const userObj = JSON.parse(stored);
           userObj.fullName = updated.fullName;
-          userObj.avatarUrl = updated.avatarUrl;
           if (localStorage.getItem('pms_user')) {
             localStorage.setItem('pms_user', JSON.stringify(userObj));
           } else {
@@ -127,25 +126,20 @@ export default function ProfilePage() {
 
       setTimeout(() => setSuccessToast(''), 4000);
     } catch (err) {
-      setServerError(err.message || 'Cập nhật thất bại. Vui lòng kiểm tra lại');
+      if (err.data && typeof err.data === 'object' && Object.keys(err.data).length > 0) {
+        setFieldErrors(err.data);
+        const details = Object.values(err.data).join('; ');
+        setServerError(`${err.message || 'Dữ liệu không hợp lệ'}: ${details}`);
+      } else {
+        setServerError(err.message || 'Cập nhật thất bại. Vui lòng kiểm tra lại');
+      }
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleReset = () => {
-    if (profile) {
-      setFormData({
-        fullName: profile.fullName || '',
-        phone: profile.phone || '',
-        dateOfBirth: profile.dateOfBirth || '',
-        gender: profile.gender || 'MALE',
-        address: profile.address || '',
-        avatarUrl: profile.avatarUrl || '',
-      });
-      setFieldErrors({});
-      setServerError('');
-    }
+  const handleCancel = () => {
+    navigate('/home');
   };
 
   if (isLoading) {
@@ -157,8 +151,6 @@ export default function ProfilePage() {
       </div>
     );
   }
-
-  const avatarInitials = (formData.fullName || profile?.username || 'U').trim().slice(0, 2).toUpperCase();
 
   return (
     <div style={{ maxWidth: '960px', margin: '0 auto', padding: '16px 0' }}>
@@ -212,28 +204,20 @@ export default function ProfilePage() {
               width: '72px',
               height: '72px',
               borderRadius: '50%',
-              background: '#ffffff',
-              color: '#059669',
-              fontSize: '28px',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              background: '#e2e8f0',
               boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
               overflow: 'hidden',
               flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {formData.avatarUrl ? (
-              <img
-                src={formData.avatarUrl}
-                alt="Avatar"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                onError={(e) => (e.target.style.display = 'none')}
-              />
-            ) : (
-              avatarInitials
-            )}
+            <img
+              src="/default-avatar.png"
+              alt="Default Avatar"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 800 }}>
@@ -319,6 +303,13 @@ export default function ProfilePage() {
             </div>
 
             <div>
+              <div style={{ color: 'var(--text-secondary)', marginBottom: '2px' }}>Chi nhánh / Kho làm việc</div>
+              <span className="pms-badge pms-badge-success" style={{ marginTop: '2px' }}>
+                {profile?.storeName || 'Hội sở chính / Chưa phân bổ'}
+              </span>
+            </div>
+
+            <div>
               <div style={{ color: 'var(--text-secondary)', marginBottom: '2px' }}>Trạng thái tài khoản</div>
               <span className={`pms-badge ${profile?.status === 1 ? 'pms-badge-success' : 'pms-badge-danger'}`}>
                 {profile?.status === 1 ? 'Hoạt động (Active)' : 'Đã khóa (Locked)'}
@@ -327,7 +318,7 @@ export default function ProfilePage() {
 
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                Tài khoản được phân quyền bởi Quản trị viên (Admin). Bạn không thể thay đổi Tên đăng nhập và Email tại màn hình này.
+                Tài khoản và chi nhánh được phân quyền bởi Quản trị viên (Admin). Bạn không thể thay đổi thông tin tại mục này.
               </div>
             </div>
           </div>
@@ -462,7 +453,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Address */}
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                 Địa chỉ thường trú
               </label>
@@ -486,34 +477,11 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Avatar URL */}
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                Đường dẫn Ảnh đại diện (Avatar URL)
-              </label>
-              <input
-                type="text"
-                name="avatarUrl"
-                value={formData.avatarUrl}
-                onChange={handleChange}
-                placeholder="https://example.com/avatar.png"
-                style={{
-                  width: '100%',
-                  padding: '9px 12px',
-                  borderRadius: '8px',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: '13px',
-                  boxSizing: 'border-box',
-                  outline: 'none',
-                }}
-              />
-            </div>
-
             {/* Actions */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <button
                 type="button"
-                onClick={handleReset}
+                onClick={handleCancel}
                 disabled={isSaving}
                 className="btn-pms btn-pms-secondary"
               >
@@ -551,4 +519,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

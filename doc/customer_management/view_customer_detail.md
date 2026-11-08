@@ -4,7 +4,7 @@
 - **Mã Use Case**: `UC29` (SRS 3.8.3)
 - **Tên Use Case**: View Customer Detail (Xem chi tiết hồ sơ khách hàng)
 - **Tác nhân (Actor)**: `ALL` (Dược sĩ bán thuốc, Quản lý cửa hàng, Thu ngân, Quản trị viên)
-- **Mô tả nghiệp vụ**: Cung cấp giao diện toàn diện hiển thị tất cả các thông tin định danh, lịch sử mua hàng tổng quan, chính sách ưu đãi thành viên và hồ sơ y tế chuyên sâu (tiền sử dị ứng, bệnh nền, chống chỉ định) của một khách hàng cụ thể.
+- **Mô tả nghiệp vụ**: Cung cấp giao diện toàn diện hiển thị tất cả các thông tin định danh, lịch sử mua hàng tổng quan và hồ sơ y tế chuyên sâu (tiền sử dị ứng, bệnh nền, chống chỉ định) của một khách hàng cụ thể.
 - **Tiền điều kiện (Preconditions)**:
   - Khách hàng có tồn tại trong hệ thống.
   - Người dùng đã đăng nhập vào hệ thống.
@@ -24,10 +24,8 @@
    - Tính toán thống kê: tổng số đơn hàng đã mua, số ngày kể từ lần mua gần nhất.
    - Trả về đối tượng `CustomerDetailResponse`.
 4. Frontend hiển thị **Customer Detail Drawer** được bố cục khoa học gồm 3 tab/khối chính:
-   - **Khối 1: Thông tin định danh & Thành viên**:
+   - **Khối 1: Thông tin định danh & Cá nhân**:
      * Mã khách hàng, Họ và tên, Số điện thoại, Giới tính, Ngày sinh, Tuổi, Email, Địa chỉ.
-     * Thẻ hội viên (Badge): Standard, Silver, Gold, Diamond.
-     * Điểm thưởng hiện có & Giá trị quy đổi tiền mặt.
      * Tổng số tiền đã chi tiêu tích lũy (`total_spent`).
    - **Khối 2: Hồ sơ sức khỏe & Cảnh báo an toàn y tế**:
      * Banner cảnh báo màu đỏ nếu có tiền sử dị ứng thuốc.
@@ -38,7 +36,7 @@
    - **Khối 3: Lịch sử đơn hàng gần nhất**:
      * Danh sách 5 đơn hàng mua gần đây nhất (Mã đơn, ngày giờ, chi nhánh, tổng tiền, trạng thái).
      * Nút bấm *"Xem toàn bộ lịch sử mua hàng"* (chuyển sang Use Case 3.7.4).
-5. Từ màn hình này, nhân viên có thể bấm nhanh nút: **"Chỉnh sửa hồ sơ"**, **"Tạo đơn bán hàng mới cho khách này"**, hoặc **"In mã thành viên"**.
+5. Từ màn hình này, nhân viên có thể bấm nhanh nút: **"Chỉnh sửa hồ sơ"** hoặc **"Tạo đơn bán hàng mới cho khách này"**.
 
 ### 2.2. Luồng ngoại lệ
 - **A1 - Khách hàng không tồn tại**: Nếu ID không tồn tại hoặc đã bị xóa vĩnh viễn, Backend trả về HTTP `404 Not Found`. Frontend hiển thị thông báo: *"Không tìm thấy thông tin khách hàng yêu cầu"*.
@@ -51,10 +49,9 @@
 - **Header Drawer**:
   - Avatar đại diện theo giới tính.
   - Họ và tên khách hàng (In đậm, font 20px).
-  - Huy hiệu Hạng thành viên (Badge: Vàng cho Gold, Bạc cho Silver, Tím cho Diamond).
   - Trạng thái: Đang hoạt động (Active) / Đã vô hiệu hóa (Inactive).
 - **Body Drawer**:
-  - Grid 2 cột: Cột trái (Thông tin cá nhân & Thẻ thành viên), Cột phải (Hồ sơ sức khỏe y tế nổi bật).
+  - Grid 2 cột: Cột trái (Thông tin cá nhân cơ bản), Cột phải (Hồ sơ sức khỏe y tế nổi bật).
   - Phía dưới là danh sách các hóa đơn gần đây kèm link xem lại chi tiết hóa đơn.
 - **Footer Drawer**:
   - Nút "Sửa thông tin" (`secondary`).
@@ -84,8 +81,6 @@
     "age": 36,
     "email": "lan.tran@gmail.com",
     "address": "Số 15 Phố Duy Tân, Cầu Giấy, Hà Nội",
-    "membershipTier": "GOLD",
-    "loyaltyPoints": 120,
     "totalSpent": 12500000.00,
     "totalOrders": 18,
     "status": 1,
@@ -133,8 +128,6 @@ public class CustomerDetailResponse {
     private Integer age;
     private String email;
     private String address;
-    private String membershipTier;
-    private Integer loyaltyPoints;
     private BigDecimal totalSpent;
     private Integer totalOrders;
     private Short status;

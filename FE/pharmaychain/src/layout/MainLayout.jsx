@@ -522,7 +522,9 @@ export default function MainLayout() {
             onClick={() => setShowLogoutModal(true)}
             title="Bấm để đăng xuất"
           >
-            <div className="pms-user-avatar">{avatarInitials}</div>
+            <div className="pms-user-avatar" style={{ overflow: "hidden", background: "#e2e8f0" }}>
+              <img src="/default-avatar.png" alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
             <div className="pms-user-info" style={{ flex: 1, minWidth: 0 }}>
               <div
                 className="pms-user-name"
@@ -607,16 +609,15 @@ export default function MainLayout() {
                     width: "28px",
                     height: "28px",
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark))",
-                    color: "white",
+                    background: "#e2e8f0",
+                    overflow: "hidden",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "11px",
-                    fontWeight: 700,
+                    flexShrink: 0,
                   }}
                 >
-                  {avatarInitials}
+                  <img src="/default-avatar.png" alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
                 <div style={{ textAlign: "left", lineHeight: 1.2 }}>
                   <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>

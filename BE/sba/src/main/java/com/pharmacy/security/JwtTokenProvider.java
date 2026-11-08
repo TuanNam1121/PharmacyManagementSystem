@@ -13,33 +13,48 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 @Slf4j
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret:5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437}")
-    private String jwtSecret;
+    @Value("${jwt.access-token.secret:${jwt.secret:5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437}}")
+    private String accessTokenSecret;
 
-    @Value("${jwt.expiration:28800000}")
-    private long jwtExpirationInMs; // Default: 8 hours (28,800,000 ms)
+    @Value("${jwt.access-token.expiration:900000}")
+    private long accessTokenExpirationInMs; // 15 minutes (900,000 ms)
 
-    private SecretKey getSigningKey() {
+    @Value("${jwt.refresh-token.secret:6B59703373367639792F423F4528482B4D6251655468576D5A7134743777217A}")
+    private String refreshTokenSecret;
+
+    @Value("${jwt.refresh-token.expiration:28800000}")
+    private long refreshTokenExpirationInMs; // 8 hours (28,800,000 ms)
+
+    private SecretKey getSigningKey(String secret) {
         byte[] keyBytes;
         try {
-            keyBytes = Decoders.BASE64.decode(jwtSecret);
+            keyBytes = Decoders.BASE64.decode(secret);
             if (keyBytes.length < 32) {
-                keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+                keyBytes = secret.getBytes(StandardCharsets.UTF_8);
             }
         } catch (Exception e) {
-            keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+            keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         }
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(Account account) {
+    private SecretKey getAccessSigningKey() {
+        return getSigningKey(accessTokenSecret);
+    }
+
+    private SecretKey getRefreshSigningKey() {
+        return getSigningKey(refreshTokenSecret);
+    }
+
+    public String generateAccessToken(Account account) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+        Date expiryDate = new Date(now.getTime() + accessTokenExpirationInMs);
 
         String roleCode = "USER";
         if (account.getRole() != null && account.getRole().getCode() != null) {
@@ -61,14 +76,50 @@ public class JwtTokenProvider {
                 .claim("role", roleCode)
                 .claim("fullName", fullName)
                 .claim("accountId", account.getId())
+                .claim("type", "ACCESS")
                 .issuedAt(now)
                 .expiration(expiryDate)
-                .signWith(getSigningKey(), Jwts.SIG.HS256)
+                .signWith(getAccessSigningKey(), Jwts.SIG.HS256)
+                .compact();
+    }
+
+    public String generateToken(Account account) {
+        return generateAccessToken(account);
+    }
+
+    public String generateRefreshToken(Account account) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + refreshTokenExpirationInMs);
+
+        return Jwts.builder()
+                .subject(String.valueOf(account.getId()))
+                .claim("username", account.getUsername())
+                .claim("accountId", account.getId())
+                .claim("type", "REFRESH")
+                .claim("jti", UUID.randomUUID().toString())
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getRefreshSigningKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
     public Long getAccountIdFromToken(String token) {
         Claims claims = getClaimsFromToken(token);
+        String subject = claims.getSubject();
+        if (subject != null) {
+            try {
+                return Long.parseLong(subject);
+            } catch (NumberFormatException ignored) {}
+        }
+        Object accountId = claims.get("accountId");
+        if (accountId instanceof Number number) {
+            return number.longValue();
+        }
+        return null;
+    }
+
+    public Long getAccountIdFromRefreshToken(String token) {
+        Claims claims = getClaimsFromRefreshToken(token);
         String subject = claims.getSubject();
         if (subject != null) {
             try {
@@ -93,7 +144,15 @@ public class JwtTokenProvider {
 
     public Claims getClaimsFromToken(String token) {
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(getAccessSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public Claims getClaimsFromRefreshToken(String token) {
+        return Jwts.parser()
+                .verifyWith(getRefreshSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
@@ -102,18 +161,34 @@ public class JwtTokenProvider {
     public boolean validateToken(String authToken) {
         try {
             Jwts.parser()
-                    .verifyWith(getSigningKey())
+                    .verifyWith(getAccessSigningKey())
                     .build()
                     .parseSignedClaims(authToken);
             return true;
         } catch (JwtException | IllegalArgumentException ex) {
-            log.error("Invalid JWT token: {}", ex.getMessage());
+            log.error("Invalid JWT access token: {}", ex.getMessage());
+        }
+        return false;
+    }
+
+    public boolean validateRefreshToken(String refreshToken) {
+        try {
+            Jwts.parser()
+                    .verifyWith(getRefreshSigningKey())
+                    .build()
+                    .parseSignedClaims(refreshToken);
+            return true;
+        } catch (JwtException | IllegalArgumentException ex) {
+            log.error("Invalid JWT refresh token: {}", ex.getMessage());
         }
         return false;
     }
 
     public long getExpirationInSeconds() {
-        return jwtExpirationInMs / 1000;
+        return accessTokenExpirationInMs / 1000;
+    }
+
+    public long getRefreshTokenExpirationInSeconds() {
+        return refreshTokenExpirationInMs / 1000;
     }
 }
-

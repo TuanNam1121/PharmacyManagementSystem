@@ -14,7 +14,6 @@ function unwrap(json) {
  */
 export const fetchCustomers = async ({
   keyword = '',
-  membershipTier = '',
   status = '',
   page = 0,
   size = 10,
@@ -23,7 +22,6 @@ export const fetchCustomers = async ({
 } = {}) => {
   const params = new URLSearchParams();
   if (keyword) params.append('keyword', keyword.trim());
-  if (membershipTier && membershipTier !== 'ALL') params.append('membershipTier', membershipTier);
   if (status !== '' && status !== null && status !== undefined && status !== 'ALL') {
     params.append('status', String(status));
   }

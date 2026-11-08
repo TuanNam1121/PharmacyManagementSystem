@@ -29,8 +29,6 @@ public class CustomerResponse {
     private String gender;
     private Short genderCode;
     private String address;
-    private String membershipTier;
-    private Integer loyaltyPoints;
     private BigDecimal totalSpent;
     private Short status;
     private Boolean hasAllergies;

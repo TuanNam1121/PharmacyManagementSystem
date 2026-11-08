@@ -57,6 +57,7 @@ export default function PosCounterPage() {
         lastCompletedInvoice,
         setLastCompletedInvoice,
         addToCart,
+        updateUnit,
         updateQuantity,
         updateDosage,
         removeFromCart,
@@ -141,6 +142,8 @@ export default function PosCounterPage() {
                 items: cartItems.map((item) => ({
                     productId: item.productId,
                     batchId: item.batchId,
+                    unitId: item.unitId || null,
+                    unitName: item.unit,
                     quantity: item.quantity,
                     unitPrice: item.unitPrice,
                     dosageInstruction: item.dosageInstruction || null,
@@ -379,6 +382,7 @@ export default function PosCounterPage() {
                     {/* Cart Items Table */}
                     <PosCartTable
                         items={cartItems}
+                        onUpdateUnit={updateUnit}
                         onUpdateQuantity={updateQuantity}
                         onUpdateDosage={updateDosage}
                         onRemoveItem={removeFromCart}
@@ -468,13 +472,9 @@ export default function PosCounterPage() {
                                     <div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <strong style={{ fontSize: 14, color: '#0f172a' }}>{customer.fullName}</strong>
-                                            <span className="pms-badge pms-badge-success" style={{ fontSize: 10, padding: '1px 6px' }}>
-                                                {customer.membershipTier || 'Thành viên'}
-                                            </span>
                                         </div>
-                                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2, display: 'flex', justifyContent: 'space-between' }}>
+                                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
                                             <span>SĐT: <strong>{customer.phone}</strong></span>
-                                            <span>Điểm tích lũy: <strong style={{ color: 'var(--brand-primary)' }}>{(customer.loyaltyPoints ?? customer.rewardPoints ?? customer.points ?? 0)} điểm</strong></span>
                                         </div>
                                         {customer.allergies && (
                                             <div style={{ fontSize: 11, color: '#dc2626', marginTop: 4, fontWeight: 600 }}>

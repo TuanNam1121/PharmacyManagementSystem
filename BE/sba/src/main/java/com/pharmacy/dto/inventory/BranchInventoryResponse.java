@@ -1,5 +1,6 @@
 package com.pharmacy.dto.inventory;
 
+import com.pharmacy.dto.product.ProductUnitDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -39,4 +41,7 @@ public class BranchInventoryResponse {
     private String warningLevel; // NORMAL, WARNING, DANGER
     private String locationCode;
     private LocalDateTime updatedAt;
+    private String baseUnitName;
+    private String packagingBreakdown;
+    private List<ProductUnitDto> units;
 }

@@ -71,6 +71,7 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
             batchNumber: item.batchNumber,
             expiryDate: item.expiryDate,
             unit: item.unit || 'Hộp',
+            units: item.units || [],
             sellingPrice: item.sellingPrice,
             quantity: 1,
             availableQuantity: item.quantity,

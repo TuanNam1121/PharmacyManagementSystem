@@ -4,15 +4,15 @@
 - **Mã Use Case**: `UC21` (SRS 3.7.1)
 - **Tên Use Case**: Create Sales Invoice (Tạo hóa đơn bán lẻ)
 - **Tác nhân (Actor)**: `Pharmacist` (Dược sĩ bán thuốc), `Cashier` (Thu ngân)
-- **Mô tả nghiệp vụ**: Cho phép nhân viên tạo mới một hóa đơn bán lẻ thuốc và thực phẩm chức năng tại quầy thu ngân (POS Counter). Hỗ trợ quét mã vạch Barcode, tìm kiếm sản phẩm thông minh, tự động chọn Lô thuốc theo nguyên tắc FEFO (Hạn dùng gần nhất xuất trước), kiểm tra tồn kho khả dụng, áp dụng chiết khấu và tích lũy điểm hội viên cho khách hàng.
+- **Mô tả nghiệp vụ**: Cho phép nhân viên tạo mới một hóa đơn bán lẻ thuốc và thực phẩm chức năng tại quầy thu ngân (POS Counter). Hỗ trợ quét mã vạch Barcode, tìm kiếm sản phẩm thông minh, tự động chọn Lô thuốc theo nguyên tắc FEFO (Hạn dùng gần nhất xuất trước), bán thuốc lẻ đa đơn vị (Viên, Vỉ, Hộp) với cơ chế quy đổi tương thích ngược, kiểm tra tồn kho khả dụng và chiết khấu cho khách hàng.
 - **Tiền điều kiện (Preconditions)**:
   - Nhân viên đã đăng nhập và đang có một ca làm việc đang mở (`status = 'OPEN'`).
   - Sản phẩm/thuốc được bán phải còn tồn kho khả dụng tại chi nhánh (`inventories.quantity > 0`).
 - **Hậu điều kiện (Postconditions)**:
   - Hóa đơn mới được lưu vào bảng `dbo.sales_invoices` với mã hóa đơn duy nhất (VD: `INV-20261104-0012`).
-  - Chi tiết từng mặt hàng được lưu vào `dbo.sales_invoice_details`.
-  - Số lượng tồn kho tại chi nhánh tương ứng với từng lô thuốc bị trừ ngay lập tức trong bảng `dbo.inventories`.
-  - Cộng điểm tích lũy thành viên cho khách hàng (nếu có chọn khách hàng).
+  - Chi tiết từng mặt hàng được lưu vào `dbo.sales_invoice_details` (kèm đơn vị tính và hệ số quy đổi lúc bán).
+  - Số lượng tồn kho tại chi nhánh tương ứng với từng lô thuốc bị trừ ngay lập tức trong bảng `dbo.inventories` theo đơn vị cơ bản (Base Quantity).
+  - Cập nhật tổng chi tiêu tích lũy cho khách hàng (nếu có chọn khách hàng).
   - Bản ghi nhật ký được lưu vào `audit_logs`.
 
 ---
@@ -23,16 +23,19 @@
 1. Dược sĩ truy cập màn hình **POS Counter** (`/pos`).
 2. Hệ thống kiểm tra ca mở của dược sĩ và tự động gán `shiftId` và `storeId` cho phiên bán hàng.
 3. **Thêm sản phẩm vào giỏ hàng**:
-   - Dược sĩ sử dụng máy quét mã vạch để quét Barcode trên vỏ hộp thuốc, HOẶC gõ tên thuốc/hoạt chất vào thanh tìm kiếm (phím tắt `F2`).
+   - Dược sĩ sử dụng máy quét mã vạch để quét Barcode trên vỏ hộp thuốc, HOẶC gõ tên thuốc/hoạt chất vào thanh tìm kiếm
    - Hệ thống lọc ra danh sách các lô thuốc còn hạn sử dụng tại kho chi nhánh và tự động chọn lô thuốc có hạn sử dụng gần nhất (**FEFO - First Expired, First Out**).
-   - Sản phẩm được thêm vào bảng giỏ hàng với: Tên thuốc, Đơn vị tính (Hộp/Vỉ/Viên), Số lô (Batch No), Hạn dùng (Exp Date), Đơn giá niêm yết, Số lượng mặc định = 1, Thành tiền.
-4. **Chỉnh sửa giỏ hàng**:
-   - Dược sĩ có thể điều chỉnh số lượng (phím tắt `+/-` hoặc nhập số trực tiếp).
-   - Hệ thống tự động kiểm tra: nếu số lượng yêu cầu > số lượng tồn kho của lô -> cảnh báo và không cho phép nhập vượt quá tồn kho.
+   - Sản phẩm được thêm vào bảng giỏ hàng với: Tên thuốc, Đơn vị tính (Hộp/Vỉ/Viên - có Dropdown chọn nếu thuốc có nhiều đơn vị), Số lô (Batch No), Hạn dùng (Exp Date), Đơn giá tương ứng với đơn vị chọn, Số lượng mặc định = 1, Thành tiền.
+4. **Chỉnh sửa giỏ hàng & Chọn đơn vị tính bán lẻ**:
+   - Dược sĩ có thể chọn đơn vị bán lẻ (Hộp, Vỉ, Viên). Khi thay đổi đơn vị, hệ thống tự động cập nhật lại đơn giá niêm yết của đơn vị đó.
+   - Dược sĩ điều chỉnh số lượng mua (phím tắt `+/-` hoặc nhập số trực tiếp).
+   - Hệ thống tự động quy đổi ra số lượng đơn vị cơ bản:
+     $$\text{Số lượng cơ bản (Base Quantity)} = \text{Số lượng mua} \times \text{Hệ số quy đổi (conversion\_factor)}$$
+   - Kiểm tra tồn kho: nếu $\text{Base Quantity} > \text{Số lượng tồn kho cơ bản của lô}$ -> cảnh báo và chặn không cho phép bán vượt quá tồn kho.
    - Dược sĩ có thể xóa dòng sản phẩm (icon thùng rác hoặc phím `Delete`).
 5. **Chọn thông tin khách hàng (Tùy chọn)**:
    - Mặc định là **"Khách vãng lai"** (Customer ID = null hoặc ID mặc định).
-   - Nếu khách hàng là hội viên, dược sĩ nhập Số điện thoại khách hàng (phím tắt `F4`). Hệ thống hiển thị: Tên khách hàng, Hạng thẻ hội viên (Bạc, Vàng, Kim Cương), Điểm tích lũy hiện có, và cảnh báo tiền sử dị ứng thuốc (nếu có trong hồ sơ sức khỏe).
+   - Nếu khách hàng đã đăng ký, dược sĩ nhập Số điện thoại khách hàng (phím tắt `F4`). Hệ thống hiển thị: Tên khách hàng, Số điện thoại và cảnh báo tiền sử dị ứng thuốc (nếu có trong hồ sơ sức khỏe).
 6. **Chiết khấu và Thuế**:
    - Dược sĩ có thể nhập mã giảm giá hoặc chiết khấu trực tiếp (% hoặc số tiền) nếu có quyền.
    - Hệ thống tự động tính:
@@ -54,7 +57,21 @@
 - **BR-01 (Bắt buộc phải có Ca làm việc đang mở)**: Hóa đơn chỉ được tạo khi người dùng có `Shift` hợp lệ với trạng thái `OPEN`.
 - **BR-02 (Quy tắc xuất kho FEFO)**: Hệ thống ưu tiên xuất các lô thuốc có hạn sử dụng gần nhất trước. Trường hợp một lô không đủ số lượng, hệ thống tự động tách thành 2 dòng với 2 lô khác nhau.
 - **BR-03 (Định dạng mã hóa đơn)**: `invoice_code` được sinh tự động theo quy tắc: `INV-YYYYMMDD-XXXX` (Ví dụ: `INV-20261104-0001`), đảm bảo tính duy nhất tuyệt đối.
-- **BR-04 (Tích lũy điểm thưởng thành viên)**: Với mỗi 100.000 VNĐ thanh toán thành công, khách hàng thành viên được cộng 1 điểm thưởng (tương đương 1.000 VNĐ cho các lần mua tiếp theo).
+- **BR-04 (Quy ước ngầm định & Tương thích ngược khi bán lẻ đa đơn vị)**:
+  * **Tồn kho chuẩn**: Số lượng tồn kho trong bảng `inventories` luôn được lưu trữ và tính toán theo **Đơn vị nhỏ nhất (Base Unit / Smallest Unit)** (VD: Viên).
+  * **Quy ước ngầm định (Default / Fallback)**: Nếu một sản phẩm **chưa được thiết lập bảng quy đổi** trong `product_units` (hoặc là các sản phẩm đóng gói đơn chiếc như Chai siro, Tuýp kem, Que thử thai), hệ thống sẽ tự động coi sản phẩm đó chỉ có **1 đơn vị duy nhất** lấy từ bảng `products`:
+    * Tên đơn vị: `product.unit`
+    * Hệ số quy đổi: `conversion_factor = 1`
+    * Đơn giá: `product.selling_price`
+  * **Khi bán hàng có đơn vị quy đổi**: 
+    $$\text{Số lượng trừ kho thực tế} = \text{Số lượng bán (quantity)} \times \text{conversion\_factor}$$
+    *Ví dụ*: Thuốc Decolgen có quy đổi (1 Hộp = 25 Vỉ = 100 Viên). Khi Dược sĩ bán 2 Vỉ (hệ số 4) $\rightarrow$ Kho trừ $2 \times 4 = 8$ Viên.
+
+### 2.4. Lộ Trình Triển Khai Cuốn Chiếu (Phased Rollout Plan)
+Để đảm bảo hệ thống không bị gián đoạn hoạt động và bảo toàn tính toàn vẹn dữ liệu, tính năng bán lẻ đa đơn vị được thực hiện theo 3 giai đoạn:
+- **Bước 1 (Danh mục & Cấu hình Đơn vị)**: Tạo bảng cơ sở dữ liệu `product_units`. Bổ sung giao diện thiết lập danh sách đơn vị quy đổi (Tên đơn vị, Hệ số quy đổi, Giá bán riêng) trong màn hình Quản lý Sản phẩm.
+- **Bước 2 (Bán hàng POS & Trừ tồn kho)**: Cập nhật giao diện bán hàng POS cho phép chọn đơn vị quy đổi; chỉnh sửa logic Backend `createInvoice` và `returnSalesInvoice` để trừ và hoàn kho theo `conversion_factor` (kèm quy ước ngầm định cho thuốc chưa quy đổi).
+- **Bước 3 (Kiểm kê kho & Báo cáo)**: Nâng cấp màn hình Kiểm kê kho (`Inventory Audit`) hỗ trợ nhập kiểm kê chẵn/lẻ (Hộp + Vỉ + Viên); cập nhật các Báo cáo Doanh thu và Báo cáo Xuất - Nhập - Tồn hiển thị quy đổi chuẩn xác.
 
 ---
 
@@ -92,13 +109,17 @@ Giao diện được tối ưu hóa cho thao tác nhanh không cần chuột (h�
     {
       "productId": 501,
       "batchId": 12,
+      "unitId": 102,
+      "unitName": "Vỉ",
       "quantity": 2,
-      "unitPrice": 120000.00,
+      "unitPrice": 30000.00,
       "discount": 0.00
     },
     {
       "productId": 508,
       "batchId": 45,
+      "unitId": null,
+      "unitName": "Lọ",
       "quantity": 1,
       "unitPrice": 85000.00,
       "discount": 0.00
@@ -106,8 +127,8 @@ Giao diện được tối ưu hóa cho thao tác nhanh không cần chuột (h�
   ],
   "payment": {
     "paymentMethod": "CASH",
-    "amountPaid": 305000.00,
-    "tenderedCash": 500000.00
+    "amountPaid": 145000.00,
+    "tenderedCash": 200000.00
   }
 }
 ```
@@ -123,29 +144,32 @@ Giao diện được tối ưu hóa cho thao tác nhanh không cần chuột (h�
     "storeName": "Nhà thuốc Chi nhánh 1 - Cầu Giấy",
     "cashierName": "Nguyễn Văn Dược",
     "customerName": "Trần Thị Lan",
-    "totalAmount": 325000.00,
-    "discountAmount": 20000.00,
+    "totalAmount": 145000.00,
+    "discountAmount": 0.00,
     "taxAmount": 0.00,
-    "netAmount": 305000.00,
-    "changeAmount": 195000.00,
+    "netAmount": 145000.00,
+    "changeAmount": 55000.00,
     "paymentStatus": "PAID",
     "invoiceStatus": "COMPLETED",
     "createdAt": "2026-11-04T09:15:30",
-    "earnedPoints": 3,
     "items": [
       {
         "productName": "Panadol Extra Đỏ",
         "batchNumber": "BATCH-202512-01",
-        "unit": "Hộp",
+        "unit": "Vỉ",
+        "conversionFactor": 12,
         "quantity": 2,
-        "unitPrice": 120000.00,
-        "lineTotal": 240000.00
+        "baseQuantity": 24,
+        "unitPrice": 30000.00,
+        "lineTotal": 60000.00
       },
       {
         "productName": "Berberin 100mg",
         "batchNumber": "BATCH-202605-03",
         "unit": "Lọ",
+        "conversionFactor": 1,
         "quantity": 1,
+        "baseQuantity": 1,
         "unitPrice": 85000.00,
         "lineTotal": 85000.00
       }
@@ -191,6 +215,9 @@ public class InvoiceItemRequest {
     @NotNull(message = "Mã lô thuốc không được để trống")
     private Long batchId;
 
+    private Long unitId; // Null nếu là sản phẩm đơn vị mặc định
+    private String unitName; // "Hộp", "Vỉ", "Viên"
+
     @NotNull(message = "Số lượng không được để trống")
     @DecimalMin(value = "1", message = "Số lượng bán phải từ 1 trở lên")
     private Integer quantity;
@@ -207,74 +234,88 @@ public class InvoiceItemRequest {
 @Transactional(rollbackFor = Exception.class)
 public SalesInvoiceResponse createInvoice(CreateSalesInvoiceRequest request, Long accountId, String clientIp) {
     // 1. Kiểm tra ca làm việc đang mở của nhân viên
-    Shift currentShift = shiftRepository.findFirstByAccountIdAndStatusOrderByOpeningTimeDesc(accountId, "OPEN")
+    Shift currentShift = shiftRepository.findFirstByAccount_IdAndStatus(accountId, (short) 1)
             .orElseThrow(() -> new NoOpenShiftException("Bạn chưa mở ca làm việc hoặc ca đã bị đóng!"));
 
     // 2. Khởi tạo đối tượng SalesInvoice
     SalesInvoice invoice = new SalesInvoice();
-    invoice.setInvoiceCode(generateInvoiceCode());
-    invoice.setStoreId(currentShift.getStoreId());
-    invoice.setShiftId(currentShift.getShiftId());
-    invoice.setCashierId(accountId);
-    invoice.setCustomerId(request.getCustomerId());
-    invoice.setDiscountAmount(request.getDiscountAmount());
-    invoice.setTaxAmount(request.getTaxAmount());
+    invoice.setCode(generateInvoiceCode());
+    invoice.setStore(currentShift.getStore());
+    invoice.setShift(currentShift);
+    invoice.setAccount(accountRepository.findById(accountId).orElse(null));
+    if (request.getCustomerId() != null) {
+        invoice.setCustomer(customerRepository.findById(request.getCustomerId()).orElse(null));
+    }
+    invoice.setDiscountAmount(request.getDiscountAmount() != null ? request.getDiscountAmount() : BigDecimal.ZERO);
+    invoice.setTaxAmount(request.getTaxAmount() != null ? request.getTaxAmount() : BigDecimal.ZERO);
     invoice.setCreatedAt(LocalDateTime.now());
 
     BigDecimal totalAmount = BigDecimal.ZERO;
     List<SalesInvoiceDetail> details = new ArrayList<>();
 
-    // 3. Duyệt và kiểm tra tồn kho cho từng sản phẩm
+    // 3. Duyệt và kiểm tra tồn kho quy đổi cho từng sản phẩm
     for (InvoiceItemRequest itemReq : request.getItems()) {
+        Product product = productRepository.findById(itemReq.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm ID: " + itemReq.getProductId()));
+
         Inventory inventory = inventoryRepository.findByStoreIdAndProductIdAndBatchId(
-                currentShift.getStoreId(), itemReq.getProductId(), itemReq.getBatchId())
+                currentShift.getStore().getId(), itemReq.getProductId(), itemReq.getBatchId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm trong kho chi nhánh!"));
 
-        if (inventory.getQuantity() < itemReq.getQuantity()) {
-            throw new InsufficientStockException("Sản phẩm ID " + itemReq.getProductId() + " trong kho chỉ còn " + inventory.getQuantity());
+        // Quy ước ngầm định (Backward Compatibility):
+        ProductUnit unit = itemReq.getUnitId() != null 
+                ? productUnitRepository.findById(itemReq.getUnitId()).orElse(null) 
+                : null;
+        
+        String unitName = (unit != null) ? unit.getUnitName() : product.getUnit();
+        int conversionFactor = (unit != null) ? unit.getConversionFactor() : 1;
+        BigDecimal unitPrice = (unit != null) ? unit.getSellingPrice() : (itemReq.getUnitPrice() != null ? itemReq.getUnitPrice() : product.getSellingPrice());
+
+        // Tính số lượng cơ bản trừ kho
+        int baseQuantityToDeduct = itemReq.getQuantity() * conversionFactor;
+
+        if (inventory.getQuantity() < baseQuantityToDeduct) {
+            throw new InsufficientStockException("Sản phẩm " + product.getName() + " không đủ tồn kho khả dụng! Hiện còn: " + inventory.getQuantity() + " " + product.getUnit());
         }
 
-        // Trừ tồn kho chi nhánh
-        inventory.setQuantity(inventory.getQuantity() - itemReq.getQuantity());
-        inventory.setLastUpdated(LocalDateTime.now());
+        // Trừ tồn kho chi nhánh theo đơn vị cơ bản
+        inventory.setQuantity(inventory.getQuantity() - baseQuantityToDeduct);
+        inventory.setUpdatedAt(LocalDateTime.now());
         inventoryRepository.save(inventory);
 
         // Tạo chi tiết hóa đơn
         SalesInvoiceDetail detail = new SalesInvoiceDetail();
-        detail.setInvoice(invoice);
-        detail.setProductId(itemReq.getProductId());
-        detail.setBatchId(itemReq.getBatchId());
+        detail.setSalesInvoice(invoice);
+        detail.setProduct(product);
+        detail.setBatch(inventory.getBatch());
         detail.setQuantity(itemReq.getQuantity());
-        detail.setUnitPrice(itemReq.getUnitPrice());
-        detail.setDiscount(itemReq.getDiscount());
-        BigDecimal lineTotal = itemReq.getUnitPrice().multiply(BigDecimal.valueOf(itemReq.getQuantity())).subtract(itemReq.getDiscount());
-        detail.setLineTotal(lineTotal);
+        detail.setUnitName(unitName);
+        detail.setConversionFactor(conversionFactor);
+        detail.setBaseQuantity(baseQuantityToDeduct);
+        detail.setUnitPrice(unitPrice);
+        
+        BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(itemReq.getQuantity())).subtract(itemReq.getDiscount() != null ? itemReq.getDiscount() : BigDecimal.ZERO);
+        detail.setSubTotal(lineTotal);
         details.add(detail);
 
         totalAmount = totalAmount.add(lineTotal);
     }
 
-    BigDecimal netAmount = totalAmount.subtract(request.getDiscountAmount()).add(request.getTaxAmount());
+    BigDecimal netAmount = totalAmount.subtract(invoice.getDiscountAmount()).add(invoice.getTaxAmount());
     invoice.setTotalAmount(totalAmount);
-    invoice.setNetAmount(netAmount);
-    invoice.setInvoiceStatus("COMPLETED");
-    invoice.setPaymentStatus("PAID");
+    invoice.setFinalAmount(netAmount);
+    invoice.setStatus((short) 1); // 1 = COMPLETED
     invoice.setDetails(details);
-    salesInvoiceRepository.save(invoice);
+    SalesInvoice savedInvoice = salesInvoiceRepository.save(invoice);
 
-    // 4. Xử lý bản ghi thanh toán (Payment)
-    paymentService.recordPayment(invoice, request.getPayment());
+    // 4. Xử lý thanh toán
+    paymentService.recordPayment(savedInvoice, request.getPayment());
 
-    // 5. Cộng điểm tích lũy khách hàng (nếu có)
-    if (request.getCustomerId() != null) {
-        customerService.accumulatePoints(request.getCustomerId(), netAmount);
-    }
-
-    // 6. Ghi Audit Log
+    // 5. Ghi Audit Log
     auditLogService.log("SALES", "CREATE_INVOICE", accountId, clientIp, 
-        "Tạo hóa đơn #" + invoice.getInvoiceCode() + " với số tiền " + netAmount + " VNĐ");
+        "Tạo hóa đơn #" + savedInvoice.getCode() + " với số tiền " + netAmount + " VNĐ");
 
-    return mapToInvoiceResponse(invoice, request.getPayment());
+    return mapToInvoiceResponse(savedInvoice, request.getPayment());
 }
 ```
 
@@ -285,7 +326,8 @@ public SalesInvoiceResponse createInvoice(CreateSalesInvoiceRequest request, Lon
 | :--- | :--- | :--- | :--- |
 | **TC-INV-01** | Bán hàng thành công | Thuốc có đủ tồn kho, thanh toán tiền mặt | Tạo hóa đơn thành công, tồn kho trừ đúng, in được bill |
 | **TC-INV-02** | Bán khi chưa mở ca | Nhân viên chưa có ca OPEN | Chặn lại và báo lỗi "Bạn chưa mở ca làm việc" |
-| **TC-INV-03** | Bán quá số lượng tồn kho | Tồn kho = 5, nhập mua = 10 | Báo lỗi HTTP 400 "Số lượng trong kho không đủ" |
+| **TC-INV-03** | Bán quá số lượng tồn kho | Tồn kho cơ bản = 5 viên, bán 2 vỉ (8 viên) | Báo lỗi HTTP 400 "Số lượng trong kho không đủ" |
 | **TC-INV-04** | Giỏ hàng trống | `items`: [] | Validation lỗi "Hóa đơn phải có ít nhất một sản phẩm" |
-| **TC-INV-05** | Tích điểm khách hàng thành viên | Hóa đơn 300.000 VNĐ, có `customerId` | Điểm tích lũy của khách hàng tăng thêm +3 điểm |
+| **TC-INV-05** | Bán thuốc lẻ đa đơn vị có quy đổi | Bán 2 vỉ Decolgen (hệ số 4 viên/vỉ) | Hóa đơn lưu 2 Vỉ, tồn kho `inventories` trừ đúng 8 Viên cơ bản |
+| **TC-INV-06** | Bán sản phẩm đơn chiếc (Fallback quy ước ngầm định) | `unitId: null`, Siro Prospan (hệ số = 1) | Tự động áp dụng đơn vị gốc "Chai", hệ số 1, trừ kho 1 chai |
 

@@ -105,6 +105,133 @@ public class EmailServiceImpl implements EmailService {
         log.info("Sending quotation confirmation to supplier {}", supplier.getEmail());
         return true;
     }
+
+    @Override
+    public boolean sendPasswordResetEmail(String toEmail, String username, String resetToken) {
+        if (toEmail == null || toEmail.isBlank() || !isValidEmail(toEmail)) {
+            log.warn("Invalid email recipient for password reset: {}", toEmail);
+            return false;
+        }
+
+        String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
+        String subject = "Khôi phục mật khẩu - PharmaChain Management System";
+
+        String plainText = String.format(
+                "Xin chào %s,\n\n"
+                        + "Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản hệ thống PharmaChain.\n"
+                        + "Vui lòng truy cập liên kết bên dưới để tạo mật khẩu mới (Liên kết có hiệu lực trong 15 phút):\n"
+                        + "%s\n\n"
+                        + "Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.\n\n"
+                        + "---\nPharmaChain Management System",
+                username, resetLink);
+
+        String htmlContent = buildPasswordResetHtmlEmail(username, resetLink);
+
+        log.info("Sending password reset email to {}. Reset link: {}", toEmail, resetLink);
+
+        EmailLog emailLog = new EmailLog();
+        emailLog.setToEmail(toEmail);
+        emailLog.setSubject(subject);
+        emailLog.setBody(plainText);
+        emailLog.setRefType("PASSWORD_RESET");
+        emailLog.setStatus((short) 0); // Pending
+        emailLog.setCreatedAt(LocalDateTime.now());
+
+        try {
+            if (mailSender != null) {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+                helper.setFrom(fromEmail);
+                helper.setTo(toEmail);
+                helper.setSubject(subject);
+                helper.setText(plainText, htmlContent);
+                mailSender.send(message);
+                log.info("Password reset email successfully sent to {}", toEmail);
+            } else {
+                log.warn("JavaMailSender is null, email not actually sent via SMTP");
+            }
+
+            emailLog.setStatus((short) 1); // Sent
+            emailLog.setSentAt(LocalDateTime.now());
+            emailLogRepository.save(emailLog);
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to send password reset email to {}: {}", toEmail, e.getMessage());
+            emailLog.setStatus((short) 2); // Failed
+            emailLog.setErrorMessage(e.getMessage());
+            emailLogRepository.save(emailLog);
+            return false;
+        }
+    }
+
+    private String buildPasswordResetHtmlEmail(String username, String resetLink) {
+        final String brand = "#10b981";
+        final String brandDark = "#059669";
+        final String textPrimary = "#0f172a";
+        final String textSecondary = "#64748b";
+        final String textMuted = "#94a3b8";
+        final String borderColor = "#e2e8f0";
+        final String canvas = "#f8fafc";
+        final String card = "#ffffff";
+
+        String safeUsername = escapeHtml(username);
+        String safeLink = escapeHtml(resetLink);
+
+        StringBuilder sb = new StringBuilder(2048);
+        sb.append("<!DOCTYPE html><html lang=\"vi\"><head><meta charset=\"UTF-8\">")
+          .append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
+          .append("<title>Khôi phục mật khẩu</title></head>")
+          .append("<body style=\"margin:0;padding:0;background-color:").append(canvas)
+          .append(";font-family:Arial,Helvetica,sans-serif;color:").append(textPrimary).append(";\">")
+          .append("<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"")
+          .append(" style=\"background-color:").append(canvas).append(";\"><tr><td align=\"center\" style=\"padding:24px 12px;\">")
+          .append("<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"")
+          .append(" style=\"width:600px;max-width:600px;background-color:").append(card)
+          .append(";border:1px solid ").append(borderColor).append(";border-radius:12px;overflow:hidden;\">");
+
+        // Branded header
+        sb.append("<tr><td style=\"padding:24px 28px;color:#ffffff;background-color:").append(brand)
+          .append(";background-image:linear-gradient(135deg,").append(brand).append(",").append(brandDark).append(");\">")
+          .append("<div style=\"font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;opacity:0.92;\">PharmaChain Management System</div>")
+          .append("<div style=\"font-size:20px;font-weight:bold;margin-top:6px;\">Yêu Cầu Đặt Lại Mật Khẩu</div>")
+          .append("</td></tr>");
+
+        // Greeting & instructions
+        sb.append("<tr><td style=\"padding:28px 28px 12px;font-size:14px;line-height:1.7;color:").append(textPrimary).append(";\">")
+          .append("<p style=\"margin:0 0 16px;\">Xin chào <strong>").append(safeUsername).append("</strong>,</p>")
+          .append("<p style=\"margin:0 0 16px;\">Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn trên hệ thống Quản Lý Chuỗi Nhà Thuốc PharmaChain.</p>")
+          .append("<p style=\"margin:0 0 20px;\">Vui lòng nhấn vào nút bên dưới để tiến hành tạo mật khẩu mới. <em>Liên kết này có hiệu lực trong vòng <strong>15 phút</strong></em>.</p>")
+          .append("</td></tr>");
+
+        // CTA Button
+        sb.append("<tr><td align=\"center\" style=\"padding:12px 28px 20px;\">")
+          .append("<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>")
+          .append("<td align=\"center\" bgcolor=\"").append(brand).append("\" style=\"background-color:").append(brand).append(";border-radius:8px;\">")
+          .append("<a href=\"").append(safeLink).append("\" target=\"_blank\"")
+          .append(" style=\"display:inline-block;padding:14px 32px;font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;\">")
+          .append("Đặt Lại Mật Khẩu</a></td></tr></table></td></tr>");
+
+        // Security notice
+        sb.append("<tr><td style=\"padding:0 28px 16px;font-size:13px;line-height:1.6;color:").append(textSecondary).append(";\">")
+          .append("<p style=\"margin:0;\">Nếu bạn không gửi yêu cầu này, bạn có thể an tâm bỏ qua email này. Mật khẩu hiện tại của bạn sẽ không bị thay đổi.</p>")
+          .append("</td></tr>");
+
+        // Fallback link
+        sb.append("<tr><td style=\"padding:12px 28px 24px;border-top:1px solid ").append(borderColor).append(";font-size:12px;color:").append(textMuted).append(";line-height:1.6;\">")
+          .append("Nếu nút trên không hoạt động, hãy sao chép liên kết sau vào trình duyệt:<br>")
+          .append("<a href=\"").append(safeLink).append("\" target=\"_blank\" style=\"color:").append(brandDark).append(";word-break:break-all;\">")
+          .append(safeLink).append("</a></td></tr>");
+
+        // Footer
+        sb.append("<tr><td style=\"padding:16px 28px;background-color:").append(canvas)
+          .append(";border-top:1px solid ").append(borderColor).append(";font-size:11px;color:").append(textMuted).append(";line-height:1.6;\">")
+          .append("Đây là email tự động từ Hệ thống PharmaChain. Vui lòng không trả lời thư này.<br>")
+          .append("&copy; 2026 PharmaChain Inc. Mọi quyền được bảo lưu.")
+          .append("</td></tr>");
+
+        sb.append("</table></td></tr></table></body></html>");
+        return sb.toString();
+    }
     
     /**
      * Build a branded HTML invitation email for the RFQ.

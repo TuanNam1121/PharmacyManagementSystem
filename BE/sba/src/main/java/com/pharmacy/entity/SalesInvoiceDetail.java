@@ -42,6 +42,18 @@ public class SalesInvoiceDetail {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
+    @Size(max = 50)
+    @Nationalized
+    @Column(name = "unit_name", length = 50)
+    private String unitName;
+
+    @ColumnDefault("1")
+    @Column(name = "conversion_factor")
+    private Integer conversionFactor = 1;
+
+    @Column(name = "base_quantity")
+    private Integer baseQuantity;
+
     @NotNull
     @Column(name = "unit_price", nullable = false, precision = 18, scale = 2)
     private BigDecimal unitPrice;

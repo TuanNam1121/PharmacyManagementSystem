@@ -10,12 +10,18 @@ function unwrap(json) {
 }
 
 export const authApi = {
-  login: async ({ username, password, rememberMe = false }) => {
+  login: async ({ username, password }) => {
+    console.log(username, password);
     const res = await post(`${BASE_URL}/login`, {
       username: username?.trim(),
       password,
-      rememberMe: Boolean(rememberMe),
     });
+    console.log(res);
+    return unwrap(res);
+  },
+
+  refreshToken: async () => {
+    const res = await post(`${BASE_URL}/refresh-token`, {});
     return unwrap(res);
   },
 

@@ -80,7 +80,7 @@ class CustomerServiceTest {
         when(customerRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
         PageResponse<CustomerResponse> result = customerService.getCustomers(
-                null, null, null, 0, 10, "createdAt", "desc"
+                null, null, 0, 10, "createdAt", "desc"
         );
 
         assertNotNull(result);
@@ -100,7 +100,7 @@ class CustomerServiceTest {
         when(customerRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(emptyPage);
 
         PageResponse<CustomerResponse> result = customerService.getCustomers(
-                "xyz999", null, null, 0, 10, "createdAt", "desc"
+                "xyz999", null, 0, 10, "createdAt", "desc"
         );
 
         assertNotNull(result);
@@ -129,7 +129,6 @@ class CustomerServiceTest {
         assertEquals(101L, detail.getCustomerId());
         assertEquals("KH-000101", detail.getCustomerCode());
         assertEquals("Nguyen Van A", detail.getFullName());
-        assertEquals("SILVER", detail.getMembershipTier());
         assertEquals(1, detail.getTotalOrders());
         assertEquals(BigDecimal.valueOf(1500000), detail.getTotalSpent());
     }

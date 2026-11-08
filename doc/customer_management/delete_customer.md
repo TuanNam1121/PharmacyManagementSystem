@@ -43,7 +43,6 @@
 ### 2.3. Quy Tắc Nghiệp Vụ (Business Rules)
 - **BR-01 (Nghiêm cấm Xóa cứng - Hard Delete)**: Khách hàng đã từng phát sinh ít nhất một hóa đơn bán lẻ (`SalesInvoice`) tuyệt đối KHÔNG được xóa cứng (DELETE FROM `customers`) ra khỏi cơ sở dữ liệu vì sẽ làm vi phạm ràng buộc khóa ngoại (Foreign Key Integrity) và vi phạm luật lưu trữ chứng từ kế toán 10 năm của Nhà nước.
 - **BR-02 (Quyền hạn thực hiện)**: Dược sĩ hoặc Thu ngân thông thường KHÔNG có quyền xóa khách hàng. Nút xóa bị ẩn hoặc vô hiệu hóa đối với các tài khoản không có quyền hạn.
-- **BR-03 (Bảo vệ điểm thưởng)**: Khi ở trạng thái `status = 0`, điểm tích lũy của khách hàng bị đóng băng tạm thời và không thể quy đổi hay thanh toán tại quầy POS.
 
 ---
 
@@ -131,4 +130,3 @@ public void deleteCustomer(Long customerId, String reason, Long accountId, Strin
 | **TC-DEL-03** | Dược sĩ cố tình gọi API xóa | Token có role `ROLE_PHARMACIST` | Trả về HTTP 403 Forbidden "Không đủ quyền thực hiện" |
 | **TC-DEL-04** | Xóa khách hàng đã bị vô hiệu hóa trước đó | Khách hàng có `status = 0` | Báo lỗi HTTP 400 "Khách hàng này đã ngừng hoạt động" |
 | **TC-DEL-05** | Kích hoạt lại khách hàng đã xóa | Quản lý gọi API reactivate | Khách hàng chuyển lại `status = 1`, tìm kiếm lại được tại POS |
-

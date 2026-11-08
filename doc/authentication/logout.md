@@ -25,7 +25,7 @@
 6. Backend tiếp nhận request:
    - Trích xuất thông tin người dùng từ SecurityContext.
    - Ghi nhật ký kiểm toán vào bảng `audit_logs` (`action_code = 'LOGOUT'`, `module_name = 'AUTH'`).
-   - (Tùy chọn) Đưa JWT token vào Redis Blacklist hoặc hủy refreshToken tương ứng.
+   - hủy refreshToken tương ứng.
    - Trả về HTTP `200 OK`.
 7. Frontend xóa sạch `accessToken`, `user` khỏi `localStorage` và `sessionStorage`.
 8. Frontend reset toàn bộ trạng thái trong `AuthContext`.

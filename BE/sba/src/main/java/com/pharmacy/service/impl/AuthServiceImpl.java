@@ -3,19 +3,21 @@ package com.pharmacy.service.impl;
 import com.pharmacy.dto.auth.*;
 import com.pharmacy.entity.Account;
 import com.pharmacy.entity.AuditLog;
-import com.pharmacy.entity.EmailLog;
 import com.pharmacy.entity.PasswordResetToken;
+import com.pharmacy.entity.RefreshToken;
 import com.pharmacy.entity.enums.AccountStatus;
 import com.pharmacy.exception.AccountLockedException;
 import com.pharmacy.exception.BadCredentialsException;
 import com.pharmacy.exception.InvalidTokenException;
 import com.pharmacy.exception.ResourceNotFoundException;
+import com.pharmacy.exception.TokenRefreshException;
 import com.pharmacy.repository.AccountRepository;
 import com.pharmacy.repository.AuditLogRepository;
-import com.pharmacy.repository.EmailLogRepository;
 import com.pharmacy.repository.PasswordResetTokenRepository;
+import com.pharmacy.repository.RefreshTokenRepository;
 import com.pharmacy.security.JwtTokenProvider;
 import com.pharmacy.service.AuthService;
+import com.pharmacy.service.EmailService;
 import com.pharmacy.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,16 +35,17 @@ import java.util.UUID;
 public class AuthServiceImpl implements AuthService {
 
     private final AccountRepository accountRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final AuditLogRepository auditLogRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
-    private final EmailLogRepository emailLogRepository;
+    private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final ProfileService profileService;
 
     @Override
     @Transactional
-    public LoginResponse login(LoginRequest request, String ipAddress) {
+    public LoginResult login(LoginRequest request, String ipAddress) {
         String keyword = request.getUsername() != null ? request.getUsername().trim() : "";
 
         // 1. Tìm kiếm tài khoản theo username hoặc email
@@ -79,29 +82,124 @@ public class AuthServiceImpl implements AuthService {
         account.setLastLoginAt(LocalDateTime.now());
         accountRepository.save(account);
 
-        // 5. Sinh JWT Token
-        String token = jwtTokenProvider.generateToken(account);
+        // 5. Sinh cặp Access Token (15 phút) & Refresh Token (8 tiếng)
+        String accessToken = jwtTokenProvider.generateAccessToken(account);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(account);
 
-        // 6. Ghi nhật ký kiểm toán thành công
+        // 6. Lưu Refresh Token vào Database
+        LocalDateTime expiryDate = LocalDateTime.now()
+                .plusSeconds(jwtTokenProvider.getRefreshTokenExpirationInSeconds());
+        RefreshToken refreshTokenEntity = RefreshToken.builder()
+                .account(account)
+                .token(refreshToken)
+                .expiryDate(expiryDate)
+                .revoked(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+        refreshTokenRepository.save(refreshTokenEntity);
+
+        // 7. Ghi nhật ký kiểm toán thành công
         recordAuditLog(account, (short) 1, "AUTH", account.getId(), null, "LOGIN_SUCCESS", ipAddress);
 
-        // 7. Tạo LoginResponse
-        return buildLoginResponse(account, token);
+        // 8. Tạo LoginResponse & trả về LoginResult
+        LoginResponse loginResponse = buildLoginResponse(account, accessToken);
+        return new LoginResult(loginResponse, refreshToken);
     }
 
     @Override
     @Transactional
-    public void logout(String authHeader, String clientIp) {
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            if (jwtTokenProvider.validateToken(token)) {
-                Long accountId = jwtTokenProvider.getAccountIdFromToken(token);
-                if (accountId != null) {
-                    Account account = accountRepository.findById(accountId).orElse(null);
-                    recordAuditLog(account, (short) 4, "AUTH", accountId, null, "LOGOUT", clientIp);
-                    log.info("Account ID {} logged out successfully from IP {}", accountId, clientIp);
+    public LoginResult refreshToken(String requestRefreshToken, String ipAddress) {
+        if (requestRefreshToken == null || requestRefreshToken.trim().isEmpty()) {
+            throw new TokenRefreshException("Không tìm thấy Refresh Token. Vui lòng đăng nhập lại");
+        }
+
+        // 1. Kiểm tra tính hợp lệ về cấu trúc/chữ ký token
+        if (!jwtTokenProvider.validateRefreshToken(requestRefreshToken)) {
+            throw new TokenRefreshException("Refresh Token không hợp lệ. Vui lòng đăng nhập lại");
+        }
+
+        // 2. Tìm kiếm Refresh Token trong Database
+        RefreshToken tokenEntity = refreshTokenRepository.findByTokenWithDetails(requestRefreshToken)
+                .orElseThrow(() -> new TokenRefreshException("Refresh Token không tồn tại trên hệ thống"));
+
+        Account account = tokenEntity.getAccount();
+        if (account == null || account.getStatus() != AccountStatus.ACTIVE) {
+            throw new TokenRefreshException("Tài khoản liên kết không tồn tại hoặc đã bị khóa");
+        }
+
+        // 3. Cơ chế phát hiện tấn công tái sử dụng (Token Reuse Detection)
+        if (tokenEntity.isRevoked()) {
+            refreshTokenRepository.revokeAllByAccountId(account.getId());
+            recordAuditLog(account, (short) 1, "AUTH", account.getId(), null, "TOKEN_REUSE_DETECTED", ipAddress);
+            log.warn("Security Alert: Reused revoked refresh token detected for account ID {}. All tokens revoked.",
+                    account.getId());
+            throw new TokenRefreshException(
+                    "Cảnh báo bảo mật: Phát hiện Token tái sử dụng trái phép. Phiên làm việc đã bị hủy");
+        }
+
+        // 4. Kiểm tra thời hạn hết hạn (Expiry)
+        if (tokenEntity.getExpiryDate().isBefore(LocalDateTime.now())) {
+            tokenEntity.setRevoked(true);
+            refreshTokenRepository.save(tokenEntity);
+            throw new TokenRefreshException("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại");
+        }
+
+        // 5. Áp dụng Refresh Token Rotation (RTR): Vô hiệu hóa token cũ, sinh cặp AT +
+        // RT mới
+        tokenEntity.setRevoked(true);
+
+        String newAccessToken = jwtTokenProvider.generateAccessToken(account);
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(account);
+
+        tokenEntity.setReplacedByToken(newRefreshToken);
+        refreshTokenRepository.save(tokenEntity);
+
+        LocalDateTime newExpiryDate = LocalDateTime.now()
+                .plusSeconds(jwtTokenProvider.getRefreshTokenExpirationInSeconds());
+        RefreshToken newRtEntity = RefreshToken.builder()
+                .account(account)
+                .token(newRefreshToken)
+                .expiryDate(newExpiryDate)
+                .revoked(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+        refreshTokenRepository.save(newRtEntity);
+
+        recordAuditLog(account, (short) 1, "AUTH", account.getId(), null, "TOKEN_REFRESH", ipAddress);
+
+        LoginResponse loginResponse = buildLoginResponse(account, newAccessToken);
+        return new LoginResult(loginResponse, newRefreshToken);
+    }
+
+    @Override
+    @Transactional
+    public void logout(String authHeader, String requestRefreshToken, String clientIp) {
+        Long accountId = null;
+
+        // Vô hiệu hóa Refresh Token trong DB nếu có
+        if (requestRefreshToken != null && !requestRefreshToken.trim().isEmpty()) {
+            Optional<RefreshToken> tokenOpt = refreshTokenRepository.findByToken(requestRefreshToken);
+            if (tokenOpt.isPresent()) {
+                RefreshToken token = tokenOpt.get();
+                token.setRevoked(true);
+                refreshTokenRepository.save(token);
+                if (token.getAccount() != null) {
+                    accountId = token.getAccount().getId();
                 }
             }
+        }
+
+        if (accountId == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            if (jwtTokenProvider.validateToken(token)) {
+                accountId = jwtTokenProvider.getAccountIdFromToken(token);
+            }
+        }
+
+        if (accountId != null) {
+            Account account = accountRepository.findById(accountId).orElse(null);
+            recordAuditLog(account, (short) 4, "AUTH", accountId, null, "LOGOUT", clientIp);
+            log.info("Account ID {} logged out successfully from IP {}", accountId, clientIp);
         }
     }
 
@@ -141,27 +239,11 @@ public class AuthServiceImpl implements AuthService {
         tokenEntity.setCreatedAt(LocalDateTime.now());
         passwordResetTokenRepository.save(tokenEntity);
 
-        // Tạo bản ghi email giả lập (EmailLog)
-        String resetLink = "http://localhost:5173/reset-password?token=" + resetToken;
-        String emailBody = String.format(
-                "Xin chào %s,\n\nBạn đã yêu cầu đặt lại mật khẩu cho tài khoản hệ thống PharmaChain.\n" +
-                        "Vui lòng nhấn vào liên kết bên dưới để tạo mật khẩu mới (Liên kết có hiệu lực trong 15 phút):\n%s\n\n"
-                        +
-                        "Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.",
-                account.getUsername(), resetLink);
-
-        EmailLog emailLog = new EmailLog();
-        emailLog.setToEmail(account.getEmail());
-        emailLog.setSubject("Khôi phục mật khẩu - PharmaChain Management System");
-        emailLog.setBody(emailBody);
-        emailLog.setRefType("PASSWORD_RESET");
-        emailLog.setRefId(tokenEntity.getId());
-        emailLog.setStatus((short) 1); // 1: Sent / Queued
-        emailLogRepository.save(emailLog);
+        // Gửi email khôi phục mật khẩu thông qua EmailService
+        emailService.sendPasswordResetEmail(account.getEmail(), account.getUsername(), resetToken);
 
         recordAuditLog(account, (short) 1, "AUTH", account.getId(), null, "FORGOT_PASSWORD_REQUEST", clientIp);
-        log.info("Password reset token generated for account '{}': {} (Link: {})", account.getUsername(), resetToken,
-                resetLink);
+        log.info("Password reset token generated for account '{}': {}", account.getUsername(), resetToken);
     }
 
     @Override

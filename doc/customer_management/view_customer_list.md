@@ -4,7 +4,7 @@
 - **Mã Use Case**: `UC30` (SRS 3.8.4)
 - **Tên Use Case**: View Customer List (Xem danh sách khách hàng, tìm kiếm & phân trang)
 - **Tác nhân (Actor)**: `ALL` (Dược sĩ bán thuốc, Thu ngân, Quản lý cửa hàng, Quản trị viên)
-- **Mô tả nghiệp vụ**: Cung cấp màn hình quản lý danh sách toàn bộ khách hàng trong chuỗi nhà thuốc với khả năng tìm kiếm đa năng tức thời (theo Số điện thoại, Mã khách hàng, Tên), lọc dữ liệu theo Phân hạng thành viên (`membership_tier`) và Trạng thái hoạt động (`status`), sắp xếp linh hoạt và phân trang tối ưu hiệu năng.
+- **Mô tả nghiệp vụ**: Cung cấp màn hình quản lý danh sách toàn bộ khách hàng trong chuỗi nhà thuốc với khả năng tìm kiếm đa năng tức thời (theo Số điện thoại, Mã khách hàng, Tên), lọc dữ liệu theo Trạng thái hoạt động (`status`), sắp xếp linh hoạt và phân trang tối ưu hiệu năng.
 - **Tiền điều kiện (Preconditions)**:
   - Người dùng đã đăng nhập thành công vào hệ thống.
 - **Hậu điều kiện (Postconditions)**:
@@ -23,7 +23,6 @@
 4. Frontend hiển thị giao diện danh sách gồm:
    - **Thanh công cụ phía trên**:
      * Ô tìm kiếm nhanh (Search Box): hỗ trợ gõ SĐT, Tên, Mã khách hàng (có Debounce 300ms).
-     * Bộ lọc Phân hạng thẻ: Tất cả, Chuẩn (Standard), Bạc (Silver), Vàng (Gold), Kim Cương (Diamond).
      * Bộ lọc Trạng thái: Tất cả, Đang hoạt động (`status = 1`), Ngừng hoạt động (`status = 0`).
      * Nút "Đăng ký khách hàng mới" (+ Register).
      * Nút "Xuất file Excel" (Export).
@@ -32,11 +31,9 @@
      * Cột 2: Họ và tên (`fullName`).
      * Cột 3: Số điện thoại (`phone`).
      * Cột 4: Giới tính (`gender`).
-     * Cột 5: Hạng thành viên (`membershipTier` - hiển thị Badge màu tương ứng).
-     * Cột 6: Điểm tích lũy (`loyaltyPoints`).
-     * Cột 7: Tổng chi tiêu (`totalSpent` - định dạng tiền tệ VNĐ).
-     * Cột 8: Trạng thái (Active / Inactive).
-     * Cột 9: Thao tác (Icon Xem chi tiết, Sửa, Xóa).
+     * Cột 5: Tổng chi tiêu (`totalSpent` - định dạng tiền tệ VNĐ).
+     * Cột 6: Trạng thái (Active / Inactive).
+     * Cột 7: Thao tác (Icon Xem chi tiết, Sửa, Xóa).
    - **Thanh phân trang phía dưới**:
      * Hiển thị: "Hiển thị X - Y trong tổng số Z khách hàng".
      * Chọn số dòng mỗi trang: 10, 20, 50 dòng.
@@ -60,13 +57,12 @@
 | STT | Tên điều khiển | Loại điều khiển | Giá trị lựa chọn | Hành động kích hoạt |
 | :---: | :--- | :--- | :--- | :--- |
 | 1 | `keywordInput` | Search Input Box | Tự do (SĐT, Họ tên, Mã KH) | Tìm kiếm tự động sau khi dừng gõ 300ms |
-| 2 | `tierSelect` | Dropdown Filter | Tất cả, STANDARD, SILVER, GOLD, DIAMOND | Lọc danh sách theo hạng thẻ |
-| 3 | `statusSelect` | Dropdown Filter | Tất cả, Hoạt động (1), Ngừng hoạt động (0) | Lọc danh sách theo trạng thái |
-| 4 | `btnRegister` | Button (Primary) | - | Mở Modal Đăng ký khách hàng mới |
-| 5 | `pagination` | Pagination Bar | Trang 1..N, Size: 10, 20, 50 | Chuyển trang và thay đổi kích thước trang |
-| 6 | Nút `View Detail`| Action Icon (Mắt) | - | Mở CustomerDetailDrawer |
-| 7 | Nút `Edit` | Action Icon (Bút) | - | Mở CustomerEditModal |
-| 8 | Nút `Delete` | Action Icon (Thùng rác)| - | Mở CustomerDeleteModal (nếu có quyền) |
+| 2 | `statusSelect` | Dropdown Filter | Tất cả, Hoạt động (1), Ngừng hoạt động (0) | Lọc danh sách theo trạng thái |
+| 3 | `btnRegister` | Button (Primary) | - | Mở Modal Đăng ký khách hàng mới |
+| 4 | `pagination` | Pagination Bar | Trang 1..N, Size: 10, 20, 50 | Chuyển trang và thay đổi kích thước trang |
+| 5 | Nút `View Detail`| Action Icon (Mắt) | - | Mở CustomerDetailDrawer |
+| 6 | Nút `Edit` | Action Icon (Bút) | - | Mở CustomerEditModal |
+| 7 | Nút `Delete` | Action Icon (Thùng rác)| - | Mở CustomerDeleteModal (nếu có quyền) |
 
 ---
 
@@ -78,11 +74,10 @@
 - **Mức độ truy cập**: Authenticated (`ALL`)
 - **Query Parameters**:
   * `keyword` (String, optional): Từ khóa tìm theo SĐT, Tên hoặc Mã KH.
-  * `membershipTier` (String, optional): `STANDARD`, `SILVER`, `GOLD`, `DIAMOND`.
   * `status` (Short, optional): `1` (Active), `0` (Inactive).
   * `page` (Integer, default: 0): Số thứ tự trang (bắt đầu từ 0).
   * `size` (Integer, default: 10): Số lượng bản ghi mỗi trang.
-  * `sortBy` (String, default: "createdAt"): Trường sắp xếp (`createdAt`, `fullName`, `totalSpent`, `loyaltyPoints`).
+  * `sortBy` (String, default: "createdAt"): Trường sắp xếp (`createdAt`, `fullName`, `totalSpent`).
   * `sortDir` (String, default: "desc"): Chiều sắp xếp (`asc`, `desc`).
 
 #### Response Payload (HTTP 200 OK):
@@ -98,8 +93,6 @@
         "fullName": "Trần Thị Lan",
         "phone": "0987123456",
         "gender": "FEMALE",
-        "membershipTier": "GOLD",
-        "loyaltyPoints": 120,
         "totalSpent": 12500000.00,
         "status": 1,
         "hasAllergies": true,
@@ -111,8 +104,6 @@
         "fullName": "Hoàng Minh Tuấn",
         "phone": "0912345678",
         "gender": "MALE",
-        "membershipTier": "SILVER",
-        "loyaltyPoints": 45,
         "totalSpent": 4500000.00,
         "status": 1,
         "hasAllergies": false,
@@ -143,8 +134,6 @@ public class CustomerResponse {
     private String fullName;
     private String phone;
     private String gender;
-    private String membershipTier;
-    private Integer loyaltyPoints;
     private BigDecimal totalSpent;
     private Short status;
     private Boolean hasAllergies;
@@ -155,7 +144,7 @@ public class CustomerResponse {
 ### 4.3. Thuật Toán Service Layer (`CustomerServiceImpl.getCustomers`)
 ```java
 @Transactional(readOnly = true)
-public PageResponse<CustomerResponse> getCustomers(String keyword, String membershipTier, Short status, int page, int size, String sortBy, String sortDir) {
+public PageResponse<CustomerResponse> getCustomers(String keyword, Short status, int page, int size, String sortBy, String sortDir) {
     Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
     Pageable pageable = PageRequest.of(page, size, sort);
 
@@ -168,10 +157,6 @@ public PageResponse<CustomerResponse> getCustomers(String keyword, String member
             Predicate namePredicate = cb.like(cb.lower(root.get("fullName")), kw);
             Predicate codePredicate = cb.like(cb.lower(root.get("customerCode")), kw);
             predicates.add(cb.or(phonePredicate, namePredicate, codePredicate));
-        }
-
-        if (membershipTier != null && !membershipTier.trim().isEmpty()) {
-            predicates.add(cb.equal(root.get("membershipTier"), membershipTier.toUpperCase()));
         }
 
         if (status != null) {
@@ -199,7 +184,6 @@ public PageResponse<CustomerResponse> getCustomers(String keyword, String member
 | :--- | :--- | :--- | :--- |
 | **TC-LST-01** | Lấy danh sách mặc định trang đầu | `page`: 0, `size`: 10 | Trả về 10 bản ghi mới nhất, tính đúng `totalElements` |
 | **TC-LST-02** | Tìm kiếm theo số điện thoại | `keyword`: "0987123456" | Trả về đúng 1 bản ghi khớp SĐT |
-| **TC-LST-03** | Lọc theo hạng thẻ Gold | `membershipTier`: "GOLD" | Chỉ trả về các khách hàng có hạng `GOLD` |
-| **TC-LST-04** | Chuyển sang trang tiếp theo | Bấm Next sang trang 2 | Trả về 10 bản ghi của trang 2 |
-| **TC-LST-05** | Tìm từ khóa không tồn tại | `keyword`: "xyz123abc999" | Trả về danh sách rỗng (`content: []`), `totalElements: 0` |
+| **TC-LST-03** | Chuyển sang trang tiếp theo | Bấm Next sang trang 2 | Trả về 10 bản ghi của trang 2 |
+| **TC-LST-04** | Tìm từ khóa không tồn tại | `keyword`: "xyz123abc999" | Trả về danh sách rỗng (`content: []`), `totalElements: 0` |
 

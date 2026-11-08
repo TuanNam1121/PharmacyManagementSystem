@@ -7,7 +7,7 @@ import com.pharmacy.dto.customer.CustomerResponse;
 import com.pharmacy.dto.customer.CustomerUpdateRequest;
 
 public interface CustomerService {
-    PageResponse<CustomerResponse> getCustomers(String keyword, String membershipTier, Short status,
+    PageResponse<CustomerResponse> getCustomers(String keyword, Short status,
                                                 int page, int size, String sortBy, String sortDir);
 
     CustomerDetailResponse getCustomerDetail(Long customerId);
