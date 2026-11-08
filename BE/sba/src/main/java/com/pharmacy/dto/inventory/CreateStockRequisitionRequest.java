@@ -37,5 +37,9 @@ public class CreateStockRequisitionRequest {
         @NotNull(message = "Requested quantity is required")
         @Min(value = 1, message = "Requested quantity must be at least 1")
         private Integer requestedQty;
+
+        private Long unitId;
+        private String unitName;
+        private Integer conversionFactor;
     }
 }

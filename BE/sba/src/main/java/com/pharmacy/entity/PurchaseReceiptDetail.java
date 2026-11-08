@@ -71,4 +71,15 @@ public class PurchaseReceiptDetail {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "batch_id")
     private ProductBatch batch;
+
+    @Size(max = 50)
+    @Column(name = "unit_name", length = 50)
+    private String unitName;
+
+    @Builder.Default
+    @Column(name = "conversion_factor", nullable = false)
+    private Integer conversionFactor = 1;
+
+    @Column(name = "base_quantity")
+    private Integer baseQuantity;
 }

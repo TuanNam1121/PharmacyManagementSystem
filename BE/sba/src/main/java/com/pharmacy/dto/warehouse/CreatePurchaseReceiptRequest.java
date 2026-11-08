@@ -48,5 +48,9 @@ public class CreatePurchaseReceiptRequest {
         private LocalDate expiryDate;
 
         private Long locationId;
+
+        private Long unitId;
+        private String unitName;
+        private Integer conversionFactor;
     }
 }

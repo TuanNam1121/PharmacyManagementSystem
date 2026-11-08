@@ -83,19 +83,63 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                 };
                 return updated;
             }
+
+            const pUnits = product.units || [];
+            let defaultUnitId = '';
+            let defaultUnitName = product.unit || 'Unit';
+            let defaultFactor = 1;
+
+            if (pUnits.length > 0) {
+                // Mặc định chọn đơn vị đóng gói lớn nhất (Hộp) khi lập phiếu lĩnh hàng từ kho tổng
+                const highestUnit = [...pUnits].sort((a, b) => (b.conversionFactor || 1) - (a.conversionFactor || 1))[0];
+                defaultUnitId = highestUnit.id;
+                defaultUnitName = highestUnit.unitName;
+                defaultFactor = highestUnit.conversionFactor || 1;
+            }
+
             return [
                 ...prev,
                 {
                     productId: product.id,
                     productName: product.name,
                     barcode: product.barcode,
-                    unit: product.unit || 'Unit',
+                    unit: defaultUnitName,
+                    baseUnit: product.unit || 'Unit',
+                    unitId: defaultUnitId,
+                    unitName: defaultUnitName,
+                    conversionFactor: defaultFactor,
+                    units: pUnits,
                     requestedQty: 10
                 }
             ];
         });
         setSearchTerm('');
         setIsDropdownOpen(false);
+    };
+
+    const handleUnitChange = (productId, unitId) => {
+        setSelectedItems(prev => prev.map(item => {
+            if (item.productId === productId) {
+                const selected = (item.units || []).find(u => String(u.id) === String(unitId));
+                if (selected) {
+                    return {
+                        ...item,
+                        unitId: selected.id,
+                        unitName: selected.unitName,
+                        unit: selected.unitName,
+                        conversionFactor: selected.conversionFactor || 1
+                    };
+                }
+                return {
+                    ...item,
+                    unitId: '',
+                    unitName: item.baseUnit || 'Unit',
+                    unit: item.baseUnit || 'Unit',
+                    conversionFactor: 1
+                };
+            }
+            return item;
+        }));
     };
 
     // Increase/decrease quantity
@@ -145,7 +189,10 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
 
         const items = selectedItems.map(item => ({
             productId: item.productId,
-            requestedQty: Number(item.requestedQty)
+            requestedQty: Number(item.requestedQty),
+            unitId: item.unitId ? Number(item.unitId) : undefined,
+            unitName: item.unitName || undefined,
+            conversionFactor: Number(item.conversionFactor) || 1
         }));
 
         // Sửa phiếu: chỉ gửi danh sách mặt hàng; tạo mới: gửi thêm chi nhánh + người lập
@@ -385,7 +432,23 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                                     </span>
                                                 </td>
                                                 <td style={{ textAlign: 'center' }}>
-                                                    <span className="pms-badge pms-badge-neutral">{row.unit}</span>
+                                                    {row.units && row.units.length > 0 ? (
+                                                        <select
+                                                            className="pms-select"
+                                                            style={{ fontSize: 11.5, padding: '3px 6px', fontWeight: 600, color: '#0284c7' }}
+                                                            value={row.unitId || ''}
+                                                            onChange={e => handleUnitChange(row.productId, e.target.value)}
+                                                            disabled={submitting}
+                                                        >
+                                                            {row.units.map(u => (
+                                                                <option key={u.id} value={u.id}>
+                                                                    {u.unitName} (x{u.conversionFactor})
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    ) : (
+                                                        <span className="pms-badge pms-badge-neutral">{row.unit}</span>
+                                                    )}
                                                 </td>
                                                 <td style={{ textAlign: 'center' }}>
                                                     <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
@@ -416,6 +479,11 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                                             +
                                                         </button>
                                                     </div>
+                                                    {row.conversionFactor > 1 && (
+                                                        <div style={{ fontSize: 11, color: '#0284c7', fontWeight: 600, marginTop: 2 }}>
+                                                            = {((Number(row.requestedQty) || 0) * row.conversionFactor).toLocaleString()} {row.baseUnit || 'viên'}
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td style={{ textAlign: 'center' }}>
                                                     <button

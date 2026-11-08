@@ -27,4 +27,7 @@ public class PurchaseReceiptItemResponse {
     private BigDecimal unitCost;
     private BigDecimal subtotal;
     private String locationCode;
+    private String unitName;
+    private Integer conversionFactor;
+    private Integer baseQuantity;
 }

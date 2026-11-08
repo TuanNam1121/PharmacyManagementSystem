@@ -4,9 +4,11 @@ import com.pharmacy.dto.PageResponse;
 import com.pharmacy.dto.inventory.CreateStockRequisitionRequest;
 import com.pharmacy.dto.inventory.StockRequisitionDto;
 import com.pharmacy.dto.inventory.UpdateStockRequisitionRequest;
+import com.pharmacy.dto.product.ProductUnitDto;
 import com.pharmacy.dto.warehouse.ProductOptionDto;
 import com.pharmacy.entity.Account;
 import com.pharmacy.entity.Product;
+import com.pharmacy.entity.ProductUnit;
 import com.pharmacy.entity.StockRequisition;
 import com.pharmacy.entity.StockRequisitionDetail;
 import com.pharmacy.entity.Store;
@@ -26,6 +28,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +38,7 @@ public class StockRequisitionServiceImpl implements StockRequisitionService {
     private final StockRequisitionDetailRepository detailRepository;
     private final StoreRepository storeRepository;
     private final ProductRepository productRepository;
+    private final ProductUnitRepository productUnitRepository;
     private final AccountRepository accountRepository;
 
     // ─── helpers ────────────────────────────────────────────────────────────────
@@ -53,6 +57,9 @@ public class StockRequisitionServiceImpl implements StockRequisitionService {
                 .requestedQty(d.getRequestedQty())
                 .approvedQty(d.getApprovedQty())
                 .receivedQty(d.getReceivedQty())
+                .unitName(d.getUnitName())
+                .conversionFactor(d.getConversionFactor())
+                .baseRequestedQty(d.getBaseRequestedQty())
                 .build();
     }
 
@@ -138,10 +145,28 @@ public class StockRequisitionServiceImpl implements StockRequisitionService {
                     .orElseThrow(
                             () -> new IllegalArgumentException("Product not found with ID: " + item.getProductId()));
 
+            int factor = 1;
+            String unitName = product.getUnit();
+            if (item.getUnitId() != null) {
+                ProductUnit pu = productUnitRepository.findById(item.getUnitId()).orElse(null);
+                if (pu != null) {
+                    factor = (pu.getConversionFactor() != null && pu.getConversionFactor() > 0) ? pu.getConversionFactor() : 1;
+                    unitName = pu.getUnitName();
+                }
+            } else if (item.getConversionFactor() != null && item.getConversionFactor() > 0) {
+                factor = item.getConversionFactor();
+                unitName = item.getUnitName() != null ? item.getUnitName() : product.getUnit();
+            }
+
+            int baseQty = item.getRequestedQty() * factor;
+
             StockRequisitionDetail detail = StockRequisitionDetail.builder()
                     .stockRequisition(requisition)
                     .product(product)
                     .requestedQty(item.getRequestedQty())
+                    .unitName(unitName)
+                    .conversionFactor(factor)
+                    .baseRequestedQty(baseQty)
                     .build();
 
             requisition.getDetails().add(detail);
@@ -202,12 +227,27 @@ public class StockRequisitionServiceImpl implements StockRequisitionService {
     public List<ProductOptionDto> searchProducts(String search) {
         Pageable limit = PageRequest.of(0, 25);
         return productRepository.searchProducts(search, limit).stream()
-                .map(p -> new ProductOptionDto(
-                        p.getId(),
-                        p.getName(),
-                        p.getBarcode(),
-                        p.getUnit(),
-                        p.getCostPrice()))
+                .map(p -> {
+                    List<ProductUnitDto> unitDtos = productUnitRepository.findByProduct_IdOrderByConversionFactorAsc(p.getId()).stream()
+                            .map(u -> ProductUnitDto.builder()
+                                    .id(u.getId())
+                                    .unitName(u.getUnitName())
+                                    .conversionFactor(u.getConversionFactor())
+                                    .sellingPrice(u.getSellingPrice())
+                                    .isBaseUnit(u.getIsBaseUnit())
+                                    .barcode(u.getBarcode())
+                                    .build())
+                            .collect(Collectors.toList());
+
+                    return ProductOptionDto.builder()
+                            .id(p.getId())
+                            .name(p.getName())
+                            .barcode(p.getBarcode())
+                            .unit(p.getUnit())
+                            .purchasePrice(p.getCostPrice())
+                            .units(unitDtos)
+                            .build();
+                })
                 .toList();
     }
 }

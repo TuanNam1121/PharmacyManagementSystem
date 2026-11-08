@@ -1017,6 +1017,24 @@ IF COL_LENGTH('dbo.sales_invoice_details', 'base_quantity') IS NULL
     ALTER TABLE dbo.sales_invoice_details ADD base_quantity INT NULL;
 GO
 
+-- Bổ sung cột quy đổi vào purchase_receipt_details nếu chưa có
+IF COL_LENGTH('dbo.purchase_receipt_details', 'unit_name') IS NULL
+    ALTER TABLE dbo.purchase_receipt_details ADD unit_name NVARCHAR(50) NULL;
+IF COL_LENGTH('dbo.purchase_receipt_details', 'conversion_factor') IS NULL
+    ALTER TABLE dbo.purchase_receipt_details ADD conversion_factor INT NOT NULL DEFAULT 1;
+IF COL_LENGTH('dbo.purchase_receipt_details', 'base_quantity') IS NULL
+    ALTER TABLE dbo.purchase_receipt_details ADD base_quantity INT NULL;
+GO
+
+-- Bổ sung cột quy đổi vào stock_requisition_details nếu chưa có
+IF COL_LENGTH('dbo.stock_requisition_details', 'unit_name') IS NULL
+    ALTER TABLE dbo.stock_requisition_details ADD unit_name NVARCHAR(50) NULL;
+IF COL_LENGTH('dbo.stock_requisition_details', 'conversion_factor') IS NULL
+    ALTER TABLE dbo.stock_requisition_details ADD conversion_factor INT NOT NULL DEFAULT 1;
+IF COL_LENGTH('dbo.stock_requisition_details', 'base_requested_qty') IS NULL
+    ALTER TABLE dbo.stock_requisition_details ADD base_requested_qty INT NULL;
+GO
+
 -- Seed dữ liệu mẫu quy đổi đơn vị cho thuốc Panadol Extra (barcode: 8934567890123)
 DECLARE @PanadolId BIGINT = (SELECT TOP 1 id FROM dbo.products WHERE barcode = '8934567890123');
 IF @PanadolId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM dbo.product_units WHERE product_id = @PanadolId)
