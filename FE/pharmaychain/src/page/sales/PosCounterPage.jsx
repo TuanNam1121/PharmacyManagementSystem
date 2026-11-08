@@ -15,7 +15,6 @@ import CustomerFormModal from '../../component/customer/CustomerFormModal';
 import { createCustomer } from '../../api/customerApi';
 import PaymentModal from '../../component/sales/PaymentModal';
 import InvoicePrintTemplate from '../../component/sales/InvoicePrintTemplate';
-import SalesReturnModal from '../../component/sales/SalesReturnModal';
 import CustomerHistoryDrawer from '../../component/sales/CustomerHistoryDrawer';
 
 export default function PosCounterPage() {
@@ -54,8 +53,6 @@ export default function PosCounterPage() {
         setCustomerModalOpen,
         historyDrawerOpen,
         setHistoryDrawerOpen,
-        returnModalOpen,
-        setReturnModalOpen,
         lastCompletedInvoice,
         setLastCompletedInvoice,
         addToCart,
@@ -290,19 +287,6 @@ export default function PosCounterPage() {
                                     ))}
                                 </div>
                             )}
-
-                            <button
-                                type="button"
-                                className="btn-pms btn-pms-secondary"
-                                style={{ fontSize: 12, height: 36 }}
-                                onClick={() => setReturnModalOpen(true)}
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ marginRight: 6 }}>
-                                    <polyline points="1 4 1 10 7 10" />
-                                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-                                </svg>
-                                Trả hàng
-                            </button>
 
                             {currentShift ? (
                                 <button
@@ -878,14 +862,6 @@ export default function PosCounterPage() {
                 isOpen={printModalOpen}
                 onClose={() => setPrintModalOpen(false)}
                 invoice={lastCompletedInvoice}
-            />
-
-            <SalesReturnModal
-                isOpen={returnModalOpen}
-                onClose={() => setReturnModalOpen(false)}
-                onReturnSuccess={() => {
-                    refreshShift();
-                }}
             />
 
             <CustomerHistoryDrawer
