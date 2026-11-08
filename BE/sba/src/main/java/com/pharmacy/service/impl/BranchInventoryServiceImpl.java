@@ -188,7 +188,6 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
 
         BigDecimal cost = (p != null && p.getCostPrice() != null) ? p.getCostPrice() : BigDecimal.ZERO;
         BigDecimal sell = (p != null && p.getSellingPrice() != null) ? p.getSellingPrice() : BigDecimal.ZERO;
-        BigDecimal totalVal = sell.multiply(BigDecimal.valueOf(qty));
 
         List<ProductUnitDto> unitDtos = Collections.emptyList();
         if (p != null) {
@@ -204,6 +203,15 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
                     .collect(Collectors.toList());
         }
 
+        ProductUnitDto baseUnit = unitDtos.stream()
+                .filter(u -> Boolean.TRUE.equals(u.getIsBaseUnit()) || (u.getConversionFactor() != null && u.getConversionFactor() == 1))
+                .findFirst()
+                .orElse(null);
+        String baseUnitName = baseUnit != null ? baseUnit.getUnitName() : (p != null ? p.getUnit() : "");
+        BigDecimal unitPrice = baseUnit != null && baseUnit.getSellingPrice() != null ? baseUnit.getSellingPrice() : sell;
+        BigDecimal totalVal = unitPrice.multiply(BigDecimal.valueOf(qty));
+        String packagingBreakdown = calculatePackagingBreakdown(qty, unitDtos);
+
         return BranchInventoryResponse.builder()
                 .id(i.getId())
                 .storeId(s != null ? s.getId() : null)
@@ -212,6 +220,8 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
                 .barcode(p != null ? p.getBarcode() : "")
                 .productName(p != null ? p.getName() : "")
                 .unit(p != null ? p.getUnit() : "")
+                .baseUnitName(baseUnitName)
+                .packagingBreakdown(packagingBreakdown)
                 .activeIngredient(p != null ? p.getActiveIngredient() : "")
                 .manufacturer(p != null ? p.getManufacturer() : "")
                 .isPrescription(p != null && Boolean.TRUE.equals(p.getIsPrescription()))
@@ -222,7 +232,7 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
                 .quantity(qty)
                 .minQuantity(minQ)
                 .costPrice(cost)
-                .sellingPrice(sell)
+                .sellingPrice(unitPrice)
                 .totalValue(totalVal)
                 .daysToExpiry(days)
                 .stockStatus(stockStatus)
@@ -232,5 +242,42 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
                 .updatedAt(i.getUpdatedAt())
                 .units(unitDtos)
                 .build();
+    }
+
+    private String calculatePackagingBreakdown(int totalQty, List<ProductUnitDto> units) {
+        if (totalQty <= 0 || units == null || units.isEmpty()) {
+            return null;
+        }
+        List<ProductUnitDto> higherUnits = units.stream()
+                .filter(u -> u.getConversionFactor() != null && u.getConversionFactor() > 1)
+                .sorted((a, b) -> Integer.compare(b.getConversionFactor(), a.getConversionFactor()))
+                .collect(Collectors.toList());
+
+        if (higherUnits.isEmpty()) {
+            return null;
+        }
+
+        int remaining = totalQty;
+        List<String> parts = new ArrayList<>();
+
+        for (ProductUnitDto unit : higherUnits) {
+            int factor = unit.getConversionFactor();
+            int count = remaining / factor;
+            if (count > 0) {
+                parts.add(count + " " + unit.getUnitName());
+                remaining = remaining % factor;
+            }
+        }
+
+        if (remaining > 0) {
+            ProductUnitDto baseUnit = units.stream()
+                    .filter(u -> u.getConversionFactor() != null && u.getConversionFactor() == 1)
+                    .findFirst()
+                    .orElse(null);
+            String baseName = baseUnit != null ? baseUnit.getUnitName() : "lẻ";
+            parts.add(remaining + " " + baseName);
+        }
+
+        return parts.isEmpty() ? null : String.join(" ", parts);
     }
 }

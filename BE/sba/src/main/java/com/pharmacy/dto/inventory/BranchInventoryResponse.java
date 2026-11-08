@@ -41,5 +41,7 @@ public class BranchInventoryResponse {
     private String warningLevel; // NORMAL, WARNING, DANGER
     private String locationCode;
     private LocalDateTime updatedAt;
+    private String baseUnitName;
+    private String packagingBreakdown;
     private List<ProductUnitDto> units;
 }

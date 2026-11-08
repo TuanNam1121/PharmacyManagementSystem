@@ -137,9 +137,14 @@ export default function BranchInventoryTable({
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
                                         <div style={{ fontWeight: 700, fontSize: 14, color: row.quantity === 0 ? 'var(--color-danger)' : 'var(--text-primary)' }}>
-                                            {row.quantity.toLocaleString()} {row.unit}
+                                            {row.quantity.toLocaleString()} {row.baseUnitName || row.unit}
                                         </div>
-                                        <div>{renderStockBadge(row)}</div>
+                                        {row.packagingBreakdown && (
+                                            <div style={{ fontSize: 11.5, color: '#0284c7', fontWeight: 600, marginTop: 1 }} title="Quy đổi tương đương">
+                                                ~ {row.packagingBreakdown}
+                                            </div>
+                                        )}
+                                        <div style={{ marginTop: 2 }}>{renderStockBadge(row)}</div>
                                     </td>
                                     <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>
                                         {money(row.sellingPrice)}
