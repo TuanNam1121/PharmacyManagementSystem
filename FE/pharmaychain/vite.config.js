@@ -7,8 +7,5 @@ export default defineConfig({
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()] })
-  ],
-  server : {
-    port: 3000
-  }
+  ]
 })

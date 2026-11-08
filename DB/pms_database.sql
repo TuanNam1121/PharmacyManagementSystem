@@ -272,7 +272,6 @@ DECLARE @WhId   BIGINT = (SELECT id FROM dbo.stores WHERE code = 'WH01');
 DECLARE @St01Id BIGINT = (SELECT id FROM dbo.stores WHERE code = 'ST01');
 
 DECLARE @AccountData TABLE (
-DECLARE @AccountData TABLE (
     username VARCHAR(50),
     email VARCHAR(150),
     phone VARCHAR(20),
