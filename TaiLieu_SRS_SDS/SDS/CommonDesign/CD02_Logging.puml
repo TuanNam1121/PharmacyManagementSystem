@@ -1,0 +1,160 @@
+@startuml CD02_Logging
+title Common Design - Logging Class Diagram
+skinparam style strictuml
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+
+skinparam class {
+    BorderColor #000000
+    BackgroundColor #7ACFF5
+    HeaderBackgroundColor #7ACFF5
+    FontColor #000000
+    FontSize 11
+    StereotypeFontColor #000000
+    StereotypeFontSize 10
+    ArrowColor #000000
+}
+
+skinparam package {
+    BorderColor #000000
+    BackgroundColor #FFFFFF
+    FontColor #000000
+    FontSize 12
+}
+
+package "org.slf4j" <<Logging Framework>> {
+    interface Logger {
+        + info(format: String, arg: Object): void
+        + warn(format: String, arg: Object): void
+        + error(msg: String, t: Throwable): void
+        + debug(format: String, arg: Object): void
+    }
+
+    class LoggerFactory {
+        + {static} getLogger(clazz: Class<?>): Logger
+    }
+
+    LoggerFactory ..> Logger : creates
+}
+
+package "com.pharmacy.entity" <<JPA Entities>> {
+    class AuditLog <<entity>> {
+        - id: Long
+        - account: Account
+        - action: Short
+        - entityName: String
+        - entityId: Long
+        - oldValue: String
+        - newValue: String
+        - ipAddress: String
+        - createdAt: LocalDateTime
+        + getId(): Long
+        + getAccount(): Account
+        + getAction(): Short
+        + getEntityName(): String
+        + getEntityId(): Long
+        + getOldValue(): String
+        + getNewValue(): String
+        + getIpAddress(): String
+        + getCreatedAt(): LocalDateTime
+        + setAccount(account: Account): void
+        + setAction(action: Short): void
+        + setEntityName(name: String): void
+        + setEntityId(id: Long): void
+        + setOldValue(oldVal: String): void
+        + setNewValue(newVal: String): void
+        + setIpAddress(ip: String): void
+        + setCreatedAt(time: LocalDateTime): void
+    }
+
+    class Account <<entity>> {
+        - id: Long
+        - username: String
+        - email: String
+    }
+
+    AuditLog "0..*" --> "0..1" Account : performed by
+}
+
+package "com.pharmacy.dto.audit" <<DTO>> {
+    class AuditLogDto <<boundary>> {
+        - id: Long
+        - accountId: Long
+        - accountUsername: String
+        - accountFullName: String
+        - action: Short
+        - actionName: String
+        - entityName: String
+        - entityId: Long
+        - oldValue: String
+        - newValue: String
+        - ipAddress: String
+        - createdAt: LocalDateTime
+        + getId(): Long
+        + getAccountUsername(): String
+        + getActionName(): String
+    }
+}
+
+package "com.pharmacy.repository" <<Data Access>> {
+    interface "JpaRepository<T, ID>" as JpaRepository
+    interface "JpaSpecificationExecutor<T>" as JpaSpecificationExecutor
+
+    interface AuditLogRepository <<entity>> {
+        + findAll(spec: Specification<AuditLog>, pageable: Pageable): Page<AuditLog>
+        + findByEntityNameAndEntityId(entityName: String, entityId: Long): List<AuditLog>
+    }
+
+    JpaRepository <|-- AuditLogRepository
+    JpaSpecificationExecutor <|-- AuditLogRepository
+    AuditLogRepository ..> AuditLog : manages
+}
+
+package "com.pharmacy.service" <<Business Service>> {
+    interface AuditLogService <<control>> {
+        + getAuditLogs(search: String, action: Short, entityName: String, pageable: Pageable): Page<AuditLogDto>
+    }
+
+    class AuditLogServiceImpl <<control>> {
+        - auditLogRepository: AuditLogRepository
+        + getAuditLogs(search: String, action: Short, entityName: String, pageable: Pageable): Page<AuditLogDto>
+        - mapToDto(log: AuditLog): AuditLogDto
+        - resolveActionName(action: Short): String
+    }
+
+    AuditLogService <|.. AuditLogServiceImpl
+    AuditLogServiceImpl --> AuditLogRepository : injects
+    AuditLogServiceImpl ..> AuditLogDto : transforms
+}
+
+package "com.pharmacy.controller" <<Presentation>> {
+    class AuditLogController <<control>> {
+        - auditLogService: AuditLogService
+        + getAuditLogs(search: String, action: Short, entityName: String, page: int, size: int): ResponseEntity<ApiResponse<Page<AuditLogDto>>>
+    }
+
+    AuditLogController --> AuditLogService : invokes
+}
+
+package "com.pharmacy.service.impl" <<Audited Services>> {
+    class AuthServiceImpl <<control>> {
+        - auditLogRepository: AuditLogRepository
+        - logger: Logger
+        - recordAuditLog(account: Account, action: Short, entityName: String, entityId: Long, details: String, ip: String): void
+    }
+
+    class ProfileServiceImpl <<control>> {
+        - auditLogRepository: AuditLogRepository
+        - logger: Logger
+        - recordAuditLog(account: Account, action: Short, entityName: String, entityId: Long, details: String, ip: String): void
+    }
+
+    AuthServiceImpl --> AuditLogRepository : saves audit record
+    ProfileServiceImpl --> AuditLogRepository : saves audit record
+    AuthServiceImpl ..> Logger : application logs
+    ProfileServiceImpl ..> Logger : application logs
+}
+
+@enduml

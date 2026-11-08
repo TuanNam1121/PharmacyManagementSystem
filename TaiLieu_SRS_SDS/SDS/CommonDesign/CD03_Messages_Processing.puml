@@ -1,0 +1,163 @@
+@startuml CD03_Messages_Processing
+title Common Design - Messages Processing Class Diagram
+skinparam style strictuml
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+
+skinparam class {
+    BorderColor #000000
+    BackgroundColor #7ACFF5
+    HeaderBackgroundColor #7ACFF5
+    FontColor #000000
+    FontSize 11
+    StereotypeFontColor #000000
+    StereotypeFontSize 10
+    ArrowColor #000000
+}
+
+skinparam package {
+    BorderColor #000000
+    BackgroundColor #FFFFFF
+    FontColor #000000
+    FontSize 12
+}
+
+package "com.pharmacy.dto" <<API Response Formatting>> {
+    class "ApiResponse<T>" as ApiResponse <<boundary>> {
+        - status: int
+        - message: String
+        - data: T
+        - timestamp: LocalDateTime
+        + {static} success(data: T): ApiResponse<T>
+        + {static} success(message: String, data: T): ApiResponse<T>
+        + {static} error(status: int, message: String): ApiResponse<T>
+        + getStatus(): int
+        + getMessage(): String
+        + getData(): T
+        + getTimestamp(): LocalDateTime
+    }
+
+    class "PageResponse<T>" as PageResponse <<boundary>> {
+        - content: List<T>
+        - pageNumber: int
+        - pageSize: int
+        - totalElements: long
+        - totalPages: int
+        - last: boolean
+        + {static} from(page: Page<T>): PageResponse<T>
+        + getContent(): List<T>
+        + getTotalElements(): long
+        + getTotalPages(): int
+    }
+}
+
+package "jakarta.validation" <<Bean Validation Messages>> {
+    interface ConstraintValidator
+    class "@Valid" as ValidAnnotation
+    class "@NotNull" as NotNullAnnotation
+    class "@NotBlank" as NotBlankAnnotation
+    class "@Size" as SizeAnnotation
+    class "@Email" as EmailAnnotation
+}
+
+package "org.springframework.validation" <<Validation Binding>> {
+    interface BindingResult {
+        + getFieldErrors(): List<FieldError>
+        + hasErrors(): boolean
+    }
+
+    class FieldError {
+        - field: String
+        - defaultMessage: String
+        + getField(): String
+        + getDefaultMessage(): String
+    }
+
+    BindingResult "1" o-- "0..*" FieldError
+}
+
+package "org.springframework.mail.javamail" <<Mail Dispatcher Framework>> {
+    interface JavaMailSender {
+        + createMimeMessage(): MimeMessage
+        + send(mimeMessage: MimeMessage): void
+    }
+
+    class MimeMessageHelper {
+        - mimeMessage: MimeMessage
+        + setFrom(from: String): void
+        + setTo(to: String): void
+        + setSubject(subject: String): void
+        + setText(text: String, html: boolean): void
+    }
+
+    MimeMessageHelper --> JavaMailSender : prepares message for
+}
+
+package "com.pharmacy.entity" <<Message Persistence>> {
+    class EmailLog <<entity>> {
+        - id: Long
+        - toEmail: String
+        - subject: String
+        - body: String
+        - refType: String
+        - refId: Long
+        - status: Short
+        - errorMessage: String
+        - sentAt: LocalDateTime
+        + getId(): Long
+        + getToEmail(): String
+        + getSubject(): String
+        + getStatus(): Short
+        + setToEmail(email: String): void
+        + setSubject(subject: String): void
+        + setBody(html: String): void
+        + setStatus(status: Short): void
+        + setSentAt(time: LocalDateTime): void
+    }
+}
+
+package "com.pharmacy.repository" <<Data Access>> {
+    interface EmailLogRepository <<entity>> {
+        + save(emailLog: EmailLog): EmailLog
+        + findByToEmail(email: String): List<EmailLog>
+    }
+    EmailLogRepository ..> EmailLog : manages
+}
+
+package "com.pharmacy.service" <<Email Message Service>> {
+    interface EmailService <<control>> {
+        + sendRfqEmail(rfq: Rfq, supplier: Supplier, token: String, url: String): boolean
+        + sendQuotationConfirmationEmail(supplier: Supplier, rfqCode: String): boolean
+        + sendPasswordResetEmail(toEmail: String, username: String, resetToken: String): boolean
+    }
+
+    class EmailServiceImpl <<control>> {
+        - mailSender: JavaMailSender
+        - emailLogRepository: EmailLogRepository
+        - fromEmail: String
+        - frontendUrl: String
+        + sendRfqEmail(rfq: Rfq, supplier: Supplier, token: String, url: String): boolean
+        + sendQuotationConfirmationEmail(supplier: Supplier, rfqCode: String): boolean
+        + sendPasswordResetEmail(toEmail: String, username: String, resetToken: String): boolean
+        - isValidEmail(email: String): boolean
+        - logEmail(to: String, subject: String, body: String, refType: String, refId: Long, status: Short, error: String): void
+    }
+
+    EmailService <|.. EmailServiceImpl
+    EmailServiceImpl --> JavaMailSender : sends email
+    EmailServiceImpl --> EmailLogRepository : logs message status
+    EmailServiceImpl ..> MimeMessageHelper : formats HTML email
+}
+
+package "com.pharmacy.exception" <<Validation Message Handler>> {
+    class GlobalExceptionHandler <<control>> {
+        + handleValidationException(ex: MethodArgumentNotValidException): ResponseEntity<ApiResponse<Map<String, String>>>
+    }
+
+    GlobalExceptionHandler ..> BindingResult : extracts field errors
+    GlobalExceptionHandler ..> ApiResponse : packages validation messages
+}
+
+@enduml

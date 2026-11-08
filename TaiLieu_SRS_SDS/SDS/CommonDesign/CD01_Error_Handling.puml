@@ -1,0 +1,164 @@
+@startuml CD01_Error_Handling
+title Common Design - Error Handling Class Diagram
+skinparam style strictuml
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+
+skinparam class {
+    BorderColor #000000
+    BackgroundColor #7ACFF5
+    HeaderBackgroundColor #7ACFF5
+    FontColor #000000
+    FontSize 11
+    StereotypeFontColor #000000
+    StereotypeFontSize 10
+    ArrowColor #000000
+}
+
+skinparam package {
+    BorderColor #000000
+    BackgroundColor #FFFFFF
+    FontColor #000000
+    FontSize 12
+}
+
+package "java.lang" <<Standard>> {
+    class Exception {
+        + Exception(message: String)
+        + Exception(message: String, cause: Throwable)
+        + getMessage(): String
+    }
+
+    class RuntimeException {
+        + RuntimeException(message: String)
+        + RuntimeException(message: String, cause: Throwable)
+    }
+
+    class IllegalArgumentException {
+        + IllegalArgumentException(message: String)
+    }
+
+    class IllegalStateException {
+        + IllegalStateException(message: String)
+    }
+
+    Exception <|-- RuntimeException
+    RuntimeException <|-- IllegalArgumentException
+    RuntimeException <|-- IllegalStateException
+}
+
+package "com.pharmacy.exception" <<Business Exceptions>> {
+    class BadCredentialsException <<entity>> {
+        + BadCredentialsException(message: String)
+    }
+
+    class AccountLockedException <<entity>> {
+        + AccountLockedException(message: String)
+    }
+
+    class TokenRefreshException <<entity>> {
+        + TokenRefreshException(message: String)
+    }
+
+    class InvalidTokenException <<entity>> {
+        + InvalidTokenException(message: String)
+    }
+
+    class ResourceNotFoundException <<entity>> {
+        + ResourceNotFoundException(message: String)
+    }
+
+    class DuplicateResourceException <<entity>> {
+        + DuplicateResourceException(message: String)
+    }
+
+    class CustomerPhoneAlreadyExistsException <<entity>> {
+        + CustomerPhoneAlreadyExistsException(message: String)
+    }
+
+    class InsufficientStockException <<entity>> {
+        + InsufficientStockException(message: String)
+    }
+
+    class NoOpenShiftException <<entity>> {
+        + NoOpenShiftException(message: String)
+    }
+
+    class ShiftAlreadyOpenException <<entity>> {
+        + ShiftAlreadyOpenException(message: String)
+    }
+
+    class InvalidOperationException <<entity>> {
+        + InvalidOperationException(message: String)
+    }
+
+    RuntimeException <|-- BadCredentialsException
+    RuntimeException <|-- AccountLockedException
+    RuntimeException <|-- TokenRefreshException
+    RuntimeException <|-- InvalidTokenException
+    RuntimeException <|-- ResourceNotFoundException
+    RuntimeException <|-- DuplicateResourceException
+    RuntimeException <|-- CustomerPhoneAlreadyExistsException
+    RuntimeException <|-- InsufficientStockException
+    RuntimeException <|-- NoOpenShiftException
+    RuntimeException <|-- ShiftAlreadyOpenException
+    RuntimeException <|-- InvalidOperationException
+}
+
+package "org.springframework.web.bind" <<Spring Web>> {
+    class MethodArgumentNotValidException {
+        + getBindingResult(): BindingResult
+    }
+    Exception <|-- MethodArgumentNotValidException
+}
+
+package "com.pharmacy.dto" <<Payload>> {
+    class "ApiResponse<T>" as ApiResponse <<boundary>> {
+        - status: int
+        - message: String
+        - data: T
+        - timestamp: LocalDateTime
+        + {static} success(data: T): ApiResponse<T>
+        + {static} success(message: String, data: T): ApiResponse<T>
+        + {static} error(status: int, message: String): ApiResponse<T>
+        + getStatus(): int
+        + getMessage(): String
+        + getData(): T
+        + getTimestamp(): LocalDateTime
+    }
+}
+
+package "com.pharmacy.exception" <<Advice Handler>> {
+    class GlobalExceptionHandler <<control>> {
+        + handleCustomBadCredentialsException(ex: BadCredentialsException): ResponseEntity<ApiResponse<Void>>
+        + handleSpringBadCredentialsException(ex: SpringBadCredentials): ResponseEntity<ApiResponse<Void>>
+        + handleAccountLockedException(ex: AccountLockedException): ResponseEntity<ApiResponse<Void>>
+        + handleTokenRefreshException(ex: TokenRefreshException): ResponseEntity<ApiResponse<Void>>
+        + handleInvalidTokenException(ex: InvalidTokenException): ResponseEntity<ApiResponse<Void>>
+        + handleResourceNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ApiResponse<Void>>
+        + handleDuplicateResourceException(ex: DuplicateResourceException): ResponseEntity<ApiResponse<Void>>
+        + handleValidationException(ex: MethodArgumentNotValidException): ResponseEntity<ApiResponse<Map<String, String>>>
+        + handleIllegalArgumentException(ex: IllegalArgumentException): ResponseEntity<ApiResponse<Void>>
+        + handleIllegalStateException(ex: IllegalStateException): ResponseEntity<ApiResponse<Void>>
+        + handleInvalidOperation(ex: InvalidOperationException): ResponseEntity<ApiResponse<Void>>
+        + handleNotFound(ex: EntityNotFoundException): ResponseEntity<ApiResponse<Void>>
+        + handleGeneralException(ex: Exception): ResponseEntity<ApiResponse<Void>>
+    }
+}
+
+GlobalExceptionHandler ..> BadCredentialsException : handles (401)
+GlobalExceptionHandler ..> AccountLockedException : handles (403)
+GlobalExceptionHandler ..> TokenRefreshException : handles (401)
+GlobalExceptionHandler ..> InvalidTokenException : handles (400)
+GlobalExceptionHandler ..> ResourceNotFoundException : handles (404)
+GlobalExceptionHandler ..> DuplicateResourceException : handles (409)
+GlobalExceptionHandler ..> CustomerPhoneAlreadyExistsException : handles (409 via Duplicate)
+GlobalExceptionHandler ..> InsufficientStockException : handles (400 via InvalidOp)
+GlobalExceptionHandler ..> NoOpenShiftException : handles (400 via InvalidOp)
+GlobalExceptionHandler ..> ShiftAlreadyOpenException : handles (409 via Conflict)
+GlobalExceptionHandler ..> MethodArgumentNotValidException : handles (400)
+GlobalExceptionHandler ..> ApiResponse : produces formatted response
+
+@enduml
