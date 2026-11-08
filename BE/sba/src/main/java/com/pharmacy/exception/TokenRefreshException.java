@@ -5,3 +5,4 @@ public class TokenRefreshException extends RuntimeException {
         super(message);
     }
 }
+

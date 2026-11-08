@@ -57,3 +57,4 @@ public class RefreshToken {
     @Column(name = "replaced_by_token", length = 500)
     private String replacedByToken;
 }
+
