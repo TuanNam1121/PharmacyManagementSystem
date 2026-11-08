@@ -4,12 +4,12 @@
 - **Mã Use Case**: `UC27` (SRS 3.8.1)
 - **Tên Use Case**: Register New Customer (Đăng ký khách hàng mới)
 - **Tác nhân (Actor)**: `Pharmacist` (Dược sĩ bán thuốc), `Cashier` (Thu ngân), `Store Manager` (Quản lý cửa hàng)
-- **Mô tả nghiệp vụ**: Cho phép nhân viên đăng ký hồ sơ khách hàng mới vào hệ thống tại quầy POS hoặc từ màn hình quản lý khách hàng. Hỗ trợ lưu trữ thông tin liên lạc để tích lũy điểm thưởng thành viên và ghi nhận hồ sơ y tế ban đầu (tiền sử dị ứng thuốc, bệnh mãn tính) nhằm đảm bảo an toàn sử dụng thuốc.
+- **Mô tả nghiệp vụ**: Cho phép nhân viên đăng ký hồ sơ khách hàng mới vào hệ thống tại quầy POS hoặc từ màn hình quản lý khách hàng. Hỗ trợ lưu trữ thông tin liên lạc và ghi nhận hồ sơ y tế ban đầu (tiền sử dị ứng thuốc, bệnh mãn tính) nhằm đảm bảo an toàn sử dụng thuốc.
 - **Tiền điều kiện (Preconditions)**:
   - Nhân viên đã đăng nhập thành công vào hệ thống.
   - Số điện thoại đăng ký chưa từng tồn tại trên toàn bộ chuỗi nhà thuốc.
 - **Hậu điều kiện (Postconditions)**:
-  - Bản ghi khách hàng mới được lưu vào bảng `dbo.customers` với `status = 1` (Active), hạng hội viên khởi tạo là `STANDARD`, điểm tích lũy ban đầu là `0`.
+  - Bản ghi khách hàng mới được lưu vào bảng `dbo.customers` với `status = 1` (Active), tổng chi tiêu ban đầu là `0`.
   - Bản ghi hồ sơ sức khỏe tương ứng được tạo trong bảng `dbo.customer_health_profiles`.
   - Ghi nhận nhật ký vào `audit_logs`.
 
@@ -41,7 +41,7 @@
 6. Backend tiếp nhận yêu cầu:
    - Kiểm tra số điện thoại: truy vấn `customerRepository.existsByPhone(phone)`. Nếu đã tồn tại -> ném ngoại lệ `CustomerPhoneAlreadyExistsException`.
    - Sinh mã khách hàng tự động: `KH-YYYYMMDD-XXXX` (Ví dụ: `KH-20261104-0025`).
-   - Khởi tạo đối tượng `Customer`: `status = 1`, `membershipTier = "STANDARD"`, `loyaltyPoints = 0`, `totalSpent = 0`.
+   - Khởi tạo đối tượng `Customer`: `status = 1`, `totalSpent = 0`.
    - Khởi tạo đối tượng `CustomerHealthProfile` liên kết với `customerId`.
    - Lưu vào cơ sở dữ liệu trong cùng một giao dịch `@Transactional`.
    - Ghi nhật ký vào `audit_logs` (`action_code = 'REGISTER_CUSTOMER'`).
@@ -119,8 +119,6 @@
     "dateOfBirth": "1990-08-20",
     "email": "lan.tran@gmail.com",
     "address": "Số 15 Phố Duy Tân, Cầu Giấy, Hà Nội",
-    "membershipTier": "STANDARD",
-    "loyaltyPoints": 0,
     "totalSpent": 0.00,
     "status": 1,
     "createdAt": "2026-11-04T10:00:00",
@@ -209,8 +207,6 @@ public CustomerDetailResponse registerCustomer(CustomerCreateRequest request, Lo
     customer.setDateOfBirth(request.getDateOfBirth());
     customer.setEmail(request.getEmail());
     customer.setAddress(request.getAddress());
-    customer.setMembershipTier("STANDARD");
-    customer.setLoyaltyPoints(0);
     customer.setTotalSpent(BigDecimal.ZERO);
     customer.setStatus((short) 1);
     customer.setCreatedAt(LocalDateTime.now());

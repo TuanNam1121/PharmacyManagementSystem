@@ -40,7 +40,7 @@
 - **A2 - Khách hàng không tồn tại**: Nếu ID khách hàng bị sai hoặc đã bị xóa trước đó, Backend trả về HTTP `404 Not Found`.
 
 ### 2.3. Quy Tắc Nghiệp Vụ (Business Rules)
-- **BR-01 (Bảo toàn điểm tích lũy và doanh số)**: Khi cập nhật hồ sơ cá nhân, các trường tài chính gồm `loyalty_points`, `membership_tier`, và `total_spent` KHÔNG được phép thay đổi thủ công qua form này; các giá trị này chỉ được thay đổi tự động thông qua quy trình bán hàng hoặc chính sách thưởng điểm của hệ thống.
+- **BR-01 (Bảo toàn doanh số tích lũy)**: Khi cập nhật hồ sơ cá nhân, trường tổng chi tiêu `total_spent` KHÔNG được phép thay đổi thủ công qua form này; giá trị này được tính toán tự động dựa trên lịch sử đơn hàng hoàn tất.
 - **BR-02 (Kiểm tra trùng SĐT khi thay đổi)**: Chỉ cho phép đổi số điện thoại nếu số mới chưa được sử dụng bởi bất kỳ tài khoản khách hàng nào khác.
 
 ---
@@ -51,18 +51,16 @@
 | STT | Tên trường | Control Type | Bắt buộc | Cho phép sửa | Ràng buộc dữ liệu |
 | :---: | :--- | :--- | :---: | :---: | :--- |
 | 1 | `customerCode` | Text Box | Có | Không (Disabled) | Mã định danh khách hàng (VD: `KH-20261104-0025`) |
-| 2 | `membershipTier`| Badge Tag | Có | Không (Disabled) | Hạng thẻ: Standard, Silver, Gold, Diamond |
-| 3 | `loyaltyPoints` | Number Display | Có | Không (Disabled) | Điểm tích lũy hiện tại |
-| 4 | `fullName` | Text Box | Có | Có | Tối đa 100 ký tự |
-| 5 | `phone` | Text Box | Có | Có | Đúng chuẩn 10 chữ số Việt Nam |
-| 6 | `gender` | Dropdown | Có | Có | MALE, FEMALE, OTHER |
-| 7 | `dateOfBirth` | Date Picker | Không | Có | Phải là ngày trong quá khứ |
-| 8 | `email` | Email Input | Không | Có | Tối đa 100 ký tự |
-| 9 | `address` | Text Area | Không | Có | Tối đa 255 ký tự |
-| 10 | `allergies` | Tags Input | Không | Có | Danh sách thuốc dị ứng |
-| 11 | `chronicDiseases`| Multi-select | Không | Có | Bệnh lý nền |
-| 12 | `isPregnant` | Checkbox | Không | Có | Đang mang thai |
-| 13 | `isBreastfeeding`| Checkbox | Không | Có | Đang cho con bú |
+| 2 | `fullName` | Text Box | Có | Có | Tối đa 100 ký tự |
+| 3 | `phone` | Text Box | Có | Có | Đúng chuẩn 10 chữ số Việt Nam |
+| 4 | `gender` | Dropdown | Có | Có | MALE, FEMALE, OTHER |
+| 5 | `dateOfBirth` | Date Picker | Không | Có | Phải là ngày trong quá khứ |
+| 6 | `email` | Email Input | Không | Có | Tối đa 100 ký tự |
+| 7 | `address` | Text Area | Không | Có | Tối đa 255 ký tự |
+| 8 | `allergies` | Tags Input | Không | Có | Danh sách thuốc dị ứng |
+| 9 | `chronicDiseases`| Multi-select | Không | Có | Bệnh lý nền |
+| 10 | `isPregnant` | Checkbox | Không | Có | Đang mang thai |
+| 11 | `isBreastfeeding`| Checkbox | Không | Có | Đang cho con bú |
 
 ---
 
@@ -107,8 +105,6 @@
     "dateOfBirth": "1990-08-20",
     "email": "lan.tran.updated@gmail.com",
     "address": "Số 99 Đường Cầu Giấy, Hà Nội",
-    "membershipTier": "STANDARD",
-    "loyaltyPoints": 15,
     "totalSpent": 1500000.00,
     "updatedAt": "2026-11-04T10:45:00",
     "healthProfile": {
@@ -218,4 +214,3 @@ public CustomerDetailResponse updateCustomer(Long customerId, CustomerUpdateRequ
 | **TC-EDT-02** | Đổi số điện thoại trùng người khác | Đổi sang SĐT của khách hàng B | Báo lỗi HTTP 409 "Số điện thoại đã thuộc về khách hàng khác" |
 | **TC-EDT-03** | Bỏ trống họ và tên | `fullName`: "" | Validation lỗi "Họ và tên không được để trống" |
 | **TC-EDT-04** | Cập nhật cho khách hàng không tồn tại | `customerId` không có trong DB | Trả về HTTP 404 Not Found |
-

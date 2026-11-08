@@ -1,11 +1,10 @@
 # Cụm Tính Năng: Customer Management (Quản Lý Khách Hàng & Hồ Sơ Y Tế)
 
 ## 1. Tổng Quan Nghiệp Vụ & Mục Tiêu
-Cụm tính năng **Customer Management (CRM Nhà thuốc)** cung cấp giải pháp quản lý thông tin khách hàng toàn diện cho toàn bộ chuỗi nhà thuốc. Hệ thống không chỉ lưu trữ các thông tin định danh cơ bản phục vụ chăm sóc khách hàng và tích điểm thành viên, mà còn quản lý chuyên sâu **Hồ sơ sức khỏe y tế (`CustomerHealthProfile`)** nhằm hỗ trợ Dược sĩ tư vấn dùng thuốc an toàn, tránh tương tác thuốc và dị ứng nguy hiểm.
+Cụm tính năng **Customer Management (CRM Nhà thuốc)** cung cấp giải pháp quản lý thông tin khách hàng toàn diện cho toàn bộ chuỗi nhà thuốc. Hệ thống lưu trữ các thông tin định danh cơ bản phục vụ chăm sóc khách hàng, đồng thời quản lý chuyên sâu **Hồ sơ sức khỏe y tế (`CustomerHealthProfile`)** nhằm hỗ trợ Dược sĩ tư vấn dùng thuốc an toàn, tránh tương tác thuốc và dị ứng nguy hiểm.
 
 ### Mục tiêu cốt lõi:
 - **Đăng ký khách hàng mới nhanh chóng**: Hỗ trợ Dược sĩ tạo nhanh hồ sơ khách hàng ngay tại quầy POS chỉ với Số điện thoại và Họ tên trong vòng chưa đầy 15 giây.
-- **Quản lý phân hạng hội viên (Membership Tier & Loyalty Points)**: Tự động tính toán điểm tích lũy dựa trên doanh số mua hàng, phân hạng khách hàng (`STANDARD`, `SILVER`, `GOLD`, `DIAMOND`) và áp dụng chính sách ưu đãi riêng biệt.
 - **Hồ sơ sức khỏe & Cảnh báo an toàn y tế**: Ghi nhận các thông tin quan trọng như: Tiền sử dị ứng thuốc (Penicillin, Aspirin...), Bệnh lý nền mãn tính (Tiểu đường, Tăng huyết áp, Suy gan, Suy thận, Tim mạch), Phụ nữ mang thai / cho con bú.
 - **Tra cứu và quản lý tập trung**: Tìm kiếm khách hàng theo SĐT, Họ tên, CCCD/CMND trên toàn chuỗi; hỗ trợ xem chi tiết hồ sơ bệnh án, lịch sử mua thuốc và cập nhật thông tin.
 - **Quản lý vòng đời khách hàng & Xóa an toàn**: Thực hiện xóa mềm (`soft delete` hoặc vô hiệu hóa `status = 0`) nhằm bảo toàn lịch sử hóa đơn kế toán và nhật ký y khoa theo quy định của Bộ Y Tế.
@@ -31,8 +30,6 @@ erDiagram
         date date_of_birth
         varchar gender
         nvarchar address
-        int loyalty_points
-        varchar membership_tier "STANDARD, SILVER, GOLD, DIAMOND"
         decimal total_spent
         tinyint status "1: Active, 0: Inactive/Deleted"
         datetime created_at
@@ -53,7 +50,7 @@ erDiagram
 ```
 
 ### Chi tiết các JPA Entity:
-1. `com.pharmacy.entity.Customer`: Lưu trữ thông tin khách hàng, số điện thoại định danh duy nhất, điểm tích lũy và xếp hạng thành viên.
+1. `com.pharmacy.entity.Customer`: Lưu trữ thông tin khách hàng và số điện thoại định danh duy nhất.
 2. `com.pharmacy.entity.CustomerHealthProfile`: Lưu trữ tiền sử dị ứng, bệnh nền, thuốc đang dùng định kỳ.
 3. `com.pharmacy.entity.SalesInvoice`: Liên kết tới các hóa đơn khách hàng đã mua để tính tổng chi tiêu (`total_spent`).
 
@@ -66,12 +63,12 @@ erDiagram
 | :--- | :--- | :--- | :--- |
 | **Controller** | `CustomerController.java` | `com.pharmacy.controller` | Tiếp nhận tất cả các REST API `/api/v1/customers/*` |
 | **Service Interface**| `CustomerService.java` | `com.pharmacy.service` | Khai báo các nghiệp vụ: tạo, sửa, xóa, tìm kiếm, cập nhật hồ sơ y tế |
-| **Service Impl** | `CustomerServiceImpl.java` | `com.pharmacy.service.impl` | Triển khai logic nghiệp vụ khách hàng, tích điểm, kiểm tra trùng SĐT |
+| **Service Impl** | `CustomerServiceImpl.java` | `com.pharmacy.service.impl` | Triển khai logic nghiệp vụ khách hàng, kiểm tra trùng SĐT |
 | **Repository** | `CustomerRepository.java` | `com.pharmacy.repository` | Truy vấn khách hàng theo SĐT, tên, phân trang, lọc theo trạng thái |
 | **Repository** | `CustomerHealthProfileRepository.java`| `com.pharmacy.repository`| Quản lý lưu trữ hồ sơ dị ứng và bệnh lý của khách hàng |
 | **DTO (Request)** | `CustomerCreateRequest.java` | `com.pharmacy.dto.customer` | Chứa thông tin tạo mới: họ tên, SĐT, giới tính, ngày sinh, địa chỉ, hồ sơ y tế ban đầu |
 | **DTO (Request)** | `CustomerUpdateRequest.java` | `com.pharmacy.dto.customer` | Chứa thông tin chỉnh sửa khách hàng và hồ sơ sức khỏe |
-| **DTO (Request)** | `CustomerFilterRequest.java` | `com.pharmacy.dto.customer` | Tham số tìm kiếm, phân trang và lọc theo hạng thẻ |
+| **DTO (Request)** | `CustomerFilterRequest.java` | `com.pharmacy.dto.customer` | Tham số tìm kiếm và phân trang |
 | **DTO (Response)**| `CustomerResponse.java` | `com.pharmacy.dto.customer` | Dữ liệu tóm tắt khách hàng dùng trong danh sách bảng |
 | **DTO (Response)**| `CustomerDetailResponse.java` | `com.pharmacy.dto.customer` | Dữ liệu chi tiết đầy đủ gồm thông tin cá nhân và hồ sơ y tế |
 | **DTO (Nested)** | `CustomerHealthProfileDto.java`| `com.pharmacy.dto.customer` | Thông tin dị ứng, bệnh mãn tính, mang thai, cho con bú |
@@ -80,8 +77,8 @@ erDiagram
 ### 3.2. Phía Frontend (React 18 - Vite)
 | Phân loại | Tên File | Thư mục | Mục đích & Mô tả |
 | :--- | :--- | :--- | :--- |
-| **Page** | `CustomerDirectoryPage.jsx` | `src/page/customers/` | Màn hình danh sách khách hàng (tìm kiếm, bộ lọc hạng thẻ, phân trang) |
-| **Component** | `CustomerTable.jsx` | `src/component/customers/` | Bảng danh sách hiển thị tên, SĐT, hạng thẻ, điểm, tổng chi tiêu, trạng thái |
+| **Page** | `CustomerDirectoryPage.jsx` | `src/page/customers/` | Màn hình danh sách khách hàng (tìm kiếm, bộ lọc trạng thái, phân trang) |
+| **Component** | `CustomerTable.jsx` | `src/component/customers/` | Bảng danh sách hiển thị tên, SĐT, tổng chi tiêu, trạng thái |
 | **Component** | `CustomerCreateModal.jsx` | `src/component/customers/` | Modal đăng ký khách hàng mới (hỗ trợ tạo nhanh tại quầy POS) |
 | **Component** | `CustomerEditModal.jsx` | `src/component/customers/` | Modal chỉnh sửa thông tin khách hàng và cập nhật hồ sơ bệnh án |
 | **Component** | `CustomerDetailDrawer.jsx` | `src/component/customers/` | Drawer trượt hiển thị chi tiết hồ sơ y tế, dị ứng thuốc và lịch sử mua |
@@ -109,7 +106,7 @@ sequenceDiagram
     Svc->>Repo: existsByPhone(phone)
     Repo-->>Svc: False (Chưa tồn tại)
     Svc->>Svc: generateCustomerCode() -> KH-YYYYMMDD-XXXX
-    Svc->>DB: Save Customer Entity (status = 1, tier = 'STANDARD')
+    Svc->>DB: Save Customer Entity (status = 1)
     Svc->>DB: Save CustomerHealthProfile Entity
     Svc-->>Ctrl: CustomerDetailResponse
     Ctrl-->>FE: HTTP 201 Created + Dữ liệu khách hàng
@@ -136,4 +133,3 @@ sequenceDiagram
 3. [3.8.3 View Customer Detail (Xem chi tiết khách hàng & Hồ sơ y tế)](file:///c:/Users/AD/OneDrive/Desktop/FPT/Fall_2026/SBA301/FE_Project/PharmacyChainManagementSystem/doc/customer_management/view_customer_detail.md)
 4. [3.8.4 View Customer List (Danh sách khách hàng, tìm kiếm & phân trang)](file:///c:/Users/AD/OneDrive/Desktop/FPT/Fall_2026/SBA301/FE_Project/PharmacyChainManagementSystem/doc/customer_management/view_customer_list.md)
 5. [3.8.5 Delete Customer (Vô hiệu hóa / Xóa khách hàng)](file:///c:/Users/AD/OneDrive/Desktop/FPT/Fall_2026/SBA301/FE_Project/PharmacyChainManagementSystem/doc/customer_management/delete_customer.md)
-
