@@ -8,10 +8,9 @@ public interface EmailService {
     boolean sendRfqEmail(Rfq rfq, Supplier supplier, String rawToken, String frontendUrl);
 
     /**
-     * Validate a recipient email before sending (presence, format and, when enabled, domain MX).
+     * Validate a recipient email before sending (presence and basic format).
      *
-     * @return null when the address is valid and (optionally) the domain can receive mail;
-     *         otherwise a human-readable Vietnamese reason.
+     * @return null when the address is valid; otherwise a human-readable Vietnamese reason.
      */
     String validateRecipient(String email);
 
