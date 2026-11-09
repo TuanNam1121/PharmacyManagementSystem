@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -100,6 +101,10 @@ public class InventoryAuditServiceImpl implements InventoryAuditService {
     public InventoryAuditDto requestAuditSession(CreateAuditRequest request, String username, String clientIp) {
         Store store = storeRepository.findById(request.getStoreId())
                 .orElseThrow(() -> new IllegalArgumentException("Store not found with ID: " + request.getStoreId()));
+
+        if (request.getAuditDate().isBefore(LocalDate.now())) {
+            throw new InvalidOperationException("Invalid request date");
+        }
 
         Account requester = resolveAccount(username);
         if (requester == null) {
