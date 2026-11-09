@@ -104,7 +104,7 @@ export default function QuotationCompareModal({ show, onHide, data, loading, emp
                       ))}
                       <td style={{ borderLeft: '1px solid var(--border)' }}></td>
                     </tr>
-                    {Number(data.purchaseProposalStatus) === 0 && (
+                    {data.supplierSelectable && (
                       <tr>
                         <td colSpan="2"></td>
                         {data.columns.map(col => {

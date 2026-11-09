@@ -5,12 +5,12 @@ import lombok.Getter;
 @Getter
 public enum PurchaseProposalStatus {
     DRAFT((short) 0, "Đã lập đề xuất"),
-    PENDING_APPROVAL((short) 1, "Chờ phê duyệt"),
-    APPROVED((short) 2, "Đã phê duyệt"),
-    REJECTED((short) 3, "Đã từ chối"),
-    PARTIALLY_RECEIVED((short) 4, "Nhập một phần"),
-    COMPLETED((short) 5, "Hoàn tất"),
-    CANCELLED((short) 6, "Đã hủy");
+    RFQ_SENT((short) 1, "Đang chào giá RFQ"),
+    // From the proposal screen this reads "Đã chọn báo giá"; the PO module keeps
+    // its own wording ("Chờ phê duyệt") for this same code.
+    QUOTATION_SELECTED((short) 2, "Đã chọn báo giá"),
+    APPROVED((short) 3, "Đã duyệt đơn PO"),
+    REJECTED((short) 4, "Đã từ chối");
 
     public static final PurchaseProposalStatus PENDING = DRAFT;
 
@@ -40,17 +40,23 @@ public enum PurchaseProposalStatus {
         }
         return switch (status.intValue()) {
             case 0 -> DRAFT.label;
-            case 1 -> PENDING_APPROVAL.label;
-            case 2 -> APPROVED.label;
-            case 3 -> REJECTED.label;
-            case 4 -> PARTIALLY_RECEIVED.label;
-            case 5 -> COMPLETED.label;
-            case 6 -> CANCELLED.label;
+            case 1 -> RFQ_SENT.label;
+            case 2 -> QUOTATION_SELECTED.label;
+            case 3 -> APPROVED.label;
+            case 4 -> REJECTED.label;
             default -> "Trạng thái " + status;
         };
     }
 
     public static String resolveLabel(Short status) {
         return resolveText(status);
+    }
+
+    /**
+     * True while the proposal is still in its sourcing phase (no supplier
+     * decision taken yet) — i.e. a winning supplier quotation may still be chosen.
+     */
+    public static boolean isAwaitingSupplierSelection(Short code) {
+        return DRAFT.getCode().equals(code) || RFQ_SENT.getCode().equals(code);
     }
 }

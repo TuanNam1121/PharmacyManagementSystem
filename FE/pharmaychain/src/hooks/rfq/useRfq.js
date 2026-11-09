@@ -227,6 +227,7 @@ export function useSendRfq(supplier, initialProposalId = null) {
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoading, setSuppliersLoading] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState(supplier?.id ?? '');
+  const [emailWarning, setEmailWarning] = useState(null);
 
   useEffect(() => {
     if (initialProposalId) {
@@ -281,18 +282,24 @@ export function useSendRfq(supplier, initialProposalId = null) {
 
     setSubmitting(true);
     setError(null);
+    setEmailWarning(null);
     try {
-      await sendRfq({
+      const data = await sendRfq({
         supplierId: Number(supplierId),
         purchaseProposalId: Number(selectedProposalId),
         subject: subject.trim(),
         content: content.trim(),
       });
-      resetForm();
-      return true;
+      const warning = data?.emailWarning || null;
+      setEmailWarning(warning);
+      // Keep the form intact when there is a warning so the user can review or retry.
+      if (!warning) {
+        resetForm();
+      }
+      return { success: true, emailWarning: warning };
     } catch (err) {
       setError(err.message || 'Failed to send RFQ');
-      return false;
+      return { success: false, emailWarning: null };
     } finally {
       setSubmitting(false);
     }
@@ -304,6 +311,7 @@ export function useSendRfq(supplier, initialProposalId = null) {
     setContent('');
     setSelectedSupplierId(supplier?.id ?? '');
     setError(null);
+    setEmailWarning(null);
   };
 
   return {
@@ -321,6 +329,8 @@ export function useSendRfq(supplier, initialProposalId = null) {
     suppliersLoading,
     selectedSupplierId,
     setSelectedSupplierId,
+    emailWarning,
+    setEmailWarning,
     fetchProposals,
     fetchSuppliers,
     handleSubmit,

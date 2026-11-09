@@ -82,7 +82,7 @@ public class PurchaseProposalController {
                 ApiResponse.success("Purchase proposal rejected successfully", data));
     }
 
-    @Operation(summary = "Select the winning supplier quotation for a purchase proposal (moves it to PENDING_APPROVAL)")
+    @Operation(summary = "Select the winning supplier quotation for a purchase proposal (moves it to 'Đã chọn báo giá' and rejects competing RFQs)")
     @PatchMapping("/{id}/select-supplier")
     public ResponseEntity<ApiResponse<PurchaseProposalResponse>> selectSupplier(
             @PathVariable Long id,

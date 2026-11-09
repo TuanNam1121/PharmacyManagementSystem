@@ -17,6 +17,8 @@ export default function SendRfqModal({ show, onHide, supplier, supplierSelectMod
     suppliersLoading,
     selectedSupplierId,
     setSelectedSupplierId,
+    emailWarning,
+    setEmailWarning,
     fetchProposals,
     fetchSuppliers,
     handleSubmit,
@@ -25,6 +27,8 @@ export default function SendRfqModal({ show, onHide, supplier, supplierSelectMod
 
   useEffect(() => {
     if (!show) return;
+    // Clear any warning from a previous send so it is not shown for a new supplier.
+    setEmailWarning(null);
     fetchProposals();
     if (supplierSelectMode) {
       fetchSuppliers();
@@ -42,12 +46,17 @@ Quý công ty vui lòng xem chi tiết và phản hồi đơn giá trực tuyế
 
 Trân trọng cảm ơn,
 Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
-  }, [show, supplier, supplierSelectMode, fetchProposals, fetchSuppliers, setSubject, setContent]);
+  }, [show, supplier, supplierSelectMode, fetchProposals, fetchSuppliers, setSubject, setContent, setEmailWarning]);
 
   const handleClose = () => {
     resetForm();
     onHide();
   };
+
+  const selectedSupplier = supplierSelectMode
+    ? suppliers.find((s) => String(s.id) === String(selectedSupplierId))
+    : supplier;
+  const recipientEmail = selectedSupplier?.email;
 
   if (!show) return null;
 
@@ -88,12 +97,16 @@ Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
 
         <form
           onSubmit={async (e) => {
-            const success = await handleSubmit(e);
-            if (success) {
+            const result = await handleSubmit(e);
+            if (result?.success) {
               if (onSuccess) {
-                onSuccess();
+                onSuccess(result.emailWarning);
               }
-              onHide();
+              // Keep the modal open when the email could not be delivered so the
+              // warning stays visible; the RFQ itself has already been created.
+              if (!result.emailWarning) {
+                onHide();
+              }
             }
           }}
         >
@@ -113,6 +126,19 @@ Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
                 {error}
+              </div>
+            )}
+
+            {emailWarning && (
+              <div className="pms-alert pms-alert-warning" style={{ marginBottom: 16 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <span>
+                  <strong>Đã tạo RFQ nhưng email chưa gửi được.</strong> {emailWarning}
+                </span>
               </div>
             )}
 
@@ -165,6 +191,11 @@ Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
                       Email: {supplier.email}
                     </span>
                   )}
+                </div>
+              )}
+              {supplierSelectMode && recipientEmail && (
+                <div className="pms-form-hint">
+                  Người nhận: <strong>{recipientEmail}</strong>
                 </div>
               )}
               {supplierSelectMode && suppliers.length === 0 && !suppliersLoading && (

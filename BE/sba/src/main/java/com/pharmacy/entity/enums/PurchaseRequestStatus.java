@@ -4,11 +4,12 @@ import lombok.Getter;
 
 @Getter
 public enum PurchaseRequestStatus {
-    SUBMITTED((short) 1, "Đã gửi duyệt"),
-    RFQ_SENT((short) 2, "Đang chào giá RFQ"),
-    PROPOSAL_CREATED((short) 3, "Đã lập đề xuất"),
-    COMPLETED((short) 4, "Hoàn tất"),
-    CANCELLED((short) 5, "Đã hủy");
+    SUBMITTED((short) 1, "Chờ duyệt"),
+    PROPOSAL_CREATED((short) 2, "Đã lập đề xuất"),
+    RFQ_SENT((short) 3, "Đang chào giá RFQ"),
+    QUOTATION_SELECTED((short) 4, "Đã chọn báo giá"),
+    COMPLETED((short) 5, "Đã duyệt đơn PO"),
+    CANCELLED((short) 6, "Đã hủy");
 
     private final Short code;
     private final String label;
@@ -36,10 +37,11 @@ public enum PurchaseRequestStatus {
         }
         return switch (status.intValue()) {
             case 1 -> SUBMITTED.label;
-            case 2 -> RFQ_SENT.label;
-            case 3 -> PROPOSAL_CREATED.label;
-            case 4 -> COMPLETED.label;
-            case 5 -> CANCELLED.label;
+            case 2 -> PROPOSAL_CREATED.label;
+            case 3 -> RFQ_SENT.label;
+            case 4 -> QUOTATION_SELECTED.label;
+            case 5 -> COMPLETED.label;
+            case 6 -> CANCELLED.label;
             default -> null;
         };
     }

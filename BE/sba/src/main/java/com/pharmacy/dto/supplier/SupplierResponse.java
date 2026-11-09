@@ -52,7 +52,10 @@ public record SupplierResponse(
                 .name(supplier.getName())
                 .contactPerson(supplier.getContactPerson())
                 .phone(supplier.getPhone())
+                .email(supplier.getEmail())
+                .address(supplier.getAddress())
                 .taxCode(supplier.getTaxCode())
+                .note(supplier.getNote())
                 .status(supplier.getStatus())
                 .createdAt(convertLocalDateTime(supplier.getCreatedAt()))
                 .build();

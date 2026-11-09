@@ -1719,7 +1719,7 @@ ALTER TABLE [dbo].[categories]  WITH CHECK ADD CHECK  (([status]=(1) OR [status]
     GO
 ALTER TABLE [dbo].[products]  WITH CHECK ADD CHECK  (([status]=(2) OR [status]=(1) OR [status]=(0)))
     GO
-ALTER TABLE [dbo].[rfqs]  WITH CHECK ADD CHECK  (([status]>=(0) AND [status]<=(3)))
+ALTER TABLE [dbo].[rfqs]  WITH CHECK ADD CHECK  (([status]>=(0) AND [status]<=(4)))
     GO
 ALTER TABLE [dbo].[suppliers]  WITH CHECK ADD CHECK  (([status]=(3) OR [status]=(2) OR [status]=(1)))
     GO

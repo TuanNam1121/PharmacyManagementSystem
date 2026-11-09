@@ -6,6 +6,7 @@ import com.pharmacy.entity.PurchaseProposalDetail;
 import com.pharmacy.entity.Rfq;
 import com.pharmacy.entity.SupplierQuotation;
 import com.pharmacy.entity.SupplierQuotationDetail;
+import com.pharmacy.entity.enums.PurchaseProposalStatus;
 import com.pharmacy.entity.enums.RfqStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,6 +28,7 @@ public class CompareResponse {
     private Long purchaseProposalId;
     private String purchaseProposalCode;
     private Short purchaseProposalStatus;
+    private boolean supplierSelectable;
     private List<RfqCompareColumn> columns;
     private List<ProductCompareRow> rows;
     private Map<Long, BigDecimal> totals;
@@ -50,6 +52,7 @@ public class CompareResponse {
                 .purchaseProposalId(proposal.getId())
                 .purchaseProposalCode(proposal.getCode())
                 .purchaseProposalStatus(proposal.getStatus())
+                .supplierSelectable(PurchaseProposalStatus.isAwaitingSupplierSelection(proposal.getStatus()))
                 .columns(buildColumns(rfqs))
                 .rows(buildRows(proposal, rfqs, priceLookup, quantityByProductId))
                 .totals(buildTotals(rfqs, quotationByRfqId))

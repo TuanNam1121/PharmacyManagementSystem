@@ -22,6 +22,9 @@ public interface RfqRepository extends JpaRepository<Rfq, Long> {
     boolean existsBySupplierIdAndPurchaseProposalId(Long supplierId, Long purchaseProposalId);
 
     List<Rfq> findBySupplierIdAndPurchaseProposalId(Long supplierId, Long purchaseProposalId);
+
+    /** All RFQs raised for a single purchase proposal (candidate set for the selection cascade). */
+    List<Rfq> findByPurchaseProposalId(Long purchaseProposalId);
     
     @Query("SELECT r FROM Rfq r WHERE r.tokenHash = :tokenHash AND r.expiredAt > :now AND r.status = com.pharmacy.entity.enums.RfqStatus.SENT")
     Optional<Rfq> findValidRfqByTokenHash(@Param("tokenHash") String tokenHash, @Param("now") LocalDateTime now);

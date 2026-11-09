@@ -47,9 +47,12 @@ public class RfqController {
     @PostMapping("/send")
     public ResponseEntity<ApiResponse<RfqResponse>> sendRfq(@Valid @RequestBody SendRfqRequest request) {
         RfqResponse data = rfqService.sendRfq(request);
+        String message = Boolean.FALSE.equals(data.emailSent())
+                ? "RFQ đã tạo nhưng email chưa gửi được tới nhà cung cấp"
+                : "RFQ sent successfully";
         ApiResponse<RfqResponse> body = ApiResponse.<RfqResponse>builder()
                 .status(HttpStatus.CREATED.value())
-                .message("RFQ sent successfully")
+                .message(message)
                 .data(data)
                 .timestamp(LocalDateTime.now())
                 .build();

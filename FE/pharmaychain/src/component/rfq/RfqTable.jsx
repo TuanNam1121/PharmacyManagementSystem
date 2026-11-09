@@ -1,4 +1,4 @@
-import { formatDate, isInactiveStatus } from "../../utils/format";
+import { formatDate } from "../../utils/format";
 
 export default function RfqTable({
   data,
@@ -18,11 +18,14 @@ export default function RfqTable({
     if (s === 'RESPONDED' || s === '1' || s === 'ĐÃ NHẬN BÁO GIÁ' || s === 'ĐÃ PHẢN HỒI') {
       return <span className="pms-badge pms-badge-success">Đã phản hồi</span>;
     }
-    if (s === 'EXPIRED' || s === '2' || s === 'HẾT HẠN' || s === 'ĐÃ HẾT HẠN') {
-      return <span className="pms-badge pms-badge-warning">Đã hết hạn</span>;
+    if (s === 'SELECTED' || s === '2' || s === 'ĐÃ CHỌN') {
+      return <span className="pms-badge pms-badge-success">Đã chọn</span>;
     }
-    if (s === 'CANCELLED' || s === '3' || s === 'ĐÃ HỦY') {
-      return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
+    if (s === 'REJECTED' || s === '3' || s === 'TỪ CHỐI') {
+      return <span className="pms-badge pms-badge-danger">Từ chối</span>;
+    }
+    if (s === 'EXPIRED' || s === '4' || s === 'HẾT HẠN' || s === 'ĐÃ HẾT HẠN') {
+      return <span className="pms-badge pms-badge-warning">Đã hết hạn</span>;
     }
     return <span className="pms-badge pms-badge-neutral">{status || '—'}</span>;
   };
@@ -70,10 +73,10 @@ export default function RfqTable({
                     rfq.status === '1' ||
                     String(rfq.status).toUpperCase() === 'ĐÃ PHẢN HỒI';
 
-                  const canSelectSupplier =
-                    Number(rfq.purchaseProposalStatus) === 0 &&
-                    !isInactiveStatus(rfq.supplierStatus) &&
-                    isResponded;
+                  // The server decides whether a winning quotation can still be
+                  // chosen (RFQ responded + supplier active + proposal still in its
+                  // sourcing phase). Keeps this in sync with the business rules.
+                  const canSelectSupplier = rfq.supplierSelectable === true;
 
                   return (
                     <tr key={rfq.id}>
@@ -159,6 +162,26 @@ export default function RfqTable({
                               disabled={selectingRfqId === rfq.id}
                               title="Chọn nhà cung cấp này"
                               aria-label="Chọn nhà cung cấp"
+                            >
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                              >
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            </button>
+                          )}
+                          {isResponded && !canSelectSupplier && (
+                            <button
+                              className="pms-icon-btn"
+                              style={{ color: "var(--text-muted)", cursor: "not-allowed" }}
+                              disabled
+                              title="Đề xuất mua hàng đã chốt nhà cung cấp — không thể chọn lại"
+                              aria-label="Đề xuất đã chốt nhà cung cấp"
                             >
                               <svg
                                 width="14"

@@ -6,6 +6,13 @@ import com.pharmacy.entity.Supplier;
 import com.pharmacy.repository.EmailLogRepository;
 import com.pharmacy.service.EmailService;
 import jakarta.mail.internet.MimeMessage;
+import javax.naming.Context;
+import javax.naming.NameNotFoundException;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Hashtable;
 
 @Slf4j
 @Service
@@ -32,21 +40,23 @@ public class EmailServiceImpl implements EmailService {
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
+    @Value("${app.mail.verify-domain:false}")
+    private boolean verifyDomain;
+
+    @Value("${app.mail.dns-timeout-ms:3000}")
+    private int dnsTimeoutMs;
+
     private static final DateTimeFormatter DEADLINE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     @Override
     public boolean sendRfqEmail(Rfq rfq, Supplier supplier, String rawToken, String frontendUrl) {
-        if (supplier.getEmail() == null || supplier.getEmail().isBlank()) {
-            log.warn("Supplier {} has no email address, cannot send RFQ", supplier.getId());
+        // Validate the recipient up-front (presence, format and, when enabled, domain MX).
+        String invalidReason = validateRecipient(supplier.getEmail());
+        if (invalidReason != null) {
+            log.warn("Supplier {} cannot receive RFQ email: {}", supplier.getId(), invalidReason);
             return false;
         }
-        
-        // Validate email format
-        if (!isValidEmail(supplier.getEmail())) {
-            log.warn("Supplier {} has invalid email address: {}", supplier.getId(), supplier.getEmail());
-            return false;
-        }
-        
+
         String subject = rfq.getSubject();
         String content = rfq.getContent();
         
@@ -71,20 +81,24 @@ public class EmailServiceImpl implements EmailService {
         emailLog.setCreatedAt(LocalDateTime.now());
         
         try {
-            // Send email if mailSender is available
-            if (mailSender != null) {
-                MimeMessage message = mailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-                helper.setFrom(fromEmail);
-                helper.setTo(supplier.getEmail());
-                helper.setSubject(subject);
-                // Set both an HTML body and a plain-text fallback
-                helper.setText(plainContent, buildRfqHtmlEmail(rfq, content, rfqLink));
-                mailSender.send(message);
-                log.info("Email sent successfully to {}", supplier.getEmail());
-            } else {
-                log.warn("JavaMailSender not available, email not actually sent");
+            // Attempt delivery; fail gracefully when SMTP is not configured
+            if (mailSender == null) {
+                log.warn("JavaMailSender is not configured, RFQ email was not sent");
+                emailLog.setStatus((short) 2); // failed
+                emailLog.setErrorMessage("JavaMailSender is not configured");
+                emailLogRepository.save(emailLog);
+                return false;
             }
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(fromEmail);
+            helper.setTo(supplier.getEmail());
+            helper.setSubject(subject);
+            // Set both an HTML body and a plain-text fallback
+            helper.setText(plainContent, buildRfqHtmlEmail(rfq, content, rfqLink));
+            mailSender.send(message);
+            log.info("Email sent successfully to {}", supplier.getEmail());
             
             emailLog.setStatus((short) 1); // sent
             emailLog.setSentAt(LocalDateTime.now());
@@ -349,6 +363,94 @@ public class EmailServiceImpl implements EmailService {
               .append("</p>");
         }
         return sb.toString();
+    }
+
+    @Override
+    public String validateRecipient(String email) {
+        if (email == null || email.isBlank()) {
+            return "Nhà cung cấp chưa có địa chỉ email.";
+        }
+        String normalized = email.trim();
+        if (!isValidEmail(normalized)) {
+            return "Địa chỉ email không đúng định dạng: " + normalized;
+        }
+        if (verifyDomain) {
+            String domain = normalized.substring(normalized.indexOf('@') + 1);
+            if (!domainAcceptsMail(domain)) {
+                return "Tên miền '" + domain + "' không tồn tại hoặc không nhận thư (không có bản ghi MX).";
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Check whether the domain can actually receive mail, using DNS. A domain whose MX
+     * records are missing or are placeholders (RFC 7505 null MX ".", "localhost", or a
+     * single-label host such as parked domains) is treated as unable to receive mail.
+     */
+    private boolean domainAcceptsMail(String domain) {
+        Hashtable<String, String> env = new Hashtable<>();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.dns.DnsContextFactory");
+        env.put("com.sun.jndi.dns.timeout.initial", String.valueOf(dnsTimeoutMs));
+        env.put("com.sun.jndi.dns.timeout.retries", "1");
+        DirContext ctx = null;
+        try {
+            ctx = new InitialDirContext(env);
+            Attributes mx = ctx.getAttributes(domain, new String[] { "MX" });
+            Attribute mxAttr = mx.get("MX");
+            if (mxAttr != null) {
+                // Accept only when at least one MX target is a real mail host.
+                for (int i = 0; i < mxAttr.size(); i++) {
+                    if (isUsableMxHost(extractMxExchange(String.valueOf(mxAttr.get(i))))) {
+                        return true;
+                    }
+                }
+                log.warn("Domain {} publishes only unusable MX records", domain);
+                return false;
+            }
+            // No MX record: mail may still be delivered to the domain host (A record).
+            Attributes a = ctx.getAttributes(domain, new String[] { "A" });
+            return a.get("A") != null;
+        } catch (NameNotFoundException e) {
+            log.warn("Mail domain does not exist: {}", domain);
+            return false;
+        } catch (NamingException e) {
+            log.warn("Unable to verify mail domain '{}': {}", domain, e.getMessage());
+            return false;
+        } finally {
+            if (ctx != null) {
+                try {
+                    ctx.close();
+                } catch (NamingException ignored) {
+                    // ignore
+                }
+            }
+        }
+    }
+
+    /** Extract the host part from a JNDI MX record such as "10 mail.example.com.". */
+    String extractMxExchange(String mxRecord) {
+        if (mxRecord == null) {
+            return "";
+        }
+        String[] parts = mxRecord.trim().split("\\s+");
+        String host = parts.length >= 2 ? parts[1] : parts[0];
+        if (host.length() > 1 && host.endsWith(".")) {
+            host = host.substring(0, host.length() - 1);
+        }
+        return host;
+    }
+
+    /** A usable MX host is a multi-label name that is not a null/localhost placeholder. */
+    boolean isUsableMxHost(String host) {
+        if (host == null || host.isBlank()) {
+            return false;
+        }
+        String h = host.trim().toLowerCase();
+        if (h.equals(".") || h.equals("localhost") || h.equals("localhost.localdomain")) {
+            return false;
+        }
+        return h.indexOf('.') >= 0;
     }
 
     private boolean isValidEmail(String email) {

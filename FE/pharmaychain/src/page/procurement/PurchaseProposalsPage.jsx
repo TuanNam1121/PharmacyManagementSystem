@@ -39,6 +39,7 @@ export default function PurchaseProposalsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+  const [warnMsg, setWarnMsg] = useState(null);
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
@@ -141,20 +142,19 @@ export default function PurchaseProposalsPage() {
   const statusOptions = [
     { value: '', label: 'Tất cả trạng thái' },
     { value: '0', label: 'Đã lập đề xuất' },
-    { value: '1', label: 'Chờ phê duyệt' },
-    { value: '2', label: 'Đã phê duyệt' },
-    { value: '3', label: 'Đã từ chối' },
-    { value: '5', label: 'Hoàn tất' },
+    { value: '1', label: 'Đang chào giá RFQ' },
+    { value: '2', label: 'Đã chọn báo giá' },
+    { value: '3', label: 'Đã duyệt đơn PO' },
+    { value: '4', label: 'Đã từ chối' },
   ];
 
   const getStatusBadge = (statusCode, statusText) => {
     const s = Number(statusCode);
-    if (s === 2) return <span className="pms-badge pms-badge-success">Đã phê duyệt</span>;
-    if (s === 1) return <span className="pms-badge pms-badge-warning">Chờ phê duyệt</span>;
-    if (s === 3) return <span className="pms-badge pms-badge-danger">Đã từ chối</span>;
-    if (s === 4) return <span className="pms-badge pms-badge-info">Nhập một phần</span>;
-    if (s === 5) return <span className="pms-badge pms-badge-success">Hoàn tất</span>;
-    if (s === 6) return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
+    if (s === 0) return <span className="pms-badge pms-badge-info">Đã lập đề xuất</span>;
+    if (s === 1) return <span className="pms-badge pms-badge-info">Đang chào giá RFQ</span>;
+    if (s === 2) return <span className="pms-badge pms-badge-warning">Đã chọn báo giá</span>;
+    if (s === 3) return <span className="pms-badge pms-badge-success">Đã duyệt đơn PO</span>;
+    if (s === 4) return <span className="pms-badge pms-badge-danger">Đã từ chối</span>;
     return <span className="pms-badge pms-badge-info">{statusText || 'Đã lập đề xuất'}</span>;
   };
 
@@ -180,6 +180,13 @@ export default function PurchaseProposalsPage() {
         <div className="pms-alert pms-alert-success">
           ✓ {successMsg}
           <button className="pms-alert-close" onClick={() => setSuccessMsg(null)}>✕</button>
+        </div>
+      )}
+
+      {warnMsg && (
+        <div className="pms-alert pms-alert-warning">
+          ⚠ {warnMsg}
+          <button className="pms-alert-close" onClick={() => setWarnMsg(null)}>✕</button>
         </div>
       )}
 
@@ -264,7 +271,7 @@ export default function PurchaseProposalsPage() {
                       <td className="text-sm text-muted-color">{formatDate(row.createdAt)}</td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'inline-flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
-                          {Number(row.status) === 0 && (
+                          {[0, 1].includes(Number(row.status)) && (
                             <button
                               className="pms-icon-btn edit"
                               style={{ color: 'var(--brand-primary)' }}
@@ -323,8 +330,14 @@ export default function PurchaseProposalsPage() {
         onHide={() => { setSendRfqModalOpen(false); setSelectedProposalForRfq(null); }}
         supplierSelectMode
         preselectedProposalId={selectedProposalForRfq}
-        onSuccess={() => {
-          setSuccessMsg('Gửi yêu cầu báo giá RFQ thành công!');
+        onSuccess={(warn) => {
+          if (warn) {
+            setWarnMsg(warn);
+            setSuccessMsg(null);
+          } else {
+            setSuccessMsg('Gửi yêu cầu báo giá RFQ thành công!');
+            setWarnMsg(null);
+          }
           fetchList();
         }}
       />

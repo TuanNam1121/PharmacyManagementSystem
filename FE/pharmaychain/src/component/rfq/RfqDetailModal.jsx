@@ -42,6 +42,10 @@ export default function RfqDetailModal({
         return <span className="pms-badge pms-badge-success">Đã phản hồi</span>;
       case "EXPIRED":
         return <span className="pms-badge pms-badge-warning">Đã hết hạn</span>;
+      case "SELECTED":
+        return <span className="pms-badge pms-badge-success">Đã chọn</span>;
+      case "REJECTED":
+        return <span className="pms-badge pms-badge-danger">Từ chối</span>;
       default:
         return <span className="pms-badge">Không xác định</span>;
     }

@@ -15,7 +15,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -62,6 +67,22 @@ class SupplierServiceTest {
                 .taxCode("0101234567")
                 .note("Cập nhật thông tin liên hệ")
                 .build();
+    }
+
+    @Test
+    @DisplayName("Danh sách nhà cung cấp trả về đủ email, địa chỉ và ghi chú để form chỉnh sửa tự điền")
+    void viewSupplierList_includesEmailAddressAndNote() {
+        sampleSupplier.setNote("Giao hàng trong 2 ngày, công nợ 30 ngày");
+        when(supplierRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(sampleSupplier)));
+
+        Page<SupplierResponse> page = supplierService.viewSupplierList(null, null, PageRequest.of(0, 10));
+
+        assertEquals(1, page.getTotalElements());
+        SupplierResponse response = page.getContent().get(0);
+        assertEquals("contact@abc.vn", response.email());
+        assertEquals("123 Lê Lợi, Quận 1, TP.HCM", response.address());
+        assertEquals("Giao hàng trong 2 ngày, công nợ 30 ngày", response.note());
     }
 
     @Test

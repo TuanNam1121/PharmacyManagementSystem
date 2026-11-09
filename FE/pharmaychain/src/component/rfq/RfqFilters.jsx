@@ -10,6 +10,8 @@ export default function RfqFilters({
     { value: 'SENT', label: 'Đã gửi' },
     { value: 'RESPONDED', label: 'Đã phản hồi' },
     { value: 'EXPIRED', label: 'Đã hết hạn' },
+    { value: 'SELECTED', label: 'Đã chọn' },
+    { value: 'REJECTED', label: 'Từ chối' },
   ];
 
   return (

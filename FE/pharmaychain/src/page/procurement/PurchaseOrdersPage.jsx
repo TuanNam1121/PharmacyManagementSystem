@@ -10,10 +10,10 @@ import PurchaseOrderDetailModal from '../../component/procurement/PurchaseOrderD
 
 const STATUS_TABS = [
     { label: 'Tất cả đơn hàng', value: '' },
-    { label: 'Chờ phê duyệt', value: 1 },
-    { label: 'Đã duyệt', value: 2 },
-    { label: 'Đã từ chối', value: 3 },
-    { label: 'Hoàn tất', value: 5 },
+    { label: 'Đang chào giá RFQ', value: 1 },
+    { label: 'Chờ phê duyệt', value: 2 },
+    { label: 'Đã duyệt', value: 3 },
+    { label: 'Đã từ chối', value: 4 },
 ];
 
 const getPoStatusBadge = (status, statusText) => {
@@ -21,15 +21,13 @@ const getPoStatusBadge = (status, statusText) => {
         case 0:
             return <span className="pms-badge pms-badge-neutral">Bản nháp</span>;
         case 1:
-            return <span className="pms-badge pms-badge-warning">Chờ phê duyệt</span>;
+            return <span className="pms-badge pms-badge-info">Đang chào giá RFQ</span>;
         case 2:
-            return <span className="pms-badge pms-badge-success">Đã phê duyệt</span>;
+            return <span className="pms-badge pms-badge-warning">Chờ phê duyệt</span>;
         case 3:
-            return <span className="pms-badge pms-badge-danger">Đã từ chối</span>;
+            return <span className="pms-badge pms-badge-success">Đã phê duyệt</span>;
         case 4:
-            return <span className="pms-badge pms-badge-info">Nhập một phần</span>;
-        case 5:
-            return <span className="pms-badge pms-badge-success">Hoàn tất</span>;
+            return <span className="pms-badge pms-badge-danger">Đã từ chối</span>;
         default:
             return <span className="pms-badge pms-badge-neutral">{statusText || 'Không xác định'}</span>;
     }
@@ -128,8 +126,8 @@ export default function PurchaseOrdersPage() {
     const totalPages = Math.ceil(total / size);
 
     // Quick statistics
-    const pendingCount = list.filter((x) => x.status === 1).length;
-    const approvedCount = list.filter((x) => x.status === 2).length;
+    const pendingCount = list.filter((x) => x.status === 2).length;
+    const approvedCount = list.filter((x) => x.status === 3).length;
 
     return (
         <div className="pms-page">
@@ -311,7 +309,7 @@ export default function PurchaseOrdersPage() {
                                 </tr>
                             ) : (
                                 list.map((po, index) => {
-                                    const isPending = po.status === 0 || po.status === 1;
+                                    const isPending = po.status === 0 || po.status === 2;
                                     return (
                                         <tr key={po.id}>
                                             <td>{page * size + index + 1}</td>

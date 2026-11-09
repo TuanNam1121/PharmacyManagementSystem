@@ -4,6 +4,7 @@ import com.pharmacy.entity.PurchaseProposal;
 import com.pharmacy.entity.PurchaseProposalDetail;
 import com.pharmacy.entity.PurchaseProposalRequest;
 import com.pharmacy.entity.PurchaseRequest;
+import com.pharmacy.entity.SupplierQuotationDetail;
 import com.pharmacy.entity.enums.PurchaseProposalStatus;
 import com.pharmacy.entity.enums.PurchaseRequestStatus;
 import lombok.AllArgsConstructor;
@@ -11,9 +12,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Data
 @Builder
@@ -33,8 +37,10 @@ public class PurchaseProposalResponse {
     private LocalDateTime approvedAt;
     private String rejectReason;
     private Long supplierQuotationId;
+    private String supplierQuotationCode;
     private Long supplierId;
     private String supplierName;
+    private BigDecimal totalAmount;
 
     public static PurchaseProposalResponse fromEntity(PurchaseProposal pp) {
         if (pp == null) {
@@ -66,11 +72,63 @@ public class PurchaseProposalResponse {
                 .approvedAt(pp.getApprovedAt())
                 .rejectReason(pp.getRejectReason())
                 .supplierQuotationId(pp.getSupplierQuotation() != null ? pp.getSupplierQuotation().getId() : null)
+                .supplierQuotationCode(pp.getSupplierQuotation() != null ? pp.getSupplierQuotation().getCode() : null)
                 .supplierId(pp.getSupplierQuotation() != null && pp.getSupplierQuotation().getSupplier() != null
                         ? pp.getSupplierQuotation().getSupplier().getId() : null)
                 .supplierName(pp.getSupplierQuotation() != null && pp.getSupplierQuotation().getSupplier() != null
                         ? pp.getSupplierQuotation().getSupplier().getName() : null)
+                .totalAmount(pp.getTotalAmount())
                 .build();
+    }
+
+    /**
+     * Like {@link #fromEntity(PurchaseProposal)} but overlays the pricing of the
+     * winning supplier quotation (unit price, tax rate and line subtotal) onto each
+     * consolidated item. Used by the detail endpoint once a supplier has been chosen
+     * so the proposal shows the selected supplier and the agreed prices instead of a
+     * bare requested-quantity list.
+     */
+    public static PurchaseProposalResponse fromEntity(PurchaseProposal pp,
+            List<SupplierQuotationDetail> winnerDetails) {
+        PurchaseProposalResponse response = fromEntity(pp);
+        if (response == null || winnerDetails == null || winnerDetails.isEmpty()
+                || response.getItems() == null || response.getItems().isEmpty()) {
+            return response;
+        }
+
+        Map<Long, SupplierQuotationDetail> quotedByProductId = winnerDetails.stream()
+                .filter(d -> d != null && d.getProduct() != null && d.getProduct().getId() != null)
+                .collect(Collectors.toMap(d -> d.getProduct().getId(), d -> d, (existing, replacement) -> existing));
+
+        for (ProposalItemDto item : response.getItems()) {
+            SupplierQuotationDetail detail = quotedByProductId.get(item.getProductId());
+            if (detail == null) {
+                continue;
+            }
+            item.setUnitPrice(detail.getUnitPrice());
+            item.setTaxRate(detail.getTaxRate());
+            item.setSubtotal(resolveSubtotal(detail));
+        }
+
+        return response;
+    }
+
+    /**
+     * Uses the persisted {@code subtotal} formula value when available, otherwise
+     * recomputes {@code quantity * unitPrice * (1 + taxRate/100)}.
+     */
+    private static BigDecimal resolveSubtotal(SupplierQuotationDetail detail) {
+        if (detail.getSubtotal() != null) {
+            return detail.getSubtotal();
+        }
+        if (detail.getUnitPrice() == null || detail.getQuantity() == null) {
+            return null;
+        }
+        BigDecimal taxRate = detail.getTaxRate() != null ? detail.getTaxRate() : BigDecimal.ZERO;
+        BigDecimal taxMultiplier = BigDecimal.ONE.add(taxRate.divide(BigDecimal.valueOf(100)));
+        return detail.getUnitPrice()
+                .multiply(BigDecimal.valueOf(detail.getQuantity()))
+                .multiply(taxMultiplier);
     }
 
     @Data
@@ -108,6 +166,9 @@ public class PurchaseProposalResponse {
         private String productName;
         private String unit;
         private Integer quantity;
+        private BigDecimal unitPrice;
+        private BigDecimal taxRate;
+        private BigDecimal subtotal;
 
         public static ProposalItemDto fromEntity(PurchaseProposalDetail d) {
             if (d == null) {

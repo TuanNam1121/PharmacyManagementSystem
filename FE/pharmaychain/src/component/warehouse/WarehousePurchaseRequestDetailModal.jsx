@@ -5,12 +5,14 @@ const getPrStatusBadge = (status, statusText) => {
     case 1:
       return <span className="pms-badge pms-badge-warning">Chờ duyệt</span>;
     case 2:
-      return <span className="pms-badge pms-badge-info">Đang chào giá RFQ</span>;
-    case 3:
       return <span className="pms-badge pms-badge-info">Đã lập đề xuất</span>;
+    case 3:
+      return <span className="pms-badge pms-badge-info">Đang chào giá RFQ</span>;
     case 4:
-      return <span className="pms-badge pms-badge-success">Đã duyệt đơn PO</span>;
+      return <span className="pms-badge pms-badge-info">Đã chọn báo giá</span>;
     case 5:
+      return <span className="pms-badge pms-badge-success">Đã duyệt đơn PO</span>;
+    case 6:
       return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
     default:
       return <span className="pms-badge pms-badge-neutral">{statusText || 'Không xác định'}</span>;

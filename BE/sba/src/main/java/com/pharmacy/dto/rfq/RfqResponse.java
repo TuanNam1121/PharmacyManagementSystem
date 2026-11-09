@@ -1,6 +1,7 @@
 package com.pharmacy.dto.rfq;
 
 import com.pharmacy.entity.Rfq;
+import com.pharmacy.entity.enums.PurchaseProposalStatus;
 import com.pharmacy.entity.enums.RfqStatus;
 import com.pharmacy.entity.enums.SupplierStatus;
 import lombok.Builder;
@@ -19,9 +20,12 @@ public record RfqResponse(
         String purchaseProposalCode,
         Short purchaseProposalStatus,
         SupplierStatus supplierStatus,
+        boolean supplierSelectable,
         String subject,
         String content,
         RfqStatus status,
+        Boolean emailSent,
+        String emailWarning,
         String sentAt,
         String responseAt,
         String expiredAt,
@@ -30,6 +34,10 @@ public record RfqResponse(
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     public static RfqResponse fromEntity(Rfq rfq) {
+        return fromEntity(rfq, null, null);
+    }
+
+    public static RfqResponse fromEntity(Rfq rfq, Boolean emailSent, String emailWarning) {
         if (rfq == null) return null;
 
         // An RFQ past its deadline without a response is reported as EXPIRED.
@@ -40,6 +48,17 @@ public record RfqResponse(
             effectiveStatus = RfqStatus.EXPIRED;
         }
 
+        // An RFQ can be chosen as the winning quotation only while it is a live
+        // response and the linked proposal has not yet decided on a supplier.
+        boolean supplierActive = rfq.getSupplier() != null
+                && rfq.getSupplier().getStatus() != SupplierStatus.INACTIVE;
+        Short proposalStatus = rfq.getPurchaseProposal() != null
+                ? rfq.getPurchaseProposal().getStatus()
+                : null;
+        boolean supplierSelectable = effectiveStatus == RfqStatus.RESPONDED
+                && supplierActive
+                && PurchaseProposalStatus.isAwaitingSupplierSelection(proposalStatus);
+
         return RfqResponse.builder()
                 .id(rfq.getId())
                 .code(rfq.getCode())
@@ -48,11 +67,14 @@ public record RfqResponse(
                 .supplierCode(rfq.getSupplier() != null ? rfq.getSupplier().getCode() : null)
                 .purchaseProposalId(rfq.getPurchaseProposal() != null ? rfq.getPurchaseProposal().getId() : null)
                 .purchaseProposalCode(rfq.getPurchaseProposal() != null ? rfq.getPurchaseProposal().getCode() : null)
-                .purchaseProposalStatus(rfq.getPurchaseProposal() != null ? rfq.getPurchaseProposal().getStatus() : null)
+                .purchaseProposalStatus(proposalStatus)
                 .supplierStatus(rfq.getSupplier() != null ? rfq.getSupplier().getStatus() : null)
+                .supplierSelectable(supplierSelectable)
                 .subject(rfq.getSubject())
                 .content(rfq.getContent())
                 .status(effectiveStatus)
+                .emailSent(emailSent)
+                .emailWarning(emailWarning)
                 .sentAt(convertLocalDateTime(rfq.getSentAt()))
                 .responseAt(convertLocalDateTime(rfq.getResponseAt()))
                 .expiredAt(convertLocalDateTime(rfq.getExpiredAt()))

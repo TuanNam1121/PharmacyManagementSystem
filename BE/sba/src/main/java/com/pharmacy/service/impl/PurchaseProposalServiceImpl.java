@@ -9,14 +9,18 @@ import com.pharmacy.entity.PurchaseProposalDetail;
 import com.pharmacy.entity.PurchaseProposalRequest;
 import com.pharmacy.entity.PurchaseRequest;
 import com.pharmacy.entity.PurchaseRequestDetail;
+import com.pharmacy.entity.Rfq;
 import com.pharmacy.entity.SupplierQuotation;
+import com.pharmacy.entity.SupplierQuotationDetail;
 import com.pharmacy.entity.enums.PurchaseProposalStatus;
 import com.pharmacy.entity.enums.PurchaseRequestStatus;
+import com.pharmacy.entity.enums.RfqStatus;
 import com.pharmacy.repository.AccountRepository;
 import com.pharmacy.repository.ProductRepository;
 import com.pharmacy.repository.PurchaseProposalRepository;
 import com.pharmacy.repository.PurchaseProposalRequestRepository;
 import com.pharmacy.repository.PurchaseRequestRepository;
+import com.pharmacy.repository.RfqRepository;
 import com.pharmacy.repository.SupplierQuotationDetailRepository;
 import com.pharmacy.repository.SupplierQuotationRepository;
 import com.pharmacy.service.PurchaseProposalService;
@@ -38,6 +42,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -54,12 +59,13 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
     private final SupplierQuotationDetailRepository supplierQuotationDetailRepository;
     @org.springframework.context.annotation.Lazy
     private final com.pharmacy.service.WarehouseInventoryService warehouseInventoryService;
+    private final RfqRepository rfqRepository;
 
     @Override
     @Transactional
     public PurchaseProposalResponse createPurchaseProposal(CreatePurchaseProposalRequest request) {
         List<Long> requestedIds = request.getPurchaseRequestIds() != null
-                ? request.getPurchaseRequestIds().stream().filter(java.util.Objects::nonNull).distinct().toList()
+                ? request.getPurchaseRequestIds().stream().filter(Objects::nonNull).distinct().toList()
                 : Collections.emptyList();
         List<CreatePurchaseProposalRequest.CreateProposalItemRequest> directItems = request.getItems() != null
                 ? request.getItems().stream().filter(it -> it != null && it.getProductId() != null && it.getQuantity() != null && it.getQuantity() > 0).toList()
@@ -190,7 +196,16 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
     public PurchaseProposalResponse getPurchaseProposalDetail(Long id) {
         PurchaseProposal pp = purchaseProposalRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new EntityNotFoundException("Purchase proposal not found with ID: " + id));
-        return PurchaseProposalResponse.fromEntity(pp);
+
+        // Once a supplier has been chosen, expose their quotation pricing (unit price,
+        // tax and line subtotal) alongside the consolidated items so the detail screen
+        // can show the selected supplier and the agreed totals instead of a bare list.
+        List<SupplierQuotationDetail> winnerDetails = (pp.getSupplierQuotation() != null)
+                ? supplierQuotationDetailRepository
+                        .findBySupplierQuotationIdWithProduct(pp.getSupplierQuotation().getId())
+                : Collections.emptyList();
+
+        return PurchaseProposalResponse.fromEntity(pp, winnerDetails);
     }
 
     @Override
@@ -200,8 +215,8 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
                 .orElseThrow(() -> new EntityNotFoundException("Purchase proposal not found with ID: " + id));
 
         if (!PurchaseProposalStatus.DRAFT.getCode().equals(pp.getStatus())
-                && !PurchaseProposalStatus.PENDING_APPROVAL.getCode().equals(pp.getStatus())) {
-            throw new IllegalStateException("Only draft or pending proposals can be approved. Current status: "
+                && !PurchaseProposalStatus.QUOTATION_SELECTED.getCode().equals(pp.getStatus())) {
+            throw new IllegalStateException("Only draft or quotation-selected proposals can be approved. Current status: "
                     + PurchaseProposalStatus.resolveText(pp.getStatus()));
         }
 
@@ -232,8 +247,11 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
         PurchaseProposal pp = purchaseProposalRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Purchase proposal not found with ID: " + id));
 
-        if (!PurchaseProposalStatus.PENDING.getCode().equals(pp.getStatus())) {
-            throw new IllegalStateException("Only pending proposals can be rejected. Current status: "
+        boolean rejectable = PurchaseProposalStatus.DRAFT.getCode().equals(pp.getStatus())
+                || PurchaseProposalStatus.RFQ_SENT.getCode().equals(pp.getStatus())
+                || PurchaseProposalStatus.QUOTATION_SELECTED.getCode().equals(pp.getStatus());
+        if (!rejectable) {
+            throw new IllegalStateException("Only draft, RFQ-sent or quotation-selected proposals can be rejected. Current status: "
                     + PurchaseProposalStatus.resolveText(pp.getStatus()));
         }
 
@@ -249,8 +267,11 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
         PurchaseProposal pp = purchaseProposalRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Purchase proposal not found with ID: " + id));
 
-        // A supplier can only be chosen while the proposal is still awaiting one
-        if (!PurchaseProposalStatus.DRAFT.getCode().equals(pp.getStatus())) {
+        // A supplier can only be chosen while the proposal is still in its RFQ phase
+        // ("Đã lập đề xuất" or "Đang chào giá RFQ").
+        boolean selectable = PurchaseProposalStatus.DRAFT.getCode().equals(pp.getStatus())
+                || PurchaseProposalStatus.RFQ_SENT.getCode().equals(pp.getStatus());
+        if (!selectable) {
             throw new IllegalStateException(
                     "Only proposals awaiting supplier selection can choose a supplier. Current status: "
                             + PurchaseProposalStatus.resolveText(pp.getStatus()));
@@ -278,9 +299,54 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         pp.setTotalAmount(quotedTotal);
 
-        pp.setStatus(PurchaseProposalStatus.PENDING_APPROVAL.getCode());
+        pp.setStatus(PurchaseProposalStatus.QUOTATION_SELECTED.getCode());
+
+        // The chosen RFQ becomes "Đã chọn"; every competing RFQ of the same proposal
+        // that is still awaiting a decision becomes "Từ chối".
+        cascadeRfqSelection(pp.getId(), rfqId);
+
+        // Linked purchase requests advance to "Đã chọn báo giá".
+        if (pp.getRequests() != null) {
+            for (PurchaseProposalRequest link : pp.getRequests()) {
+                PurchaseRequest pr = link.getPurchaseRequest();
+                if (pr == null
+                        || PurchaseRequestStatus.CANCELLED.getCode().equals(pr.getStatus())
+                        || PurchaseRequestStatus.COMPLETED.getCode().equals(pr.getStatus())) {
+                    continue;
+                }
+                pr.setStatus(PurchaseRequestStatus.QUOTATION_SELECTED.getCode());
+                pr.setUpdatedAt(LocalDateTime.now());
+                purchaseRequestRepository.save(pr);
+            }
+        }
 
         return PurchaseProposalResponse.fromEntity(purchaseProposalRepository.save(pp));
+    }
+
+    /**
+     * Marks the winning RFQ as SELECTED and rejects the competing RFQs of the same
+     * proposal that are still awaiting a decision (sent and not yet past deadline,
+     * or already responded). Expired, cancelled, or already-resolved RFQs are kept.
+     */
+    private void cascadeRfqSelection(Long purchaseProposalId, Long selectedRfqId) {
+        List<Rfq> rfqs = rfqRepository.findByPurchaseProposalId(purchaseProposalId);
+        LocalDateTime now = LocalDateTime.now();
+        for (Rfq rfq : rfqs) {
+            if (rfq.getId().equals(selectedRfqId)) {
+                if (rfq.getStatus() != RfqStatus.SELECTED) {
+                    rfq.setStatus(RfqStatus.SELECTED);
+                    rfqRepository.save(rfq);
+                }
+                continue;
+            }
+            boolean stillActive = rfq.getStatus() == RfqStatus.RESPONDED
+                    || (rfq.getStatus() == RfqStatus.SENT
+                            && (rfq.getExpiredAt() == null || rfq.getExpiredAt().isAfter(now)));
+            if (stillActive) {
+                rfq.setStatus(RfqStatus.REJECTED);
+                rfqRepository.save(rfq);
+            }
+        }
     }
 
     private String generateProposalCode() {

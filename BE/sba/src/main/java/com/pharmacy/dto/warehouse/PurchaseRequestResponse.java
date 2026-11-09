@@ -22,7 +22,7 @@ public class PurchaseRequestResponse {
     private Long id;
     private String code;
     private String createdByUsername;
-    private Short status; // 1 submitted, 2 RFQ sent, 3 proposal created, 4 completed, 5 cancelled
+    private Short status; // 1 Chờ duyệt, 2 Đã lập đề xuất, 3 Đang chào giá RFQ, 4 Đã chọn báo giá, 5 Đã duyệt đơn PO, 6 Đã hủy
     private String statusText;
     private String reason;
     private LocalDateTime createdAt;

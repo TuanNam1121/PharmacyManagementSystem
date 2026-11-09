@@ -14,12 +14,14 @@ const getPrStatusBadge = (status, statusText) => {
     case 1:
       return <span className="pms-badge pms-badge-warning">Chờ duyệt</span>;
     case 2:
-      return <span className="pms-badge pms-badge-info">Đang chào giá RFQ</span>;
-    case 3:
       return <span className="pms-badge pms-badge-info">Đã lập đề xuất</span>;
+    case 3:
+      return <span className="pms-badge pms-badge-info">Đang chào giá RFQ</span>;
     case 4:
-      return <span className="pms-badge pms-badge-success">Đã duyệt đơn PO</span>;
+      return <span className="pms-badge pms-badge-info">Đã chọn báo giá</span>;
     case 5:
+      return <span className="pms-badge pms-badge-success">Đã duyệt đơn PO</span>;
+    case 6:
       return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
     default:
       return <span className="pms-badge pms-badge-neutral">{statusText || 'Không xác định'}</span>;
@@ -204,10 +206,11 @@ export default function WarehousePurchaseRequestsPage() {
         >
           <option value="">Tất cả trạng thái</option>
           <option value="1">Chờ duyệt</option>
-          <option value="2">Đang chào giá RFQ</option>
-          <option value="3">Đã lập đề xuất</option>
-          <option value="4">Đã duyệt đơn PO</option>
-          <option value="5">Đã hủy</option>
+          <option value="2">Đã lập đề xuất</option>
+          <option value="3">Đang chào giá RFQ</option>
+          <option value="4">Đã chọn báo giá</option>
+          <option value="5">Đã duyệt đơn PO</option>
+          <option value="6">Đã hủy</option>
         </select>
 
         <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>

@@ -5,14 +5,25 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
 
   const renderStatusBadge = (status, statusText) => {
     const s = Number(status);
-    if (s === 2) return <span className="pms-badge pms-badge-success">Đã phê duyệt</span>;
-    if (s === 1) return <span className="pms-badge pms-badge-warning">Chờ phê duyệt</span>;
-    if (s === 3) return <span className="pms-badge pms-badge-danger">Đã từ chối</span>;
-    if (s === 4) return <span className="pms-badge pms-badge-info">Nhập một phần</span>;
-    if (s === 5) return <span className="pms-badge pms-badge-success">Hoàn tất</span>;
-    if (s === 6) return <span className="pms-badge pms-badge-danger">Đã hủy</span>;
+    if (s === 0) return <span className="pms-badge pms-badge-info">Đã lập đề xuất</span>;
+    if (s === 1) return <span className="pms-badge pms-badge-info">Đang chào giá RFQ</span>;
+    if (s === 2) return <span className="pms-badge pms-badge-warning">Đã chọn báo giá</span>;
+    if (s === 3) return <span className="pms-badge pms-badge-success">Đã duyệt đơn PO</span>;
+    if (s === 4) return <span className="pms-badge pms-badge-danger">Đã từ chối</span>;
     return <span className="pms-badge pms-badge-info">{statusText || 'Đã lập đề xuất'}</span>;
   };
+
+  // Đã chốt nhà cung cấp (kể cả khi đề xuất sau đó bị từ chối) → hiển thị nhà cung cấp
+  // đã chọn cùng đơn giá / thành tiền của từng mặt hàng theo báo giá.
+  const hasQuotation = detail?.supplierQuotationId != null;
+
+  const formatCurrency = (value) => (
+    value == null ? '—' : `${Number(value).toLocaleString('vi-VN')} ₫`
+  );
+
+  const itemsTotal = Array.isArray(detail?.items)
+    ? detail.items.reduce((sum, it) => sum + Number(it.subtotal || 0), 0)
+    : 0;
 
   return (
     <div className="pms-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onHide(); }}>
@@ -61,6 +72,38 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
                 </div>
               </div>
 
+              {/* Selected supplier + order total (once a quotation has been chosen) */}
+              {hasQuotation && (
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 16,
+                  background: '#f0fdf4', border: '1px solid #bbf7d0',
+                  borderRadius: 'var(--border-radius-md)', padding: '16px 20px', marginBottom: 20,
+                }}>
+                  <div className="pms-detail-row">
+                    <div className="pms-detail-label" style={{ color: '#15803d', fontWeight: 700 }}>
+                      Nhà Cung Cấp Đã Chọn
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', marginTop: 2 }}>
+                      {detail.supplierName || '—'}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                      Báo giá: {detail.supplierQuotationCode || '—'}
+                    </div>
+                  </div>
+                  <div className="pms-detail-row" style={{ textAlign: 'right' }}>
+                    <div className="pms-detail-label" style={{ color: '#15803d', fontWeight: 700 }}>
+                      Tổng Giá Trị Đơn Hàng
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 18, color: '#059669', marginTop: 2 }}>
+                      {formatCurrency(detail.totalAmount)}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                      Theo báo giá nhà cung cấp đã chốt
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Aggregated Purchase Requests */}
               <div style={{
                 padding: '12px 16px', background: 'var(--bg-card)',
@@ -79,28 +122,75 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
               {detail.items && detail.items.length > 0 && (
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>
-                    Danh Sách Thuốc & Sản Phẩm Tổng Hợp ({detail.items.length})
+                    {hasQuotation
+                      ? `Mặt Hàng & Đơn Giá Theo Báo Giá (${detail.items.length})`
+                      : `Danh Sách Thuốc & Sản Phẩm Tổng Hợp (${detail.items.length})`}
                   </div>
                   <div className="pms-table-wrap">
                     <table className="pms-table" style={{ fontSize: 13 }}>
-                      <thead>
-                        <tr>
-                          <th>Tên Thuốc / Sản Phẩm</th>
-                          <th>Mã Thuốc</th>
-                          <th>Đơn Vị Tính</th>
-                          <th style={{ textAlign: 'right' }}>Số Lượng</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {detail.items.map((item) => (
-                          <tr key={item.productId}>
-                            <td>{item.productName}</td>
-                            <td className="mono">{item.productCode}</td>
-                            <td>{item.unit}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 700 }}>{item.quantity}</td>
-                          </tr>
-                        ))}
-                      </tbody>
+                      {hasQuotation ? (
+                        <>
+                          <thead>
+                            <tr>
+                              <th>Tên Thuốc / Sản Phẩm</th>
+                              <th>Mã Thuốc</th>
+                              <th>Đơn Vị Tính</th>
+                              <th style={{ textAlign: 'right' }}>Số Lượng</th>
+                              <th style={{ textAlign: 'right' }}>Đơn Giá (₫)</th>
+                              <th style={{ textAlign: 'right' }}>Thuế (%)</th>
+                              <th style={{ textAlign: 'right' }}>Thành Tiền (₫)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {detail.items.map((item) => (
+                              <tr key={item.productId}>
+                                <td className="fw-600">{item.productName}</td>
+                                <td className="mono">{item.productCode}</td>
+                                <td>{item.unit}</td>
+                                <td style={{ textAlign: 'right', fontWeight: 700 }}>{item.quantity}</td>
+                                <td style={{ textAlign: 'right' }}>
+                                  {item.unitPrice == null ? '—' : Number(item.unitPrice).toLocaleString('vi-VN')}
+                                </td>
+                                <td style={{ textAlign: 'right' }}>
+                                  {item.taxRate == null ? '—' : `${Number(item.taxRate)}%`}
+                                </td>
+                                <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                  {item.subtotal == null ? '—' : Number(item.subtotal).toLocaleString('vi-VN')}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr style={{ background: 'var(--bg-canvas)', fontWeight: 700 }}>
+                              <td colSpan={6} style={{ textAlign: 'right' }}>Tổng Tiền:</td>
+                              <td style={{ textAlign: 'right', color: '#059669', fontSize: 14 }}>
+                                {Number(detail.totalAmount != null ? detail.totalAmount : itemsTotal).toLocaleString('vi-VN')} ₫
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </>
+                      ) : (
+                        <>
+                          <thead>
+                            <tr>
+                              <th>Tên Thuốc / Sản Phẩm</th>
+                              <th>Mã Thuốc</th>
+                              <th>Đơn Vị Tính</th>
+                              <th style={{ textAlign: 'right' }}>Số Lượng</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {detail.items.map((item) => (
+                              <tr key={item.productId}>
+                                <td>{item.productName}</td>
+                                <td className="mono">{item.productCode}</td>
+                                <td>{item.unit}</td>
+                                <td style={{ textAlign: 'right', fontWeight: 700 }}>{item.quantity}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </>
+                      )}
                     </table>
                   </div>
                 </div>

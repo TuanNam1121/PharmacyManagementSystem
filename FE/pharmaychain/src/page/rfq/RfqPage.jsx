@@ -39,6 +39,7 @@ export default function RfqPage() {
   const [supplierFilter] = useState('');
   const [purchaseProposalFilter] = useState('');
   const [successMsg, setSuccessMsg] = useState(null);
+  const [warnMsg, setWarnMsg] = useState(null);
   const [uiError, setUiError] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [compareModalOpen, setCompareModalOpen] = useState(false);
@@ -141,7 +142,7 @@ export default function RfqPage() {
       setCompareModalOpen(false);
       setCompareEmptyMessage(null);
       setSuccessMsg(
-        `Đã chọn nhà cung cấp ${col.supplier?.name || ''}. Đề xuất chuyển sang trạng thái "Chờ phê duyệt" và không thể gửi email RFQ nữa.`
+        `Đã chọn nhà cung cấp ${col.supplier?.name || ''}. Đề xuất chuyển sang trạng thái "Đã chọn báo giá" và không thể gửi email RFQ nữa.`
       );
       fetchRfqs();
     } catch (err) {
@@ -159,7 +160,7 @@ export default function RfqPage() {
     try {
       await selectProposalSupplier(proposalId, rfq.id);
       setSuccessMsg(
-        `Đã chọn nhà cung cấp ${rfq.supplierName || ''}. Đề xuất chuyển sang trạng thái "Chờ phê duyệt" và không thể gửi email RFQ nữa.`
+        `Đã chọn nhà cung cấp ${rfq.supplierName || ''}. Đề xuất chuyển sang trạng thái "Đã chọn báo giá" và không thể gửi email RFQ nữa.`
       );
       fetchRfqs();
     } catch (err) {
@@ -194,6 +195,13 @@ export default function RfqPage() {
         <div className="pms-alert pms-alert-success">
           ✓ {successMsg}
           <button className="pms-alert-close" onClick={() => setSuccessMsg(null)}>✕</button>
+        </div>
+      )}
+
+      {warnMsg && (
+        <div className="pms-alert pms-alert-warning">
+          ⚠ {warnMsg}
+          <button className="pms-alert-close" onClick={() => setWarnMsg(null)}>✕</button>
         </div>
       )}
 
@@ -263,7 +271,16 @@ export default function RfqPage() {
         onHide={() => setSendModalOpen(false)}
         supplierSelectMode
         preselectedProposalId={preselectedProposalId}
-        onSuccess={() => { fetchRfqs(); setSuccessMsg('Gửi yêu cầu báo giá thành công!'); }}
+        onSuccess={(warn) => {
+          fetchRfqs();
+          if (warn) {
+            setWarnMsg(warn);
+            setSuccessMsg(null);
+          } else {
+            setSuccessMsg('Gửi yêu cầu báo giá thành công!');
+            setWarnMsg(null);
+          }
+        }}
       />
     </div>
   );

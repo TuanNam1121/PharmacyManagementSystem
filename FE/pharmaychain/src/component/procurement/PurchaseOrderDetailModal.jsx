@@ -3,11 +3,10 @@ import { formatDate } from '../../utils/format';
 
 const STATUS_BADGES = {
     0: { label: 'Bản nháp', cls: 'pms-badge pms-badge-neutral' },
-    1: { label: 'Chờ phê duyệt', cls: 'pms-badge pms-badge-warning' },
-    2: { label: 'Đã phê duyệt', cls: 'pms-badge pms-badge-success' },
-    3: { label: 'Đã từ chối', cls: 'pms-badge pms-badge-danger' },
-    4: { label: 'Đã nhận một phần', cls: 'pms-badge pms-badge-info' },
-    5: { label: 'Đã hoàn tất', cls: 'pms-badge pms-badge-success' },
+    1: { label: 'Đang chào giá RFQ', cls: 'pms-badge pms-badge-info' },
+    2: { label: 'Chờ phê duyệt', cls: 'pms-badge pms-badge-warning' },
+    3: { label: 'Đã phê duyệt', cls: 'pms-badge pms-badge-success' },
+    4: { label: 'Đã từ chối', cls: 'pms-badge pms-badge-danger' },
 };
 
 export default function PurchaseOrderDetailModal({
@@ -31,7 +30,7 @@ export default function PurchaseOrderDetailModal({
         cls: 'pms-badge pms-badge-neutral',
     };
 
-    const isPending = detail?.status === 0 || detail?.status === 1;
+    const isPending = detail?.status === 0 || detail?.status === 2;
 
     // Chỉ coi là giá đã chốt khi đơn đã gắn báo giá của nhà cung cấp
     const hasQuotation = Boolean(detail?.supplierQuotationCode);
@@ -152,7 +151,7 @@ export default function PurchaseOrderDetailModal({
                             </div>
 
                             {/* Status Notice if Rejected or Approved */}
-                            {detail.status === 3 && detail.rejectReason && (
+                            {detail.status === 4 && detail.rejectReason && (
                                 <div
                                     style={{
                                         background: '#fef2f2',
@@ -167,7 +166,7 @@ export default function PurchaseOrderDetailModal({
                                 </div>
                             )}
 
-                            {detail.status === 2 && detail.approvedByUsername && (
+                            {detail.status === 3 && detail.approvedByUsername && (
                                 <div
                                     style={{
                                         background: '#f0fdf4',

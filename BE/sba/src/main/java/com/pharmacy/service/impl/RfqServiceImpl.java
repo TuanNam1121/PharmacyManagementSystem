@@ -59,9 +59,11 @@ public class RfqServiceImpl implements RfqService {
 
     @Override
     public List<PurchaseProposalResponse> getEligiblePurchaseProposals() {
-        // Only proposals that have not yet chosen a supplier are eligible to send RFQ emails
+        // Proposals that have not yet chosen a supplier are eligible to send RFQ emails.
+        // "Đang chào giá RFQ" (RFQ_SENT) still qualifies so more suppliers can be invited.
         return purchaseProposalRepository.findByStatusIn(
-                List.of(PurchaseProposalStatus.DRAFT.getCode()))
+                List.of(PurchaseProposalStatus.DRAFT.getCode(),
+                        PurchaseProposalStatus.RFQ_SENT.getCode()))
                 .stream()
                 .map(PurchaseProposalResponse::fromEntity)
                 .toList();
@@ -85,17 +87,16 @@ public class RfqServiceImpl implements RfqService {
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Purchase proposal not found with ID: " + request.purchaseProposalId()));
 
-        // Only proposals that have not yet chosen a supplier can send an RFQ
+        // Only proposals that have not yet chosen a supplier can send an RFQ.
         Short proposalStatus = proposal.getStatus();
         if (proposalStatus == null
-                || !proposalStatus.equals(PurchaseProposalStatus.DRAFT.getCode())) {
+                || (!proposalStatus.equals(PurchaseProposalStatus.DRAFT.getCode())
+                        && !proposalStatus.equals(PurchaseProposalStatus.RFQ_SENT.getCode()))) {
             throw new IllegalArgumentException(
                     "Chỉ đề xuất chưa chọn nhà cung cấp mới được gửi RFQ");
         }
 
-        // Block sending only if an RFQ for this supplier + proposal is still active
-        // (already responded, or sent and not yet past its deadline). Expired or
-        // cancelled RFQs can be re-sent.
+        // Block sending only if an RFQ for this supplier + proposal is still active.
         List<Rfq> existingRfqs = rfqRepository
                 .findBySupplierIdAndPurchaseProposalId(supplier.getId(), proposal.getId());
         LocalDateTime now = LocalDateTime.now();
@@ -125,7 +126,6 @@ public class RfqServiceImpl implements RfqService {
                 ? proposal.getRequests().get(0).getPurchaseRequest()
                 : null;
 
-        // Create RFQ entity - built from the aggregated purchase proposal
         Rfq rfq = Rfq.builder()
                 .code(rfqCode)
                 .supplier(supplier)
@@ -138,15 +138,18 @@ public class RfqServiceImpl implements RfqService {
                 .subject(request.subject())
                 .content(request.content())
                 .status(RfqStatus.SENT)
-                .sentAt(LocalDateTime.now())
-                .createdAt(LocalDateTime.now())
+                .sentAt(now)
+                .createdAt(now)
                 .build();
 
-        // Save RFQ
         Rfq savedRfq = rfqRepository.save(rfq);
 
-        // NOTE: sending an RFQ no longer mutates the proposal status. The proposal only
-        // becomes PENDING_APPROVAL when a winning supplier is chosen (selectSupplier).
+        // First RFQ sent => proposal moves to the "Đang chào giá RFQ" (RFQ_SENT) state.
+        if (proposal.getStatus() == null
+                || proposal.getStatus().equals(PurchaseProposalStatus.DRAFT.getCode())) {
+            proposal.setStatus(PurchaseProposalStatus.RFQ_SENT.getCode());
+            purchaseProposalRepository.save(proposal);
+        }
 
         // Move every aggregated purchase request to RFQ_SENT
         if (proposal.getRequests() != null) {
@@ -160,13 +163,19 @@ public class RfqServiceImpl implements RfqService {
             }
         }
 
-        // Send email to supplier
+        // Validate the recipient first so the client is warned immediately (e.g. wrong email),
+        // then attempt to send. The RFQ is always saved so the flow still works for testing.
+        String emailWarning = emailService.validateRecipient(supplier.getEmail());
         boolean emailSent = emailService.sendRfqEmail(savedRfq, supplier, rawToken, rfqFrontendUrl);
         if (!emailSent) {
             log.error("Failed to send email for RFQ {}, but RFQ is saved", savedRfq.getId());
+            if (emailWarning == null) {
+                emailWarning = "Không gửi được email tới " + supplier.getEmail()
+                        + " (vui lòng kiểm tra cấu hình SMTP).";
+            }
         }
 
-        return RfqResponse.fromEntity(savedRfq);
+        return RfqResponse.fromEntity(savedRfq, emailSent, emailWarning);
     }
 
     @Override
