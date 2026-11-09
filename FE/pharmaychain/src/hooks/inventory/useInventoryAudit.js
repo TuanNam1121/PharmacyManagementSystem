@@ -8,6 +8,7 @@ import {
     submitAuditCount,
     reviewAudit,
 } from '../../api/InventoryAuditAPI';
+import { getAuthorizedStores } from '../../api/StoreAPI';
 
 export const useInventoryAudit = () => {
     const [searchParams] = useSearchParams();
@@ -23,6 +24,7 @@ export const useInventoryAudit = () => {
     const [storeId, setStoreId] = useState(initialStoreId);
     const [statusFilter, setStatusFilter] = useState(''); // '' | 0 | 1 | 2 | 3 | 4
     const [listLoading, setListLoading] = useState(false);
+    
 
     useEffect(() => {
         const urlStoreId = searchParams.get('storeId');
@@ -190,6 +192,7 @@ export const useInventoryAudit = () => {
     return {
         // List
         auditList, total, page, setPage, size,
+        
         search, setSearch,
         statusFilter, setStatusFilter,
         listLoading,

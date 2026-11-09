@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { use, useEffect, useState } from 'react';
 import { useInventoryAudit } from '../../hooks/inventory/useInventoryAudit';
 import RequestAuditModal from '../../component/inventory/RequestAuditModal';
 import ApproveRequestModal from '../../component/inventory/ApproveRequestModal';
 import AuditCountingModal from '../../component/inventory/AuditCountingModal';
 import ReviewAuditModal from '../../component/inventory/ReviewAuditModal';
 import { useAuth } from '../../hooks/useAuth';
+import { useSearchParams } from 'react-router-dom';
+import { getAuthorizedStores } from '../../api/StoreAPI';
 
 // ── Cấu hình trạng thái kiểm kê ─────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -102,6 +104,7 @@ function DetailModal({ show, audit, loading, onHide }) {
 export default function InventoryAuditPage() {
     const {
         auditList, total, page, setPage, size,
+        
         search, setSearch,
         storeId,
         statusFilter, setStatusFilter,
@@ -127,6 +130,7 @@ export default function InventoryAuditPage() {
         successMsg, setSuccessMsg,
         fetchList,
     } = useInventoryAudit();
+    
 
     const STATUS_TABS = [
         { value: '', label: 'Tất cả phiên' },
@@ -137,11 +141,15 @@ export default function InventoryAuditPage() {
         { value: '4', label: 'Từ chối' },
     ];
 
+
     const { user } = useAuth();
+    
     const rawRole = (user?.role || '').toUpperCase().replace(/^ROLE_/, '').trim();
 
     // Chỉ Admin và Quản lý cửa hàng mới được duyệt / đối soát
     const canApprove = ['ADMIN', 'STORE_MANAGER'].includes(rawRole);
+
+    
 
     return (
         <div>
@@ -279,7 +287,8 @@ export default function InventoryAuditPage() {
                                         <circle cx="12" cy="10" r="3" />
                                     </svg>
 
-                                    {String(storeId) === '3' ? 'Chi nhánh 01 - Cầu Giấy (ST01)' : String(storeId) === '4' ? 'Chi nhánh 02 - Đống Đa (ST02)' : 'Theo phân quyền'}
+                                    {user ? `${user.storeName}` : 'Nhà thuốc chi nhánh'}
+                                    {/* {String(storeId) === '3' ? 'Chi nhánh 01 - Cầu Giấy (ST01)' : String(storeId) === '4' ? 'Chi nhánh 02 - Đống Đa (ST02)' : 'Theo phân quyền'} */}
 
                                 </span>
                             </div>

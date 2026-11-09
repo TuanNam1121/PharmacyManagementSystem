@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { searchProductsForRequisition } from '../../api/StockRequisitionAPI';
+import { useAuth } from '../../context/AuthContext';
 
 export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 1, onConfirm, submitting, editItem = null }) {
     const isEdit = !!editItem;
@@ -211,6 +212,8 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
 
     const totalUnits = selectedItems.reduce((sum, item) => sum + (Number(item.requestedQty) || 0), 0);
 
+    const { user } = useAuth();
+
     if (!show) return null;
 
     return (
@@ -250,7 +253,7 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                 <label className="pms-label" style={{ fontWeight: 600, fontSize: 13 }}>
                                     Chi nhánh tiếp nhận *
                                 </label>
-                                <select
+                                {/* <select
                                     className="pms-select"
                                     style={{ width: '100%' }}
                                     value={storeId}
@@ -260,7 +263,24 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
                                 >
                                     <option value="3">Chi nhánh 01 — Cầu Giấy (ST01)</option>
                                     <option value="4">Chi nhánh 02 — Đống Đa (ST02)</option>
-                                </select>
+                                </select> */}
+                                <div
+                                    className="pms-input-readonly"
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        backgroundColor: '#f1f5f9',
+                                        color: '#475569',
+                                        border: '1px solid var(--border, #cbd5e1)',
+                                        borderRadius: 6,
+                                        fontSize: 13.5,
+                                        fontWeight: 600,
+                                        cursor: 'not-allowed',
+                                        userSelect: 'none'
+                                    }}
+                                >
+                                    {user?.storeName || '—'}
+                                </div>
                             </div>
 
                             {/* Server Search Autocomplete Box */}

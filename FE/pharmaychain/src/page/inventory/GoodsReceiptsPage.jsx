@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useGoodsReceipt } from '../../hooks/inventory/useGoodsReceipt';
 import { formatDate } from '../../utils/format';
+import { useAuth } from '../../context/AuthContext';
 
 // ── Cấu hình trạng thái tiếng Việt ─────────────────────────────────────────────
 const STATUS_MAP = {
@@ -493,6 +494,8 @@ export default function GoodsReceiptsPage() {
         fetchList,
     } = useGoodsReceipt();
 
+    const { user } = useAuth();
+
     const totalPages = Math.ceil(total / size);
 
     const STATUS_TABS = [
@@ -618,7 +621,7 @@ export default function GoodsReceiptsPage() {
                                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                                 <circle cx="12" cy="10" r="3" />
                             </svg>
-                            Chi nhánh: {storeId === '3' ? 'Chi nhánh 01 (ST01)' : storeId === '4' ? 'Chi nhánh 02 (ST02)' : 'Theo phân quyền'}
+                            Chi nhánh: {user?.storeName}
                         </span>
                     </div>
 
