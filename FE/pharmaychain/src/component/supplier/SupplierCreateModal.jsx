@@ -56,7 +56,12 @@ export default function SupplierCreateModal({
     const e = {};
     if (!isEdit && !form.code.trim()) e.code = 'Mã nhà cung cấp là bắt buộc';
     if (!form.name.trim()) e.name = 'Tên nhà cung cấp là bắt buộc';
-    if (!form.phone.trim()) e.phone = 'Số điện thoại là bắt buộc';
+    const normalizedPhone = form.phone.replace(/[\s.-]/g, '');
+    if (!form.phone.trim()) {
+      e.phone = 'Số điện thoại là bắt buộc';
+    } else if (!/^0[0-9]{9,10}$/.test(normalizedPhone)) {
+      e.phone = 'Số điện thoại không hợp lệ (10-11 chữ số, bắt đầu bằng 0)';
+    }
     if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       e.email = 'Vui lòng nhập địa chỉ email hợp lệ';
     }
@@ -85,7 +90,7 @@ export default function SupplierCreateModal({
         code: form.code.trim(),
         name: form.name.trim(),
         contactPerson: form.contactPerson.trim() || null,
-        phone: form.phone.trim(),
+        phone: form.phone.replace(/[\s.-]/g, ''),
         email: form.email.trim() || null,
         address: form.address.trim() || null,
         taxCode: form.taxCode.trim() || null,

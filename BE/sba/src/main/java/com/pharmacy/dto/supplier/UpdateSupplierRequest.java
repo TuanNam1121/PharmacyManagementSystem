@@ -14,6 +14,7 @@ public record UpdateSupplierRequest(
     String name,
     String contactPerson,
     @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "^0[0-9]{9,10}$", message = "Số điện thoại không hợp lệ (10-11 chữ số, bắt đầu bằng 0)")
     String phone,
     @Email(message = "Invalid email format")
     String email,
@@ -23,6 +24,12 @@ public record UpdateSupplierRequest(
     @Size(max = 1000, message = "Note cannot exceed 1000 characters")
     String note
 ) {
+    public UpdateSupplierRequest {
+        if (phone != null) {
+            phone = phone.trim().replaceAll("[\\s.\\-]", "");
+        }
+    }
+
     public Supplier toEntity(){
         return Supplier.builder()
         .name(this.name)

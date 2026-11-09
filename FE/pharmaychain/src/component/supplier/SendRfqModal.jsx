@@ -109,8 +109,15 @@ Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
               }
             }
           }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            minHeight: 0,
+            overflow: 'hidden',
+          }}
         >
-          <div className="pms-modal-body">
+          <div className="pms-modal-body" style={{ flex: 1, overflowY: 'auto' }}>
             {error && (
               <div className="pms-alert pms-alert-danger" style={{ marginBottom: 16 }}>
                 <svg
@@ -285,7 +292,7 @@ Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
           </div>
 
           {/* Modal Footer */}
-          <div className="pms-modal-footer">
+          <div className="pms-modal-footer" style={{ flexShrink: 0 }}>
             <button
               type="button"
               className="btn-pms btn-pms-ghost"

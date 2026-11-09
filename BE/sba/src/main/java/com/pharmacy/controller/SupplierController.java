@@ -31,6 +31,7 @@ import com.pharmacy.entity.enums.SupplierStatus;
 import com.pharmacy.service.SupplierService;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -69,7 +70,7 @@ public class SupplierController {
 
         @PostMapping
         public ResponseEntity<ApiResponse<SupplierResponse>> createSupplier(
-                        @RequestBody CreateSupplierRequest request) {
+                        @Valid @RequestBody CreateSupplierRequest request) {
                 SupplierResponse data = supplierService.createSupplier(request);
                 ApiResponse<SupplierResponse> body = ApiResponse.<SupplierResponse>builder()
                                 .status(HttpStatus.CREATED.value())
@@ -83,7 +84,7 @@ public class SupplierController {
         @PatchMapping("/{id}")
         public ResponseEntity<ApiResponse<SupplierResponse>> updateSupplierInformation(
                         @PathVariable Long id,
-                        @RequestBody UpdateSupplierRequest request) {
+                        @Valid @RequestBody UpdateSupplierRequest request) {
                 SupplierResponse data = supplierService.updateSupplierInformation(id, request);
                 ApiResponse<SupplierResponse> body = ApiResponse.<SupplierResponse>builder()
                                 .status(HttpStatus.OK.value())
