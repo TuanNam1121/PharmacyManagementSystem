@@ -7,6 +7,7 @@ export default function RequestAuditModal({ show, defaultStoreId = '3', onHide, 
     const [reason, setReason] = useState('');
     const [error, setError] = useState(null);
 
+
     if (!show) return null;
 
     const handleSubmit = async (e) => {
@@ -53,26 +54,26 @@ export default function RequestAuditModal({ show, defaultStoreId = '3', onHide, 
                             </div>
                         )}
 
-                        <div className="pms-alert pms-alert-info" style={{ marginBottom: 16, fontSize: 13 }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
-                            </svg>
-                            Tạo yêu cầu này sẽ chốt số liệu tồn kho sổ sách cho tất cả mặt hàng tại chi nhánh. Việc kiểm đếm thực tế chỉ bắt đầu sau khi <strong>Quản lý Cửa Hàng phê duyệt</strong> yêu cầu.
-                        </div>
+                        {/*<div className="pms-alert pms-alert-info" style={{ marginBottom: 16, fontSize: 13 }}>*/}
+                        {/*    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">*/}
+                        {/*        <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />*/}
+                        {/*    </svg>*/}
+                        {/*    Tạo yêu cầu này sẽ chốt số liệu tồn kho sổ sách cho tất cả mặt hàng tại chi nhánh. Việc kiểm đếm thực tế chỉ bắt đầu sau khi <strong>Quản lý Cửa Hàng phê duyệt</strong> yêu cầu.*/}
+                        {/*</div>*/}
 
-                        <div className="pms-form-group" style={{ marginBottom: 14 }}>
-                            <label className="pms-label" style={{ fontWeight: 600 }}>Chi nhánh kiểm kê <span style={{ color: 'var(--danger)' }}>*</span></label>
-                            <select
-                                className="pms-select"
-                                value={storeId}
-                                onChange={(e) => setStoreId(e.target.value)}
-                                disabled={submitting}
-                                style={{ width: '100%' }}
-                            >
-                                <option value="3">Chi nhánh 01 — Cầu Giấy (ST01)</option>
-                                <option value="4">Chi nhánh 02 — Đống Đa (ST02)</option>
-                            </select>
-                        </div>
+                        {/*<div className="pms-form-group" style={{ marginBottom: 14 }}>*/}
+                        {/*    <label className="pms-label" style={{ fontWeight: 600 }}>Chi nhánh kiểm kê <span style={{ color: 'var(--danger)' }}>*</span></label>*/}
+                        {/*    <select*/}
+                        {/*        className="pms-select"*/}
+                        {/*        value={storeId}*/}
+                        {/*        onChange={(e) => setStoreId(e.target.value)}*/}
+                        {/*        disabled={submitting}*/}
+                        {/*        style={{ width: '100%' }}*/}
+                        {/*    >*/}
+                        {/*        <option value="3">Chi nhánh 01 — Cầu Giấy (ST01)</option>*/}
+                        {/*        <option value="4">Chi nhánh 02 — Đống Đa (ST02)</option>*/}
+                        {/*    </select>*/}
+                        {/*</div>*/}
 
                         <div className="pms-form-group" style={{ marginBottom: 14 }}>
                             <label className="pms-label" style={{ fontWeight: 600 }}>Ngày kiểm kê dự kiến <span style={{ color: 'var(--danger)' }}>*</span></label>

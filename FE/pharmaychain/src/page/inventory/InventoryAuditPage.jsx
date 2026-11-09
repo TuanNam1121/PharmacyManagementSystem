@@ -278,7 +278,9 @@ export default function InventoryAuditPage() {
                                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                                         <circle cx="12" cy="10" r="3" />
                                     </svg>
+
                                     {String(storeId) === '3' ? 'Chi nhánh 01 - Cầu Giấy (ST01)' : String(storeId) === '4' ? 'Chi nhánh 02 - Đống Đa (ST02)' : 'Theo phân quyền'}
+
                                 </span>
                             </div>
 

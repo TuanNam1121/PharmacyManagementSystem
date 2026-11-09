@@ -12,6 +12,7 @@ import {
 export const useInventoryAudit = () => {
     const [searchParams] = useSearchParams();
     const initialStoreId = searchParams.get('storeId') || localStorage.getItem('pms_selected_store_id') || 3;
+    console.log(initialStoreId);
 
     // ── List state ──────────────────────────────────────────────────────────────
     const [auditList, setAuditList] = useState([]);
@@ -192,6 +193,7 @@ export const useInventoryAudit = () => {
         search, setSearch,
         statusFilter, setStatusFilter,
         listLoading,
+        storeId,
         // Selected & Detail
         selectedAudit,
         detailModalOpen, setDetailModalOpen,

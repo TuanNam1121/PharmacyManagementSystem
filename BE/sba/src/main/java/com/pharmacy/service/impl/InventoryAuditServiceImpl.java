@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 @Service
@@ -105,10 +106,9 @@ public class InventoryAuditServiceImpl implements InventoryAuditService {
             throw new IllegalStateException("User account not found");
         }
 
-        if (requester != null) {
-            if (requester.getStore().getId() != store.getId()) {
-                throw new InvalidOperationException("You don't have permission to access this resource");
-            }
+        if (!Objects.equals(requester.getStore().getId(), store.getId())) {
+            System.out.println(requester.getStore().getId() + " - " + store.getId());
+            throw new InvalidOperationException("You don't have permission to access this resource");
         }
 
         // Snapshot current branch inventory
