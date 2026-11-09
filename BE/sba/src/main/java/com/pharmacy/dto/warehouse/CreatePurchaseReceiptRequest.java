@@ -16,12 +16,14 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreatePurchaseReceiptRequest {
-    @NotNull(message = "Supplier ID is required")
+    private Long purchaseProposalId;
+
     private Long supplierId;
 
     private Long storeId;
     private String note;
     private Short deliveryType; // 1 full, 2 partial
+    private Boolean autoConfirm; // true: Xác nhận nhập kho và tăng tồn ngay
 
     @NotEmpty(message = "Receipt items list cannot be empty")
     private List<CreatePurchaseReceiptItem> items;

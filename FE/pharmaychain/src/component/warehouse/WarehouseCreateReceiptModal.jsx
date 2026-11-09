@@ -1,9 +1,28 @@
 import { useState, useEffect } from 'react';
 import { money } from '../../utils/format';
-import { getWarehouseLocations, getWarehouseProducts } from '../../api/WarehouseInventoryAPI';
+import { getWarehouseLocations, getWarehouseProducts, getApprovedPurchaseProposals } from '../../api/WarehouseInventoryAPI';
 import { viewSupplierList } from '../../api/SupplierAPI';
 
+const generateBatchHelper = () => {
+  const d = new Date();
+  const yy = String(d.getFullYear()).slice(2);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const rand = Math.floor(100 + Math.random() * 900);
+  return `LOT-${yy}${mm}${dd}-${rand}`;
+};
+
+const getTodayStr = () => new Date().toISOString().split('T')[0];
+const getExpDateStr = () => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() + 2);
+  return d.toISOString().split('T')[0];
+};
+
 export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, loading }) {
+  const [purchaseProposals, setPurchaseProposals] = useState([]);
+  const [selectedProposalId, setSelectedProposalId] = useState('');
+
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -11,13 +30,14 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
   const [supplierId, setSupplierId] = useState('');
   const [deliveryType, setDeliveryType] = useState('1');
   const [note, setNote] = useState('');
+  const [autoConfirm, setAutoConfirm] = useState(true);
   const [items, setItems] = useState([
     {
       productId: '',
-      batchNumber: '',
-      manufactureDate: '',
-      expiryDate: '',
-      quantity: 100,
+      batchNumber: generateBatchHelper(),
+      manufactureDate: getTodayStr(),
+      expiryDate: getExpDateStr(),
+      quantity: 10,
       unitCost: 0,
       locationId: '',
     },
@@ -28,48 +48,98 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
   useEffect(() => {
     if (show) {
       setFormError(null);
+      setSelectedProposalId('');
+
+      // Fetch approved purchase proposals
+      getApprovedPurchaseProposals()
+        .then((res) => setPurchaseProposals(res || []))
+        .catch((err) => console.error('Failed to load purchase proposals', err));
+
       // Fetch suppliers
       viewSupplierList({ page: 0, size: 100 })
         .then((res) => setSuppliers(res?.content || []))
         .catch((err) => console.error('Failed to load suppliers', err));
 
-      // Fetch products
+      // Fetch products (contains defaultLocationId from DB)
       getWarehouseProducts()
         .then((res) => setProducts(res || []))
         .catch((err) => console.error('Failed to load products', err));
 
       // Fetch locations
       getWarehouseLocations()
-        .then((res) => setLocations(res || []))
+        .then((res) => {
+          const locs = res || [];
+          setLocations(locs);
+          if (locs.length > 0) {
+            setItems((prev) =>
+              prev.map((it) => ({
+                ...it,
+                locationId: it.locationId || String(locs[0].id),
+              }))
+            );
+          }
+        })
         .catch((err) => console.error('Failed to load locations', err));
     }
   }, [show]);
 
   if (!show) return null;
 
+  // Handle choosing a Purchase Proposal
+  const handleProposalChange = (proposalId) => {
+    setSelectedProposalId(proposalId);
+    if (!proposalId) return;
+
+    const pp = purchaseProposals.find((p) => String(p.id) === String(proposalId));
+    if (!pp) return;
+
+    // Set supplier from proposal
+    if (pp.supplierId) {
+      setSupplierId(String(pp.supplierId));
+    }
+
+    // Set note reference
+    setNote(`Nhập kho theo đơn mua hàng ${pp.code}`);
+
+    // Pre-populate items from proposal
+    if (pp.items && pp.items.length > 0) {
+      const defaultLocId = locations[0]?.id ? String(locations[0].id) : '';
+      const mapped = pp.items.map((it) => {
+        const prod = products.find((p) => String(p.id) === String(it.productId));
+        const locId = it.suggestedLocationId
+          ? String(it.suggestedLocationId)
+          : prod?.defaultLocationId
+          ? String(prod.defaultLocationId)
+          : defaultLocId;
+
+        return {
+          productId: String(it.productId),
+          batchNumber: generateBatchHelper(),
+          manufactureDate: getTodayStr(),
+          expiryDate: getExpDateStr(),
+          quantity: it.quantity || 10,
+          unitCost: Number(it.unitCost) || Number(prod?.purchasePrice) || 0,
+          locationId: locId || defaultLocId,
+        };
+      });
+      setItems(mapped);
+    }
+  };
+
   const handleItemChange = (index, field, value) => {
     setItems((prev) => {
       const copy = [...prev];
       copy[index] = { ...copy[index], [field]: value };
 
-      // If user selected a product, auto-fill unitCost if available
+      // When product is selected, auto-fill unitCost & auto-select location from DB
       if (field === 'productId') {
         const p = products.find((prod) => String(prod.id) === String(value));
         if (p) {
-          const pUnits = p.units || [];
-          if (pUnits.length > 0) {
-            // Mặc định chọn đơn vị đóng gói lớn nhất (thường là Hộp khi nhập từ NCC)
-            const highestUnit = [...pUnits].sort((a, b) => (b.conversionFactor || 1) - (a.conversionFactor || 1))[0];
-            copy[index].unitId = highestUnit.id;
-            copy[index].unitName = highestUnit.unitName;
-            copy[index].conversionFactor = highestUnit.conversionFactor || 1;
-            const baseCost = Number(p.purchasePrice) || 0;
-            copy[index].unitCost = Math.round(baseCost * (highestUnit.conversionFactor || 1));
-          } else {
-            copy[index].unitId = '';
-            copy[index].unitName = p.unit || '';
-            copy[index].conversionFactor = 1;
-            copy[index].unitCost = Number(p.purchasePrice) || 0;
+          copy[index].unitCost = Number(p.purchasePrice) || 0;
+          // Lấy vị trí ô kệ theo DB của thuốc này (nếu có), hoặc lấy ô kệ đầu tiên
+          const dbLocId = p.defaultLocationId ? String(p.defaultLocationId) : (locations[0]?.id ? String(locations[0].id) : '');
+          if (dbLocId) {
+            copy[index].locationId = dbLocId;
           }
         }
       }
@@ -77,44 +147,18 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
     });
   };
 
-  const handleUnitChange = (index, unitId) => {
-    setItems((prev) => {
-      const copy = [...prev];
-      const it = copy[index];
-      const p = products.find((prod) => String(prod.id) === String(it.productId));
-      const pUnits = p?.units || [];
-      const selectedUnit = pUnits.find((u) => String(u.id) === String(unitId));
-
-      if (selectedUnit) {
-        copy[index].unitId = selectedUnit.id;
-        copy[index].unitName = selectedUnit.unitName;
-        copy[index].conversionFactor = selectedUnit.conversionFactor || 1;
-        const baseCost = Number(p.purchasePrice) || 0;
-        copy[index].unitCost = Math.round(baseCost * (selectedUnit.conversionFactor || 1));
-      } else {
-        copy[index].unitId = '';
-        copy[index].unitName = p?.unit || '';
-        copy[index].conversionFactor = 1;
-        copy[index].unitCost = Number(p?.purchasePrice) || 0;
-      }
-      return copy;
-    });
-  };
-
   const addItemRow = () => {
+    const defaultLocId = locations[0]?.id ? String(locations[0].id) : '';
     setItems((prev) => [
       ...prev,
       {
         productId: '',
-        batchNumber: '',
-        manufactureDate: '',
-        expiryDate: '',
-        quantity: 50,
+        batchNumber: generateBatchHelper(),
+        manufactureDate: getTodayStr(),
+        expiryDate: getExpDateStr(),
+        quantity: 10,
         unitCost: 0,
-        locationId: '',
-        unitId: '',
-        unitName: '',
-        conversionFactor: 1,
+        locationId: defaultLocId,
       },
     ]);
   };
@@ -146,6 +190,8 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
       return;
     }
 
+    const defaultLocId = locations[0]?.id ? Number(locations[0].id) : undefined;
+
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       if (!it.productId) {
@@ -164,12 +210,18 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
         setFormError(`Dòng #${i + 1}: Số lượng nhập phải lớn hơn 0`);
         return;
       }
+      if (!it.locationId && !defaultLocId) {
+        setFormError(`Dòng #${i + 1}: Vui lòng chọn vị trí ô kệ lưu trữ`);
+        return;
+      }
     }
 
     const payload = {
+      purchaseProposalId: selectedProposalId ? Number(selectedProposalId) : undefined,
       supplierId: Number(supplierId),
       deliveryType: Number(deliveryType),
       note: note.trim() || undefined,
+      autoConfirm: Boolean(autoConfirm),
       items: items.map((it) => ({
         productId: Number(it.productId),
         batchNumber: it.batchNumber.trim().toUpperCase(),
@@ -177,10 +229,9 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
         expiryDate: it.expiryDate,
         quantity: Number(it.quantity),
         unitCost: Number(it.unitCost) || 0,
-        locationId: it.locationId ? Number(it.locationId) : undefined,
-        unitId: it.unitId ? Number(it.unitId) : undefined,
-        unitName: it.unitName || undefined,
-        conversionFactor: Number(it.conversionFactor) || 1,
+        locationId: it.locationId ? Number(it.locationId) : defaultLocId,
+        unitName: 'Hộp',
+        conversionFactor: 1,
       })),
     };
 
@@ -193,7 +244,7 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">Tạo Phiếu Nhập Kho (Nhập Hàng Mua)</div>
-            <div className="pms-modal-sub">Ghi nhận lô hàng nhập từ nhà cung cấp với số lô, hạn dùng và định vị ô kệ</div>
+            <div className="pms-modal-sub">Ghi nhận lô hàng nhập từ nhà cung cấp theo phiếu mua hàng và gán vị trí ô kệ chuẩn xác</div>
           </div>
           <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -212,6 +263,39 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                 {formError}
               </div>
             )}
+
+            {/* Link to approved Purchase Proposal */}
+            <div style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: 'var(--border-radius-md)',
+              padding: '12px 16px',
+              marginBottom: 16,
+            }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, alignItems: 'center' }}>
+                <div>
+                  <label className="pms-form-label" style={{ fontWeight: 700, color: '#0f172a' }}>
+                    Chọn Phiếu Mua Hàng Đã Phê Duyệt (Khuyên Dùng)
+                  </label>
+                  <select
+                    className="pms-select"
+                    value={selectedProposalId}
+                    onChange={(e) => handleProposalChange(e.target.value)}
+                    style={{ fontWeight: selectedProposalId ? 600 : 400 }}
+                  >
+                    <option value="">— Nhập trực tiếp (Không theo phiếu mua) —</option>
+                    {purchaseProposals.map((pp) => (
+                      <option key={pp.id} value={pp.id}>
+                        {pp.code} — {pp.supplierName || 'NCC'} ({money(pp.totalAmount || 0)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ fontSize: 12.5, color: '#64748b', lineHeight: 1.4 }}>
+                  Chọn phiếu mua hàng đã duyệt để tự động tải đúng Nhà Cung Cấp, danh sách thuốc và vị trí ô kệ lưu kho.
+                </div>
+              </div>
+            </div>
 
             {/* Header info */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 2fr', gap: 16, marginBottom: 20 }}>
@@ -282,15 +366,15 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                   <thead>
                     <tr>
                       <th style={{ width: 30 }}>#</th>
-                      <th style={{ minWidth: 180 }}>Tên Thuốc / Sản Phẩm *</th>
-                      <th style={{ width: 120 }}>ĐVT Nhập</th>
+                      <th style={{ minWidth: 200 }}>Tên Thuốc / Sản Phẩm *</th>
+                      <th style={{ width: 90, textAlign: 'center' }}>ĐVT Nhập</th>
                       <th style={{ width: 120 }}>Số Lô (Batch) *</th>
                       <th style={{ width: 120 }}>Ngày SX (Mfg)</th>
                       <th style={{ width: 120 }}>Hạn Dùng (Exp) *</th>
-                      <th style={{ width: 110 }} className="text-right">SL Nhập *</th>
+                      <th style={{ width: 100 }} className="text-right">SL Nhập *</th>
                       <th style={{ width: 120 }} className="text-right">Đơn Giá Nhập</th>
-                      <th style={{ width: 120 }}>Vị Trí Ô Kệ</th>
-                      <th style={{ width: 110 }} className="text-right">Thành Tiền</th>
+                      <th style={{ width: 220 }}>Vị Trí Ô Kệ *</th>
+                      <th style={{ width: 120 }} className="text-right">Thành Tiền</th>
                       <th style={{ width: 40 }}></th>
                     </tr>
                   </thead>
@@ -298,8 +382,6 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                     {items.map((it, idx) => {
                       const subtotal = (Number(it.quantity) || 0) * (Number(it.unitCost) || 0);
                       const prod = products.find((p) => String(p.id) === String(it.productId));
-                      const prodUnits = prod?.units || [];
-                      const hasUnits = prodUnits.length > 0;
 
                       return (
                         <tr key={idx}>
@@ -307,7 +389,7 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                           <td>
                             <select
                               className="pms-select"
-                              style={{ fontSize: 12, padding: '4px 8px' }}
+                              style={{ fontSize: 12, padding: '5px 8px' }}
                               value={it.productId}
                               onChange={(e) => handleItemChange(idx, 'productId', e.target.value)}
                               required
@@ -315,42 +397,29 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                               <option value="">— Chọn Dược Phẩm —</option>
                               {products.map((p) => (
                                 <option key={p.id} value={p.id}>
-                                  {p.name} ({p.barcode || p.unit})
+                                  {p.name} ({p.barcode || p.unit || 'Hộp'})
                                 </option>
                               ))}
                             </select>
                           </td>
-                          <td>
-                            {hasUnits ? (
-                              <select
-                                className="pms-select"
-                                style={{ fontSize: 11.5, padding: '4px 6px', fontWeight: 600, color: '#0284c7' }}
-                                value={it.unitId || ''}
-                                onChange={(e) => handleUnitChange(idx, e.target.value)}
-                              >
-                                {prodUnits.map((u) => (
-                                  <option key={u.id} value={u.id}>
-                                    {u.unitName} (x{u.conversionFactor})
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span className="pms-badge pms-badge-neutral" style={{ fontSize: 11 }}>
-                                {it.unitName || prod?.unit || 'Đơn vị'}
-                              </span>
-                            )}
+                          <td style={{ textAlign: 'center' }}>
+                            <span
+                              className="pms-badge pms-badge-neutral"
+                              style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', background: '#f1f5f9' }}
+                            >
+                              {prod?.unit || 'Hộp'}
+                            </span>
                           </td>
                           <td>
                             <input
                               type="text"
                               className="pms-input mono"
                               style={{ fontSize: 12, padding: '4px 8px' }}
-                              placeholder="e.g. LOT-2026A"
+                              placeholder="VD: LOT-2026A"
                               value={it.batchNumber}
                               onChange={(e) => handleItemChange(idx, 'batchNumber', e.target.value)}
                               required
-                            >
-                            </input>
+                            />
                           </td>
                           <td>
                             <input
@@ -376,16 +445,11 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                               type="number"
                               min="1"
                               className="pms-input text-right"
-                              style={{ fontSize: 12, padding: '4px 8px' }}
+                              style={{ fontSize: 12, padding: '4px 8px', fontWeight: 600 }}
                               value={it.quantity}
                               onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
                               required
                             />
-                            {it.conversionFactor > 1 && (
-                              <div style={{ fontSize: 10.5, color: '#0284c7', fontWeight: 600, marginTop: 2, textAlign: 'right' }}>
-                                = {((Number(it.quantity) || 0) * it.conversionFactor).toLocaleString()} {prod?.unit || 'viên'}
-                              </div>
-                            )}
                           </td>
                           <td>
                             <input
@@ -401,14 +465,14 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
                           <td>
                             <select
                               className="pms-select"
-                              style={{ fontSize: 11, padding: '4px 6px' }}
+                              style={{ fontSize: 11.5, padding: '4px 8px', fontWeight: 600, color: '#1e40af' }}
                               value={it.locationId}
                               onChange={(e) => handleItemChange(idx, 'locationId', e.target.value)}
+                              required
                             >
-                              <option value="">— Chưa gán vị trí —</option>
                               {locations.map((loc) => (
                                 <option key={loc.id} value={loc.id}>
-                                  {loc.code} ({loc.aisle || ''}-{loc.shelf || ''})
+                                  {loc.code} (Dãy: {loc.aisle || '—'}, Kệ: {loc.shelf || '—'}, Hộc: {loc.bin || '—'})
                                 </option>
                               ))}
                             </select>
@@ -453,13 +517,32 @@ export default function WarehouseCreateReceiptModal({ show, onHide, onSubmit, lo
             </div>
           </div>
 
-          <div className="pms-modal-footer">
-            <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={loading}>
-              Hủy
-            </button>
-            <button type="submit" className="btn-pms btn-pms-primary" disabled={loading}>
-              {loading ? 'Đang tạo phiếu…' : 'Xác Nhận Tạo Phiếu Nhập'}
-            </button>
+          <div className="pms-modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', userSelect: 'none', fontWeight: 600, color: '#334155' }}>
+              <input
+                type="checkbox"
+                checked={autoConfirm}
+                onChange={(e) => setAutoConfirm(e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: 'var(--color-success)', cursor: 'pointer' }}
+              />
+              <span>Xác nhận nhập kho và tăng tồn ngay</span>
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" className="btn-pms btn-pms-secondary" onClick={onHide} disabled={loading}>
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="btn-pms btn-pms-primary"
+                disabled={loading}
+                style={{
+                  background: autoConfirm ? 'var(--color-success)' : undefined,
+                  borderColor: autoConfirm ? 'var(--color-success)' : undefined,
+                }}
+              >
+                {loading ? 'Đang xử lý…' : (autoConfirm ? 'Xác Nhận Nhập Kho & Tăng Tồn' : 'Lưu Phiếu Chờ Kiểm Nhận')}
+              </button>
+            </div>
           </div>
         </form>
       </div>

@@ -33,11 +33,20 @@ public interface WarehouseInventoryService {
 
     InventoryAdjustmentResponse rejectAdjustment(Long id, Long approverId, String reason);
 
+    // Helper: Get approved purchase proposals eligible for receiving
+    List<ApprovedPurchaseProposalDto> getApprovedPurchaseProposals();
+
     // Function #53: Manage Purchase Receipt (Create new incoming receipt)
     WarehousePurchaseHistoryResponse createPurchaseReceipt(CreatePurchaseReceiptRequest request, Long creatorId);
 
     // Function #54: Confirm Purchase Receipt (Inspect and accept goods into inventory)
     WarehousePurchaseHistoryResponse confirmPurchaseReceipt(Long id, Long confirmerId);
+
+    // Cancel / Reject incoming purchase receipt (Không nhận hàng)
+    WarehousePurchaseHistoryResponse cancelPurchaseReceipt(Long id, Long cancellerId, String reason);
+
+    // Auto-create goods receipt when a Purchase Proposal / PO is approved
+    com.pharmacy.entity.PurchaseReceipt createAutoReceiptForProposal(com.pharmacy.entity.PurchaseProposal pp, com.pharmacy.entity.Account actor);
 
     // Function #48: Manage Purchase Requests
     Page<PurchaseRequestResponse> getPurchaseRequests(Pageable pageable, String search, Short status);

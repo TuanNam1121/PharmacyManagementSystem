@@ -12,6 +12,7 @@ import {
   rejectInventoryAdjustment,
   createPurchaseReceipt,
   confirmPurchaseReceipt,
+  cancelPurchaseReceipt,
 } from '../../api/WarehouseInventoryAPI';
 
 export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryFilter = '' } = {}) => {
@@ -91,7 +92,8 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
   const fetchLocations = useCallback(async () => {
     try {
       const res = await getWarehouseLocations();
-      setLocations(res || []);
+      const sorted = (res || []).slice().sort((a, b) => (a.code || '').localeCompare(b.code || ''));
+      setLocations(sorted);
     } catch (err) {
       console.error('Failed to load locations', err);
     }
@@ -254,12 +256,17 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
     setError(null);
     try {
       const created = await createPurchaseReceipt(payload);
-      setSuccessMsg(`Purchase receipt ${created?.code || ''} created successfully (Pending inspection)!`);
+      if (payload.autoConfirm) {
+        setSuccessMsg(`Phiếu nhập ${created?.code || ''} đã hoàn tất nhập kho và cập nhật số lô mới vào kho tổng!`);
+      } else {
+        setSuccessMsg(`Đã tạo phiếu nhập ${created?.code || ''} ở trạng thái Chờ kiểm nhận!`);
+      }
       setCreateReceiptModalOpen(false);
       await fetchHistory();
+      await fetchInventory();
       return created;
     } catch (err) {
-      setError(err?.message || 'Failed to create purchase receipt');
+      setError(err?.message || 'Lỗi khi tạo phiếu nhập kho');
       throw err;
     } finally {
       setCreateReceiptLoading(false);
@@ -268,22 +275,40 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
 
   // Function #54: Confirm Purchase Receipt action
   const [confirmReceiptLoading, setConfirmReceiptLoading] = useState(false);
+  const [cancelReceiptLoading, setCancelReceiptLoading] = useState(false);
 
   const handleConfirmReceipt = async (id) => {
     setConfirmReceiptLoading(true);
     setError(null);
     try {
       const confirmed = await confirmPurchaseReceipt(id);
-      setSuccessMsg(`Receipt ${confirmed?.code || ''} confirmed and stock accepted into warehouse inventory!`);
+      setSuccessMsg(`Phiếu nhập ${confirmed?.code || ''} đã duyệt nhận hàng thành công và cập nhật lô mới vào kho tổng!`);
       setReceiptDetail(confirmed);
       await fetchHistory();
       await fetchInventory();
       return confirmed;
     } catch (err) {
-      setError(err?.message || 'Failed to confirm purchase receipt');
+      setError(err?.message || 'Không thể duyệt nhận hàng');
       throw err;
     } finally {
       setConfirmReceiptLoading(false);
+    }
+  };
+
+  const handleCancelReceipt = async (id, reason = '') => {
+    setCancelReceiptLoading(true);
+    setError(null);
+    try {
+      const cancelled = await cancelPurchaseReceipt(id, reason);
+      setSuccessMsg(`Phiếu nhập ${cancelled?.code || ''} đã từ chối tiếp nhận thành công!`);
+      setReceiptDetail(cancelled);
+      await fetchHistory();
+      return cancelled;
+    } catch (err) {
+      setError(err?.message || 'Không thể từ chối tiếp nhận phiếu nhập');
+      throw err;
+    } finally {
+      setCancelReceiptLoading(false);
     }
   };
 
@@ -337,6 +362,8 @@ export const useWarehouseInventory = ({ initialTab = 'inventory', initialExpiryF
     handleCreateReceipt,
     confirmReceiptLoading,
     handleConfirmReceipt,
+    cancelReceiptLoading,
+    handleCancelReceipt,
 
     // Adjustments
     adjustmentList,

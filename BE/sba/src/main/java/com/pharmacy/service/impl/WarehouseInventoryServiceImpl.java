@@ -23,8 +23,10 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,6 +50,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
     private final GoodsIssueDetailRepository goodsIssueDetailRepository;
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final PurchaseRequestDetailRepository purchaseRequestDetailRepository;
+    private final PurchaseProposalRepository purchaseProposalRepository;
 
     /* =========================================================================
        FUNCTION #41: VIEW INVENTORY
@@ -92,6 +95,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
     @Transactional(readOnly = true)
     public List<WarehouseLocationResponse> getLocations() {
         return locationRepository.findAll().stream()
+                .sorted(Comparator.comparing(WarehouseLocation::getCode, Comparator.nullsLast(String::compareTo)))
                 .map(loc -> WarehouseLocationResponse.builder()
                         .id(loc.getId())
                         .code(loc.getCode())
@@ -306,10 +310,107 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
        FUNCTION #53 & #54: MANAGE & CONFIRM PURCHASE RECEIPT (GOODS INWARD)
        ========================================================================= */
     @Override
+    @Transactional(readOnly = true)
+    public List<ApprovedPurchaseProposalDto> getApprovedPurchaseProposals() {
+        // Mỗi phiếu mua hàng chỉ tạo 1 phiếu nhập duy nhất: loại bỏ mọi phiếu mua đã có phiếu nhập
+        Set<Long> receivedProposalIds = purchaseReceiptRepository.findAll().stream()
+                .filter(r -> r.getPurchaseProposal() != null)
+                .map(r -> r.getPurchaseProposal().getId())
+                .collect(Collectors.toSet());
+
+        List<PurchaseProposal> proposals = purchaseProposalRepository.findAll().stream()
+                .filter(p -> p.getStatus() != null && p.getStatus() == 2 && !receivedProposalIds.contains(p.getId())) // 2: Approved, chưa nhận hàng
+                .sorted(Comparator.comparing(PurchaseProposal::getApprovedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+
+        List<WarehouseLocation> allLocations = locationRepository.findAll().stream()
+                .sorted(Comparator.comparing(WarehouseLocation::getCode))
+                .collect(Collectors.toList());
+        WarehouseLocation defaultLoc = allLocations.isEmpty() ? null : allLocations.get(0);
+
+        return proposals.stream().map(p -> {
+            Supplier supplier = null;
+            if (p.getSupplierQuotation() != null) {
+                supplier = p.getSupplierQuotation().getSupplier();
+            }
+            if (supplier == null) {
+                supplier = supplierRepository.findAll().stream().findFirst().orElse(null);
+            }
+
+            Supplier finalSupplier = supplier;
+            List<ApprovedPurchaseProposalDto.ProposalItemDto> items = (p.getDetails() == null ? Collections.<PurchaseProposalDetail>emptyList() : p.getDetails())
+                    .stream().map(d -> {
+                        Product prod = d.getProduct();
+                        WarehouseLocation suggestedLoc = null;
+                        if (prod != null) {
+                            suggestedLoc = inventoryRepository.findAll().stream()
+                                    .filter(inv -> inv.getProduct().getId().equals(prod.getId()) && inv.getLocation() != null)
+                                    .map(Inventory::getLocation)
+                                    .findFirst()
+                                    .orElse(defaultLoc);
+                        }
+                        if (suggestedLoc == null) {
+                            suggestedLoc = defaultLoc;
+                        }
+
+                        BigDecimal cost = (prod != null && prod.getCostPrice() != null) ? prod.getCostPrice() : BigDecimal.ZERO;
+                        String uName = (prod != null && prod.getUnit() != null) ? prod.getUnit() : "Hộp";
+
+                        return ApprovedPurchaseProposalDto.ProposalItemDto.builder()
+                                .productId(prod != null ? prod.getId() : null)
+                                .productCode(prod != null ? prod.getBarcode() : "")
+                                .productName(prod != null ? prod.getName() : "")
+                                .unit(uName)
+                                .unitName(uName)
+                                .conversionFactor(1)
+                                .quantity(d.getQuantity() != null ? d.getQuantity() : 1)
+                                .unitCost(cost)
+                                .suggestedLocationId(suggestedLoc != null ? suggestedLoc.getId() : null)
+                                .suggestedLocationCode(suggestedLoc != null ? suggestedLoc.getCode() : "")
+                                .build();
+                    }).collect(Collectors.toList());
+
+            return ApprovedPurchaseProposalDto.builder()
+                    .id(p.getId())
+                    .code(p.getCode())
+                    .supplierId(finalSupplier != null ? finalSupplier.getId() : null)
+                    .supplierName(finalSupplier != null ? finalSupplier.getName() : "Công ty Dược phẩm")
+                    .supplierCode(finalSupplier != null ? finalSupplier.getCode() : "SUP")
+                    .totalAmount(p.getTotalAmount())
+                    .approvedAt(p.getApprovedAt())
+                    .items(items)
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public WarehousePurchaseHistoryResponse createPurchaseReceipt(CreatePurchaseReceiptRequest request, Long creatorId) {
-        Supplier supplier = supplierRepository.findById(request.getSupplierId())
-                .orElseThrow(() -> new EntityNotFoundException("Supplier not found with ID: " + request.getSupplierId()));
+        PurchaseProposal proposal = null;
+        if (request.getPurchaseProposalId() != null) {
+            proposal = purchaseProposalRepository.findById(request.getPurchaseProposalId()).orElse(null);
+            if (proposal != null) {
+                final Long propId = proposal.getId();
+                boolean alreadyUsed = purchaseReceiptRepository.findAll().stream()
+                        .anyMatch(r -> r.getPurchaseProposal() != null && r.getPurchaseProposal().getId().equals(propId));
+                if (alreadyUsed) {
+                    throw new IllegalStateException("Đơn mua hàng " + proposal.getCode() + " đã được lập phiếu nhập kho. Mỗi đơn mua hàng chỉ được tạo 1 phiếu nhập duy nhất!");
+                }
+            }
+
+        }
+
+        Supplier supplier = null;
+        if (request.getSupplierId() != null) {
+            supplier = supplierRepository.findById(request.getSupplierId()).orElse(null);
+        }
+        if (supplier == null && proposal != null && proposal.getSupplierQuotation() != null) {
+            supplier = proposal.getSupplierQuotation().getSupplier();
+        }
+        if (supplier == null) {
+            supplier = supplierRepository.findAll().stream().findFirst()
+                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy thông tin nhà cung cấp hợp lệ"));
+        }
 
         Store warehouse = storeRepository.findFirstByType(StoreType.CENTRAL_WAREHOUSE.getCode())
                 .orElseGet(() -> storeRepository.findAll().stream().findFirst().orElseThrow());
@@ -326,6 +427,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
 
         PurchaseReceipt receipt = PurchaseReceipt.builder()
                 .code(receiptCode)
+                .purchaseProposal(proposal)
                 .supplier(supplier)
                 .store(warehouse)
                 .createdBy(creator)
@@ -338,28 +440,40 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
 
         PurchaseReceipt savedReceipt = purchaseReceiptRepository.save(receipt);
 
+        List<WarehouseLocation> allLocations = locationRepository.findAll().stream()
+                .sorted(Comparator.comparing(WarehouseLocation::getCode))
+                .collect(Collectors.toList());
+        WarehouseLocation defaultLoc = allLocations.isEmpty() ? null : allLocations.get(0);
+
         for (CreatePurchaseReceiptRequest.CreatePurchaseReceiptItem item : request.getItems()) {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new EntityNotFoundException("Product not found with ID: " + item.getProductId()));
 
-            WarehouseLocation loc = item.getLocationId() != null
-                    ? locationRepository.findById(item.getLocationId()).orElse(null)
-                    : null;
-
-            int conversionFactor = 1;
-            String unitName = product.getUnit();
-            if (item.getUnitId() != null) {
-                ProductUnit pu = productUnitRepository.findById(item.getUnitId()).orElse(null);
-                if (pu != null) {
-                    conversionFactor = (pu.getConversionFactor() != null && pu.getConversionFactor() > 0) ? pu.getConversionFactor() : 1;
-                    unitName = pu.getUnitName();
-                }
-            } else if (item.getConversionFactor() != null && item.getConversionFactor() > 0) {
-                conversionFactor = item.getConversionFactor();
-                unitName = item.getUnitName() != null ? item.getUnitName() : product.getUnit();
+            WarehouseLocation loc = null;
+            if (item.getLocationId() != null) {
+                loc = locationRepository.findById(item.getLocationId()).orElse(null);
+            }
+            if (loc == null) {
+                loc = inventoryRepository.findAll().stream()
+                        .filter(inv -> inv.getProduct().getId().equals(product.getId()) && inv.getLocation() != null)
+                        .map(Inventory::getLocation)
+                        .findFirst()
+                        .orElse(defaultLoc);
             }
 
-            int baseQuantity = item.getQuantity() * conversionFactor;
+            // Kho Tổng mặc định nhập và quản lý theo Hộp (conversionFactor = 1)
+            String unitName = (item.getUnitName() != null && !item.getUnitName().trim().isEmpty())
+                    ? item.getUnitName().trim()
+                    : (product.getUnit() != null ? product.getUnit() : "Hộp");
+            int conversionFactor = 1;
+            int baseQuantity = item.getQuantity();
+
+            long receiptSuffix = savedReceipt.getId() != null ? savedReceipt.getId() : (System.currentTimeMillis() % 1000);
+            String batchNo = (item.getBatchNumber() != null && !item.getBatchNumber().trim().isEmpty())
+                    ? item.getBatchNumber().trim()
+                    : ("LOT-" + LocalDate.now().toString().replace("-", "").substring(2) + "-" + String.format("%03d", receiptSuffix) + "-" + product.getId());
+            LocalDate mfg = item.getManufactureDate() != null ? item.getManufactureDate() : LocalDate.now().minusDays(10);
+            LocalDate exp = item.getExpiryDate() != null ? item.getExpiryDate() : LocalDate.now().plusYears(2);
 
             PurchaseReceiptDetail detail = PurchaseReceiptDetail.builder()
                     .purchaseReceipt(savedReceipt)
@@ -368,9 +482,9 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                     .quantity(item.getQuantity())
                     .unitCost(item.getUnitCost())
                     .subtotal(item.getUnitCost().multiply(BigDecimal.valueOf(item.getQuantity())))
-                    .batchNumber(item.getBatchNumber().trim())
-                    .manufactureDate(item.getManufactureDate())
-                    .expiryDate(item.getExpiryDate())
+                    .batchNumber(batchNo)
+                    .manufactureDate(mfg)
+                    .expiryDate(exp)
                     .location(loc)
                     .unitName(unitName)
                     .conversionFactor(conversionFactor)
@@ -378,6 +492,10 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                     .build();
 
             purchaseReceiptDetailRepository.save(detail);
+        }
+
+        if (Boolean.TRUE.equals(request.getAutoConfirm())) {
+            return confirmPurchaseReceipt(savedReceipt.getId(), creatorId);
         }
 
         return getPurchaseReceiptDetail(savedReceipt.getId());
@@ -401,18 +519,39 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         List<PurchaseReceiptDetail> details = purchaseReceiptDetailRepository.findByPurchaseReceiptIdWithDetails(id);
         Store warehouse = pr.getStore() != null ? pr.getStore() : storeRepository.findFirstByType(StoreType.CENTRAL_WAREHOUSE.getCode()).orElse(null);
 
+        List<WarehouseLocation> allLocations = locationRepository.findAll().stream()
+                .sorted(Comparator.comparing(WarehouseLocation::getCode))
+                .collect(Collectors.toList());
+        WarehouseLocation defaultLoc = allLocations.isEmpty() ? null : allLocations.get(0);
+
         for (PurchaseReceiptDetail detail : details) {
             Product product = detail.getProduct();
+            if (product == null) continue;
+
+            String rawBatchNumber = detail.getBatchNumber();
+            if (rawBatchNumber == null || rawBatchNumber.trim().isEmpty()) {
+                long receiptSuffix = pr.getId() != null ? pr.getId() : (System.currentTimeMillis() % 1000);
+                rawBatchNumber = "LOT-" + LocalDate.now().toString().replace("-", "").substring(2) + "-" + String.format("%03d", receiptSuffix) + "-" + product.getId();
+                detail.setBatchNumber(rawBatchNumber);
+            }
+            final String batchNo = rawBatchNumber.trim();
+
+            if (detail.getManufactureDate() == null) {
+                detail.setManufactureDate(LocalDate.now().minusDays(10));
+            }
+            if (detail.getExpiryDate() == null) {
+                detail.setExpiryDate(LocalDate.now().plusYears(2));
+            }
 
             // Find or create ProductBatch
             ProductBatch batch = productBatchRepository.findAll().stream()
                     .filter(b -> b.getProduct().getId().equals(product.getId()) &&
-                            b.getBatchNumber().equalsIgnoreCase(detail.getBatchNumber()))
+                            b.getBatchNumber().equalsIgnoreCase(batchNo))
                     .findFirst()
                     .orElseGet(() -> {
                         ProductBatch newBatch = ProductBatch.builder()
                                 .product(product)
-                                .batchNumber(detail.getBatchNumber())
+                                .batchNumber(batchNo)
                                 .manufactureDate(detail.getManufactureDate())
                                 .expiryDate(detail.getExpiryDate())
                                 .supplier(pr.getSupplier())
@@ -422,11 +561,21 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                     });
 
             detail.setBatch(batch);
+
+            // Đảm bảo vị trí ô kệ không bao giờ bị null
+            WarehouseLocation finalLocation = detail.getLocation();
+            if (finalLocation == null) {
+                finalLocation = inventoryRepository.findAll().stream()
+                        .filter(inv -> inv.getProduct().getId().equals(product.getId()) && inv.getLocation() != null)
+                        .map(Inventory::getLocation)
+                        .findFirst()
+                        .orElse(defaultLoc);
+                detail.setLocation(finalLocation);
+            }
             purchaseReceiptDetailRepository.save(detail);
 
-            // Update or Insert into warehouse inventory using baseQuantity (smallest unit)
-            int factor = (detail.getConversionFactor() != null && detail.getConversionFactor() > 0) ? detail.getConversionFactor() : 1;
-            int addQty = detail.getBaseQuantity() != null ? detail.getBaseQuantity() : (detail.getQuantity() * factor);
+            // Kho tổng quản lý theo Hộp: tăng đúng số lượng hộp nhập kho
+            int addQty = detail.getQuantity() != null ? detail.getQuantity() : 0;
 
             if (warehouse != null) {
                 Inventory inv = inventoryRepository.findAll().stream()
@@ -437,16 +586,17 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
 
                 if (inv != null) {
                     inv.setQuantity(inv.getQuantity() + addQty);
-                    if (detail.getLocation() != null) {
-                        inv.setLocation(detail.getLocation());
+                    if (finalLocation != null) {
+                        inv.setLocation(finalLocation);
                     }
+                    inv.setUpdatedAt(LocalDateTime.now());
                     inventoryRepository.save(inv);
                 } else {
                     Inventory newInv = Inventory.builder()
                             .store(warehouse)
                             .product(product)
                             .batch(batch)
-                            .location(detail.getLocation())
+                            .location(finalLocation)
                             .quantity(addQty)
                             .version(0)
                             .updatedAt(LocalDateTime.now())
@@ -454,16 +604,116 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                     inventoryRepository.save(newInv);
                 }
             }
-
-            // Đồng bộ cập nhật cost_price cơ bản của sản phẩm nếu nhập theo đơn vị quy đổi
-            if (factor > 1 && detail.getUnitCost() != null) {
-                product.setCostPrice(detail.getUnitCost().divide(BigDecimal.valueOf(factor), 2, RoundingMode.HALF_UP));
-                productRepository.save(product);
-            }
         }
 
         PurchaseReceipt savedPr = purchaseReceiptRepository.save(pr);
         return getPurchaseReceiptDetail(savedPr.getId());
+    }
+
+    @Override
+    @Transactional
+    public WarehousePurchaseHistoryResponse cancelPurchaseReceipt(Long id, Long cancellerId, String reason) {
+        PurchaseReceipt pr = purchaseReceiptRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Purchase receipt not found with ID: " + id));
+
+        if (pr.getStatus() != null && pr.getStatus().equals(PurchaseReceiptStatus.CONFIRMED.getCode())) {
+            throw new IllegalStateException("Không thể từ chối phiếu nhập kho đã được xác nhận nhập vào tồn kho");
+        }
+
+        pr.setStatus(PurchaseReceiptStatus.CANCELLED.getCode()); // 2 = Cancelled
+        if (reason != null && !reason.trim().isEmpty()) {
+            pr.setNote((pr.getNote() != null ? pr.getNote() + " " : "") + "[Từ chối tiếp nhận: " + reason.trim() + "]");
+        }
+        PurchaseReceipt savedPr = purchaseReceiptRepository.save(pr);
+        return getPurchaseReceiptDetail(savedPr.getId());
+    }
+
+    @Override
+    @Transactional
+    public PurchaseReceipt createAutoReceiptForProposal(PurchaseProposal pp, Account actor) {
+        if (pp == null) return null;
+
+        // Kiểm tra xem đã tồn tại phiếu nhập nào cho đề xuất này chưa để tránh trùng lặp
+        Optional<PurchaseReceipt> existing = purchaseReceiptRepository.findAll().stream()
+                .filter(r -> r.getPurchaseProposal() != null && r.getPurchaseProposal().getId().equals(pp.getId()))
+                .findFirst();
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        Store warehouse = storeRepository.findFirstByType(StoreType.CENTRAL_WAREHOUSE.getCode())
+                .orElseGet(() -> storeRepository.findAll().stream().findFirst().orElseThrow());
+
+        Supplier supplier = null;
+        if (pp.getSupplierQuotation() != null && pp.getSupplierQuotation().getSupplier() != null) {
+            supplier = pp.getSupplierQuotation().getSupplier();
+        }
+        if (supplier == null) {
+            supplier = supplierRepository.findAll().stream().findFirst().orElse(null);
+        }
+
+        String receiptCode = "REC-" + System.currentTimeMillis() % 1000000;
+
+        PurchaseReceipt receipt = PurchaseReceipt.builder()
+                .code(receiptCode)
+                .purchaseProposal(pp)
+                .supplier(supplier)
+                .store(warehouse)
+                .createdBy(actor != null ? actor : pp.getCreatedBy())
+                .deliveryType((short) 1) // Giao trực tiếp
+                .status(PurchaseReceiptStatus.DRAFT.getCode()) // 0 = Chờ kiểm nhận
+                .totalAmount(pp.getTotalAmount() != null ? pp.getTotalAmount() : BigDecimal.ZERO)
+                .note("Tự động chuyển từ đơn/đề xuất mua hàng " + pp.getCode() + " đã được phê duyệt")
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        PurchaseReceipt savedReceipt = purchaseReceiptRepository.save(receipt);
+
+        List<WarehouseLocation> allLocations = locationRepository.findAll().stream()
+                .sorted(Comparator.comparing(WarehouseLocation::getCode))
+                .collect(Collectors.toList());
+        WarehouseLocation defaultLoc = allLocations.isEmpty() ? null : allLocations.get(0);
+
+        if (pp.getDetails() != null) {
+            for (PurchaseProposalDetail d : pp.getDetails()) {
+                Product product = d.getProduct();
+                if (product == null) continue;
+
+                WarehouseLocation loc = inventoryRepository.findAll().stream()
+                        .filter(inv -> inv.getProduct().getId().equals(product.getId()) && inv.getLocation() != null)
+                        .map(Inventory::getLocation)
+                        .findFirst()
+                        .orElse(defaultLoc);
+
+                BigDecimal unitCost = product.getCostPrice() != null ? product.getCostPrice() : BigDecimal.ZERO;
+                int qty = d.getQuantity() != null ? d.getQuantity() : 1;
+                BigDecimal sub = unitCost.multiply(BigDecimal.valueOf(qty));
+
+                long receiptSuffix = savedReceipt.getId() != null ? savedReceipt.getId() : (System.currentTimeMillis() % 1000);
+                String batchNumber = "LOT-" + LocalDate.now().toString().replace("-", "").substring(2) + "-" + String.format("%03d", receiptSuffix) + "-" + product.getId();
+                LocalDate mfgDate = LocalDate.now().minusDays(10);
+                LocalDate expDate = LocalDate.now().plusYears(2);
+
+                PurchaseReceiptDetail detail = PurchaseReceiptDetail.builder()
+                        .purchaseReceipt(savedReceipt)
+                        .product(product)
+                        .orderQuantity(qty)
+                        .quantity(qty)
+                        .unitCost(unitCost)
+                        .subtotal(sub)
+                        .batchNumber(batchNumber)
+                        .manufactureDate(mfgDate)
+                        .expiryDate(expDate)
+                        .location(loc)
+                        .unitName("Hộp")
+                        .conversionFactor(1)
+                        .baseQuantity(qty)
+                        .build();
+
+                purchaseReceiptDetailRepository.save(detail);
+            }
+        }
+        return savedReceipt;
     }
 
     /* =========================================================================
@@ -776,15 +1026,22 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         return WarehousePurchaseHistoryResponse.builder()
                 .id(pr.getId())
                 .code(pr.getCode())
+                .purchaseProposalId(pr.getPurchaseProposal() != null ? pr.getPurchaseProposal().getId() : null)
+                .purchaseProposalCode(pr.getPurchaseProposal() != null ? pr.getPurchaseProposal().getCode() : null)
+                .supplierId(pr.getSupplier() != null ? pr.getSupplier().getId() : null)
+                .supplierName(pr.getSupplier() != null ? pr.getSupplier().getName() : null)
+                .supplierCode(pr.getSupplier() != null ? pr.getSupplier().getCode() : null)
                 .deliveryType(pr.getDeliveryType())
                 .deliveryTypeLabel(deliveryLabel)
                 .status(pr.getStatus())
                 .statusLabel(statusLabel)
                 .totalAmount(pr.getTotalAmount() != null ? pr.getTotalAmount() : BigDecimal.ZERO)
                 .note(pr.getNote() != null ? pr.getNote() : "")
+                .createdByUsername(pr.getCreatedBy() != null ? pr.getCreatedBy().getUsername() : null)
+                .confirmedByUsername(pr.getConfirmedBy() != null ? pr.getConfirmedBy().getUsername() : null)
                 .createdAt(pr.getCreatedAt())
                 .confirmedAt(pr.getConfirmedAt())
-                .itemCount(0)
+                .itemCount(pr.getDetails() != null ? pr.getDetails().size() : 0)
                 .items(Collections.emptyList())
                 .build();
     }
@@ -855,8 +1112,19 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
     @Override
     @Transactional(readOnly = true)
     public List<ProductOptionDto> getProductOptions() {
+        List<WarehouseLocation> allLocations = locationRepository.findAll().stream()
+                .sorted(Comparator.comparing(WarehouseLocation::getCode))
+                .collect(Collectors.toList());
+        WarehouseLocation defaultLoc = allLocations.isEmpty() ? null : allLocations.get(0);
+
         return productRepository.findAll().stream()
                 .map(p -> {
+                    WarehouseLocation loc = inventoryRepository.findAll().stream()
+                            .filter(inv -> inv.getProduct().getId().equals(p.getId()) && inv.getLocation() != null)
+                            .map(Inventory::getLocation)
+                            .findFirst()
+                            .orElse(defaultLoc);
+
                     List<ProductUnitDto> unitDtos = productUnitRepository.findByProduct_IdOrderByConversionFactorAsc(p.getId()).stream()
                             .map(u -> ProductUnitDto.builder()
                                     .id(u.getId())
@@ -872,9 +1140,11 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
                             .id(p.getId())
                             .name(p.getName())
                             .barcode(p.getBarcode())
-                            .unit(p.getUnit())
+                            .unit(p.getUnit() != null ? p.getUnit() : "Hộp")
                             .purchasePrice(p.getCostPrice())
                             .units(unitDtos)
+                            .defaultLocationId(loc != null ? loc.getId() : null)
+                            .defaultLocationCode(loc != null ? loc.getCode() : "")
                             .build();
                 })
                 .collect(Collectors.toList());

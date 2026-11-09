@@ -15,14 +15,18 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
         @Query(value = "SELECT i FROM Inventory i " +
                         "JOIN FETCH i.product p " +
                         "JOIN FETCH i.batch b " +
+                        "JOIN FETCH i.store s " +
                         "LEFT JOIN FETCH i.location l " +
-                        "WHERE (:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "WHERE s.type = 2 " +
+                        "  AND (:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
                         "      OR LOWER(p.barcode) LIKE LOWER(CONCAT('%', :search, '%')) " +
                         "      OR LOWER(b.batchNumber) LIKE LOWER(CONCAT('%', :search, '%')))", countQuery = "SELECT count(i) FROM Inventory i "
                                         +
+                                        "JOIN i.store s " +
                                         "JOIN i.product p " +
                                         "JOIN i.batch b " +
-                                        "WHERE (:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) "
+                                        "WHERE s.type = 2 " +
+                                        "  AND (:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) "
                                         +
                                         "      OR LOWER(p.barcode) LIKE LOWER(CONCAT('%', :search, '%')) " +
                                         "      OR LOWER(b.batchNumber) LIKE LOWER(CONCAT('%', :search, '%')))")

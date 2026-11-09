@@ -19,5 +19,7 @@ public class ProductOptionDto {
     private String barcode;
     private String unit;
     private BigDecimal purchasePrice;
+    private Long defaultLocationId;
+    private String defaultLocationCode;
     private List<ProductUnitDto> units;
 }

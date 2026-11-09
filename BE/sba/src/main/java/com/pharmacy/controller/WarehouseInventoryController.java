@@ -160,6 +160,15 @@ public class WarehouseInventoryController {
     }
 
     /**
+     * Helper: Get approved purchase proposals eligible for receiving goods
+     */
+    @GetMapping("/approved-purchase-proposals")
+    public ResponseEntity<ApiResponse<List<ApprovedPurchaseProposalDto>>> getApprovedPurchaseProposals() {
+        List<ApprovedPurchaseProposalDto> list = warehouseInventoryService.getApprovedPurchaseProposals();
+        return ResponseEntity.ok(ApiResponse.success("Approved purchase proposals retrieved successfully", list));
+    }
+
+    /**
      * Function #53: Manage Purchase Receipt (Create new incoming receipt)
      */
     @PostMapping("/purchase-receipts")
@@ -186,7 +195,20 @@ public class WarehouseInventoryController {
             @RequestParam(required = false) Long confirmerId) {
 
         WarehousePurchaseHistoryResponse response = warehouseInventoryService.confirmPurchaseReceipt(id, confirmerId);
-        return ResponseEntity.ok(ApiResponse.success("Purchase receipt confirmed successfully, inventory updated", response));
+        return ResponseEntity.ok(ApiResponse.success("Duyệt nhận hàng thành công, tồn kho kho tổng đã được tạo mới", response));
+    }
+
+    /**
+     * Cancel / Reject incoming purchase receipt (Từ chối / Không nhận hàng)
+     */
+    @PatchMapping("/purchase-receipts/{id}/cancel")
+    public ResponseEntity<ApiResponse<WarehousePurchaseHistoryResponse>> cancelPurchaseReceipt(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long cancellerId,
+            @RequestParam(required = false) String reason) {
+
+        WarehousePurchaseHistoryResponse response = warehouseInventoryService.cancelPurchaseReceipt(id, cancellerId, reason);
+        return ResponseEntity.ok(ApiResponse.success("Từ chối tiếp nhận lô hàng thành công", response));
     }
 
     /**

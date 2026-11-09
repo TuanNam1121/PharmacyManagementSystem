@@ -52,6 +52,8 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
     private final ProductRepository productRepository;
     private final SupplierQuotationRepository supplierQuotationRepository;
     private final SupplierQuotationDetailRepository supplierQuotationDetailRepository;
+    @org.springframework.context.annotation.Lazy
+    private final com.pharmacy.service.WarehouseInventoryService warehouseInventoryService;
 
     @Override
     @Transactional
@@ -220,7 +222,8 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
             }
         }
 
-        return PurchaseProposalResponse.fromEntity(purchaseProposalRepository.save(pp));
+        PurchaseProposal savedPp = purchaseProposalRepository.save(pp);
+        return PurchaseProposalResponse.fromEntity(savedPp);
     }
 
     @Override

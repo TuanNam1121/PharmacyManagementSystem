@@ -1,6 +1,15 @@
 import { formatDate, money } from '../../utils/format';
 
-export default function WarehousePurchaseReceiptDetailModal({ show, onHide, detail, loading, onConfirm, confirmLoading }) {
+export default function WarehousePurchaseReceiptDetailModal({
+  show,
+  onHide,
+  detail,
+  loading,
+  onConfirm,
+  confirmLoading,
+  onCancel,
+  cancelLoading,
+}) {
   if (!show) return null;
 
   const isConfirmed = detail?.status === 1 || detail?.statusLabel === 'Confirmed';
@@ -34,7 +43,7 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
             <div>
               {/* Summary */}
               <div style={{
-                display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16,
+                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16,
                 background: 'var(--bg-canvas)', border: '1px solid var(--border-color)',
                 borderRadius: 'var(--border-radius-md)', padding: '16px 20px', marginBottom: 20,
               }}>
@@ -43,8 +52,22 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
                   <div className="pms-detail-value mono fw-700">{detail.code}</div>
                 </div>
                 <div className="pms-detail-row">
+                  <div className="pms-detail-label">Phiếu Mua Hàng Liên Kết</div>
+                  <div className="pms-detail-value mono fw-600">
+                    {detail.purchaseProposalCode ? (
+                      <span className="pms-badge pms-badge-info">{detail.purchaseProposalCode}</span>
+                    ) : (
+                      'Nhập trực tiếp'
+                    )}
+                  </div>
+                </div>
+                <div className="pms-detail-row">
+                  <div className="pms-detail-label">Nhà Cung Cấp</div>
+                  <div className="pms-detail-value fw-600">{detail.supplierName || '—'}</div>
+                </div>
+                <div className="pms-detail-row">
                   <div className="pms-detail-label">Tổng Giá Trị</div>
-                  <div className="pms-detail-value fw-700" style={{ color: 'var(--brand-primary)' }}>{money(detail.totalAmount)}</div>
+                  <div className="pms-detail-value fw-700" style={{ color: 'var(--brand-primary)', fontSize: 16 }}>{money(detail.totalAmount)}</div>
                 </div>
                 <div className="pms-detail-row">
                   <div className="pms-detail-label">Ngày Lập Phiếu</div>
@@ -53,7 +76,9 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
                 <div className="pms-detail-row">
                   <div className="pms-detail-label">Trạng Thái</div>
                   <div style={{ marginTop: 2 }}>
-                    <span className="pms-badge pms-badge-success">{detail.statusLabel || 'Đã xác nhận'}</span>
+                    <span className={`pms-badge ${isConfirmed ? 'pms-badge-success' : 'pms-badge-warning'}`}>
+                      {detail.statusLabel || (isConfirmed ? 'Đã nhập kho' : 'Chờ kiểm nhận')}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -125,11 +150,33 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn-pms btn-pms-secondary" onClick={onHide}>Đóng</button>
-            {!isConfirmed && onConfirm && detail && (
+            {!isConfirmed && detail?.status !== 2 && onCancel && detail && (
+              <button
+                className="btn-pms"
+                onClick={() => {
+                  onCancel(detail);
+                  onHide();
+                }}
+                disabled={confirmLoading || cancelLoading}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                {cancelLoading ? 'Đang từ chối…' : 'Từ Chối Tiếp Nhận'}
+              </button>
+            )}
+            {!isConfirmed && detail?.status !== 2 && onConfirm && detail && (
               <button
                 className="btn-pms btn-pms-primary"
-                onClick={() => onConfirm(detail.id)}
-                disabled={confirmLoading}
+                onClick={async () => {
+                  await onConfirm(detail.id);
+                  onHide();
+                }}
+                disabled={confirmLoading || cancelLoading}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
                   background: 'var(--color-success)', borderColor: 'var(--color-success)',
@@ -138,7 +185,7 @@ export default function WarehousePurchaseReceiptDetailModal({ show, onHide, deta
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
-                {confirmLoading ? 'Đang xác nhận…' : 'Xác Nhận Nhập Kho & Tăng Tồn'}
+                {confirmLoading ? 'Đang duyệt…' : 'Duyệt Nhận Hàng (Nhập Kho)'}
               </button>
             )}
           </div>

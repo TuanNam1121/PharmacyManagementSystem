@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function WarehouseLocationModal({
   show, onHide, inventory, locations, onAssign, onCreateLocation, loading,
 }) {
-  const [selectedLocationId, setSelectedLocationId] = useState(inventory?.locationId || '');
+  const [selectedLocationId, setSelectedLocationId] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newCode, setNewCode]   = useState('');
   const [newAisle, setNewAisle] = useState('');
@@ -11,6 +11,14 @@ export default function WarehouseLocationModal({
   const [newBin, setNewBin]     = useState('');
   const [creating, setCreating] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  useEffect(() => {
+    if (inventory) {
+      setSelectedLocationId(inventory.locationId ? String(inventory.locationId) : '');
+      setErrorMsg(null);
+      setShowCreateForm(false);
+    }
+  }, [inventory, show]);
 
   if (!show || !inventory) return null;
 
@@ -118,7 +126,7 @@ export default function WarehouseLocationModal({
               </div>
               <div className="pms-form-group">
                 <label className="pms-label">Mã Vị Trí Ô Kệ *</label>
-                <input className="pms-input pms-input-bare" placeholder="VD: A01-S02-B03" value={newCode}
+                <input className="pms-input pms-input-bare" placeholder="VD: A-01-01" value={newCode}
                   onChange={(e) => setNewCode(e.target.value)} required />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>

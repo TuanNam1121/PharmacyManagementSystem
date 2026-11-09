@@ -29,6 +29,15 @@ public enum PurchaseReceiptStatus {
     }
 
     public static String resolveLabel(Short status) {
-        return (status != null && status == 1) ? CONFIRMED.label : DRAFT.label;
+        if (status == null) {
+            return DRAFT.label;
+        }
+        if (status == 1) {
+            return CONFIRMED.label;
+        }
+        if (status == 2) {
+            return "Từ chối / Đã hủy";
+        }
+        return DRAFT.label;
     }
 }

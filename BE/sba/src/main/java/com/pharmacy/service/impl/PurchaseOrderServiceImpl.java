@@ -18,6 +18,7 @@ import com.pharmacy.repository.SupplierQuotationDetailRepository;
 import com.pharmacy.service.PurchaseOrderService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PurchaseOrderServiceImpl implements PurchaseOrderService {
@@ -41,6 +43,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private final AccountRepository accountRepository;
     private final AuditLogRepository auditLogRepository;
     private final PurchaseRequestRepository purchaseRequestRepository;
+    @org.springframework.context.annotation.Lazy
+    private final com.pharmacy.service.WarehouseInventoryService warehouseInventoryService;
 
     @Override
     @Transactional(readOnly = true)
@@ -186,17 +190,17 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         }
 
         // BR-02: Write immutable audit log
-        AuditLog log = new AuditLog();
-        log.setAccount(approver);
-        log.setAction((short) 2); // 2 = UPDATE / APPROVE
-        log.setEntityName("PurchaseProposal");
-        log.setEntityId(pp.getId());
-        log.setOldValue("status=" + oldStatus);
-        log.setNewValue("status=2 (Approved), approver=" + (approver != null ? approver.getUsername() : "N/A") +
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAccount(approver);
+        auditLog.setAction((short) 2); // 2 = UPDATE / APPROVE
+        auditLog.setEntityName("PurchaseProposal");
+        auditLog.setEntityId(pp.getId());
+        auditLog.setOldValue("status=" + oldStatus);
+        auditLog.setNewValue("status=2 (Approved), approver=" + (approver != null ? approver.getUsername() : "N/A") +
                 (request.getReason() != null ? ", note=" + request.getReason().trim() : ""));
-        log.setIpAddress(clientIp);
-        log.setCreatedAt(LocalDateTime.now());
-        auditLogRepository.save(log);
+        auditLog.setIpAddress(clientIp);
+        auditLog.setCreatedAt(LocalDateTime.now());
+        auditLogRepository.save(auditLog);
 
         return getPurchaseOrderDetail(id);
     }

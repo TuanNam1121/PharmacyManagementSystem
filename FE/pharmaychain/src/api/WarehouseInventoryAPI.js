@@ -106,6 +106,14 @@ export const rejectInventoryAdjustment = async (id, reason, approverId) => {
 };
 
 /**
+ * Helper: Get approved purchase proposals eligible for receiving goods
+ */
+export const getApprovedPurchaseProposals = async () => {
+  const json = await get(`${BASE_URL}/approved-purchase-proposals`);
+  return unwrapApiResponse(json);
+};
+
+/**
  * Function #53: Manage Purchase Receipt (Create new incoming receipt)
  */
 export const createPurchaseReceipt = async (payload, creatorId) => {
@@ -124,6 +132,18 @@ export const confirmPurchaseReceipt = async (id, confirmerId) => {
   if (confirmerId) params.append('confirmerId', confirmerId);
   const q = params.toString() ? `?${params.toString()}` : '';
   const json = await patch(`${BASE_URL}/purchase-receipts/${encodeURIComponent(id)}/confirm${q}`);
+  return unwrapApiResponse(json);
+};
+
+/**
+ * Cancel / Reject incoming purchase receipt (Từ chối / Không nhận hàng)
+ */
+export const cancelPurchaseReceipt = async (id, reason = '', cancellerId) => {
+  const params = new URLSearchParams();
+  if (cancellerId) params.append('cancellerId', cancellerId);
+  if (reason) params.append('reason', reason);
+  const q = params.toString() ? `?${params.toString()}` : '';
+  const json = await patch(`${BASE_URL}/purchase-receipts/${encodeURIComponent(id)}/cancel${q}`);
   return unwrapApiResponse(json);
 };
 

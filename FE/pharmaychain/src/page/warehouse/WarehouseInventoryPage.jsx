@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useWarehouseInventory } from '../../hooks/warehouse/useWarehouseInventory';
 import WarehouseStats from '../../component/warehouse/WarehouseStats';
@@ -9,6 +9,7 @@ import WarehouseAdjustmentModal from '../../component/warehouse/WarehouseAdjustm
 import WarehousePurchaseHistoryTable from '../../component/warehouse/WarehousePurchaseHistoryTable';
 import WarehousePurchaseReceiptDetailModal from '../../component/warehouse/WarehousePurchaseReceiptDetailModal';
 import WarehouseCreateReceiptModal from '../../component/warehouse/WarehouseCreateReceiptModal';
+import WarehouseRejectReceiptModal from '../../component/warehouse/WarehouseRejectReceiptModal';
 import WarehouseAdjustmentListTable from '../../component/warehouse/WarehouseAdjustmentListTable';
 
 const TABS = [
@@ -80,6 +81,7 @@ export default function WarehouseInventoryPage({
     locations, locationModalOpen, setLocationModalOpen, selectedInventory, setSelectedInventory, locationLoading, handleAssignLocation, handleCreateLocation,
     historyList, histTotal, histPage, setHistPage, histSize, histSearch, setHistSearch, histLoading, receiptDetail, receiptModalOpen, setReceiptModalOpen, receiptLoading, handleViewReceiptDetail,
     createReceiptModalOpen, setCreateReceiptModalOpen, createReceiptLoading, handleCreateReceipt, confirmReceiptLoading, handleConfirmReceipt,
+    cancelReceiptLoading, handleCancelReceipt,
     adjustmentList, adjTotal, adjPage, setAdjPage, adjSize, adjModalOpen, setAdjModalOpen, selectedForAdj, setSelectedForAdj, adjLoading, handleCreateAdjustment,
     handleApproveAdjustment, handleRejectAdjustment,
     error, setError, successMsg, setSuccessMsg,
@@ -111,6 +113,20 @@ export default function WarehouseInventoryPage({
 
   const openLocationModal = (row) => { setSelectedInventory(row); setLocationModalOpen(true); };
   const openAdjustmentModal = (row) => { setSelectedForAdj(row); setAdjModalOpen(true); };
+
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [selectedForReject, setSelectedForReject] = useState(null);
+
+  const handleOpenRejectModal = (receipt) => {
+    setSelectedForReject(receipt);
+    setRejectModalOpen(true);
+  };
+
+  const handleConfirmReject = async (id, reason) => {
+    await handleCancelReceipt(id, reason);
+    setRejectModalOpen(false);
+    setSelectedForReject(null);
+  };
 
   // Dynamic header based on props or current tab
   const getHeaderInfo = () => {
@@ -267,6 +283,8 @@ export default function WarehouseInventoryPage({
             onViewDetail={handleViewReceiptDetail}
             onConfirm={handleConfirmReceipt}
             confirmLoading={confirmReceiptLoading}
+            onCancel={handleOpenRejectModal}
+            cancelLoading={cancelReceiptLoading}
           />
           <Pagination total={histTotal} page={histPage} size={histSize} onPage={setHistPage} />
         </div>
@@ -316,12 +334,21 @@ export default function WarehouseInventoryPage({
         loading={receiptLoading}
         onConfirm={handleConfirmReceipt}
         confirmLoading={confirmReceiptLoading}
+        onCancel={handleOpenRejectModal}
+        cancelLoading={cancelReceiptLoading}
       />
       <WarehouseCreateReceiptModal
         show={createReceiptModalOpen}
         onHide={() => setCreateReceiptModalOpen(false)}
         onSubmit={handleCreateReceipt}
         loading={createReceiptLoading}
+      />
+      <WarehouseRejectReceiptModal
+        show={rejectModalOpen}
+        receipt={selectedForReject}
+        onHide={() => { setRejectModalOpen(false); setSelectedForReject(null); }}
+        onSubmit={handleConfirmReject}
+        loading={cancelReceiptLoading}
       />
     </div>
   );
