@@ -8,10 +8,14 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
     { productId: '', requestedQuantity: 100, note: '' },
   ]);
   const [formError, setFormError] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingPayload, setPendingPayload] = useState(null);
 
   useEffect(() => {
     if (show) {
       setFormError(null);
+      setShowConfirm(false);
+      setPendingPayload(null);
       getWarehouseProducts()
         .then((res) => setProducts(res || []))
         .catch((err) => console.error('Failed to load products', err));
@@ -40,14 +44,15 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Lấy đơn vị tính của dược phẩm đã chọn để hiển thị ngay bên cạnh tên thuốc
+  const getProductUnit = (productId) => {
+    const p = products.find((prod) => String(prod.id) === String(productId));
+    return p?.unit || '';
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setFormError(null);
-
-    if (!reason || !reason.trim()) {
-      setFormError('Vui lòng nhập lý do / giải trình nhu cầu mua hàng');
-      return;
-    }
 
     if (items.length === 0) {
       setFormError('Vui lòng thêm ít nhất một mặt hàng thuốc');
@@ -67,7 +72,7 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
     }
 
     const payload = {
-      reason: reason.trim(),
+      reason: reason.trim() || undefined,
       items: items.map((it) => ({
         productId: Number(it.productId),
         requestedQuantity: Number(it.requestedQuantity),
@@ -75,11 +80,17 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
       })),
     };
 
-    onSubmit(payload);
+    setPendingPayload(payload);
+    setShowConfirm(true);
+  };
+
+  const handleConfirmSubmit = () => {
+    setShowConfirm(false);
+    onSubmit(pendingPayload);
   };
 
   return (
-    <div className="pms-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onHide(); }}>
+    <div className="pms-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget && !loading) onHide(); }}>
       <div className="pms-modal pms-modal-lg">
         <div className="pms-modal-header">
           <div>
@@ -93,7 +104,10 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}
+        >
           <div className="pms-modal-body">
             {formError && (
               <div className="pms-alert pms-alert-danger" style={{ marginBottom: 16 }}>
@@ -103,20 +117,6 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
                 {formError}
               </div>
             )}
-
-            <div className="pms-form-group" style={{ marginBottom: 20 }}>
-              <label className="pms-form-label">
-                Lý Do / Giải Trình Nhu Cầu Mua Hàng <span className="pms-required">*</span>
-              </label>
-              <textarea
-                className="pms-input"
-                rows={2}
-                placeholder="VD: Cảnh báo tồn kho dưới ngưỡng an toàn, chuẩn bị nguồn hàng cho mùa dịch..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                required
-              />
-            </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -142,6 +142,7 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
                     <tr>
                       <th style={{ width: 40 }}>#</th>
                       <th>Tên Thuốc / Sản Phẩm *</th>
+                      <th style={{ width: 150 }}>Đơn Vị</th>
                       <th style={{ width: 140 }} className="text-right">SL Yêu Cầu *</th>
                       <th>Ghi Chú</th>
                       <th style={{ width: 40 }}></th>
@@ -154,7 +155,7 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
                         <td>
                           <select
                             className="pms-select"
-                            style={{ fontSize: 12, padding: '4px 8px' }}
+                            style={{ fontSize: 12, padding: '4px 32px 4px 8px' }}
                             value={it.productId}
                             onChange={(e) => handleItemChange(idx, 'productId', e.target.value)}
                             required
@@ -162,10 +163,17 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
                             <option value="">— Chọn Dược Phẩm —</option>
                             {products.map((p) => (
                               <option key={p.id} value={p.id}>
-                                {p.name} ({p.barcode || p.unit})
+                                {p.name}
                               </option>
                             ))}
                           </select>
+                        </td>
+                        <td>
+                          {it.productId ? (
+                            <span className="pms-badge pms-badge-info">{getProductUnit(it.productId) || '—'}</span>
+                          ) : (
+                            <span className="text-muted-color">—</span>
+                          )}
                         </td>
                         <td>
                           <input
@@ -207,6 +215,19 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
                 </table>
               </div>
             </div>
+
+            <div className="pms-form-group" style={{ marginTop: 20 }}>
+              <label className="pms-form-label">
+                Lý Do / Giải Trình Nhu Cầu Mua Hàng <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(không bắt buộc)</span>
+              </label>
+              <textarea
+                className="pms-input"
+                rows={2}
+                placeholder="VD: Cảnh báo tồn kho dưới ngưỡng an toàn, chuẩn bị nguồn hàng cho mùa dịch..."
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="pms-modal-footer">
@@ -219,6 +240,44 @@ export default function WarehouseCreatePurchaseRequestModal({ show, onHide, onSu
           </div>
         </form>
       </div>
+
+      {showConfirm && (
+        <div
+          className="pms-modal-overlay"
+          style={{ zIndex: 1100 }}
+          onClick={(e) => { e.stopPropagation(); if (e.target === e.currentTarget) setShowConfirm(false); }}
+        >
+          <div className="pms-modal" style={{ maxWidth: 420 }}>
+            <div className="pms-modal-header">
+              <div className="pms-modal-title">Xác nhận tạo phiếu</div>
+            </div>
+            <div className="pms-modal-body" style={{ fontSize: 14, color: 'var(--text-primary)' }}>
+              Bạn có muốn tạo phiếu yêu cầu mua hàng?
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+                {items.length} mặt hàng sẽ được gửi tới phòng Mua hàng / Cung ứng.
+              </div>
+            </div>
+            <div className="pms-modal-footer">
+              <button
+                type="button"
+                className="btn-pms btn-pms-secondary"
+                onClick={() => setShowConfirm(false)}
+                disabled={loading}
+              >
+                Không
+              </button>
+              <button
+                type="button"
+                className="btn-pms btn-pms-primary"
+                onClick={handleConfirmSubmit}
+                disabled={loading}
+              >
+                {loading ? 'Đang gửi…' : 'Có'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

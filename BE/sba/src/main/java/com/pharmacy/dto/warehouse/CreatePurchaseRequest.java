@@ -1,5 +1,7 @@
 package com.pharmacy.dto.warehouse;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -17,7 +19,7 @@ public class CreatePurchaseRequest {
     private String reason;
 
     @NotEmpty(message = "Product items list cannot be empty")
-    private List<CreatePurchaseRequestItem> items;
+    private List<@Valid CreatePurchaseRequestItem> items;
 
     @Data
     @NoArgsConstructor
@@ -27,6 +29,7 @@ public class CreatePurchaseRequest {
         private Long productId;
 
         @NotNull(message = "Requested quantity is required")
+        @Min(value = 1, message = "Số lượng yêu cầu phải lớn hơn 0")
         private Integer requestedQuantity;
 
         private String note;

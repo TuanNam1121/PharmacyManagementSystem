@@ -183,7 +183,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         Account approver = resolveActor(request.getActionByUsername());
 
         Short oldStatus = pp.getStatus();
-        pp.setStatus((short) 2); // 2 = Approved
+        pp.setStatus(PurchaseProposalStatus.APPROVED.getCode()); // 3 = Approved
         pp.setApprovedBy(approver);
         pp.setApprovedAt(LocalDateTime.now());
         purchaseProposalRepository.save(pp);

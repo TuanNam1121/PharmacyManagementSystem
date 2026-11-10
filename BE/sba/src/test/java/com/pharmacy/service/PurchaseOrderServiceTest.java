@@ -1,11 +1,15 @@
 package com.pharmacy.service;
 
+import com.pharmacy.dto.procurement.PurchaseOrderActionRequest;
 import com.pharmacy.dto.procurement.PurchaseOrderResponse;
+import com.pharmacy.entity.Account;
+import com.pharmacy.entity.AuditLog;
 import com.pharmacy.entity.Product;
 import com.pharmacy.entity.PurchaseProposal;
 import com.pharmacy.entity.PurchaseProposalDetail;
 import com.pharmacy.entity.SupplierQuotation;
 import com.pharmacy.entity.SupplierQuotationDetail;
+import com.pharmacy.entity.enums.PurchaseProposalStatus;
 import com.pharmacy.repository.AccountRepository;
 import com.pharmacy.repository.AuditLogRepository;
 import com.pharmacy.repository.PurchaseProposalRepository;
@@ -29,6 +33,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -173,5 +178,91 @@ class PurchaseOrderServiceTest {
         assertEquals(new BigDecimal("30750.00"), page.getContent().get(0).getTotalAmount());
         // Đơn chưa có báo giá -> tạm tính theo giá vốn
         assertEquals(BigDecimal.valueOf(16_500_000), page.getContent().get(1).getTotalAmount());
+    }
+
+    @Test
+    @DisplayName("Phê duyệt PO ở trạng thái nháp chuyển sang Đã phê duyệt (3)")
+    void approvePurchaseOrder_draft_setsStatusToApproved() {
+        PurchaseProposal proposal = PurchaseProposal.builder()
+                .id(20L)
+                .code("PP-20261110-0001")
+                .status(PurchaseProposalStatus.DRAFT.getCode())
+                .totalAmount(BigDecimal.ZERO)
+                .build();
+
+        Account gm = new Account();
+        gm.setUsername("gm");
+
+        when(purchaseProposalRepository.findByIdWithDetails(20L)).thenReturn(Optional.of(proposal));
+        when(accountRepository.findByUsername("gm")).thenReturn(Optional.of(gm));
+
+        PurchaseOrderActionRequest request = PurchaseOrderActionRequest.builder()
+                .actionByUsername("gm")
+                .reason("Đồng ý phát hành PO")
+                .build();
+
+        PurchaseOrderResponse response = purchaseOrderService.approvePurchaseOrder(20L, request, "127.0.0.1");
+
+        // Regression: approve phải đặt APPROVED (3), không phải QUOTATION_SELECTED (2)
+        assertEquals(PurchaseProposalStatus.APPROVED.getCode(), proposal.getStatus());
+        assertEquals(PurchaseProposalStatus.APPROVED.getCode(), response.getStatus());
+        verify(purchaseProposalRepository).save(proposal);
+        verify(auditLogRepository).save(any(AuditLog.class));
+    }
+
+    @Test
+    @DisplayName("Phê duyệt PO đang chờ phê duyệt (2) chuyển sang Đã phê duyệt (3)")
+    void approvePurchaseOrder_quotationSelected_setsStatusToApproved() {
+        PurchaseProposal proposal = PurchaseProposal.builder()
+                .id(22L)
+                .code("PP-20261110-0003")
+                .status(PurchaseProposalStatus.QUOTATION_SELECTED.getCode())
+                .totalAmount(BigDecimal.ZERO)
+                .build();
+
+        Account gm = new Account();
+        gm.setUsername("gm");
+
+        when(purchaseProposalRepository.findByIdWithDetails(22L)).thenReturn(Optional.of(proposal));
+        when(accountRepository.findByUsername("gm")).thenReturn(Optional.of(gm));
+
+        PurchaseOrderActionRequest request = PurchaseOrderActionRequest.builder()
+                .actionByUsername("gm")
+                .reason("")
+                .build();
+
+        PurchaseOrderResponse response = purchaseOrderService.approvePurchaseOrder(22L, request, "127.0.0.1");
+
+        assertEquals(PurchaseProposalStatus.APPROVED.getCode(), proposal.getStatus());
+        assertEquals(PurchaseProposalStatus.APPROVED.getCode(), response.getStatus());
+    }
+
+    @Test
+    @DisplayName("Từ chối PO ở trạng thái nháp chuyển sang Đã từ chối (4) và lưu lý do")
+    void rejectPurchaseOrder_draft_setsStatusToRejected() {
+        PurchaseProposal proposal = PurchaseProposal.builder()
+                .id(21L)
+                .code("PP-20261110-0002")
+                .status(PurchaseProposalStatus.DRAFT.getCode())
+                .totalAmount(BigDecimal.ZERO)
+                .build();
+
+        Account gm = new Account();
+        gm.setUsername("gm");
+
+        when(purchaseProposalRepository.findByIdWithDetails(21L)).thenReturn(Optional.of(proposal));
+        when(accountRepository.findByUsername("gm")).thenReturn(Optional.of(gm));
+
+        PurchaseOrderActionRequest request = PurchaseOrderActionRequest.builder()
+                .actionByUsername("gm")
+                .reason("Giá báo vượt ngân sách")
+                .build();
+
+        PurchaseOrderResponse response = purchaseOrderService.rejectPurchaseOrder(21L, request, "127.0.0.1");
+
+        assertEquals(PurchaseProposalStatus.REJECTED.getCode(), proposal.getStatus());
+        assertEquals("Giá báo vượt ngân sách", proposal.getRejectReason());
+        assertEquals(PurchaseProposalStatus.REJECTED.getCode(), response.getStatus());
+        verify(auditLogRepository).save(any(AuditLog.class));
     }
 }

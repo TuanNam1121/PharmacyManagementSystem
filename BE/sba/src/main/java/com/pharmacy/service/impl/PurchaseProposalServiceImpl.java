@@ -3,7 +3,6 @@ package com.pharmacy.service.impl;
 import com.pharmacy.dto.purchaseproposal.CreatePurchaseProposalRequest;
 import com.pharmacy.dto.purchaseproposal.PurchaseProposalResponse;
 import com.pharmacy.entity.Account;
-import com.pharmacy.entity.Product;
 import com.pharmacy.entity.PurchaseProposal;
 import com.pharmacy.entity.PurchaseProposalDetail;
 import com.pharmacy.entity.PurchaseProposalRequest;
@@ -16,7 +15,6 @@ import com.pharmacy.entity.enums.PurchaseProposalStatus;
 import com.pharmacy.entity.enums.PurchaseRequestStatus;
 import com.pharmacy.entity.enums.RfqStatus;
 import com.pharmacy.repository.AccountRepository;
-import com.pharmacy.repository.ProductRepository;
 import com.pharmacy.repository.PurchaseProposalRepository;
 import com.pharmacy.repository.PurchaseProposalRequestRepository;
 import com.pharmacy.repository.PurchaseRequestRepository;
@@ -54,7 +52,6 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
     private final PurchaseProposalRequestRepository purchaseProposalRequestRepository;
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final AccountRepository accountRepository;
-    private final ProductRepository productRepository;
     private final SupplierQuotationRepository supplierQuotationRepository;
     private final SupplierQuotationDetailRepository supplierQuotationDetailRepository;
     @org.springframework.context.annotation.Lazy
@@ -67,12 +64,8 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
         List<Long> requestedIds = request.getPurchaseRequestIds() != null
                 ? request.getPurchaseRequestIds().stream().filter(Objects::nonNull).distinct().toList()
                 : Collections.emptyList();
-        List<CreatePurchaseProposalRequest.CreateProposalItemRequest> directItems = request.getItems() != null
-                ? request.getItems().stream().filter(it -> it != null && it.getProductId() != null && it.getQuantity() != null && it.getQuantity() > 0).toList()
-                : Collections.emptyList();
-
-        if (requestedIds.isEmpty() && directItems.isEmpty()) {
-            throw new IllegalArgumentException("Vui lòng chọn ít nhất một yêu cầu mua hàng từ kho hoặc thêm ít nhất một mặt hàng mua chủ động.");
+        if (requestedIds.isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn ít nhất một yêu cầu mua hàng từ kho.");
         }
 
         // Load and validate every selected purchase request
@@ -137,24 +130,6 @@ public class PurchaseProposalServiceImpl implements PurchaseProposalService {
                 } else {
                     existing.setQuantity(existing.getQuantity() + qty);
                 }
-            }
-        }
-
-        // 2. Direct items chosen proactively by purchasing staff
-        for (CreatePurchaseProposalRequest.CreateProposalItemRequest item : directItems) {
-            Product product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy sản phẩm ID: " + item.getProductId()));
-            int qty = item.getQuantity();
-            PurchaseProposalDetail existing = consolidated.get(product.getId());
-            if (existing == null) {
-                existing = PurchaseProposalDetail.builder()
-                        .purchaseProposal(proposal)
-                        .product(product)
-                        .quantity(qty)
-                        .build();
-                consolidated.put(product.getId(), existing);
-            } else {
-                existing.setQuantity(existing.getQuantity() + qty);
             }
         }
 

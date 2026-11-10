@@ -759,7 +759,7 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         Account creator = resolveAccount(creatorId);
         Store warehouse = storeRepository.findFirstByType(StoreType.CENTRAL_WAREHOUSE.getCode())
                 .orElseGet(() -> storeRepository.findAll().stream().findFirst().orElse(null));
-        String code = "PRQ-" + System.currentTimeMillis() % 1000000;
+        String code = generatePurchaseRequestCode();
 
         PurchaseRequest pr = PurchaseRequest.builder()
                 .code(code)
@@ -787,6 +787,27 @@ public class WarehouseInventoryServiceImpl implements WarehouseInventoryService 
         }
 
         return getPurchaseRequestDetail(saved.getId());
+    }
+
+    private String generatePurchaseRequestCode() {
+        String datePrefix = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String prefix = "PR-" + datePrefix + "-";
+
+        int maxSeq = 0;
+        for (PurchaseRequest pr : purchaseRequestRepository.findAll()) {
+            String c = pr.getCode();
+            if (c != null && c.startsWith(prefix)) {
+                try {
+                    int seq = Integer.parseInt(c.substring(prefix.length()));
+                    if (seq > maxSeq) {
+                        maxSeq = seq;
+                    }
+                } catch (NumberFormatException ignored) {
+                    // ignore malformed codes
+                }
+            }
+        }
+        return prefix + String.format("%04d", maxSeq + 1);
     }
 
     /* =========================================================================

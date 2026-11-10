@@ -27,6 +27,19 @@ export const formatDateTime = (iso) => {
   return `${hours}:${minutes} ${day}/${month}/${year}`;
 };
 
+/**
+ * Ngày dạng đầy đủ tiếng Việt: "11 tháng 11 năm 2026".
+ * Dùng cho các khối chi tiết cần đọc rõ ngày/tháng/năm (tránh viết tắt Nov/Dec).
+ */
+export const formatDateLong = (iso) => {
+  if (!iso || iso === 'Invalid Date') return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  return `${day} tháng ${month} năm ${d.getFullYear()}`;
+};
+
 export const formatStatus = (status) => {
   const isActive = String(status) === '1' || status === true || status === 'ACTIVE';
   return {

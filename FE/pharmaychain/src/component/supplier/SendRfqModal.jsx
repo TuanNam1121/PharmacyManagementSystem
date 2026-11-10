@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSendRfq } from '../../hooks/rfq/useRfq';
 
 export default function SendRfqModal({ show, onHide, supplier, supplierSelectMode = false, preselectedProposalId = null, onSuccess }) {
+  const [showSuppliers, setShowSuppliers] = useState(true);
   const {
     proposals,
     loading,
@@ -15,8 +16,10 @@ export default function SendRfqModal({ show, onHide, supplier, supplierSelectMod
     setContent,
     suppliers,
     suppliersLoading,
-    selectedSupplierId,
-    setSelectedSupplierId,
+    selectedSupplierIds,
+    toggleSupplier,
+    selectAllSuppliers,
+    clearSuppliers,
     emailWarning,
     setEmailWarning,
     fetchProposals,
@@ -29,6 +32,7 @@ export default function SendRfqModal({ show, onHide, supplier, supplierSelectMod
     if (!show) return;
     // Clear any warning from a previous send so it is not shown for a new supplier.
     setEmailWarning(null);
+    setShowSuppliers(true);
     fetchProposals();
     if (supplierSelectMode) {
       fetchSuppliers();
@@ -53,10 +57,10 @@ Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
     onHide();
   };
 
-  const selectedSupplier = supplierSelectMode
-    ? suppliers.find((s) => String(s.id) === String(selectedSupplierId))
-    : supplier;
-  const recipientEmail = selectedSupplier?.email;
+  const selectedSuppliers = supplierSelectMode
+    ? suppliers.filter((s) => selectedSupplierIds.includes(String(s.id)))
+    : (supplier ? [supplier] : []);
+  const recipientEmails = selectedSuppliers.map((s) => s.email).filter(Boolean);
 
   if (!show) return null;
 
@@ -151,32 +155,109 @@ Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
 
             {/* Supplier Info / Selection */}
             <div className="pms-form-group">
-              <label className="pms-label" htmlFor="supplier">
-                Nhà Cung Cấp *
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className="pms-label" htmlFor="supplier" style={{ margin: 0 }}>
+                  Nhà Cung Cấp *{supplierSelectMode ? (
+                    <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>
+                      {' '}— Đã chọn <strong style={{ color: 'var(--brand-primary, #059669)' }}>{selectedSupplierIds.length}</strong> nhà cung cấp
+                    </span>
+                  ) : null}
+                </label>
+                {supplierSelectMode && !suppliersLoading && (
+                  <button
+                    type="button"
+                    className="btn-pms btn-pms-ghost"
+                    style={{ fontSize: 12, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    onClick={() => setShowSuppliers((v) => !v)}
+                  >
+                    {showSuppliers ? 'Thu gọn' : `Chọn nhà cung cấp (${selectedSupplierIds.length})`}
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      style={{ transform: showSuppliers ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms' }}
+                    >
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </button>
+                )}
+              </div>
               {supplierSelectMode ? (
                 suppliersLoading ? (
                   <div className="pms-spinner-wrap" style={{ padding: '12px 0' }}>
                     <div className="pms-spinner" />
                     <span className="pms-spinner-text">Đang tải danh sách nhà cung cấp...</span>
                   </div>
-                ) : (
-                  <select
-                    id="supplier"
-                    className="pms-select"
-                    style={{ width: '100%' }}
-                    value={selectedSupplierId}
-                    onChange={(e) => setSelectedSupplierId(e.target.value)}
-                    required
-                  >
-                    <option value="">-- Chọn nhà cung cấp --</option>
-                    {suppliers.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.code})
-                      </option>
-                    ))}
-                  </select>
-                )
+                ) : showSuppliers ? (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          type="button"
+                          className="btn-pms btn-pms-secondary"
+                          style={{ fontSize: 12, padding: '4px 10px' }}
+                          onClick={selectAllSuppliers}
+                        >
+                          Chọn tất cả
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-pms btn-pms-secondary"
+                          style={{ fontSize: 12, padding: '4px 10px' }}
+                          onClick={clearSuppliers}
+                          disabled={selectedSupplierIds.length === 0}
+                        >
+                          Bỏ chọn
+                        </button>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        border: '1px solid var(--border-color, #e5e7eb)',
+                        borderRadius: 8,
+                        maxHeight: 220,
+                        overflowY: 'auto',
+                      }}
+                    >
+                      {suppliers.map((s) => {
+                        const checked = selectedSupplierIds.includes(String(s.id));
+                        return (
+                          <label
+                            key={s.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 10,
+                              padding: '10px 14px',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid var(--border-color, #e5e7eb)',
+                              background: checked ? 'var(--brand-primary-light, #ecfdf5)' : 'transparent',
+                              transition: 'background 150ms ease',
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleSupplier(s.id)}
+                            />
+                            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                              {s.name}
+                            </span>
+                            <span className="text-muted-color" style={{ fontSize: 12 }}>({s.code})</span>
+                            {s.email && (
+                              <span className="text-muted-color" style={{ fontSize: 12, marginLeft: 'auto' }}>
+                                {s.email}
+                              </span>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : null
               ) : (
                 <div
                   style={{
@@ -200,9 +281,13 @@ Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
                   )}
                 </div>
               )}
-              {supplierSelectMode && recipientEmail && (
+              {supplierSelectMode && recipientEmails.length > 0 && (
                 <div className="pms-form-hint">
-                  Người nhận: <strong>{recipientEmail}</strong>
+                  Người nhận ({recipientEmails.length}):{' '}
+                  <strong>
+                    {recipientEmails.slice(0, 2).join(', ')}
+                    {recipientEmails.length > 2 ? `, +${recipientEmails.length - 2} khác` : ''}
+                  </strong>
                 </div>
               )}
               {supplierSelectMode && suppliers.length === 0 && !suppliersLoading && (
@@ -315,7 +400,9 @@ Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
                   Đang gửi…
                 </>
               ) : (
-                'Gửi RFQ'
+                supplierSelectMode && selectedSupplierIds.length > 1
+                  ? `Gửi RFQ (${selectedSupplierIds.length})`
+                  : 'Gửi RFQ'
               )}
             </button>
           </div>

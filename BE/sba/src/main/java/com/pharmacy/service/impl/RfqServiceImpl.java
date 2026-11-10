@@ -109,8 +109,8 @@ public class RfqServiceImpl implements RfqService {
                     "RFQ already sent to this supplier for the same purchase proposal");
         }
 
-        // Generate RFQ code
-        String rfqCode = "RFQ" + System.currentTimeMillis();
+        // Generate RFQ code: RFQ-YYYYMMDD-####
+        String rfqCode = generateRfqCode();
 
         // Generate random token
         String rawToken = UUID.randomUUID().toString().replace("-", "");
@@ -176,6 +176,27 @@ public class RfqServiceImpl implements RfqService {
         }
 
         return RfqResponse.fromEntity(savedRfq, emailSent, emailWarning);
+    }
+
+    private String generateRfqCode() {
+        String datePrefix = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String prefix = "RFQ-" + datePrefix + "-";
+
+        int maxSeq = 0;
+        for (Rfq rfq : rfqRepository.findAll()) {
+            String c = rfq.getCode();
+            if (c != null && c.startsWith(prefix)) {
+                try {
+                    int seq = Integer.parseInt(c.substring(prefix.length()));
+                    if (seq > maxSeq) {
+                        maxSeq = seq;
+                    }
+                } catch (NumberFormatException ignored) {
+                    // ignore malformed codes
+                }
+            }
+        }
+        return prefix + String.format("%04d", maxSeq + 1);
     }
 
     @Override

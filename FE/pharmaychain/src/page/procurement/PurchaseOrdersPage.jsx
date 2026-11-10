@@ -102,7 +102,8 @@ export default function PurchaseOrdersPage() {
         try {
             const res = await approvePurchaseOrder(id, { actionByUsername: `${user.username}`, reason: note });
             setSuccessMsg(`Đơn đặt hàng thu mua ${res?.code || ''} đã được phê duyệt thành công!`);
-            setSelectedDetail(res);
+            setDetailModalOpen(false);
+            setSelectedDetail(null);
             await fetchOrders();
         } catch (err) {
             setErrorMsg(err?.message || 'Phê duyệt đơn đặt hàng thất bại.');
@@ -117,7 +118,8 @@ export default function PurchaseOrdersPage() {
         try {
             const res = await rejectPurchaseOrder(id, { actionByUsername: `${user.username}`, reason });
             setSuccessMsg(`Đơn đặt hàng thu mua ${res?.code || ''} đã bị từ chối.`);
-            setSelectedDetail(res);
+            setDetailModalOpen(false);
+            setSelectedDetail(null);
             await fetchOrders();
         } catch (err) {
             setErrorMsg(err?.message || 'Từ chối đơn đặt hàng thất bại.');

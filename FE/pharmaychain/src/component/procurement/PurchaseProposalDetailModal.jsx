@@ -92,7 +92,7 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
                   </div>
                   <div className="pms-detail-row" style={{ textAlign: 'right' }}>
                     <div className="pms-detail-label" style={{ color: '#15803d', fontWeight: 700 }}>
-                      Tổng Giá Trị Đơn Hàng
+                      Tổng thanh toán (Chưa gồm VAT)
                     </div>
                     <div style={{ fontWeight: 700, fontSize: 18, color: '#059669', marginTop: 2 }}>
                       {formatCurrency(detail.totalAmount)}
@@ -133,7 +133,6 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
                           <thead>
                             <tr>
                               <th>Tên Thuốc / Sản Phẩm</th>
-                              <th>Mã Thuốc</th>
                               <th>Đơn Vị Tính</th>
                               <th style={{ textAlign: 'right' }}>Số Lượng</th>
                               <th style={{ textAlign: 'right' }}>Đơn Giá / Đơn vị (₫)</th>
@@ -144,8 +143,14 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
                           <tbody>
                             {detail.items.map((item) => (
                               <tr key={item.productId}>
-                                <td className="fw-600">{item.productName}</td>
-                                <td className="mono">{item.productCode}</td>
+                                <td>
+                                  <div className="fw-600">{item.productName}</div>
+                                  {item.productCode && (
+                                    <div className="mono text-xs text-muted-color" style={{ marginTop: 2 }}>
+                                      {item.productCode}
+                                    </div>
+                                  )}
+                                </td>
                                 <td>{item.unit}</td>
                                 <td style={{ textAlign: 'right', fontWeight: 700 }}>{item.quantity}</td>
                                 <td style={{ textAlign: 'right' }}>
@@ -162,7 +167,7 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
                           </tbody>
                           <tfoot>
                             <tr style={{ background: 'var(--bg-canvas)', fontWeight: 700 }}>
-                              <td colSpan={6} style={{ textAlign: 'right' }}>Tổng Tiền:</td>
+                              <td colSpan={5} style={{ textAlign: 'right' }}>Tổng Tiền:</td>
                               <td style={{ textAlign: 'right', color: '#059669', fontSize: 14 }}>
                                 {Number(detail.totalAmount != null ? detail.totalAmount : itemsTotal).toLocaleString('vi-VN')} ₫
                               </td>
@@ -174,7 +179,6 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
                           <thead>
                             <tr>
                               <th>Tên Thuốc / Sản Phẩm</th>
-                              <th>Mã Thuốc</th>
                               <th>Đơn Vị Tính</th>
                               <th style={{ textAlign: 'right' }}>Số Lượng</th>
                             </tr>
@@ -182,8 +186,14 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
                           <tbody>
                             {detail.items.map((item) => (
                               <tr key={item.productId}>
-                                <td>{item.productName}</td>
-                                <td className="mono">{item.productCode}</td>
+                                <td>
+                                  <div className="fw-600">{item.productName}</div>
+                                  {item.productCode && (
+                                    <div className="mono text-xs text-muted-color" style={{ marginTop: 2 }}>
+                                      {item.productCode}
+                                    </div>
+                                  )}
+                                </td>
                                 <td>{item.unit}</td>
                                 <td style={{ textAlign: 'right', fontWeight: 700 }}>{item.quantity}</td>
                               </tr>

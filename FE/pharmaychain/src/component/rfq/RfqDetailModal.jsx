@@ -1,4 +1,79 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
+import { formatDateLong, getInitials } from "../../utils/format";
+
+const cardStyle = {
+  border: "1px solid var(--border-color)",
+  borderRadius: "var(--border-radius-md)",
+  padding: 16,
+};
+
+const sectionTitleStyle = {
+  marginBottom: 12,
+  fontSize: 12,
+  fontWeight: 700,
+  color: "var(--brand-primary)",
+  textTransform: "uppercase",
+  letterSpacing: "0.5px",
+};
+
+const infoListStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 10,
+  fontSize: 13,
+};
+
+const statBoxStyle = {
+  background: "var(--bg-canvas)",
+  border: "1px solid var(--border-color)",
+  borderRadius: "var(--border-radius-sm)",
+  padding: "10px 12px",
+};
+
+const statLabelStyle = {
+  fontSize: 11,
+  fontWeight: 600,
+  color: "var(--text-muted)",
+  textTransform: "uppercase",
+  letterSpacing: "0.4px",
+};
+
+const formatCurrency = (amount) => {
+  if (!amount) return "0 ₫";
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(amount);
+};
+
+const getStatusBadge = (status) => {
+  switch (status) {
+    case "SENT":
+      return <span className="pms-badge pms-badge-info">Đã gửi</span>;
+    case "RESPONDED":
+      return <span className="pms-badge pms-badge-success">Đã phản hồi</span>;
+    case "EXPIRED":
+      return <span className="pms-badge pms-badge-warning">Đã hết hạn</span>;
+    case "SELECTED":
+      return <span className="pms-badge pms-badge-success">Đã chọn</span>;
+    case "REJECTED":
+      return <span className="pms-badge pms-badge-danger">Từ chối</span>;
+    default:
+      return <span className="pms-badge pms-badge-neutral">Không xác định</span>;
+  }
+};
+
+/** Dòng "Nhãn: giá trị" — đồng bộ cách trình bày với modal chi tiết nhà cung cấp */
+function InfoLine({ label, children }) {
+  return (
+    <div style={{ display: "flex", gap: 6, alignItems: "baseline", flexWrap: "wrap" }}>
+      <span style={{ color: "var(--text-muted)", whiteSpace: "nowrap" }}>{label}:</span>
+      <span style={{ color: "var(--text-primary)", fontWeight: 600, wordBreak: "break-word" }}>
+        {children}
+      </span>
+    </div>
+  );
+}
 
 export default function RfqDetailModal({
   show,
@@ -16,46 +91,7 @@ export default function RfqDetailModal({
 
   if (!show) return null;
 
-  const formatCurrency = (amount) => {
-    if (!amount) return "0";
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "SENT":
-        return <span className="pms-badge pms-badge-info">Đã gửi</span>;
-      case "RESPONDED":
-        return <span className="pms-badge pms-badge-success">Đã phản hồi</span>;
-      case "EXPIRED":
-        return <span className="pms-badge pms-badge-warning">Đã hết hạn</span>;
-      case "SELECTED":
-        return <span className="pms-badge pms-badge-success">Đã chọn</span>;
-      case "REJECTED":
-        return <span className="pms-badge pms-badge-danger">Từ chối</span>;
-      default:
-        return <span className="pms-badge">Không xác định</span>;
-    }
-  };
-
-  const sectionTitleStyle = {
-    marginBottom: 8,
-    fontSize: 13,
-    color: "var(--text-secondary)",
-  };
+  const proposalRequests = detail?.purchaseProposal?.purchaseRequests || [];
 
   return (
     <div
@@ -101,153 +137,239 @@ export default function RfqDetailModal({
         {!loading && detail && (
           <>
             <div className="pms-modal-body">
-              {/* Hàng 1: RFQ Information và Supplier Information */}
-              <div style={{ display: "flex", gap: 32, marginBottom: 20 }}>
-                {/* Cột trái: RFQ */}
-                <div style={{ flex: 1 }}>
-                  <h4 style={sectionTitleStyle}>Thông Tin RFQ</h4>
-                  <div className="pms-info-row">
-                    <div className="pms-info-label">Mã RFQ:</div>
-                    <div className="pms-info-value">{detail.rfqCode}</div>
-                  </div>
-                  <div className="pms-info-row">
-                    <div className="pms-info-label">Trạng Thái:</div>
-                    <div className="pms-info-value">
-                      {getStatusBadge(detail.status)}
-                    </div>
-                  </div>
-                  <div className="pms-info-row">
-                    <div className="pms-info-label">Ngày Gửi:</div>
-                    <div className="pms-info-value">
-                      {formatDate(detail?.purchaseProposal?.createdAt)}
-                    </div>
-                  </div>
-                  <div className="pms-info-row">
-                    <div className="pms-info-label">Hạn Chót Báo Giá:</div>
-                    <div className="pms-info-value">
-                      {formatDate(detail?.quotation?.validUntil)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Cột phải: Supplier */}
-                <div style={{ flex: 1 }}>
-                  <h4 style={sectionTitleStyle}>Nhà Cung Cấp</h4>
-                  <div className="pms-info-row">
-                    <div className="pms-info-label">Tên Nhà Cung Cấp:</div>
-                    <div className="pms-info-value">
-                      {detail.supplier?.name || "-"}
-                    </div>
-                  </div>
-                  <div className="pms-info-row">
-                    <div className="pms-info-label">Người Liên Hệ:</div>
-                    <div className="pms-info-value">
-                      {detail.supplier?.contactPerson || "-"}
-                    </div>
-                  </div>
-                  {detail.supplier?.email && (
-                    <div className="pms-info-row">
-                      <div className="pms-info-label">Email:</div>
-                      <div className="pms-info-value">
-                        {detail.supplier.email}
-                      </div>
-                    </div>
-                  )}
-                  {detail.supplier?.phone && (
-                    <div className="pms-info-row">
-                      <div className="pms-info-label">Điện Thoại:</div>
-                      <div className="pms-info-value">
-                        {detail.supplier.phone}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Hàng 2: Purchase Proposal full width */}
+              {/* Banner: mã RFQ + trạng thái + nhà cung cấp */}
               <div
                 style={{
-                  marginBottom: 24,
-                  paddingTop: 16,
-                  borderTop: "1px solid var(--border-color, #e5e7eb)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                  padding: 16,
+                  background: "var(--bg-canvas)",
+                  borderRadius: "var(--border-radius-md)",
+                  border: "1px solid var(--border-color)",
+                  marginBottom: 20,
                 }}
               >
-                <h4 style={sectionTitleStyle}>Đề Xuất Mua Hàng Gốc</h4>
-                <div className="pms-info-row">
-                  <div className="pms-info-label">Mã Đề Xuất:</div>
-                  <div className="pms-info-value">
-                    {detail.purchaseProposal?.code || "-"}
-                  </div>
+                <div
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 12,
+                    background:
+                      "linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(59, 130, 246, 0.25))",
+                    color: "var(--brand-primary)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 800,
+                    fontSize: 16,
+                    flexShrink: 0,
+                    border: "1px solid rgba(16, 185, 129, 0.4)",
+                  }}
+                >
+                  {getInitials(detail.rfqCode)}
                 </div>
-                <div className="pms-info-row">
-                  <div className="pms-info-label">Phiếu Yêu Cầu Mua Hàng:</div>
-                  <div className="pms-info-value" style={{ flex: 1 }}>
-                    {detail.purchaseProposal?.purchaseRequests && detail.purchaseProposal.purchaseRequests.length > 0
-                      ? detail.purchaseProposal.purchaseRequests.map((r) => r.code).join(", ")
-                      : "-"}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <h3
+                      className="mono"
+                      style={{
+                        margin: 0,
+                        fontSize: 17,
+                        fontWeight: 700,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      {detail.rfqCode || "—"}
+                    </h3>
+                    {getStatusBadge(detail.status)}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12.5,
+                      color: "var(--text-muted)",
+                      marginTop: 4,
+                      display: "flex",
+                      gap: 10,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span>
+                      Nhà cung cấp:{" "}
+                      <strong style={{ color: "var(--text-primary)" }}>
+                        {detail.supplier?.name || "—"}
+                      </strong>
+                    </span>
+                    {detail.supplier?.code && (
+                      <span>
+                        Mã NCC:{" "}
+                        <strong className="mono" style={{ color: "var(--text-primary)" }}>
+                          {detail.supplier.code}
+                        </strong>
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Quotation Summary */}
-              {detail.quotation && (
-                <div>
+              {/* Thông Tin RFQ + Nhà Cung Cấp */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 20,
+                  marginBottom: 20,
+                }}
+              >
+                <div style={cardStyle}>
+                  <div style={sectionTitleStyle}>Thông Tin RFQ</div>
+                  <div style={infoListStyle}>
+                    <InfoLine label="Mã RFQ">
+                      <span className="mono">{detail.rfqCode || "—"}</span>
+                    </InfoLine>
+                    <InfoLine label="Trạng thái">{getStatusBadge(detail.status)}</InfoLine>
+                    <InfoLine label="Ngày tạo đề xuất">
+                      {formatDateLong(detail.purchaseProposal?.createdAt)}
+                    </InfoLine>
+                    <InfoLine label="Hiệu lực báo giá đến">
+                      {formatDateLong(detail.quotation?.validUntil)}
+                    </InfoLine>
+                  </div>
+                </div>
+
+                <div style={cardStyle}>
+                  <div style={sectionTitleStyle}>Nhà Cung Cấp</div>
+                  <div style={infoListStyle}>
+                    <InfoLine label="Tên nhà cung cấp">{detail.supplier?.name || "—"}</InfoLine>
+                    <InfoLine label="Người liên hệ">{detail.supplier?.contactPerson || "—"}</InfoLine>
+                    <InfoLine label="Điện thoại">{detail.supplier?.phone || "—"}</InfoLine>
+                    <InfoLine label="Email">{detail.supplier?.email || "—"}</InfoLine>
+                    {detail.supplier?.taxCode && (
+                      <InfoLine label="Mã số thuế">
+                        <span className="mono">{detail.supplier.taxCode}</span>
+                      </InfoLine>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Đề Xuất Mua Hàng Gốc */}
+              <div style={{ ...cardStyle, marginBottom: 20 }}>
+                <div style={sectionTitleStyle}>Đề Xuất Mua Hàng Gốc</div>
+                <div style={infoListStyle}>
+                  <InfoLine label="Mã đề xuất">
+                    <span className="mono">{detail.purchaseProposal?.code || "—"}</span>
+                  </InfoLine>
+                  <InfoLine label="Trạng thái đề xuất">
+                    {detail.purchaseProposal?.statusText || "—"}
+                  </InfoLine>
+                  <div style={{ display: "flex", gap: 6, alignItems: "baseline", flexWrap: "wrap" }}>
+                    <span style={{ color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                      Phiếu yêu cầu mua hàng:
+                    </span>
+                    <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {proposalRequests.length > 0 ? (
+                        proposalRequests.map((req, idx) => (
+                          <span
+                            key={req.id ?? req.code ?? idx}
+                            className="pms-badge pms-badge-neutral mono"
+                          >
+                            {req.code || "—"}
+                          </span>
+                        ))
+                      ) : (
+                        <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>—</span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tổng Quan Báo Giá */}
+              {detail.quotation ? (
+                <div style={cardStyle}>
+                  <div style={sectionTitleStyle}>Tổng Quan Báo Giá</div>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                      gap: 12,
+                    }}
+                  >
+                    <div style={statBoxStyle}>
+                      <div style={statLabelStyle}>Mã báo giá</div>
+                      <div
+                        className="mono"
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                          marginTop: 4,
+                        }}
+                      >
+                        {detail.quotation.code || "—"}
+                      </div>
+                    </div>
+                    <div style={statBoxStyle}>
+                      <div style={statLabelStyle}>Ngày báo giá</div>
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                          marginTop: 4,
+                        }}
+                      >
+                        {formatDateLong(detail.quotation.quotationDate)}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        ...statBoxStyle,
+                        background: "var(--brand-primary-glow)",
+                        borderColor: "rgba(16, 185, 129, 0.4)",
+                      }}
+                    >
+                      <div style={statLabelStyle}>Tổng giá trị</div>
+                      <div
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 800,
+                          color: "var(--brand-primary)",
+                          marginTop: 4,
+                        }}
+                      >
+                        {formatCurrency(detail.quotation.totalAmount)}
+                      </div>
+                    </div>
+                  </div>
+
                   <div
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      marginBottom: 12,
+                      gap: 12,
+                      flexWrap: "wrap",
+                      marginTop: 16,
+                      paddingTop: 14,
+                      borderTop: "1px solid var(--border-color)",
                     }}
                   >
-                    <h4 style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                      Tổng Quan Báo Giá:
-                    </h4>
-                    <div style={{ display: "flex", gap: 16 }}>
-                      <div className="pms-info-row">
-                        <div className="pms-info-label">Ngày Báo Giá:</div>
-                        <div className="pms-info-value">
-                          {formatDate(detail.quotation.quotationDate)}
-                        </div>
-                      </div>
-                      <div className="pms-info-row">
-                        <div className="pms-info-label">Tổng Giá Trị:</div>
-                        <div
-                          className="pms-info-value"
-                          style={{
-                            fontWeight: 600,
-                            color: "var(--brand-primary)",
-                          }}
-                        >
-                          {formatCurrency(detail.quotation.totalAmount)}
-                        </div>
-                      </div>
+                    <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                      <strong style={{ color: "var(--text-primary)" }}>
+                        {detail.items?.length || 0} mặt hàng
+                      </strong>{" "}
+                      trong báo giá này
                     </div>
-                  </div>
-                  <div
-                    style={{
-                      background: "var(--bg-secondary)",
-                      padding: 12,
-                      borderRadius: 8,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
+                    <button
+                      className="btn-pms btn-pms-ghost"
+                      onClick={() => setShowItems((v) => !v)}
                     >
-                      <div>
-                        <strong>{detail.items?.length || 0} mặt hàng</strong>
-                      </div>
-                      <button
-                        className="btn-pms btn-pms-ghost"
-                        onClick={() => setShowItems((v) => !v)}
-                      >
-                        {showItems ? "Thu gọn danh sách" : "Xem chi tiết từng mặt hàng"}
-                      </button>
-                    </div>
+                      {showItems ? "Thu gọn danh sách" : "Xem chi tiết từng mặt hàng"}
+                    </button>
+                  </div>
 
                     {showItems && (
                       <div className="pms-table-wrap" style={{ marginTop: 12 }}>
@@ -256,7 +378,6 @@ export default function RfqDetailModal({
                             <tr>
                               <th style={{ width: 40 }}>#</th>
                               <th>Tên Thuốc / Sản Phẩm</th>
-                              <th>Mã Thuốc</th>
                               <th>Đơn Vị Tính</th>
                               <th className="text-right">Số Lượng Yêu Cầu</th>
                               <th className="text-right">Đơn Giá/ đơn vị</th>
@@ -269,14 +390,14 @@ export default function RfqDetailModal({
                                 <tr key={item.productId ?? i}>
                                   <td className="text-xs text-muted-color">{i + 1}</td>
                                   <td>
-                                    <span className="fw-600" style={{ fontSize: 13 }}>
+                                    <div className="fw-600" style={{ fontSize: 13 }}>
                                       {item.productName}
-                                    </span>
-                                  </td>
-                                  <td>
-                                    <span className="pms-badge pms-badge-neutral mono">
-                                      {item.productCode || "—"}
-                                    </span>
+                                    </div>
+                                    {item.productCode && (
+                                      <div className="mono text-xs text-muted-color" style={{ marginTop: 2 }}>
+                                        {item.productCode}
+                                      </div>
+                                    )}
                                   </td>
                                   <td className="text-sm text-secondary-color">{item.unit || "—"}</td>
                                   <td className="text-right">{item.requestedQuantity ?? 0}</td>
@@ -289,7 +410,7 @@ export default function RfqDetailModal({
                             ) : (
                               <tr>
                                 <td
-                                  colSpan={7}
+                                  colSpan={6}
                                   style={{ textAlign: "center", padding: 24, color: "var(--text-muted)" }}
                                 >
                                   Không có mặt hàng nào trong báo giá này.
@@ -300,6 +421,14 @@ export default function RfqDetailModal({
                         </table>
                       </div>
                     )}
+                </div>
+              ) : (
+                <div style={{ ...cardStyle, borderStyle: "dashed", textAlign: "center" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>
+                    Nhà cung cấp chưa gửi báo giá cho yêu cầu này.
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
+                    {detail.items?.length || 0} mặt hàng đang chờ nhà cung cấp báo giá
                   </div>
                 </div>
               )}
@@ -334,6 +463,17 @@ export default function RfqDetailModal({
               </div>
             </div>
           </>
+        )}
+
+        {!loading && !detail && (
+          <div className="pms-modal-body">
+            <div className="pms-empty">
+              <div className="pms-empty-title">Không tìm thấy thông tin yêu cầu báo giá</div>
+              <div className="pms-empty-sub">
+                Yêu cầu báo giá có thể đã bị xoá hoặc bạn không còn quyền xem.
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -1,6 +1,8 @@
 import { useSearchParams } from 'react-router-dom';
 import { useRfqResponse } from '../../hooks/rfq/useRfq';
 
+const formatCurrency = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
+
 export default function RfqResponsePage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -12,6 +14,7 @@ export default function RfqResponsePage() {
     submitting,
     error,
     success,
+    totalAmount,
     handlePriceChange,
     handleNoteChange,
     handleSubmit,
@@ -127,13 +130,6 @@ export default function RfqResponsePage() {
             </div>
           </div>
 
-          {/* Letter body */}
-          {rfqData?.content && (
-            <div className="pms-card-body" style={{ paddingBottom: 0 }}>
-              <div className="rfq-portal-letter">{rfqData.content}</div>
-            </div>
-          )}
-
           {/* Inline error */}
           {error && (
             <div className="pms-card-body" style={{ paddingBottom: 0 }}>
@@ -156,10 +152,10 @@ export default function RfqResponsePage() {
                   <thead>
                     <tr>
                       <th>Tên Thuốc / Dược Phẩm</th>
-                      <th>Mã Thuốc</th>
                       <th>Đơn Vị</th>
                       <th style={{ textAlign: 'right' }}>Số Lượng Yêu Cầu</th>
                       <th style={{ width: 190, textAlign: 'right' }}>Đơn Giá /đơn vị (₫) *</th>
+                      <th style={{ width: 150, textAlign: 'right' }}>Thành Tiền (₫)</th>
                       <th style={{ width: 240 }}>Ghi Chú NCC</th>
                     </tr>
                   </thead>
@@ -168,14 +164,18 @@ export default function RfqResponsePage() {
                       <tr key={item.id}>
                         <td>
                           <div style={{ fontWeight: 600 }}>{item.productName}</div>
+                          {item.productCode && (
+                            <div style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                              {item.productCode}
+                            </div>
+                          )}
                           {item.note && (
                             <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
                               {item.note}
                             </div>
                           )}
                         </td>
-                        <td style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{item.productCode}</td>
-                        <td>{item.unit}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{item.unit}</td>
                         <td style={{ textAlign: 'right' }}>{item.requestedQuantity}</td>
                         <td>
                           <div className="rfq-portal-price">
@@ -192,6 +192,11 @@ export default function RfqResponsePage() {
                             <span className="rfq-portal-price-suffix">₫</span>
                           </div>
                         </td>
+                        <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                          {item.unitPrice !== '' && !Number.isNaN(parseFloat(item.unitPrice))
+                            ? formatCurrency((Number(item.requestedQuantity) || 0) * parseFloat(item.unitPrice))
+                            : '—'}
+                        </td>
                         <td>
                           <input
                             type="text"
@@ -204,6 +209,13 @@ export default function RfqResponsePage() {
                       </tr>
                     ))}
                   </tbody>
+                  <tfoot>
+                    <tr className="rfq-portal-total-row">
+                      <td colSpan={4} style={{ textAlign: 'right' }}>Tổng thanh toán (Chưa gồm VAT):</td>
+                      <td style={{ textAlign: 'right' }}>{formatCurrency(totalAmount)}</td>
+                      <td />
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             </div>

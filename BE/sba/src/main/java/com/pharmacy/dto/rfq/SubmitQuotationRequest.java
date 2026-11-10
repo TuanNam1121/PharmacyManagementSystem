@@ -1,5 +1,6 @@
 package com.pharmacy.dto.rfq;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
@@ -18,6 +19,7 @@ public record SubmitQuotationRequest(
             Long itemId, // PurchaseRequestDetail id
             
             @NotNull(message = "Unit price is required")
+            @Min (value = 0, message = "Unit price must be > 0")
             BigDecimal unitPrice,
             
             String note

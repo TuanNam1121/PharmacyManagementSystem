@@ -1337,20 +1337,18 @@ textarea.pms-input {
   margin-top: 2px;
 }
 
-.rfq-portal-letter {
-  white-space: pre-wrap;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  padding: 16px 18px;
-  font-size: 13px;
-  line-height: 1.75;
-  color: var(--text-primary);
-}
-
 .rfq-portal-table th,
 .rfq-portal-table td {
   vertical-align: middle;
+}
+
+.rfq-portal-total-row td {
+  background: var(--bg-canvas);
+  border-top: 2px solid var(--border-color);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .rfq-portal-price {

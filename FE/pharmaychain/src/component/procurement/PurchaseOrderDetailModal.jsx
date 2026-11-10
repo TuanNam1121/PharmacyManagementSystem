@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { formatDate } from '../../utils/format';
 
 const STATUS_BADGES = {
@@ -22,6 +22,17 @@ export default function PurchaseOrderDetailModal({
     const [rejectReason, setRejectReason] = useState('');
     const [approveNote, setApproveNote] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
+
+    // Component luôn mounted (chỉ return null khi ẩn) nên state nội bộ sẽ tồn tại
+    // qua các lần mở. Reset lại mỗi khi mở modal để nút "Duyệt"/"Từ chối" luôn hiển thị đúng.
+    useEffect(() => {
+        if (show) {
+            setRejectMode(false);
+            setRejectReason('');
+            setApproveNote('');
+            setErrorMsg('');
+        }
+    }, [show, detail?.id]);
 
     if (!show) return null;
 

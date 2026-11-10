@@ -1,5 +1,6 @@
 package com.pharmacy.service;
 
+import com.pharmacy.dto.purchaseproposal.CreatePurchaseProposalRequest;
 import com.pharmacy.dto.purchaseproposal.PurchaseProposalResponse;
 import com.pharmacy.entity.Product;
 import com.pharmacy.entity.PurchaseProposal;
@@ -11,7 +12,6 @@ import com.pharmacy.entity.SupplierQuotationDetail;
 import com.pharmacy.entity.enums.PurchaseProposalStatus;
 import com.pharmacy.entity.enums.RfqStatus;
 import com.pharmacy.repository.AccountRepository;
-import com.pharmacy.repository.ProductRepository;
 import com.pharmacy.repository.PurchaseProposalRepository;
 import com.pharmacy.repository.PurchaseProposalRequestRepository;
 import com.pharmacy.repository.PurchaseRequestRepository;
@@ -32,6 +32,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,9 +51,6 @@ class PurchaseProposalServiceTest {
 
     @Mock
     private AccountRepository accountRepository;
-
-    @Mock
-    private ProductRepository productRepository;
 
     @Mock
     private SupplierQuotationRepository supplierQuotationRepository;
@@ -255,5 +253,18 @@ class PurchaseProposalServiceTest {
         assertEquals(1, response.getItems().size());
         assertEquals(null, response.getItems().get(0).getUnitPrice());
         assertEquals(null, response.getItems().get(0).getSubtotal());
+    }
+
+    @Test
+    @DisplayName("Tạo đề xuất mua hàng không có yêu cầu kho sẽ báo lỗi")
+    void createPurchaseProposal_withoutPurchaseRequests_throws() {
+        CreatePurchaseProposalRequest request = CreatePurchaseProposalRequest.builder()
+                .purchaseRequestIds(List.of())
+                .build();
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> purchaseProposalService.createPurchaseProposal(request));
+
+        assertEquals("Vui lòng chọn ít nhất một yêu cầu mua hàng từ kho.", ex.getMessage());
     }
 }

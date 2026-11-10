@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   getRfqs,
   getRfqQuotationDetails,
@@ -226,7 +226,7 @@ export function useSendRfq(supplier, initialProposalId = null) {
   const [content, setContent] = useState('');
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoading, setSuppliersLoading] = useState(false);
-  const [selectedSupplierId, setSelectedSupplierId] = useState(supplier?.id ?? '');
+  const [selectedSupplierIds, setSelectedSupplierIds] = useState(supplier?.id ? [String(supplier.id)] : []);
   const [emailWarning, setEmailWarning] = useState(null);
 
   useEffect(() => {
@@ -260,37 +260,89 @@ export function useSendRfq(supplier, initialProposalId = null) {
     }
   }, []);
 
+  const toggleSupplier = (id) => {
+    const key = String(id);
+    setSelectedSupplierIds((prev) =>
+      prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]
+    );
+  };
+
+  const selectAllSuppliers = () => {
+    setSelectedSupplierIds(suppliers.map((s) => String(s.id)));
+  };
+
+  const clearSuppliers = () => {
+    setSelectedSupplierIds([]);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const supplierId = selectedSupplierId || supplier?.id;
-    if (!supplierId) {
-      setError('Please select a supplier');
-      return false;
+    const supplierIds = (selectedSupplierIds.length > 0
+      ? selectedSupplierIds
+      : (supplier?.id ? [String(supplier.id)] : []))
+      .map((id) => Number(id));
+    if (supplierIds.length === 0) {
+      setError('Please select at least one supplier');
+      return { success: false, emailWarning: null };
     }
     if (!selectedProposalId) {
       setError('Please select a purchase proposal');
-      return false;
+      return { success: false, emailWarning: null };
     }
     if (!subject.trim()) {
       setError('Please enter email subject');
-      return false;
+      return { success: false, emailWarning: null };
     }
     if (!content.trim()) {
       setError('Please enter email content');
-      return false;
+      return { success: false, emailWarning: null };
     }
 
     setSubmitting(true);
     setError(null);
     setEmailWarning(null);
     try {
-      const data = await sendRfq({
-        supplierId: Number(supplierId),
+      const payloadBase = {
         purchaseProposalId: Number(selectedProposalId),
         subject: subject.trim(),
         content: content.trim(),
-      });
-      const warning = data?.emailWarning || null;
+      };
+
+      // Send sequentially (one supplier at a time) so each RFQ is committed before the
+      // next code is generated. Parallel sends would all read the same max sequence and
+      // therefore produce duplicate RFQ codes.
+      const warnings = [];
+      let sentCount = 0;
+      for (const supplierId of supplierIds) {
+        const supplierName =
+          suppliers.find((s) => String(s.id) === String(supplierId))?.name ||
+          `NCC #${supplierId}`;
+        try {
+          const data = await sendRfq({ supplierId, ...payloadBase });
+          sentCount += 1;
+          const w = data?.emailWarning;
+          if (w) {
+            warnings.push(`${supplierName}: ${w}`);
+          }
+        } catch (err) {
+          const msg = err?.message || 'Không gửi được RFQ';
+          warnings.push(`${supplierName}: ${msg}`);
+        }
+      }
+
+      if (sentCount === 0) {
+        setError(
+          warnings.length > 0
+            ? `Không gửi được RFQ tới nhà cung cấp nào. ${warnings.join(' | ')}`
+            : 'Failed to send RFQ'
+        );
+        return { success: false, emailWarning: null };
+      }
+
+      const warning =
+        warnings.length > 0
+          ? `Đã gửi ${sentCount}/${supplierIds.length} nhà cung cấp. ${warnings.join(' | ')}`
+          : null;
       setEmailWarning(warning);
       // Keep the form intact when there is a warning so the user can review or retry.
       if (!warning) {
@@ -309,7 +361,7 @@ export function useSendRfq(supplier, initialProposalId = null) {
     setSelectedProposalId('');
     setSubject('');
     setContent('');
-    setSelectedSupplierId(supplier?.id ?? '');
+    setSelectedSupplierIds(supplier?.id ? [String(supplier.id)] : []);
     setError(null);
     setEmailWarning(null);
   };
@@ -327,8 +379,11 @@ export function useSendRfq(supplier, initialProposalId = null) {
     setContent,
     suppliers,
     suppliersLoading,
-    selectedSupplierId,
-    setSelectedSupplierId,
+    selectedSupplierIds,
+    setSelectedSupplierIds,
+    toggleSupplier,
+    selectAllSuppliers,
+    clearSuppliers,
     emailWarning,
     setEmailWarning,
     fetchProposals,
@@ -445,6 +500,17 @@ export function useRfqResponse(token) {
     return date.toLocaleDateString('en-GB');
   };
 
+  // Tổng thanh toán = Σ (số lượng yêu cầu × đơn giá NCC nhập), tự động cập nhật khi nhập giá
+  const totalAmount = useMemo(
+    () =>
+      items.reduce((sum, item) => {
+        const qty = Number(item.requestedQuantity) || 0;
+        const price = parseFloat(item.unitPrice);
+        return sum + (Number.isNaN(price) ? 0 : qty * price);
+      }, 0),
+    [items]
+  );
+
   return {
     rfqData,
     items,
@@ -452,6 +518,7 @@ export function useRfqResponse(token) {
     submitting,
     error,
     success,
+    totalAmount,
     handlePriceChange,
     handleNoteChange,
     handleSubmit,
