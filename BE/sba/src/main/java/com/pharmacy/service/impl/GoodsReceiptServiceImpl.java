@@ -4,6 +4,7 @@ import com.pharmacy.dto.PageResponse;
 import com.pharmacy.dto.inventory.ConfirmGoodsReceiptRequest;
 import com.pharmacy.dto.inventory.GoodsReceiptDto;
 import com.pharmacy.entity.*;
+import com.pharmacy.exception.InvalidOperationException;
 import com.pharmacy.repository.*;
 import com.pharmacy.service.GoodsReceiptService;
 import lombok.RequiredArgsConstructor;
@@ -101,7 +102,7 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<GoodsReceiptDto> getGoodsReceiptList(Long storeId, Short status, String search,
-            Pageable pageable) {
+                                                             Pageable pageable) {
         String querySearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
         Page<GoodsIssue> page = goodsIssueRepository.findAllReceipts(storeId, status, querySearch, pageable);
         List<GoodsReceiptDto> dtoList = page.getContent().stream()
@@ -132,6 +133,13 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
         // Step 4: Validate operational inputs against business constraints
         GoodsIssue gi = goodsIssueRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Goods receipt not found with ID: " + id));
+
+        Account receiver = accountRepository.findByUsername(request.getReceivedByUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Receiver not found"));
+
+        if (!receiver.getStore().getId().equals(gi.getToStore().getId())) {
+            throw new InvalidOperationException("You can't confirm receipt with different store id!");
+        }
 
         if (gi.getStatus() == null || !gi.getStatus().equals(GoodsIssueStatus.DISPATCHED.getCode())) {
             throw new IllegalStateException("Chỉ có thể xác nhận nhận hàng khi phiếu xuất kho đang ở trạng thái Đang vận chuyển!");
@@ -164,15 +172,15 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
                         destinationStore.getId(),
                         d.getProduct().getId(),
                         d.getBatch().getId()).orElseGet(() -> {
-                            Inventory newInv = new Inventory();
-                            newInv.setStore(destinationStore);
-                            newInv.setProduct(d.getProduct());
-                            newInv.setBatch(d.getBatch());
-                            newInv.setQuantity(0);
-                            newInv.setVersion(0);
-                            newInv.setUpdatedAt(LocalDateTime.now());
-                            return newInv;
-                        });
+                    Inventory newInv = new Inventory();
+                    newInv.setStore(destinationStore);
+                    newInv.setProduct(d.getProduct());
+                    newInv.setBatch(d.getBatch());
+                    newInv.setQuantity(0);
+                    newInv.setVersion(0);
+                    newInv.setUpdatedAt(LocalDateTime.now());
+                    return newInv;
+                });
 
                 int oldQty = inv.getQuantity() != null ? inv.getQuantity() : 0;
                 int newQty = oldQty + recQty;
@@ -204,10 +212,7 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
             gi.setNote(request.getNote().trim());
         }
 
-        Account receiver = null;
-        if (request.getReceivedByUsername() != null) {
-            receiver = accountRepository.findByUsername(request.getReceivedByUsername()).orElse(null);
-        }
+
         gi.setReceivedBy(receiver);
         goodsIssueRepository.save(gi);
 
@@ -215,6 +220,7 @@ public class GoodsReceiptServiceImpl implements GoodsReceiptService {
         if (gi.getStockRequisition() != null) {
             StockRequisition sr = gi.getStockRequisition();
             sr.setStatus(StockRequisitionStatus.RECEIVED.getCode());
+            sr.setApprovedBy(receiver);
             sr.setReceivedAt(LocalDateTime.now());
             stockRequisitionRepository.save(sr);
         }

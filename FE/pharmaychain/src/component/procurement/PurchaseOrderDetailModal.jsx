@@ -44,6 +44,8 @@ export default function PurchaseOrderDetailModal({
         onReject(detail.id, rejectReason.trim());
     };
 
+    console.log(detail);
+
     const handleConfirmApprove = () => {
         setErrorMsg('');
         onApprove(detail.id, approveNote.trim());

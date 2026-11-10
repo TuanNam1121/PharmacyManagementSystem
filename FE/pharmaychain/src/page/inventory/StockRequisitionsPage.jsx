@@ -419,25 +419,27 @@ export default function StockRequisitionsPage() {
                                         <td style={{ fontSize: 13 }}>{item.approvedAt ? new Date(item.approvedAt).toLocaleDateString('vi-VN') : '—'}</td>
                                         <td style={{ fontSize: 13 }}>{item.dispatchedAt ? new Date(item.dispatchedAt).toLocaleDateString('vi-VN') : '—'}</td>
                                         <td style={{ fontSize: 13 }}>{item.receivedAt ? new Date(item.receivedAt).toLocaleDateString('vi-VN') : '—'}</td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <button
-                                                type="button"
-                                                className="btn-pms btn-pms-secondary"
-                                                style={{ padding: '4px 12px', fontSize: 12 }}
-                                                onClick={() => openDetail(item)}
-                                            >
-                                                Chi tiết
-                                            </button>
-                                            {isEditable(item.status) && (
+                                        <td>
+                                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
                                                 <button
                                                     type="button"
-                                                    className="btn-pms btn-pms-primary"
-                                                    style={{ padding: '4px 12px', fontSize: 12, marginLeft: 6 }}
-                                                    onClick={() => openEdit(item)}
+                                                    className="btn-pms btn-pms-secondary"
+                                                    style={{ padding: '4px 12px', fontSize: 12 }}
+                                                    onClick={() => openDetail(item)}
                                                 >
-                                                    Sửa
+                                                    Chi tiết
                                                 </button>
-                                            )}
+                                                {isEditable(item.status) && (
+                                                    <button
+                                                        type="button"
+                                                        className="btn-pms btn-pms-primary"
+                                                        style={{ padding: '4px 12px', fontSize: 12, marginLeft: 6 }}
+                                                        onClick={() => openEdit(item)}
+                                                    >
+                                                        Sửa
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

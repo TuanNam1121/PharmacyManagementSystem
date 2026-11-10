@@ -13,6 +13,7 @@ import com.pharmacy.entity.StockRequisition;
 import com.pharmacy.entity.StockRequisitionDetail;
 import com.pharmacy.entity.Store;
 import com.pharmacy.entity.enums.StockRequisitionStatus;
+import com.pharmacy.exception.ResourceNotFoundException;
 import com.pharmacy.repository.*;
 import com.pharmacy.service.StockRequisitionService;
 import lombok.RequiredArgsConstructor;
@@ -115,14 +116,8 @@ public class StockRequisitionServiceImpl implements StockRequisitionService {
                 .orElseThrow(() -> new IllegalArgumentException("Store not found with ID: " + request.getStoreId()));
 
         // 2. Xác định tài khoản tạo phiếu
-        Account creator = null;
-        if (request.getCreatedByUsername() != null && !request.getCreatedByUsername().isBlank()) {
-            creator = accountRepository.findByUsername(request.getCreatedByUsername()).orElse(null);
-        }
-        if (creator == null) {
-            creator = accountRepository.findByUsername(request.getCreatedByUsername())
-                    .orElseThrow(() -> new IllegalStateException("No active account found to assign as creator"));
-        }
+        Account creator = accountRepository.findByUsername(request.getCreatedByUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + request.getCreatedByUsername()));
 
         // 3. Tự sinh mã phiếu (VD: REQ-261021-4821)
         String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd"));

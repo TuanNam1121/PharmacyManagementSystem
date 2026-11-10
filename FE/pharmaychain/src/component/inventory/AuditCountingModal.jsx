@@ -5,6 +5,7 @@ export default function AuditCountingModal({ show, audit, onHide, onSubmitCount,
     const [notes, setNotes] = useState({});
     const [error, setError] = useState(null);
 
+
     useEffect(() => {
         if (audit && audit.details) {
             const initialCounts = {};
@@ -35,18 +36,37 @@ export default function AuditCountingModal({ show, audit, onHide, onSubmitCount,
         e.preventDefault();
         setError(null);
 
+        let hasNoteError = false;
+
         // Validate all items are entered
         const items = audit.details.map(item => {
             const countVal = counts[item.id];
             if (countVal === '' || countVal === undefined) {
                 return null;
             }
+
+            const countedQty = Number(countVal);
+            const noteText = (notes[item.id] || '').trim();
+
+            const systemQty = item.systemQuantity;
+
+            if (countedQty !== systemQty && !noteText) {
+                hasNoteError = true;
+            }
+
+
+
             return {
                 detailId: item.id,
                 countedQuantity: Number(countVal),
-                note: notes[item.id] || '',
+                note: noteText,
             };
         });
+
+        if (hasNoteError) {
+            setError('Vui lòng nhập ghi chú cho các thuốc có sự chênh lệch số lượng.');
+            return;
+        }
 
         if (items.some(x => x === null)) {
             setError('Vui lòng nhập số lượng thực đếm cho toàn bộ danh mục thuốc trước khi gửi duyệt.');

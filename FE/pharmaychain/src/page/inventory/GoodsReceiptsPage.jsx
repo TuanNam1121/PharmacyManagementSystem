@@ -313,9 +313,13 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
         setReceivedQuantities(auto);
     };
 
+    const { user } = useAuth();
+
     const handleConfirm = (e) => {
         e.preventDefault();
         setValidationError(null);
+
+        let hasMismatch = false;
 
         const itemsPayload = [];
         for (const d of item.details) {
@@ -324,12 +328,21 @@ function ConfirmModal({ show, item, loading, submitting, onHide, onSubmit }) {
                 setValidationError(`Số lượng thực nhận cho thuốc "${d.productName}" không hợp lệ (phải >= 0).`);
                 return;
             }
+
+            if (q !== d.quantity) {
+                hasMismatch = true;
+            }
             itemsPayload.push({ detailId: d.id, receivedQuantity: q });
+        }
+
+        if (hasMismatch && !note.trim()) {
+            setValidationError('Số lượng thực nhận có chênh lệch so với xuất kho. Vui lòng nhập ghi chú/lý do giải trình.');
+            return;
         }
 
         const payload = {
             note,
-            receivedByUsername: 'admin',
+            receivedByUsername: `${user.username}`,
             items: itemsPayload,
         };
 

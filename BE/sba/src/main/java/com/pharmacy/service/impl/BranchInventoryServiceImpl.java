@@ -37,13 +37,25 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
     private final StoreRepository storeRepository;
     private final AuditLogRepository auditLogRepository;
     private final ProductUnitRepository productUnitRepository;
+    private final AccountRepository accountRepository;
 
     @Override
     @Transactional(readOnly = true)
     public Page<BranchInventoryResponse> getBranchInventory(Long storeId, Pageable pageable, String search,
-            String warningFilter) {
+                                                            String warningFilter) {
         String querySearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+
+        if (warningFilter != null) {
+            List<Inventory> branchInventoryResponses = inventoryRepository.findAllForInventoryReport(storeId);
+            List<BranchInventoryResponse> list = branchInventoryResponses.stream()
+                    .map(this::mapToBranchResponse)
+                    .filter(res -> matchWarningFilter(res, warningFilter))
+                    .collect(Collectors.toList());
+            return new PageImpl<>(list, pageable, list.size());
+        }
+
         Page<Inventory> page = inventoryRepository.searchBranchInventory(storeId, querySearch, pageable);
+
 
         List<BranchInventoryResponse> list = page.getContent().stream()
                 .map(this::mapToBranchResponse)
@@ -63,6 +75,10 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
         List<BranchInventoryResponse> dtoList = allItems.stream()
                 .map(this::mapToBranchResponse)
                 .toList();
+//        System.out.println("Size: " + dtoList.size());
+//        for (BranchInventoryResponse res : dtoList) {
+//            System.out.println("ProductID: " + res.getProductId() + "\n" + "ProductStatus: " + res.getStockStatus());
+//        }
 
         int totalUnits = dtoList.stream().mapToInt(BranchInventoryResponse::getQuantity).sum();
         BigDecimal totalValue = dtoList.stream()
@@ -100,10 +116,13 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
     @Override
     @Transactional
     public BranchInventoryResponse updateMinQuantity(UpdateStockThresholdRequest request, String username,
-            String clientIp) {
+                                                     String clientIp) {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(
                         () -> new EntityNotFoundException("Product not found with ID: " + request.getProductId()));
+
+        Account account = accountRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found: " + username));
 
         Integer oldMin = product.getMinQuantity();
         product.setMinQuantity(request.getMinQuantity());
@@ -112,6 +131,7 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
 
         // Record Audit Log
         AuditLog auditLog = new AuditLog();
+        auditLog.setAccount(account);
         auditLog.setAction((short) 2); // 2: UPDATE
         auditLog.setEntityName("Product_MinQuantity");
         auditLog.setEntityId(product.getId());
@@ -157,7 +177,8 @@ public class BranchInventoryServiceImpl implements BranchInventoryService {
             return true;
         }
         return switch (filter.toUpperCase()) {
-            case "LOW_STOCK" -> StockStatus.LOW_STOCK.getValue().equals(res.getStockStatus()) || StockStatus.OUT_OF_STOCK.getValue().equals(res.getStockStatus());
+            case "LOW_STOCK" ->
+                    StockStatus.LOW_STOCK.getValue().equals(res.getStockStatus()) || StockStatus.OUT_OF_STOCK.getValue().equals(res.getStockStatus());
             case "OUT_OF_STOCK" -> StockStatus.OUT_OF_STOCK.getValue().equals(res.getStockStatus());
             case "EXPIRING_SOON" -> ExpiryStatus.EXPIRING_SOON.getValue().equals(res.getExpiryStatus());
             case "EXPIRED" -> ExpiryStatus.EXPIRED.getValue().equals(res.getExpiryStatus());

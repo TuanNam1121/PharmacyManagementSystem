@@ -31,8 +31,11 @@ export default function DailySalesReconcileModal({
     const numActual = Number(actualCash) || 0;
     const difference = numActual - systemCash;
 
+    let hasMismatch = false;
+
     const validate = () => {
         const e = {};
+
         if (actualCash === '' || actualCash == null) {
             e.actualCash = 'Vui lòng nhập số tiền mặt thực tế kiểm đếm trong két';
         } else if (isNaN(numActual) || numActual < 0) {
@@ -40,6 +43,10 @@ export default function DailySalesReconcileModal({
         }
         if (note && note.length > 1000) {
             e.note = 'Ghi chú đối soát không được vượt quá 1000 ký tự';
+        }
+
+        if (systemCash != actualCash && !note.trim()) {
+            hasMismatch = true;
         }
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -49,6 +56,10 @@ export default function DailySalesReconcileModal({
         e.preventDefault();
         setServerError(null);
         if (!validate()) return;
+        if (hasMismatch) {
+            setServerError('Vui lòng nhập lý do khi có sự chênh lệch');
+            return;
+        }
         try {
             await onConfirm({ actualCash: numActual, note });
         } catch (err) {

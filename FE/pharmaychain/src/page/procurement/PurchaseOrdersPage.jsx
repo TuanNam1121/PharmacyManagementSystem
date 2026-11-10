@@ -7,6 +7,7 @@ import {
     rejectPurchaseOrder,
 } from '../../api/PurchaseOrderAPI';
 import PurchaseOrderDetailModal from '../../component/procurement/PurchaseOrderDetailModal';
+import { useAuth } from '../../context/AuthContext';
 
 const STATUS_TABS = [
     { label: 'Tất cả đơn hàng', value: '' },
@@ -51,6 +52,8 @@ export default function PurchaseOrdersPage() {
     // Alerts
     const [successMsg, setSuccessMsg] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
+
+    const { user } = useAuth();
 
     const fetchOrders = useCallback(async () => {
         setLoading(true);
@@ -97,7 +100,7 @@ export default function PurchaseOrdersPage() {
         setActionLoading(true);
         setErrorMsg(null);
         try {
-            const res = await approvePurchaseOrder(id, { actionByUsername: 'admin', reason: note });
+            const res = await approvePurchaseOrder(id, { actionByUsername: `${user.username}`, reason: note });
             setSuccessMsg(`Đơn đặt hàng thu mua ${res?.code || ''} đã được phê duyệt thành công!`);
             setSelectedDetail(res);
             await fetchOrders();
@@ -112,7 +115,7 @@ export default function PurchaseOrdersPage() {
         setActionLoading(true);
         setErrorMsg(null);
         try {
-            const res = await rejectPurchaseOrder(id, { actionByUsername: 'admin', reason });
+            const res = await rejectPurchaseOrder(id, { actionByUsername: `${user.username}`, reason });
             setSuccessMsg(`Đơn đặt hàng thu mua ${res?.code || ''} đã bị từ chối.`);
             setSelectedDetail(res);
             await fetchOrders();
