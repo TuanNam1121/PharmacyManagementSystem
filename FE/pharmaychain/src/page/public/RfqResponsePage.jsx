@@ -159,7 +159,7 @@ export default function RfqResponsePage() {
                       <th>Mã Thuốc</th>
                       <th>Đơn Vị</th>
                       <th style={{ textAlign: 'right' }}>Số Lượng Yêu Cầu</th>
-                      <th style={{ width: 190, textAlign: 'right' }}>Đơn Giá Báo (₫) *</th>
+                      <th style={{ width: 190, textAlign: 'right' }}>Đơn Giá /đơn vị (₫) *</th>
                       <th style={{ width: 240 }}>Ghi Chú NCC</th>
                     </tr>
                   </thead>

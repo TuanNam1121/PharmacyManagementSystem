@@ -259,7 +259,7 @@ export default function RfqDetailModal({
                               <th>Mã Thuốc</th>
                               <th>Đơn Vị Tính</th>
                               <th className="text-right">Số Lượng Yêu Cầu</th>
-                              <th className="text-right">Đơn Giá</th>
+                              <th className="text-right">Đơn Giá/ đơn vị</th>
                               <th className="text-right">Thành Tiền</th>
                             </tr>
                           </thead>

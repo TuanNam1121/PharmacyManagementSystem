@@ -136,7 +136,7 @@ export default function PurchaseProposalDetailModal({ show, onHide, detail, load
                               <th>Mã Thuốc</th>
                               <th>Đơn Vị Tính</th>
                               <th style={{ textAlign: 'right' }}>Số Lượng</th>
-                              <th style={{ textAlign: 'right' }}>Đơn Giá (₫)</th>
+                              <th style={{ textAlign: 'right' }}>Đơn Giá / Đơn vị (₫)</th>
                               <th style={{ textAlign: 'right' }}>Thuế (%)</th>
                               <th style={{ textAlign: 'right' }}>Thành Tiền (₫)</th>
                             </tr>
