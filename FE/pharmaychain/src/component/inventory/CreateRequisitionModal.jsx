@@ -199,7 +199,7 @@ export default function CreateRequisitionModal({ show, onHide, defaultStoreId = 
         // Sửa phiếu: chỉ gửi danh sách mặt hàng; tạo mới: gửi thêm chi nhánh + người lập
         const payload = isEdit
             ? { items }
-            : { storeId: Number(storeId), createdByUsername: 'manager', items };
+            : { storeId: Number(storeId), createdByUsername: `${user.username}`, items };
 
         try {
             await onConfirm(payload);

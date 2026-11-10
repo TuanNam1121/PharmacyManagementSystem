@@ -104,7 +104,7 @@ function DetailModal({ show, audit, loading, onHide }) {
 export default function InventoryAuditPage() {
     const {
         auditList, total, page, setPage, size,
-        
+
         search, setSearch,
         storeId,
         statusFilter, setStatusFilter,
@@ -130,7 +130,7 @@ export default function InventoryAuditPage() {
         successMsg, setSuccessMsg,
         fetchList,
     } = useInventoryAudit();
-    
+
 
     const STATUS_TABS = [
         { value: '', label: 'Tất cả phiên' },
@@ -143,13 +143,13 @@ export default function InventoryAuditPage() {
 
 
     const { user } = useAuth();
-    
+
     const rawRole = (user?.role || '').toUpperCase().replace(/^ROLE_/, '').trim();
 
     // Chỉ Admin và Quản lý cửa hàng mới được duyệt / đối soát
     const canApprove = ['ADMIN', 'STORE_MANAGER'].includes(rawRole);
 
-    
+    const appearAuditSession = ['PHARMACIST'].includes(rawRole);
 
     return (
         <div>

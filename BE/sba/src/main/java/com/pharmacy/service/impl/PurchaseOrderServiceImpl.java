@@ -80,9 +80,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         Map<Long, BigDecimal> quotedTotals = quotationIds.isEmpty()
                 ? Collections.emptyMap()
                 : quotationDetailRepository.sumSubtotalByQuotationIds(quotationIds).stream()
-                        .collect(Collectors.toMap(
-                                row -> (Long) row[0],
-                                row -> row[1] == null ? BigDecimal.ZERO : new BigDecimal(row[1].toString())));
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> row[1] == null ? BigDecimal.ZERO : new BigDecimal(row[1].toString())));
 
         List<Long> proposalIdsWithoutQuotation = rows.stream()
                 .filter(row -> row.getSupplierQuotationId() == null)
@@ -251,7 +251,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private Account resolveActor(String username) {
         if (username != null && !username.trim().isEmpty()) {
             return accountRepository.findByUsername(username.trim())
-                    .orElse(null);
+                    .orElseThrow(() -> new EntityNotFoundException("Username not found: " + username));
         }
         return null;
     }
