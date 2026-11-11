@@ -2,6 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getBranchInventory } from '../../api/BranchInventoryAPI';
 import { money, formatDate } from '../../utils/format';
 
+/**
+ * Kiểm tra xem một lô hàng trong kho đã hết hạn sử dụng hay chưa
+ */
+export const isBatchExpired = (item) => {
+    if (!item) return false;
+    if (item.expiryStatus === 'EXPIRED') return true;
+    if (!item.expiryDate) return false;
+    const exp = new Date(item.expiryDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return exp <= today;
+};
+
 export default function PosSearchBar({ storeId = 1, onSelectItem }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [results, setResults] = useState([]);
@@ -30,8 +43,17 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
                     size: 15,
                 });
                 const items = res?.content || (Array.isArray(res) ? res : []);
-                // Filter out out-of-stock items
+                // Lọc bỏ hàng hết tồn kho
                 const available = items.filter((item) => (item.quantity || 0) > 0);
+                // Sắp xếp: Lô còn hạn lên trước (FEFO HSD gần nhất trước), lô hết hạn đẩy xuống cuối
+                available.sort((a, b) => {
+                    const expA = isBatchExpired(a);
+                    const expB = isBatchExpired(b);
+                    if (expA !== expB) return expA ? 1 : -1;
+                    if (!a.expiryDate) return 1;
+                    if (!b.expiryDate) return -1;
+                    return new Date(a.expiryDate) - new Date(b.expiryDate);
+                });
                 setResults(available);
                 setDropdownOpen(available.length > 0);
                 setSelectedIndex(0);
@@ -63,6 +85,11 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
     }, []);
 
     const handleSelect = (item) => {
+        if (isBatchExpired(item)) {
+            alert(`⛔ CẢNH BÁO: Thuốc "${item.productName}" (Lô: ${item.batchNumber || 'N/A'}) đã HẾT HẠN SỬ DỤNG (${formatDate(item.expiryDate)})!\n\nQuy định y tế và dược phẩm nghiêm cấm xuất bán thuốc đã hết hạn.`);
+            return;
+        }
+
         onSelectItem({
             productId: item.productId,
             productName: item.productName,
@@ -221,7 +248,15 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
                     )}
 
                     {!loading && results.map((item, idx) => {
+                        const expired = isBatchExpired(item);
                         const isSelected = idx === selectedIndex;
+                        const firstValidIdx = results.findIndex((it) => !isBatchExpired(it));
+                        const isFEFO = idx === firstValidIdx && !expired;
+
+                        const itemBackground = expired
+                            ? (isSelected ? '#fee2e2' : '#fef2f2')
+                            : (isSelected ? 'var(--brand-primary-light, #ecfdf5)' : '#fff');
+
                         return (
                             <div
                                 key={`${item.productId}-${item.batchId || idx}`}
@@ -232,9 +267,10 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
-                                    cursor: 'pointer',
-                                    background: isSelected ? 'var(--brand-primary-light, #ecfdf5)' : '#fff',
+                                    cursor: expired ? 'not-allowed' : 'pointer',
+                                    background: itemBackground,
                                     borderBottom: '1px solid #f1f5f9',
+                                    opacity: expired ? 0.78 : 1,
                                     transition: 'background 0.12s ease',
                                 }}
                             >
@@ -243,7 +279,9 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
                                         <span style={{
                                             fontSize: 14,
                                             fontWeight: 700,
-                                            color: isSelected ? 'var(--brand-primary, #059669)' : 'var(--text-primary)'
+                                            color: expired
+                                                ? '#dc2626'
+                                                : (isSelected ? 'var(--brand-primary, #059669)' : 'var(--text-primary)')
                                         }}>
                                             {item.productName}
                                         </span>
@@ -263,7 +301,19 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
                                                 Rx Kê đơn
                                             </span>
                                         )}
-                                        {idx === 0 && (
+                                        {expired ? (
+                                            <span style={{
+                                                fontSize: 10,
+                                                fontWeight: 800,
+                                                background: '#dc2626',
+                                                color: '#fff',
+                                                padding: '2px 8px',
+                                                borderRadius: 4,
+                                                boxShadow: '0 1px 3px rgba(220,38,38,0.3)'
+                                            }}>
+                                                ⛔ ĐÃ HẾT HẠN - CẤM BÁN
+                                            </span>
+                                        ) : isFEFO ? (
                                             <span style={{
                                                 fontSize: 10,
                                                 fontWeight: 700,
@@ -275,7 +325,7 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
                                             }}>
                                                 ⚡ FEFO Xuất trước
                                             </span>
-                                        )}
+                                        ) : null}
                                     </div>
 
                                     <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: 14 }}>
@@ -283,24 +333,30 @@ export default function PosSearchBar({ storeId = 1, onSelectItem }) {
                                             <span>Hoạt chất: <strong style={{ color: '#0f766e' }}>{item.activeIngredient}</strong></span>
                                         )}
                                         <span>Số lô: <strong style={{ color: '#334155' }}>{item.batchNumber || 'N/A'}</strong></span>
-                                        <span>HSD: <strong style={{ color: '#334155' }}>{formatDate(item.expiryDate)}</strong></span>
+                                        <span>
+                                            HSD:{' '}
+                                            <strong style={{ color: expired ? '#dc2626' : '#334155' }}>
+                                                {formatDate(item.expiryDate)}
+                                            </strong>
+                                            {expired && <span style={{ color: '#dc2626', fontWeight: 700, marginLeft: 4 }}>(Đã quá hạn)</span>}
+                                        </span>
                                     </div>
                                 </div>
 
                                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                                    <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary, #059669)' }}>
+                                    <div style={{ fontSize: 15, fontWeight: 800, color: expired ? '#9ca3af' : 'var(--brand-primary, #059669)' }}>
                                         {money(item.sellingPrice)}
                                     </div>
                                     <div style={{
                                         fontSize: 11,
                                         fontWeight: 600,
-                                        color: item.quantity <= 10 ? '#dc2626' : '#16a34a',
-                                        background: item.quantity <= 10 ? '#fef2f2' : '#f0fdf4',
+                                        color: expired ? '#dc2626' : (item.quantity <= 10 ? '#dc2626' : '#16a34a'),
+                                        background: expired ? '#fee2e2' : (item.quantity <= 10 ? '#fef2f2' : '#f0fdf4'),
                                         padding: '1px 6px',
                                         borderRadius: 4,
-                                        border: `1px solid ${item.quantity <= 10 ? '#fecaca' : '#bbf7d0'}`
+                                        border: `1px solid ${expired ? '#fca5a5' : (item.quantity <= 10 ? '#fecaca' : '#bbf7d0')}`
                                     }}>
-                                        Tồn: {item.quantity} {item.unit || 'đơn vị'}
+                                        {expired ? `Tồn quá hạn: ${item.quantity}` : `Tồn: ${item.quantity} ${item.unit || 'đơn vị'}`}
                                     </div>
                                 </div>
                             </div>

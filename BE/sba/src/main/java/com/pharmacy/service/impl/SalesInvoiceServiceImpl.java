@@ -4,6 +4,7 @@ import com.pharmacy.dto.PageResponse;
 import com.pharmacy.dto.sales.*;
 import com.pharmacy.entity.*;
 import com.pharmacy.exception.InsufficientStockException;
+import com.pharmacy.exception.InvalidOperationException;
 import com.pharmacy.exception.NoOpenShiftException;
 import com.pharmacy.exception.ResourceNotFoundException;
 import com.pharmacy.repository.*;
@@ -126,13 +127,21 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
             // Find Batch (FEFO if batchId not specified)
             ProductBatch batch = null;
             if (item.getBatchId() != null) {
-                batch = productBatchRepository.findById(item.getBatchId()).orElse(null);
+                batch = productBatchRepository.findById(item.getBatchId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lô thuốc ID: " + item.getBatchId()));
             }
             if (batch == null) {
                 List<ProductBatch> availableBatches = productBatchRepository.findAvailableBatchesFEFO(product.getId(), LocalDate.now());
                 if (!availableBatches.isEmpty()) {
                     batch = availableBatches.get(0);
+                } else {
+                    throw new InvalidOperationException("Không thể xuất bán! Thuốc [" + product.getName() + "] không có lô khả dụng hoặc tất cả các lô trong hệ thống đã hết hạn sử dụng.");
                 }
+            }
+
+            // Kiểm tra nghiêm ngặt hạn sử dụng của lô thuốc (Chặn tuyệt đối thuốc hết hạn)
+            if (batch != null && batch.getExpiryDate() != null && !batch.getExpiryDate().isAfter(LocalDate.now())) {
+                throw new InvalidOperationException("Không thể xuất bán! Thuốc [" + product.getName() + "] thuộc lô [" + batch.getBatchNumber() + "] đã hết hạn sử dụng vào ngày " + batch.getExpiryDate() + ".");
             }
 
             // Deduct store inventory by base quantity (smallest unit)
@@ -141,11 +150,13 @@ public class SalesInvoiceServiceImpl implements SalesInvoiceService {
                         .orElse(null);
                 if (inv != null) {
                     if (inv.getQuantity() < baseQuantityToDeduct) {
-                        throw new InsufficientStockException("Sản phẩm [" + product.getName() + "] chỉ còn tồn " + inv.getQuantity() + " " + product.getUnit() + " (yêu cầu " + baseQuantityToDeduct + ")!");
+                        throw new InsufficientStockException("Sản phẩm [" + product.getName() + "] (Lô: " + batch.getBatchNumber() + ") chỉ còn tồn " + inv.getQuantity() + " " + product.getUnit() + " (yêu cầu " + baseQuantityToDeduct + ")!");
                     }
                     inv.setQuantity(inv.getQuantity() - baseQuantityToDeduct);
                     inv.setUpdatedAt(LocalDateTime.now());
                     inventoryRepository.save(inv);
+                } else {
+                    throw new InsufficientStockException("Chi nhánh [" + store.getName() + "] không có tồn kho cho sản phẩm [" + product.getName() + "] thuộc lô [" + batch.getBatchNumber() + "]!");
                 }
             }
 

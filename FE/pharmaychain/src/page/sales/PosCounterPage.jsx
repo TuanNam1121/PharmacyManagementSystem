@@ -100,31 +100,14 @@ export default function PosCounterPage() {
         }
     };
 
-    // Fast payment states directly on right panel
-    const [quickMethod, setQuickMethod] = useState('CASH'); // CASH, BANK_TRANSFER (PayOS)
-    const [tenderedCash, setTenderedCash] = useState('');
-
-    useEffect(() => {
-        setTenderedCash(String(netAmount));
-    }, [netAmount]);
-
-    const tendered = Number(tenderedCash) || 0;
-    const changeAmount = Math.max(0, tendered - netAmount);
-    const isCashInsufficient = quickMethod === 'CASH' && tendered < netAmount;
-
-    const handleQuickDenom = (val) => {
-        if (val === 'EXACT') setTenderedCash(String(netAmount));
-        else setTenderedCash(String(val));
-    };
-
     // Handle shift close trigger
     const onTriggerCloseShift = async () => {
         await fetchSummary();
         setCloseModalVisible(true);
     };
 
-    // Direct Checkout execution
-    const executeCheckout = async (paymentOverride = null) => {
+    // Open Payment Modal after validating pre-conditions
+    const handleOpenCheckoutModal = () => {
         if (!currentShift) {
             setCheckoutError('Bạn cần mở ca làm việc trước khi thanh toán!');
             setOpenModalVisible(true);
@@ -136,28 +119,45 @@ export default function PosCounterPage() {
             return;
         }
 
+        // Chặn tuyệt đối nếu trong giỏ còn thuốc đã hết hạn sử dụng
+        const expiredItem = cartItems.find((item) => {
+            if (item.expiryStatus === 'EXPIRED') return true;
+            if (!item.expiryDate) return false;
+            const exp = new Date(item.expiryDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return exp <= today;
+        });
+        if (expiredItem) {
+            alert(`⛔ Đơn hàng có thuốc [${expiredItem.productName}] (Lô: ${expiredItem.batchNumber || 'N/A'}) đã HẾT HẠN SỬ DỤNG (${formatDate(expiredItem.expiryDate)})!\n\nVui lòng xóa thuốc hết hạn khỏi giỏ hàng trước khi thanh toán.`);
+            return;
+        }
+
         // Bắt buộc phải có thông tin khách hàng định danh
         const customerId = customer?.customerId || customer?.id;
         if (!customerId) {
-            alert('Hóa đơn bán lẻ bắt buộc phải có thông tin khách hàng định danh. Vui lòng nhập số điện thoại khách hàng!');
+            alert('Hóa đơn bán lẻ bắt buộc phải có thông tin khách hàng định danh. Vui lòng chọn hoặc thêm khách hàng!');
             setCustomerModalOpen(true);
             return;
         }
 
-        // Nếu chọn chuyển khoản PayOS mà chưa mở mã QR để nhận thanh toán, mở Modal PayOS
-        if (!paymentOverride && quickMethod === 'BANK_TRANSFER') {
-            setPaymentModalOpen(true);
+        setCheckoutError(null);
+        setPaymentModalOpen(true);
+    };
+
+    // Execute checkout after payment confirmed in PaymentModal
+    const executeCheckout = async (paymentData) => {
+        if (!currentShift || cartItems.length === 0) return;
+
+        const customerId = customer?.customerId || customer?.id;
+        if (!customerId) {
+            setCheckoutError('Thiếu thông tin khách hàng');
             return;
         }
 
-        const method = paymentOverride?.paymentMethod || quickMethod;
-        const paid = paymentOverride?.amountPaid || netAmount;
-        const tenderedAmt = paymentOverride?.tenderedCash || (method === 'CASH' ? tendered : netAmount);
-
-        if (method === 'CASH' && tenderedAmt < netAmount) {
-            alert(`Tiền khách đưa không đủ (${money(tenderedAmt)} < ${money(netAmount)})!`);
-            return;
-        }
+        const method = paymentData?.paymentMethod || 'CASH';
+        const paid = paymentData?.amountPaid ?? netAmount;
+        const tenderedAmt = paymentData?.tenderedCash ?? paid;
 
         setCheckoutSubmitting(true);
         setCheckoutError(null);
@@ -165,7 +165,7 @@ export default function PosCounterPage() {
         try {
             const invoicePayload = {
                 shiftId: currentShift.shiftId || currentShift.id,
-                customerId: customer?.customerId || customer?.id || null,
+                customerId: customerId,
                 discount: Number(discountAmount) || 0,
                 prescriptionCode: prescriptionCode.trim() || null,
                 note: orderNote.trim() || null,
@@ -182,11 +182,12 @@ export default function PosCounterPage() {
                     paymentMethod: method,
                     amountPaid: paid,
                     tenderedCash: tenderedAmt,
-                    transactionRef: paymentOverride?.transactionRef || undefined,
+                    transactionRef: paymentData?.transactionRef || undefined,
                 },
             };
 
             const completed = await createSalesInvoice(invoicePayload);
+            setPaymentModalOpen(false);
             clearCart();
             setLastCompletedInvoice(completed);
             setPrintModalOpen(true);
@@ -620,138 +621,8 @@ export default function PosCounterPage() {
                                 )}
                             </div>
 
-                            {/* 4. Payment Method & Fast Tendered Cash Calculator */}
-                            <div style={{
-                                borderTop: '1px solid #e2e8f0',
-                                paddingTop: 12,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 10
-                            }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setQuickMethod('CASH')}
-                                        style={{
-                                            border: `1.5px solid ${quickMethod === 'CASH' ? 'var(--brand-primary)' : '#e2e8f0'}`,
-                                            background: quickMethod === 'CASH' ? 'var(--brand-primary-light, #ecfdf5)' : '#fff',
-                                            color: quickMethod === 'CASH' ? 'var(--brand-primary)' : '#475569',
-                                            fontWeight: 700,
-                                            fontSize: 12,
-                                            padding: '8px 4px',
-                                            borderRadius: 8,
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        Tiền mặt
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setQuickMethod('BANK_TRANSFER');
-                                            setPaymentModalOpen(true);
-                                        }}
-                                        style={{
-                                            border: `1.5px solid ${quickMethod === 'BANK_TRANSFER' ? 'var(--brand-primary)' : '#e2e8f0'}`,
-                                            background: quickMethod === 'BANK_TRANSFER' ? 'var(--brand-primary-light, #ecfdf5)' : '#fff',
-                                            color: quickMethod === 'BANK_TRANSFER' ? 'var(--brand-primary)' : '#475569',
-                                            fontWeight: 700,
-                                            fontSize: 12,
-                                            padding: '8px 4px',
-                                            borderRadius: 8,
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        Chuyển khoản PayOS
-                                    </button>
-                                </div>
-
-                                {quickMethod === 'BANK_TRANSFER' && (
-                                    <div style={{
-                                        padding: '8px 10px',
-                                        background: '#eff6ff',
-                                        borderRadius: 6,
-                                        border: '1px solid #bfdbfe',
-                                        fontSize: 11,
-                                        color: '#1e40af',
-                                        lineHeight: 1.4
-                                    }}>
-                                        Tự động nhận diện thanh toán VietQR qua cổng PayOS. Bấm vào nút để mở mã QR.
-                                    </div>
-                                )}
-
-                                {quickMethod === 'CASH' && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                                            <span style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>Tiền khách đưa:</span>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                step="1000"
-                                                style={{
-                                                    width: 140,
-                                                    height: 32,
-                                                    textAlign: 'right',
-                                                    fontSize: 14,
-                                                    fontWeight: 800,
-                                                    border: '1.5px solid var(--border-color)',
-                                                    borderRadius: 6,
-                                                    padding: '2px 8px',
-                                                    color: '#0f172a'
-                                                }}
-                                                value={tenderedCash}
-                                                onChange={(e) => setTenderedCash(e.target.value)}
-                                            />
-                                        </div>
-
-                                        {/* Quick Denominations */}
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                            <button
-                                                type="button"
-                                                className="pos-denom-chip"
-                                                style={{ padding: '3px 8px', fontSize: 11 }}
-                                                onClick={() => handleQuickDenom('EXACT')}
-                                            >
-                                                Đúng tiền
-                                            </button>
-                                            {[50000, 100000, 200000, 500000].map((denom) => (
-                                                <button
-                                                    key={denom}
-                                                    type="button"
-                                                    className="pos-denom-chip"
-                                                    style={{ padding: '3px 8px', fontSize: 11 }}
-                                                    onClick={() => handleQuickDenom(denom)}
-                                                >
-                                                    {money(denom)}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {/* Change Display */}
-                                        <div style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            padding: '8px 12px',
-                                            borderRadius: 6,
-                                            background: isCashInsufficient ? '#fef2f2' : '#ecfdf5',
-                                            border: `1px solid ${isCashInsufficient ? '#fca5a5' : '#86efac'}`,
-                                            fontSize: 12
-                                        }}>
-                                            <span style={{ fontWeight: 700, color: isCashInsufficient ? '#991b1b' : '#065f46' }}>
-                                                {isCashInsufficient ? 'Còn thiếu:' : 'Tiền thối lại:'}
-                                            </span>
-                                            <span style={{ fontWeight: 800, fontSize: 14, color: isCashInsufficient ? '#b91c1c' : '#059669' }}>
-                                                {isCashInsufficient ? money(netAmount - tendered) : money(changeAmount)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* 5. Big Checkout Actions */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                            {/* 4. Checkout Actions */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12, borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>
                                 <button
                                     type="button"
                                     className="btn-pms btn-pms-primary"
@@ -766,8 +637,8 @@ export default function PosCounterPage() {
                                         boxShadow: '0 4px 14px rgba(5, 150, 105, 0.3)',
                                         borderRadius: 8
                                     }}
-                                    disabled={cartItems.length === 0 || !currentShift || isCashInsufficient || checkoutSubmitting}
-                                    onClick={() => executeCheckout()}
+                                    disabled={cartItems.length === 0 || !currentShift || checkoutSubmitting}
+                                    onClick={handleOpenCheckoutModal}
                                 >
                                     {checkoutSubmitting ? (
                                         <div className="spinner-border spinner-border-sm" style={{ marginRight: 8 }} />
@@ -846,10 +717,7 @@ export default function PosCounterPage() {
             <PaymentModal
                 isOpen={paymentModalOpen}
                 onClose={() => setPaymentModalOpen(false)}
-                onConfirmPayment={(paymentData) => {
-                    setPaymentModalOpen(false);
-                    executeCheckout(paymentData);
-                }}
+                onConfirmPayment={executeCheckout}
                 subtotal={subtotal}
                 discountAmount={discountAmount}
                 netAmount={netAmount}

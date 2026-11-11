@@ -91,6 +91,46 @@ export const viewPriceHistory = async (id) => {
   return unwrapApiResponse(json);
 };
 
+export const getProductUnits = async (id) => {
+  if (id === null || id === undefined || id === '') {
+    throw new Error('Product ID is required');
+  }
+  const json = await get(`${PRODUCT_BASE_URL}/${encodeURIComponent(id)}/units`);
+  return unwrapApiResponse(json);
+};
+
+export const addProductUnit = async (id, payload) => {
+  if (id === null || id === undefined || id === '') {
+    throw new Error('Product ID is required');
+  }
+  const json = await post(`${PRODUCT_BASE_URL}/${encodeURIComponent(id)}/units`, payload);
+  return unwrapApiResponse(json);
+};
+
+export const updateProductUnit = async (id, unitId, payload) => {
+  if (!id || !unitId) {
+    throw new Error('Product ID and Unit ID are required');
+  }
+  const json = await put(`${PRODUCT_BASE_URL}/${encodeURIComponent(id)}/units/${encodeURIComponent(unitId)}`, payload);
+  return unwrapApiResponse(json);
+};
+
+export const deleteProductUnit = async (id, unitId) => {
+  if (!id || !unitId) {
+    throw new Error('Product ID and Unit ID are required');
+  }
+  const json = await del(`${PRODUCT_BASE_URL}/${encodeURIComponent(id)}/units/${encodeURIComponent(unitId)}`);
+  return unwrapApiResponse(json);
+};
+
+export const syncProductUnits = async (id, units) => {
+  if (id === null || id === undefined || id === '') {
+    throw new Error('Product ID is required');
+  }
+  const json = await put(`${PRODUCT_BASE_URL}/${encodeURIComponent(id)}/units`, units);
+  return unwrapApiResponse(json);
+};
+
 export default {
   viewProductList,
   viewProductDetail,
@@ -101,4 +141,9 @@ export default {
   deleteProduct,
   viewCategoryOptions,
   viewPriceHistory,
+  getProductUnits,
+  addProductUnit,
+  updateProductUnit,
+  deleteProductUnit,
+  syncProductUnits,
 };

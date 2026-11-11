@@ -88,7 +88,7 @@ export default function RfqResponsePage() {
           <div className="pms-card-header rfq-portal-header">
             <div className="rfq-portal-heading">
               <div className="rfq-portal-brand">
-                <span className="rfq-portal-brand-mark">Rx</span>
+                <img src="/logo.png" alt="Logo" className="rfq-portal-brand-mark" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover' }} />
                 <span className="rfq-portal-brand-name">PharmaChain</span>
                 <span className="pms-badge pms-badge-info">Cổng báo giá nhà cung cấp</span>
               </div>

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Getter
 @Setter
@@ -27,4 +28,7 @@ public class ProductResponse {
     // Thông tin danh mục liên kết
     private Long categoryId;
     private String categoryName;
+
+    // Danh sách quy cách đơn vị bán lẻ (viên, vỉ, hộp...)
+    private List<ProductUnitDto> units;
 }

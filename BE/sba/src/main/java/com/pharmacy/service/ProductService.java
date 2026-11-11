@@ -6,6 +6,7 @@ import com.pharmacy.dto.product.ProductCreateRequest;
 import com.pharmacy.dto.product.ProductDetailResponse;
 import com.pharmacy.dto.product.ProductPriceUpdateRequest;
 import com.pharmacy.dto.product.ProductResponse;
+import com.pharmacy.dto.product.ProductUnitDto;
 import com.pharmacy.dto.product.ProductUpdateRequest;
 import jakarta.validation.Valid;
 
@@ -27,4 +28,15 @@ public interface ProductService {
     PageResponse<ProductResponse> getProducts(String keyword, Short status, Integer categoryId, int page, int size, String sortBy, String sortDir);
 
     List<PriceHistoryResponse> getPriceHistories(Long productId);
+
+    // Product units (Quy cách bán lẻ: viên, vỉ, hộp...)
+    List<ProductUnitDto> getProductUnits(Long productId);
+
+    ProductUnitDto addProductUnit(Long productId, ProductUnitDto unitDto);
+
+    ProductUnitDto updateProductUnit(Long productId, Long unitId, ProductUnitDto unitDto);
+
+    void deleteProductUnit(Long productId, Long unitId);
+
+    List<ProductUnitDto> syncProductUnits(Long productId, List<ProductUnitDto> units);
 }

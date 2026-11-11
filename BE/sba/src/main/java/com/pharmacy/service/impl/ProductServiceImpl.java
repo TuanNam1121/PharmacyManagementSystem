@@ -6,12 +6,14 @@ import com.pharmacy.dto.product.ProductCreateRequest;
 import com.pharmacy.dto.product.ProductDetailResponse;
 import com.pharmacy.dto.product.ProductPriceUpdateRequest;
 import com.pharmacy.dto.product.ProductResponse;
+import com.pharmacy.dto.product.ProductUnitDto;
 import com.pharmacy.dto.product.ProductUpdateRequest;
 import com.pharmacy.entity.Account;
 import com.pharmacy.entity.AccountInformation;
 import com.pharmacy.entity.Category;
 import com.pharmacy.entity.PriceHistory;
 import com.pharmacy.entity.Product;
+import com.pharmacy.entity.ProductUnit;
 import com.pharmacy.entity.enums.ProductStatus;
 import com.pharmacy.exception.DuplicateResourceException;
 import com.pharmacy.exception.ResourceNotFoundException;
@@ -19,6 +21,7 @@ import com.pharmacy.repository.AccountRepository;
 import com.pharmacy.repository.CategoryRepository;
 import com.pharmacy.repository.PriceHistoryRepository;
 import com.pharmacy.repository.ProductRepository;
+import com.pharmacy.repository.ProductUnitRepository;
 import com.pharmacy.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,7 +33,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -43,6 +48,7 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final PriceHistoryRepository priceHistoryRepository;
     private final AccountRepository accountRepository;
+    private final ProductUnitRepository productUnitRepository;
 
     @Override
     @Transactional
@@ -96,6 +102,23 @@ public class ProductServiceImpl implements ProductService {
                     : "Khởi tạo giá khi tạo mới sản phẩm");
             initialPriceHistory.setCreatedAt(LocalDateTime.now());
             priceHistoryRepository.save(initialPriceHistory);
+        }
+
+        // Khởi tạo quy cách đơn vị (product_units)
+        if (request.getUnits() != null && !request.getUnits().isEmpty()) {
+            syncUnitsInternal(savedProduct, request.getUnits());
+        } else {
+            // Tương thích ngược: tự động tạo đơn vị cơ bản
+            ProductUnit baseUnit = ProductUnit.builder()
+                    .product(savedProduct)
+                    .unitName(savedProduct.getUnit())
+                    .conversionFactor(1)
+                    .sellingPrice(savedProduct.getSellingPrice())
+                    .isBaseUnit(true)
+                    .barcode(savedProduct.getBarcode())
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            productUnitRepository.save(baseUnit);
         }
 
         return mapToProductResponse(savedProduct);
@@ -174,6 +197,11 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
+        // Đồng bộ units nếu có gửi kèm trường units
+        if (request.getUnits() != null) {
+            syncUnitsInternal(updatedProduct, request.getUnits());
+        }
+
         return mapToProductResponse(updatedProduct);
     }
 
@@ -215,6 +243,7 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + id));
 
         Category category = product.getCategory();
+        List<ProductUnitDto> units = getUnitsForProduct(id);
 
         return ProductDetailResponse.builder()
                 .id(product.getId())
@@ -235,6 +264,7 @@ public class ProductServiceImpl implements ProductService {
                 .updatedAt(product.getUpdatedAt())
                 .categoryId(category != null ? category.getId() : null)
                 .categoryName(category != null ? category.getName() : null)
+                .units(units)
                 .build();
     }
 
@@ -321,6 +351,7 @@ public class ProductServiceImpl implements ProductService {
 
     private ProductResponse mapToProductResponse(Product product) {
         Category category = product.getCategory();
+        List<ProductUnitDto> units = getUnitsForProduct(product.getId());
 
         return ProductResponse.builder()
                 .id(product.getId())
@@ -334,6 +365,7 @@ public class ProductServiceImpl implements ProductService {
                 .imageUrl(product.getImageUrl())
                 .categoryId(category != null ? category.getId() : null)
                 .categoryName(category != null ? category.getName() : null)
+                .units(units)
                 .build();
     }
 
@@ -353,6 +385,242 @@ public class ProductServiceImpl implements ProductService {
                 .effectiveFrom(history.getEffectiveFrom())
                 .reason(history.getReason())
                 .createdAt(history.getCreatedAt())
+                .build();
+    }
+
+    // ==================== PRODUCT UNITS APIS & HELPERS ====================
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductUnitDto> getProductUnits(Long productId) {
+        if (!productRepository.existsById(productId)) {
+            throw new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + productId);
+        }
+        List<ProductUnit> units = productUnitRepository.findByProduct_IdOrderByConversionFactorAsc(productId);
+        if (units == null || units.isEmpty()) {
+            Product p = productRepository.findById(productId).orElse(null);
+            if (p != null) {
+                return List.of(ProductUnitDto.builder()
+                        .unitName(p.getUnit())
+                        .conversionFactor(1)
+                        .sellingPrice(p.getSellingPrice())
+                        .isBaseUnit(true)
+                        .barcode(p.getBarcode())
+                        .build());
+            }
+            return new ArrayList<>();
+        }
+        return units.stream().map(this::mapToProductUnitDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public ProductUnitDto addProductUnit(Long productId, ProductUnitDto unitDto) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + productId));
+
+        if (unitDto.getBarcode() != null && !unitDto.getBarcode().trim().isEmpty()) {
+            Optional<ProductUnit> existingByBarcode = productUnitRepository.findByBarcode(unitDto.getBarcode().trim());
+            if (existingByBarcode.isPresent()) {
+                throw new DuplicateResourceException("Mã vạch '" + unitDto.getBarcode() + "' đã tồn tại cho quy cách khác");
+            }
+        }
+
+        boolean isBase = Boolean.TRUE.equals(unitDto.getIsBaseUnit());
+        if (isBase) {
+            List<ProductUnit> existing = productUnitRepository.findByProduct_IdOrderByConversionFactorAsc(productId);
+            for (ProductUnit u : existing) {
+                if (Boolean.TRUE.equals(u.getIsBaseUnit())) {
+                    u.setIsBaseUnit(false);
+                    productUnitRepository.save(u);
+                }
+            }
+        }
+
+        ProductUnit unit = ProductUnit.builder()
+                .product(product)
+                .unitName(unitDto.getUnitName() != null ? unitDto.getUnitName().trim() : product.getUnit())
+                .conversionFactor(unitDto.getConversionFactor() != null && unitDto.getConversionFactor() > 0 ? unitDto.getConversionFactor() : 1)
+                .sellingPrice(unitDto.getSellingPrice() != null ? unitDto.getSellingPrice() : product.getSellingPrice())
+                .isBaseUnit(isBase)
+                .barcode(unitDto.getBarcode() != null && !unitDto.getBarcode().trim().isEmpty() ? unitDto.getBarcode().trim() : null)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        ProductUnit saved = productUnitRepository.save(unit);
+        return mapToProductUnitDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public ProductUnitDto updateProductUnit(Long productId, Long unitId, ProductUnitDto unitDto) {
+        if (!productRepository.existsById(productId)) {
+            throw new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + productId);
+        }
+        ProductUnit unit = productUnitRepository.findById(unitId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy quy cách với ID: " + unitId));
+
+        if (!unit.getProduct().getId().equals(productId)) {
+            throw new IllegalArgumentException("Quy cách không thuộc về sản phẩm ID: " + productId);
+        }
+
+        if (unitDto.getBarcode() != null && !unitDto.getBarcode().trim().isEmpty()) {
+            String b = unitDto.getBarcode().trim();
+            Optional<ProductUnit> existingByBarcode = productUnitRepository.findByBarcode(b);
+            if (existingByBarcode.isPresent() && !existingByBarcode.get().getId().equals(unitId)) {
+                throw new DuplicateResourceException("Mã vạch '" + b + "' đã tồn tại cho quy cách khác");
+            }
+            unit.setBarcode(b);
+        } else {
+            unit.setBarcode(null);
+        }
+
+        if (Boolean.TRUE.equals(unitDto.getIsBaseUnit()) && !Boolean.TRUE.equals(unit.getIsBaseUnit())) {
+            List<ProductUnit> existing = productUnitRepository.findByProduct_IdOrderByConversionFactorAsc(productId);
+            for (ProductUnit u : existing) {
+                if (!u.getId().equals(unitId) && Boolean.TRUE.equals(u.getIsBaseUnit())) {
+                    u.setIsBaseUnit(false);
+                    productUnitRepository.save(u);
+                }
+            }
+            unit.setIsBaseUnit(true);
+        } else if (unitDto.getIsBaseUnit() != null) {
+            unit.setIsBaseUnit(unitDto.getIsBaseUnit());
+        }
+
+        if (unitDto.getUnitName() != null && !unitDto.getUnitName().trim().isEmpty()) {
+            unit.setUnitName(unitDto.getUnitName().trim());
+        }
+        if (unitDto.getConversionFactor() != null && unitDto.getConversionFactor() > 0) {
+            unit.setConversionFactor(unitDto.getConversionFactor());
+        }
+        if (unitDto.getSellingPrice() != null) {
+            unit.setSellingPrice(unitDto.getSellingPrice());
+        }
+
+        ProductUnit saved = productUnitRepository.save(unit);
+        return mapToProductUnitDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public void deleteProductUnit(Long productId, Long unitId) {
+        if (!productRepository.existsById(productId)) {
+            throw new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + productId);
+        }
+        ProductUnit unit = productUnitRepository.findById(unitId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy quy cách với ID: " + unitId));
+
+        if (!unit.getProduct().getId().equals(productId)) {
+            throw new IllegalArgumentException("Quy cách không thuộc về sản phẩm này");
+        }
+
+        if (Boolean.TRUE.equals(unit.getIsBaseUnit())) {
+            throw new IllegalStateException("Không thể xóa quy cách đơn vị cơ bản!");
+        }
+
+        productUnitRepository.delete(unit);
+    }
+
+    @Override
+    @Transactional
+    public List<ProductUnitDto> syncProductUnits(Long productId, List<ProductUnitDto> units) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + productId));
+        return syncUnitsInternal(product, units);
+    }
+
+    private List<ProductUnitDto> syncUnitsInternal(Product product, List<ProductUnitDto> newUnits) {
+        List<ProductUnit> currentUnits = productUnitRepository.findByProduct_IdOrderByConversionFactorAsc(product.getId());
+
+        if (newUnits == null || newUnits.isEmpty()) {
+            if (currentUnits.isEmpty()) {
+                ProductUnit baseUnit = ProductUnit.builder()
+                        .product(product)
+                        .unitName(product.getUnit())
+                        .conversionFactor(1)
+                        .sellingPrice(product.getSellingPrice())
+                        .isBaseUnit(true)
+                        .barcode(product.getBarcode())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                currentUnits.add(productUnitRepository.save(baseUnit));
+            }
+            return currentUnits.stream().map(this::mapToProductUnitDto).collect(Collectors.toList());
+        }
+
+        boolean hasBase = newUnits.stream().anyMatch(u -> Boolean.TRUE.equals(u.getIsBaseUnit()));
+        List<Long> keptIds = new ArrayList<>();
+        List<ProductUnit> savedUnits = new ArrayList<>();
+
+        for (int i = 0; i < newUnits.size(); i++) {
+            ProductUnitDto dto = newUnits.get(i);
+            boolean isBase = Boolean.TRUE.equals(dto.getIsBaseUnit()) || (!hasBase && i == 0);
+
+            ProductUnit unit = null;
+            if (dto.getId() != null) {
+                unit = productUnitRepository.findById(dto.getId()).orElse(null);
+                if (unit != null && unit.getProduct().getId().equals(product.getId())) {
+                    unit.setUnitName(dto.getUnitName() != null ? dto.getUnitName().trim() : unit.getUnitName());
+                    unit.setConversionFactor(dto.getConversionFactor() != null && dto.getConversionFactor() > 0 ? dto.getConversionFactor() : 1);
+                    unit.setSellingPrice(dto.getSellingPrice() != null ? dto.getSellingPrice() : BigDecimal.ZERO);
+                    unit.setIsBaseUnit(isBase);
+                    unit.setBarcode(dto.getBarcode() != null && !dto.getBarcode().trim().isEmpty() ? dto.getBarcode().trim() : null);
+                    unit = productUnitRepository.save(unit);
+                    keptIds.add(unit.getId());
+                    savedUnits.add(unit);
+                    continue;
+                }
+            }
+
+            unit = ProductUnit.builder()
+                    .product(product)
+                    .unitName(dto.getUnitName() != null ? dto.getUnitName().trim() : product.getUnit())
+                    .conversionFactor(dto.getConversionFactor() != null && dto.getConversionFactor() > 0 ? dto.getConversionFactor() : 1)
+                    .sellingPrice(dto.getSellingPrice() != null ? dto.getSellingPrice() : BigDecimal.ZERO)
+                    .isBaseUnit(isBase)
+                    .barcode(dto.getBarcode() != null && !dto.getBarcode().trim().isEmpty() ? dto.getBarcode().trim() : null)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            unit = productUnitRepository.save(unit);
+            keptIds.add(unit.getId());
+            savedUnits.add(unit);
+        }
+
+        for (ProductUnit old : currentUnits) {
+            if (!keptIds.contains(old.getId())) {
+                try {
+                    productUnitRepository.delete(old);
+                } catch (Exception ignored) {}
+            }
+        }
+
+        return savedUnits.stream().map(this::mapToProductUnitDto).collect(Collectors.toList());
+    }
+
+    private List<ProductUnitDto> getUnitsForProduct(Long productId) {
+        if (productUnitRepository == null || productId == null) {
+            return new ArrayList<>();
+        }
+        try {
+            List<ProductUnit> units = productUnitRepository.findByProduct_IdOrderByConversionFactorAsc(productId);
+            if (units == null || units.isEmpty()) {
+                return new ArrayList<>();
+            }
+            return units.stream().map(this::mapToProductUnitDto).collect(Collectors.toList());
+        } catch (Exception ignored) {
+            return new ArrayList<>();
+        }
+    }
+
+    private ProductUnitDto mapToProductUnitDto(ProductUnit u) {
+        return ProductUnitDto.builder()
+                .id(u.getId())
+                .unitName(u.getUnitName())
+                .conversionFactor(u.getConversionFactor())
+                .sellingPrice(u.getSellingPrice())
+                .isBaseUnit(u.getIsBaseUnit())
+                .barcode(u.getBarcode())
                 .build();
     }
 

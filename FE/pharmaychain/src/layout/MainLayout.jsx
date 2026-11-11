@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { getAuthorizedStores } from "../api/StoreAPI";
 import ChangePasswordModal from "../component/auth/ChangePasswordModal";
+import logoImg from "../assets/logo.png";
 
 // 5 Business domains structured strictly according to Backlog scope
 const NAV_MODULES = [
@@ -84,7 +85,7 @@ const NAV_MODULES = [
         <rect x="3" y="14" width="7" height="7" />
       </svg>
     ),
-    subgroups: [
+    subgroups:
       {
         key: "admin-catalog",
         title: "DANH MỤC",
@@ -332,7 +333,7 @@ export default function MainLayout() {
         {/* Logo */}
         <div className="pms-sidebar-header">
           <NavLink to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <div className="pms-logo-icon">Rx</div>
+            <img src={logoImg} alt="PharmaChain Logo" className="pms-logo-icon" />
             <div className="pms-logo-text">
               <span className="pms-logo-name">PharmaChain</span>
               <span className="pms-logo-sub">Management System</span>

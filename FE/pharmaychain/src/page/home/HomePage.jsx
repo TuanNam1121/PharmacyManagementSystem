@@ -362,7 +362,7 @@ export default function HomePage() {
         <div>
           <h1 className="pms-page-title">Bàn Làm Việc — Tổng Quan Hệ Thống</h1>
           <p className="pms-page-sub">
-            Hệ thống quản trị chuỗi nhà thuốc &amp; Kho vận PharmaChain (GSP/GDP).
+            Hệ thống quản trị chuỗi nhà thuốc &amp; Kho vận PharmaChain.
           </p>
         </div>
       </div>
@@ -390,17 +390,8 @@ export default function HomePage() {
             Xin chào, {user?.fullName || user?.username || 'Nhân viên'}
           </div>
           <div style={{ fontSize: 13, color: '#94a3b8' }}>
-            Vai trò: <strong style={{ color: '#f8fafc' }}>{user?.roleName || user?.role || 'Quản trị viên'}</strong> · Trạng thái: <span style={{ color: '#34d399' }}>● Hệ thống đang hoạt động ổn định</span>
+            Vai trò: <strong style={{ color: '#f8fafc' }}>{user?.roleName || user?.role || 'Quản trị viên'}</strong>
           </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 10 }}>
-          <NavLink to="/warehouse/inventory" className="btn-pms btn-pms-secondary" style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}>
-            Kho Tổng
-          </NavLink>
-          <NavLink to="/pos" className="btn-pms btn-pms-primary">
-            Quầy POS
-          </NavLink>
         </div>
       </div>
 

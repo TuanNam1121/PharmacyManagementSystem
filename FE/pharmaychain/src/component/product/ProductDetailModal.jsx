@@ -46,7 +46,7 @@ export default function ProductDetailModal({
     if (s === 1) {
       return (
         <span className="pms-badge pms-badge-success">
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /></svg>
           Đang kinh doanh
         </span>
       );
@@ -54,14 +54,14 @@ export default function ProductDetailModal({
     if (s === 2) {
       return (
         <span className="pms-badge pms-badge-neutral">
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /></svg>
           Ngừng lưu hành
         </span>
       );
     }
     return (
       <span className="pms-badge pms-badge-danger">
-        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /></svg>
         Ngừng kinh doanh
       </span>
     );
@@ -78,7 +78,7 @@ export default function ProductDetailModal({
           </div>
           <button className="pms-modal-close" onClick={onHide} aria-label="Đóng">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
@@ -295,6 +295,62 @@ export default function ProductDetailModal({
                 </div>
               </div>
 
+              {/* Product Units Specification Table */}
+              <div
+                style={{
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--border-radius-md)',
+                  padding: 16,
+                  marginBottom: 20,
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12 }}>
+                  Quy Cách Đóng Gói &amp; Đơn Vị Bán Lẻ (Units)
+                </div>
+                {(!detail.units || detail.units.length === 0) ? (
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    Chưa thiết lập nhiều quy cách đóng gói. Đơn vị cơ bản mặc định là <strong>{detail.unit}</strong> ({money(detail.sellingPrice)}).
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="pms-table" style={{ margin: 0, fontSize: 12.5 }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc' }}>
+                          <th>Tên Quy Cách</th>
+                          <th>Hệ Số Quy Đổi</th>
+                          <th style={{ textAlign: 'right' }}>Giá Bán Lẻ</th>
+                          <th style={{ textAlign: 'center' }}>Loại Đơn Vị</th>
+                          <th>Mã Vạch Riêng</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detail.units.map((u, i) => (
+                          <tr key={u.id || i}>
+                            <td><strong>{u.unitName}</strong></td>
+                            <td>
+                              1 {u.unitName} = {u.conversionFactor} {detail.unit || 'đơn vị'}
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--brand-primary)' }}>
+                              {money(u.sellingPrice)}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              {u.isBaseUnit ? (
+                                <span className="pms-badge pms-badge-success" style={{ fontSize: 11 }}>Cơ bản (x1)</span>
+                              ) : (
+                                <span className="pms-badge pms-badge-neutral" style={{ fontSize: 11 }}>Quy đổi (x{u.conversionFactor})</span>
+                              )}
+                            </td>
+                            <td className="mono" style={{ color: 'var(--text-secondary)' }}>
+                              {u.barcode || '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
               {/* Description */}
               {detail.description && (
                 <div
@@ -391,8 +447,8 @@ export default function ProductDetailModal({
               }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
               Chỉnh Sửa Thuốc
             </button>

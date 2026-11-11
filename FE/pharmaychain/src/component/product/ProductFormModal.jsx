@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createProduct, updateProduct } from '../../api/ProductAPI';
+import { createProduct, updateProduct, getProductUnits } from '../../api/ProductAPI';
 
 const initialForm = {
   barcode: '',
@@ -13,6 +13,7 @@ const initialForm = {
   imageUrl: '',
   status: '1',
   categoryId: '',
+  units: [],
 };
 
 export default function ProductFormModal({
@@ -34,6 +35,10 @@ export default function ProductFormModal({
       setErrors({});
       setServerError(null);
       if (isEdit && product) {
+        const initialUnits = product.units && product.units.length > 0
+          ? product.units.map((u) => ({ ...u }))
+          : [{ unitName: product.unit || '', conversionFactor: 1, sellingPrice: product.sellingPrice || 0, isBaseUnit: true, barcode: product.barcode || '' }];
+
         setForm({
           barcode: product.barcode || '',
           name: product.name || '',
@@ -46,9 +51,28 @@ export default function ProductFormModal({
           imageUrl: product.imageUrl || '',
           status: String(product.status ?? '1'),
           categoryId: product.categoryId ? String(product.categoryId) : '',
+          units: initialUnits,
         });
+
+        // Luôn fetch danh sách quy cách đơn vị mới nhất từ backend cho chế độ edit
+        const targetId = product.id || product.productId;
+        if (targetId) {
+          getProductUnits(targetId)
+            .then((fetchedUnits) => {
+              if (Array.isArray(fetchedUnits) && fetchedUnits.length > 0) {
+                setForm((prev) => ({
+                  ...prev,
+                  units: fetchedUnits.map((u) => ({ ...u })),
+                }));
+              }
+            })
+            .catch((err) => console.warn('Không thể tải units của sản phẩm:', err));
+        }
       } else {
-        setForm(initialForm);
+        setForm({
+          ...initialForm,
+          units: [{ unitName: '', conversionFactor: 1, sellingPrice: 0, isBaseUnit: true, barcode: '' }],
+        });
       }
     }
   }, [show, isEdit, product]);
@@ -56,7 +80,69 @@ export default function ProductFormModal({
   if (!show) return null;
 
   const setField = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => {
+      const updated = { ...prev, [key]: value };
+      // Nếu thay đổi unit cơ bản ở input thông tin cơ bản, tự động đồng bộ tên unit của base unit trong danh sách units
+      if (key === 'unit' && prev.units && prev.units.length > 0) {
+        updated.units = prev.units.map((u) => (u.isBaseUnit ? { ...u, unitName: value } : u));
+      }
+      return updated;
+    });
+  };
+
+  const handleAddUnit = () => {
+    setForm((prev) => {
+      const currentList = prev.units || [];
+      const lastFactor = currentList.length > 0 ? (Number(currentList[currentList.length - 1].conversionFactor) || 1) : 1;
+      return {
+        ...prev,
+        units: [
+          ...currentList,
+          {
+            unitName: '',
+            conversionFactor: lastFactor * 10,
+            sellingPrice: 0,
+            isBaseUnit: false,
+            barcode: '',
+          },
+        ],
+      };
+    });
+  };
+
+  const handleUpdateUnitRow = (index, field, value) => {
+    setForm((prev) => {
+      const nextUnits = [...(prev.units || [])];
+      nextUnits[index] = { ...nextUnits[index], [field]: value };
+
+      let updatedUnitName = prev.unit;
+      if (field === 'isBaseUnit' && value === true) {
+        nextUnits.forEach((u, i) => {
+          if (i !== index) u.isBaseUnit = false;
+        });
+        nextUnits[index].conversionFactor = 1;
+        if (nextUnits[index].unitName) {
+          updatedUnitName = nextUnits[index].unitName;
+        }
+      }
+
+      if (field === 'unitName' && nextUnits[index].isBaseUnit) {
+        updatedUnitName = value;
+      }
+
+      return { ...prev, unit: updatedUnitName, units: nextUnits };
+    });
+  };
+
+  const handleRemoveUnit = (index) => {
+    setForm((prev) => {
+      const nextUnits = (prev.units || []).filter((_, i) => i !== index);
+      if (nextUnits.length > 0 && !nextUnits.some((u) => u.isBaseUnit)) {
+        nextUnits[0].isBaseUnit = true;
+        nextUnits[0].conversionFactor = 1;
+      }
+      return { ...prev, units: nextUnits };
+    });
   };
 
   const validate = () => {
@@ -64,6 +150,14 @@ export default function ProductFormModal({
     if (!form.name.trim()) e.name = 'Tên thuốc/sản phẩm không được để trống';
     if (!form.unit.trim()) e.unit = 'Đơn vị tính không được để trống';
     if (!form.categoryId) e.categoryId = 'Vui lòng chọn danh mục dược phẩm';
+
+    // Validate units
+    if (form.units && form.units.length > 0) {
+      const emptyUnit = form.units.some((u) => !u.unitName || !u.unitName.trim());
+      if (emptyUnit) {
+        e.units = 'Tất cả các dòng quy cách cần phải có tên đơn vị';
+      }
+    }
 
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -83,6 +177,23 @@ export default function ProductFormModal({
     if (!validate()) return;
     setSubmitting(true);
     try {
+      // Chuẩn hóa danh sách units
+      const cleanedUnits = (form.units || [])
+        .filter((u) => u.unitName && u.unitName.trim())
+        .map((u) => ({
+          id: u.id || undefined,
+          unitName: u.unitName.trim(),
+          conversionFactor: Number(u.conversionFactor) > 0 ? Number(u.conversionFactor) : 1,
+          sellingPrice: Number(u.sellingPrice) >= 0 ? Number(u.sellingPrice) : 0,
+          isBaseUnit: Boolean(u.isBaseUnit),
+          barcode: u.barcode && u.barcode.trim() ? u.barcode.trim() : null,
+        }));
+
+      if (cleanedUnits.length > 0 && !cleanedUnits.some((u) => u.isBaseUnit)) {
+        cleanedUnits[0].isBaseUnit = true;
+        cleanedUnits[0].conversionFactor = 1;
+      }
+
       const payload = {
         name: form.name.trim(),
         unit: form.unit.trim(),
@@ -94,6 +205,7 @@ export default function ProductFormModal({
         manufacturer: form.manufacturer.trim() || null,
         description: form.description.trim() || null,
         imageUrl: form.imageUrl.trim() || null,
+        units: cleanedUnits,
         // Status is managed separately via the Inactive/Active action button; do not include in edit payload
         ...(!isEdit && { status: Number(form.status) }),
       };
@@ -146,8 +258,8 @@ export default function ProductFormModal({
             </div>
             <div className="pms-modal-sub">
               {isEdit
-                ? `Cập nhật thông tin danh mục cho "${product?.name || ''}"`
-                : 'Thêm mới sản phẩm/thuốc vào danh mục quản lý kho trung tâm'}
+                ? `Cập nhật thông tin danh mục và quy cách cho "${product?.name || ''}"`
+                : 'Thêm mới sản phẩm/thuốc vào danh mục quản lý kho và bán lẻ'}
             </div>
           </div>
           <button className="pms-modal-close" onClick={handleClose} aria-label="Đóng">
@@ -211,13 +323,13 @@ export default function ProductFormModal({
                   {fieldErr('categoryId')}
                 </div>
                 <div className="pms-form-group">
-                  <label className="pms-label">Đơn Vị Tính *</label>
+                  <label className="pms-label">Đơn Vị Tính Cơ Bản *</label>
                   <input
                     type="text"
                     className="pms-input pms-input-bare"
                     value={form.unit}
                     onChange={(e) => setField('unit', e.target.value)}
-                    placeholder="Ví dụ: Hộp, Vỉ, Chai, Ống, Tuýp"
+                    placeholder="Ví dụ: Viên, Gói, Chai, Ống, Tuýp"
                     maxLength={30}
                     required
                   />
@@ -279,9 +391,142 @@ export default function ProductFormModal({
               </div>
             </div>
 
-            {/* ── Section 3: Stock Settings ── */}
+            {/* ── Section 3: Product Units (Quy Cách Đóng Gói: Viên, Vỉ, Hộp...) ── */}
             <div style={{ marginBottom: 20 }}>
-              {sectionTitle(3, 'Cài Đặt Định Mức Tồn Kho')}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                {sectionTitle(3, 'Quy Cách Đóng Gói & Đơn Vị Bán Lẻ (Units)')}
+                <button
+                  type="button"
+                  className="btn-pms btn-pms-secondary"
+                  onClick={handleAddUnit}
+                  style={{ height: 28, fontSize: 12, padding: '0 10px', display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Thêm Quy Cách
+                </button>
+              </div>
+
+              {errors.units && (
+                <div style={{ color: 'var(--status-danger)', fontSize: 12, marginBottom: 8 }}>
+                  {errors.units}
+                </div>
+              )}
+
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: 8, overflowX: 'auto', background: '#fff' }}>
+                <table className="pms-table" style={{ margin: 0, fontSize: 12.5, minWidth: 620 }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc' }}>
+                      <th style={{ width: 140 }}>Tên Quy Cách *</th>
+                      <th style={{ width: 120 }}>Hệ Số Quy Đổi *</th>
+                      <th style={{ width: 150 }}>Giá Bán Lẻ (VNĐ)</th>
+                      <th style={{ width: 110, textAlign: 'center' }}>Đơn Vị Cơ Bản</th>
+                      <th style={{ minWidth: 130 }}>Mã Vạch Riêng</th>
+                      <th style={{ width: 50, textAlign: 'center' }}>Xóa</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(!form.units || form.units.length === 0) ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
+                          Chưa có quy cách nào. Bấm "+ Thêm Quy Cách" để bổ sung.
+                        </td>
+                      </tr>
+                    ) : (
+                      form.units.map((u, idx) => (
+                        <tr key={u.id || idx}>
+                          <td>
+                            <input
+                              type="text"
+                              className="pms-input pms-input-bare"
+                              style={{ height: 32, fontSize: 12.5 }}
+                              placeholder="VD: Viên, Vỉ, Hộp..."
+                              value={u.unitName}
+                              onChange={(e) => handleUpdateUnitRow(idx, 'unitName', e.target.value)}
+                              required
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              min="1"
+                              className="pms-input pms-input-bare"
+                              style={{ height: 32, fontSize: 12.5 }}
+                              value={u.conversionFactor}
+                              disabled={u.isBaseUnit}
+                              onChange={(e) => handleUpdateUnitRow(idx, 'conversionFactor', Math.max(1, Number(e.target.value) || 1))}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              min="0"
+                              step="500"
+                              className="pms-input pms-input-bare"
+                              style={{ height: 32, fontSize: 12.5, textAlign: 'right' }}
+                              value={u.sellingPrice}
+                              onChange={(e) => handleUpdateUnitRow(idx, 'sellingPrice', Number(e.target.value) || 0)}
+                            />
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <input
+                              type="radio"
+                              name="baseUnitSelection"
+                              checked={Boolean(u.isBaseUnit)}
+                              onChange={() => handleUpdateUnitRow(idx, 'isBaseUnit', true)}
+                              style={{ cursor: 'pointer', width: 16, height: 16 }}
+                              title="Chọn làm đơn vị cơ bản nhỏ nhất (hệ số quy đổi = 1)"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              className="pms-input pms-input-bare mono"
+                              style={{ height: 32, fontSize: 11.5 }}
+                              placeholder="Tùy chọn mã vạch"
+                              value={u.barcode || ''}
+                              onChange={(e) => handleUpdateUnitRow(idx, 'barcode', e.target.value)}
+                            />
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveUnit(idx)}
+                              disabled={u.isBaseUnit && form.units.length <= 1}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: (u.isBaseUnit && form.units.length <= 1) ? '#cbd5e1' : '#ef4444',
+                                cursor: (u.isBaseUnit && form.units.length <= 1) ? 'not-allowed' : 'pointer',
+                                padding: 4,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                              title={u.isBaseUnit && form.units.length <= 1 ? 'Không thể xóa đơn vị cơ bản duy nhất' : 'Xóa quy cách này'}
+                            >
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              </svg>
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 6, lineHeight: 1.5 }}>
+                <span style={{ fontWeight: 600 }}>* Chú thích:</span> Đơn vị cơ bản (hệ số 1) là đơn vị nhỏ nhất lưu trong kho. Các quy cách lớn hơn (Vỉ, Hộp...) sẽ được tự động quy đổi tương ứng khi bán lẻ tại quầy POS hoặc nhập/xuất kho.
+              </div>
+            </div>
+
+            {/* ── Section 4: Stock Settings ── */}
+            <div style={{ marginBottom: 20 }}>
+              {sectionTitle(4, 'Cài Đặt Định Mức Tồn Kho')}
               <div className="pms-form-group" style={{ maxWidth: 320 }}>
                 <label className="pms-label">Định Mức Tồn Tối Thiểu (Cảnh Báo)</label>
                 <input
@@ -294,14 +539,14 @@ export default function ProductFormModal({
                   step="1"
                 />
                 <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                  Ngưỡng cảnh báo sắp hết hàng tại kho. Đơn giá bán được thiết lập tại chức năng <em>"Thiết Lập Giá"</em>.
+                  Ngưỡng cảnh báo sắp hết hàng tại kho theo đơn vị tính cơ bản.
                 </span>
               </div>
             </div>
 
-            {/* ── Section 4: Media & Additional ── */}
+            {/* ── Section 5: Media & Additional ── */}
             <div style={{ marginBottom: 8 }}>
-              {sectionTitle(4, 'Hình Ảnh & Mô Tả Chi Tiết')}
+              {sectionTitle(5, 'Hình Ảnh & Mô Tả Chi Tiết')}
               <div className="pms-form-group" style={{ marginBottom: 14 }}>
                 <label className="pms-label">Đường Dẫn Hình Ảnh (URL)</label>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>

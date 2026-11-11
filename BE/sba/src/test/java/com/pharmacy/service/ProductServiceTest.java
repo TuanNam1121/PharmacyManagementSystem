@@ -15,6 +15,7 @@ import com.pharmacy.repository.AccountRepository;
 import com.pharmacy.repository.CategoryRepository;
 import com.pharmacy.repository.PriceHistoryRepository;
 import com.pharmacy.repository.ProductRepository;
+import com.pharmacy.repository.ProductUnitRepository;
 import com.pharmacy.service.impl.ProductServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -51,6 +52,9 @@ class ProductServiceTest {
 
     @Mock
     private AccountRepository accountRepository;
+
+    @Mock
+    private ProductUnitRepository productUnitRepository;
 
     @InjectMocks
     private ProductServiceImpl productService;

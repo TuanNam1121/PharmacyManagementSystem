@@ -7,6 +7,7 @@ import com.pharmacy.dto.product.ProductCreateRequest;
 import com.pharmacy.dto.product.ProductDetailResponse;
 import com.pharmacy.dto.product.ProductPriceUpdateRequest;
 import com.pharmacy.dto.product.ProductResponse;
+import com.pharmacy.dto.product.ProductUnitDto;
 import com.pharmacy.dto.product.ProductUpdateRequest;
 import com.pharmacy.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -99,5 +100,50 @@ public class ProductController {
             @PathVariable Long id) {
         List<PriceHistoryResponse> histories = productService.getPriceHistories(id);
         return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử giá thành công", histories));
+    }
+
+    @GetMapping("/{id}/units")
+    @Operation(summary = "Lấy danh sách quy cách đơn vị bán lẻ của sản phẩm (viên, vỉ, hộp...)")
+    public ResponseEntity<ApiResponse<List<ProductUnitDto>>> getProductUnits(@PathVariable Long id) {
+        List<ProductUnitDto> units = productService.getProductUnits(id);
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách quy cách thành công", units));
+    }
+
+    @PostMapping("/{id}/units")
+    @Operation(summary = "Thêm quy cách đơn vị mới cho sản phẩm")
+    public ResponseEntity<ApiResponse<ProductUnitDto>> addProductUnit(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductUnitDto unitDto) {
+        ProductUnitDto created = productService.addProductUnit(id, unitDto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Thêm quy cách mới thành công", created));
+    }
+
+    @PutMapping("/{id}/units/{unitId}")
+    @Operation(summary = "Cập nhật thông tin một quy cách đơn vị")
+    public ResponseEntity<ApiResponse<ProductUnitDto>> updateProductUnit(
+            @PathVariable Long id,
+            @PathVariable Long unitId,
+            @Valid @RequestBody ProductUnitDto unitDto) {
+        ProductUnitDto updated = productService.updateProductUnit(id, unitId, unitDto);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật quy cách thành công", updated));
+    }
+
+    @DeleteMapping("/{id}/units/{unitId}")
+    @Operation(summary = "Xóa một quy cách đơn vị (không xóa base unit)")
+    public ResponseEntity<ApiResponse<Void>> deleteProductUnit(
+            @PathVariable Long id,
+            @PathVariable Long unitId) {
+        productService.deleteProductUnit(id, unitId);
+        return ResponseEntity.ok(ApiResponse.success("Xóa quy cách thành công", null));
+    }
+
+    @PutMapping("/{id}/units")
+    @Operation(summary = "Đồng bộ toàn bộ danh sách quy cách đơn vị của sản phẩm")
+    public ResponseEntity<ApiResponse<List<ProductUnitDto>>> syncProductUnits(
+            @PathVariable Long id,
+            @RequestBody List<ProductUnitDto> units) {
+        List<ProductUnitDto> updatedUnits = productService.syncProductUnits(id, units);
+        return ResponseEntity.ok(ApiResponse.success("Đồng bộ danh sách quy cách thành công", updatedUnits));
     }
 }

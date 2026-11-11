@@ -41,9 +41,6 @@ export default function InvoicePrintTemplate({
                             <div className="pms-modal-title" style={{ fontSize: 16 }}>
                                 Hóa Đơn Bán Lẻ ({invoice.invoiceCode})
                             </div>
-                            <div className="pms-modal-sub">
-                                Mẫu in phiếu thanh toán nhiệt K80
-                            </div>
                         </div>
                     </div>
 
@@ -93,7 +90,7 @@ export default function InvoicePrintTemplate({
                         <div style={{ fontSize: 11, marginTop: 2 }}>{invoice.storeName || 'Chi nhánh Hà Nội'}</div>
                         <div style={{ fontSize: 10, color: '#444' }}>Hotline: 1900 6868 - Dược sĩ tư vấn</div>
                         <div style={{ margin: '8px 0', borderBottom: '1px dashed #000' }}></div>
-                        <div style={{ fontSize: 14, fontWeight: 800 }}>HÓA ĐƠN THANH TOÁN</div>
+                        <div style={{ fontSize: 14, fontWeight: 800 }}>BIÊN LAI THANH TOÁN</div>
                         <div style={{ fontSize: 11 }}>Số HĐ: <strong>{invoice.invoiceCode}</strong></div>
                         <div style={{ fontSize: 11 }}>Thời gian: {formatDateTime(invoice.createdAt || invoice.paidAt)}</div>
                     </div>
@@ -170,12 +167,6 @@ export default function InvoicePrintTemplate({
                             <span>Tiền trả lại:</span>
                             <span>{money(invoice.changeAmount || 0)}</span>
                         </div>
-                        {invoice.earnedPoints > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-                                <span>Điểm tích lũy đợt này:</span>
-                                <span>+{invoice.earnedPoints} điểm</span>
-                            </div>
-                        )}
                     </div>
 
                     <div style={{ borderBottom: '1px dashed #000', margin: '12px 0' }}></div>
@@ -183,7 +174,7 @@ export default function InvoicePrintTemplate({
                     {/* Footer */}
                     <div style={{ textAlign: 'center', fontSize: 10, color: '#333' }}>
                         <div>Thuốc đã mua vui lòng kiểm tra kỹ trước khi rời quầy.</div>
-                        <div>Hỗ trợ đổi trả trong 48h (với thuốc còn nguyên vẹn và có hóa đơn).</div>
+                        <div>Hỗ trợ đổi trả trong ngày (với thuốc còn nguyên vẹn và có hóa đơn).</div>
                         <div style={{ marginTop: 8, fontWeight: 800, fontSize: 11 }}>CẢM ƠN QUÝ KHÁCH & HẸN GẶP LẠI!</div>
                     </div>
                 </div>

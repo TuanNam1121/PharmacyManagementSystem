@@ -34,6 +34,23 @@ export function usePosCart() {
 
     // Add item to cart (with FEFO batch selection)
     const addToCart = useCallback((item) => {
+        if (!item) return;
+
+        // Kiểm tra chặn nghiêm ngặt thuốc hết hạn sử dụng
+        if (item.expiryStatus === 'EXPIRED') {
+            alert(`Không thể thêm vào giỏ! Thuốc [${item.productName || item.name}] thuộc lô [${item.batchNumber || 'N/A'}] đã hết hạn sử dụng.`);
+            return;
+        }
+        if (item.expiryDate) {
+            const exp = new Date(item.expiryDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (exp <= today) {
+                alert(`Không thể thêm vào giỏ! Thuốc [${item.productName || item.name}] thuộc lô [${item.batchNumber || 'N/A'}] đã hết hạn sử dụng (${item.expiryDate}).`);
+                return;
+            }
+        }
+
         // item: { productId, productName, batchId, batchNumber, expiryDate, unit, sellingPrice, quantity: 1, availableQuantity, activeIngredient }
         setCartItems((prev) => {
             const existingIndex = prev.findIndex(

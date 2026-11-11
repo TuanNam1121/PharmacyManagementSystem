@@ -112,19 +112,46 @@ export default function PosCartTable({
                         </tr>
                     </thead>
                     <tbody>
-                        {items.map((item, index) => (
-                            <tr key={`${item.productId}-${item.batchId}`} style={{ borderBottom: '1px solid #f1f5f9', background: '#fff' }}>
+                        {items.map((item, index) => {
+                            const isExpired = () => {
+                                if (!item) return false;
+                                if (item.expiryStatus === 'EXPIRED') return true;
+                                if (!item.expiryDate) return false;
+                                const exp = new Date(item.expiryDate);
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                return exp <= today;
+                            };
+                            const expired = isExpired();
+
+                            return (
+                            <tr key={`${item.productId}-${item.batchId}`} style={{ borderBottom: '1px solid #f1f5f9', background: expired ? '#fef2f2' : '#fff' }}>
                                 <td style={{ textAlign: 'center', color: '#94a3b8', fontWeight: 600 }}>
                                     {index + 1}
                                 </td>
                                 <td style={{ padding: '10px 12px' }}>
-                                    <div style={{ fontWeight: 700, color: '#0f172a', fontSize: 13.5 }}>
+                                    <div style={{ fontWeight: 700, color: expired ? '#dc2626' : '#0f172a', fontSize: 13.5 }}>
                                         {item.productName}
                                     </div>
                                     <div style={{ fontSize: 11, color: '#64748b', display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 3 }}>
                                         <span>Lô: <strong style={{ color: '#334155' }}>{item.batchNumber}</strong></span>
                                         {item.expiryDate && (
-                                            <span>HSD: <strong style={{ color: '#334155' }}>{formatDate(item.expiryDate)}</strong></span>
+                                            <span>
+                                                HSD: <strong style={{ color: expired ? '#dc2626' : '#334155' }}>{formatDate(item.expiryDate)}</strong>
+                                                {expired && (
+                                                    <span style={{
+                                                        marginLeft: 6,
+                                                        padding: '1px 6px',
+                                                        borderRadius: 4,
+                                                        background: '#dc2626',
+                                                        color: '#fff',
+                                                        fontWeight: 800,
+                                                        fontSize: 10
+                                                    }}>
+                                                        ⛔ ĐÃ HẾT HẠN
+                                                    </span>
+                                                )}
+                                            </span>
                                         )}
                                         {item.activeIngredient && (
                                             <span style={{ color: '#0d9488', fontWeight: 600 }}>[{item.activeIngredient}]</span>
@@ -249,7 +276,8 @@ export default function PosCartTable({
                                     </button>
                                 </td>
                             </tr>
-                        ))}
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>

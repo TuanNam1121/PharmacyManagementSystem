@@ -30,7 +30,7 @@ export default function CustomerSelectModal({
                     keyword: search.trim(),
                     status: 1, // only active
                     page: 0,
-                    size: 10,
+                    size: 3,
                 });
                 const list = res?.content || (Array.isArray(res) ? res : []);
                 setCustomers(list);

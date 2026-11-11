@@ -145,24 +145,19 @@ export default function LoginPage() {
       >
         {/* Header / Brand */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <div
+          <img
+            src="/logo.png"
+            alt="PharmaChain Logo"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              display: 'inline-block',
               width: '64px',
               height: '64px',
               borderRadius: '16px',
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              color: '#ffffff',
-              fontSize: '26px',
-              fontWeight: 800,
-              boxShadow: '0 8px 16px -4px rgba(16, 185, 129, 0.4)',
+              objectFit: 'cover',
+              boxShadow: '0 8px 16px -4px rgba(0, 0, 0, 0.3)',
               marginBottom: '16px',
             }}
-          >
-            Rx
-          </div>
+          />
           <h2
             style={{
               fontSize: '22px',

@@ -134,10 +134,6 @@ export default function InvoiceDetailModal({
                                             {formatPaymentMethod(invoice.paymentMethod)}
                                         </span>
                                     </div>
-                                    <div>
-                                        <span style={{ color: '#64748b' }}>Điểm tích lũy: </span>
-                                        <strong style={{ color: '#16a34a' }}>+{invoice.earnedPoints || 0} điểm</strong>
-                                    </div>
                                 </div>
                             </div>
 

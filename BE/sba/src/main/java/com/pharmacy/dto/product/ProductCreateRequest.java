@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class ProductCreateRequest {
@@ -49,4 +50,6 @@ public class ProductCreateRequest {
     private Long categoryId;
 
     private String priceReason;
+
+    private List<ProductUnitDto> units;
 }
