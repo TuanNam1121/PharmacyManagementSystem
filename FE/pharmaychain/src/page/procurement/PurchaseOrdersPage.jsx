@@ -314,7 +314,7 @@ export default function PurchaseOrdersPage() {
                                 </tr>
                             ) : (
                                 list.map((po, index) => {
-                                    const isPending = po.status === 0 || po.status === 2;
+                                    const isPending = po.status === 2;
                                     return (
                                         <tr key={po.id}>
                                             <td>{page * size + index + 1}</td>

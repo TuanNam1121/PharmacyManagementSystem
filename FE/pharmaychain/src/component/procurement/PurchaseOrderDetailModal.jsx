@@ -41,7 +41,7 @@ export default function PurchaseOrderDetailModal({
         cls: 'pms-badge pms-badge-neutral',
     };
 
-    const isPending = detail?.status === 0 || detail?.status === 2;
+    const isPending = detail?.status === 2;
 
     // Chỉ coi là giá đã chốt khi đơn đã gắn báo giá của nhà cung cấp
     const hasQuotation = Boolean(detail?.supplierQuotationCode);
