@@ -4,10 +4,10 @@ import {
   getRfqQuotationDetails,
   compareRfqs,
   getEligibleProposals,
+  getProposalSuppliers,
   sendRfq,
 } from '../../api/RfqAPI';
 import { getRfqDetails, submitQuotation } from '../../api/PublicRfqAPI';
-import { viewSupplierList } from '../../api/SupplierAPI';
 
 /**
  * Hook: Fetch danh sách RFQ (dùng cho RfqPage)
@@ -224,8 +224,8 @@ export function useSendRfq(supplier, initialProposalId = null) {
   const [selectedProposalId, setSelectedProposalId] = useState(initialProposalId ? String(initialProposalId) : '');
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
-  const [suppliers, setSuppliers] = useState([]);
-  const [suppliersLoading, setSuppliersLoading] = useState(false);
+  const [proposalSuppliers, setProposalSuppliers] = useState([]);
+  const [proposalSuppliersLoading, setProposalSuppliersLoading] = useState(false);
   const [selectedSupplierIds, setSelectedSupplierIds] = useState(supplier?.id ? [String(supplier.id)] : []);
   const [emailWarning, setEmailWarning] = useState(null);
 
@@ -235,15 +235,21 @@ export function useSendRfq(supplier, initialProposalId = null) {
     }
   }, [initialProposalId]);
 
-  const fetchSuppliers = useCallback(async () => {
-    setSuppliersLoading(true);
+  const fetchProposalSuppliers = useCallback(async (proposalId) => {
+    if (!proposalId) {
+      setProposalSuppliers([]);
+      return;
+    }
+    setProposalSuppliersLoading(true);
     try {
-      const data = await viewSupplierList({ page: 0, size: 100, status: 'ACTIVE' });
-      setSuppliers(data?.content || []);
+      const data = await getProposalSuppliers(proposalId);
+      const list = Array.isArray(data) ? data : data?.content || [];
+      setProposalSuppliers(list);
     } catch (err) {
       setError(err.message || 'Failed to load suppliers');
+      setProposalSuppliers([]);
     } finally {
-      setSuppliersLoading(false);
+      setProposalSuppliersLoading(false);
     }
   }, []);
 
@@ -268,15 +274,16 @@ export function useSendRfq(supplier, initialProposalId = null) {
   };
 
   const selectAllSuppliers = () => {
-    setSelectedSupplierIds(suppliers.map((s) => String(s.id)));
+    setSelectedSupplierIds(
+      proposalSuppliers.filter((s) => !s.rfqSent).map((s) => String(s.id))
+    );
   };
 
   const clearSuppliers = () => {
     setSelectedSupplierIds([]);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     const supplierIds = (selectedSupplierIds.length > 0
       ? selectedSupplierIds
       : (supplier?.id ? [String(supplier.id)] : []))
@@ -315,7 +322,7 @@ export function useSendRfq(supplier, initialProposalId = null) {
       let sentCount = 0;
       for (const supplierId of supplierIds) {
         const supplierName =
-          suppliers.find((s) => String(s.id) === String(supplierId))?.name ||
+          proposalSuppliers.find((s) => String(s.id) === String(supplierId))?.name ||
           `NCC #${supplierId}`;
         try {
           const data = await sendRfq({ supplierId, ...payloadBase });
@@ -361,6 +368,8 @@ export function useSendRfq(supplier, initialProposalId = null) {
     setSelectedProposalId('');
     setSubject('');
     setContent('');
+    setProposalSuppliers([]);
+    setProposalSuppliersLoading(false);
     setSelectedSupplierIds(supplier?.id ? [String(supplier.id)] : []);
     setError(null);
     setEmailWarning(null);
@@ -371,14 +380,15 @@ export function useSendRfq(supplier, initialProposalId = null) {
     loading,
     submitting,
     error,
+    setError,
     selectedProposalId,
     setSelectedProposalId,
     subject,
     setSubject,
     content,
     setContent,
-    suppliers,
-    suppliersLoading,
+    proposalSuppliers,
+    proposalSuppliersLoading,
     selectedSupplierIds,
     setSelectedSupplierIds,
     toggleSupplier,
@@ -387,7 +397,7 @@ export function useSendRfq(supplier, initialProposalId = null) {
     emailWarning,
     setEmailWarning,
     fetchProposals,
-    fetchSuppliers,
+    fetchProposalSuppliers,
     handleSubmit,
     resetForm,
   };

@@ -2,6 +2,7 @@ package com.pharmacy.service.impl;
 
 import com.pharmacy.dto.rfq.RfqResponse;
 import com.pharmacy.dto.rfq.SendRfqRequest;
+import com.pharmacy.dto.rfq.SupplierRfqStatusResponse;
 import com.pharmacy.dto.purchaseproposal.PurchaseProposalResponse;
 import com.pharmacy.entity.Rfq;
 import com.pharmacy.entity.Supplier;
@@ -28,11 +29,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import com.pharmacy.repository.SupplierQuotationRepository;
 import com.pharmacy.dto.rfq.RfqQuotationResponse;
@@ -45,6 +50,8 @@ import java.util.Collections;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class RfqServiceImpl implements RfqService {
+
+    private static final DateTimeFormatter RFQ_SENT_AT_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private final RfqRepository rfqRepository;
     private final SupplierRepository supplierRepository;
@@ -66,6 +73,78 @@ public class RfqServiceImpl implements RfqService {
                         PurchaseProposalStatus.RFQ_SENT.getCode()))
                 .stream()
                 .map(PurchaseProposalResponse::fromEntity)
+                .toList();
+    }
+
+    @Override
+    public List<SupplierRfqStatusResponse> getSupplierRfqStatuses(Long purchaseProposalId) {
+        // The supplier list is always scoped to a purchase proposal so the client can
+        // show, per supplier, whether an RFQ has already been sent for that proposal.
+        PurchaseProposal proposal = purchaseProposalRepository.findById(purchaseProposalId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Purchase proposal not found with ID: " + purchaseProposalId));
+
+        // Keep only the most recent RFQ per supplier for this proposal.
+        Map<Long, Rfq> latestRfqBySupplier = new HashMap<>();
+        for (Rfq rfq : rfqRepository.findByPurchaseProposalId(proposal.getId())) {
+            if (rfq.getSupplier() == null || rfq.getSupplier().getId() == null) {
+                continue;
+            }
+            Long supplierId = rfq.getSupplier().getId();
+            Rfq current = latestRfqBySupplier.get(supplierId);
+            if (current == null
+                    || (rfq.getId() != null && current.getId() != null && rfq.getId() > current.getId())) {
+                latestRfqBySupplier.put(supplierId, rfq);
+            }
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Only active suppliers can be invited (inactive ones are blocked on send).
+        return supplierRepository.findByStatus(SupplierStatus.ACTIVE, Pageable.unpaged())
+                .getContent()
+                .stream()
+                .map(supplier -> {
+                    Rfq latest = latestRfqBySupplier.get(supplier.getId());
+
+                    RfqStatus effectiveStatus = null;
+                    boolean rfqSent = false;
+                    String rfqCode = null;
+                    String rfqSentAt = null;
+
+                    if (latest != null) {
+                        effectiveStatus = latest.getStatus();
+                        // An RFQ past its deadline without a response is reported as EXPIRED.
+                        if (effectiveStatus == RfqStatus.SENT
+                                && latest.getExpiredAt() != null
+                                && latest.getExpiredAt().isBefore(now)) {
+                            effectiveStatus = RfqStatus.EXPIRED;
+                        }
+
+                        // Mirror the send guard: an RFQ blocks re-sending while it is
+                        // responded to, or still sent and not yet expired.
+                        rfqSent = effectiveStatus == RfqStatus.RESPONDED
+                                || (effectiveStatus == RfqStatus.SENT
+                                        && (latest.getExpiredAt() == null
+                                                || latest.getExpiredAt().isAfter(now)));
+                        rfqCode = latest.getCode();
+                        if (latest.getSentAt() != null) {
+                            rfqSentAt = latest.getSentAt().format(RFQ_SENT_AT_FORMATTER);
+                        }
+                    }
+
+                    return SupplierRfqStatusResponse.builder()
+                            .id(supplier.getId())
+                            .code(supplier.getCode())
+                            .name(supplier.getName())
+                            .contactPerson(supplier.getContactPerson())
+                            .email(supplier.getEmail())
+                            .rfqSent(rfqSent)
+                            .rfqStatus(effectiveStatus)
+                            .rfqCode(rfqCode)
+                            .rfqSentAt(rfqSentAt)
+                            .build();
+                })
                 .toList();
     }
 
@@ -93,7 +172,7 @@ public class RfqServiceImpl implements RfqService {
                 || (!proposalStatus.equals(PurchaseProposalStatus.DRAFT.getCode())
                         && !proposalStatus.equals(PurchaseProposalStatus.RFQ_SENT.getCode()))) {
             throw new IllegalArgumentException(
-                    "Chỉ đề xuất chưa chọn nhà cung cấp mới được gửi RFQ");
+                    "Only proposals that have not yet chosen a supplier can send an RFQ");
         }
 
         // Block sending only if an RFQ for this supplier + proposal is still active.
@@ -179,7 +258,7 @@ public class RfqServiceImpl implements RfqService {
     }
 
     private String generateRfqCode() {
-        String datePrefix = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String datePrefix = java.time.LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String prefix = "RFQ-" + datePrefix + "-";
 
         int maxSeq = 0;
@@ -271,7 +350,7 @@ public class RfqServiceImpl implements RfqService {
     }
 
     private Account getCurrentAccount() {
-        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getName() != null && !auth.getName().equalsIgnoreCase("anonymousUser")) {
             var acc = accountRepository.findByUsername(auth.getName());
             if (acc.isPresent()) return acc.get();

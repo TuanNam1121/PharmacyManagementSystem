@@ -11,22 +11,48 @@ const NAV_MODULES = [
     key: "sales-customers",
     label: "Bán Hàng & Khách Hàng",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <line x1="12" y1="1" x2="12" y2="23" />
         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
       </svg>
     ),
     items: [
-      { to: "/pos", label: "Quầy bán lẻ POS", roles: ["ADMIN", "STORE_MANAGER", "PHARMACIST"] },
-      { to: "/sales", label: "Hóa đơn & Ca bán hàng", roles: ["ADMIN", "STORE_MANAGER", "PHARMACIST", "GENERAL_MANAGER"] },
-      { to: "/customers", label: "Khách hàng", roles: ["ADMIN", "STORE_MANAGER", "PHARMACIST", "GENERAL_MANAGER"] },
+      {
+        to: "/pos",
+        label: "Quầy bán lẻ POS",
+        roles: ["ADMIN", "STORE_MANAGER", "PHARMACIST"],
+      },
+      {
+        to: "/sales",
+        label: "Hóa đơn & Ca bán hàng",
+        roles: ["ADMIN", "STORE_MANAGER", "PHARMACIST", "GENERAL_MANAGER"],
+      },
+      {
+        to: "/customers",
+        label: "Khách hàng",
+        roles: ["ADMIN", "STORE_MANAGER", "PHARMACIST", "GENERAL_MANAGER"],
+      },
     ],
   },
   {
     key: "inventory-warehouse",
     label: "Kho & Tồn Kho",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <rect x="2" y="7" width="20" height="14" rx="2" />
         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
         <path d="M2 7l10-5 10 5" />
@@ -37,9 +63,38 @@ const NAV_MODULES = [
         key: "warehouse-central",
         title: "KHO TỔNG",
         items: [
-          { to: "/warehouse/inventory", label: "Tồn kho tổng FEFO", roles: ["ADMIN", "WAREHOUSE_MANAGER", "WAREHOUSE_STAFF", "GENERAL_MANAGER", "PURCHASING_STAFF"] },
-          { to: "/warehouse/replenishment", label: "Điều chuyển chi nhánh", roles: ["ADMIN", "WAREHOUSE_MANAGER", "WAREHOUSE_STAFF", "GENERAL_MANAGER"] },
-          { to: "/warehouse/requests", label: "Yêu cầu mua hàng", roles: ["ADMIN", "WAREHOUSE_MANAGER", "WAREHOUSE_STAFF", "GENERAL_MANAGER", "PURCHASING_STAFF"] },
+          {
+            to: "/warehouse/inventory",
+            label: "Tồn kho tổng FEFO",
+            roles: [
+              "ADMIN",
+              "WAREHOUSE_MANAGER",
+              "WAREHOUSE_STAFF",
+              "GENERAL_MANAGER",
+              "PURCHASING_STAFF",
+            ],
+          },
+          {
+            to: "/warehouse/replenishment",
+            label: "Điều chuyển chi nhánh",
+            roles: [
+              "ADMIN",
+              "WAREHOUSE_MANAGER",
+              "WAREHOUSE_STAFF",
+              "GENERAL_MANAGER",
+            ],
+          },
+          {
+            to: "/warehouse/requests",
+            label: "Yêu cầu mua hàng",
+            roles: [
+              "ADMIN",
+              "WAREHOUSE_MANAGER",
+              "WAREHOUSE_STAFF",
+              "GENERAL_MANAGER",
+              "PURCHASING_STAFF",
+            ],
+          },
         ],
       },
       {
@@ -47,10 +102,26 @@ const NAV_MODULES = [
         title: "KHO CHI NHÁNH",
         isBranchSection: true,
         items: [
-          { to: "/store/inventory", label: "Tồn kho cửa hàng", roles: ["ADMIN", "STORE_MANAGER", "GENERAL_MANAGER"] },
-          { to: "/store/audit", label: "Kiểm kê kho cửa hàng", roles: ["ADMIN", "STORE_MANAGER", "PHARMACIST"] },
-          { to: "/store/requisitions", label: "Yêu cầu lĩnh thuốc", roles: ["ADMIN", "STORE_MANAGER"] },
-          { to: "/store/receipts", label: "Phiếu nhận hàng", roles: ["ADMIN", "STORE_MANAGER"] },
+          {
+            to: "/store/inventory",
+            label: "Tồn kho cửa hàng",
+            roles: ["ADMIN", "STORE_MANAGER", "GENERAL_MANAGER"],
+          },
+          {
+            to: "/store/audit",
+            label: "Kiểm kê kho cửa hàng",
+            roles: ["ADMIN", "STORE_MANAGER", "PHARMACIST"],
+          },
+          {
+            to: "/store/requisitions",
+            label: "Yêu cầu lĩnh thuốc",
+            roles: ["ADMIN", "STORE_MANAGER"],
+          },
+          {
+            to: "/store/receipts",
+            label: "Phiếu nhận hàng",
+            roles: ["ADMIN", "STORE_MANAGER"],
+          },
         ],
       },
     ],
@@ -59,7 +130,14 @@ const NAV_MODULES = [
     key: "procurement-suppliers",
     label: "Thu Mua & Nhà Cung Cấp",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <polyline points="14 2 14 8 20 8" />
         <line x1="16" y1="13" x2="8" y2="13" />
@@ -68,46 +146,105 @@ const NAV_MODULES = [
       </svg>
     ),
     items: [
-      { to: "/procurement/proposals", label: "Đề xuất mua hàng", roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"] },
-      { to: "/supplier", label: "Nhà cung cấp", roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"] },
-      { to: "/procurement/rfq", label: "RFQ & Báo giá", roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"] },
-      { to: "/procurement/orders", label: "Đơn đặt hàng PO", roles: ["GENERAL_MANAGER"] },
+      {
+        to: "/procurement/proposals",
+        label: "Đề xuất mua hàng",
+        roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"],
+      },
+      {
+        to: "/supplier",
+        label: "Nhà cung cấp",
+        roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"],
+      },
+      {
+        to: "/procurement/rfq",
+        label: "RFQ & Báo giá",
+        roles: ["ADMIN", "PURCHASING_STAFF", "GENERAL_MANAGER"],
+      },
+      {
+        to: "/procurement/orders",
+        label: "Đơn đặt hàng PO",
+        roles: ["GENERAL_MANAGER"],
+      },
     ],
   },
   {
     key: "admin-reporting",
     label: "Danh Mục, Quản Trị & Báo Cáo",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <rect x="3" y="3" width="7" height="7" />
         <rect x="14" y="3" width="7" height="7" />
         <rect x="14" y="14" width="7" height="7" />
         <rect x="3" y="14" width="7" height="7" />
       </svg>
     ),
-    subgroups:
+    subgroups: [
       {
         key: "admin-catalog",
         title: "DANH MỤC",
         items: [
-          { to: "/products", label: "Danh mục thuốc & Giá", roles: ["ADMIN", "STORE_MANAGER", "PHARMACIST", "PURCHASING_STAFF", "WAREHOUSE_MANAGER", "GENERAL_MANAGER"] },
-          { to: "/categories", label: "Nhóm thuốc GSP", roles: ["ADMIN", "STORE_MANAGER", "PURCHASING_STAFF", "GENERAL_MANAGER"] },
+          {
+            to: "/products",
+            label: "Danh mục thuốc & Giá",
+            roles: [
+              "ADMIN",
+              "STORE_MANAGER",
+              "PHARMACIST",
+              "PURCHASING_STAFF",
+              "WAREHOUSE_MANAGER",
+              "GENERAL_MANAGER",
+            ],
+          },
+          {
+            to: "/categories",
+            label: "Nhóm thuốc GSP",
+            roles: [
+              "ADMIN",
+              "STORE_MANAGER",
+              "PURCHASING_STAFF",
+              "GENERAL_MANAGER",
+            ],
+          },
         ],
       },
       {
         key: "admin-system",
         title: "QUẢN TRỊ HỆ THỐNG",
         items: [
-          { to: "/users", label: "Quản lý người dùng", roles: ["ADMIN", "GENERAL_MANAGER"] },
-          { to: "/audit-log", label: "Nhật ký kiểm toán", roles: ["ADMIN", "GENERAL_MANAGER"] },
+          {
+            to: "/users",
+            label: "Quản lý người dùng",
+            roles: ["ADMIN", "GENERAL_MANAGER"],
+          },
+          {
+            to: "/audit-log",
+            label: "Nhật ký kiểm toán",
+            roles: ["ADMIN", "GENERAL_MANAGER"],
+          },
         ],
       },
       {
         key: "admin-reports",
         title: "BÁO CÁO",
         items: [
-          { to: "/reports/profit", label: "Báo cáo lợi nhuận", roles: ["ADMIN", "GENERAL_MANAGER"] },
-          { to: "/reports/inventory", label: "Báo cáo tồn kho", roles: ["ADMIN", "GENERAL_MANAGER", "WAREHOUSE_MANAGER"] },
+          {
+            to: "/reports/profit",
+            label: "Báo cáo lợi nhuận",
+            roles: ["ADMIN", "GENERAL_MANAGER"],
+          },
+          {
+            to: "/reports/inventory",
+            label: "Báo cáo tồn kho",
+            roles: ["ADMIN", "GENERAL_MANAGER", "WAREHOUSE_MANAGER"],
+          },
         ],
       },
     ],
@@ -168,7 +305,10 @@ export default function MainLayout() {
   const crumbs = BREADCRUMB_MAP[location.pathname] || [];
 
   // Normalize user role code
-  const rawRole = (user?.role || "").toUpperCase().replace(/^ROLE_/, "").trim();
+  const rawRole = (user?.role || "")
+    .toUpperCase()
+    .replace(/^ROLE_/, "")
+    .trim();
   const rawRoleName = (user?.roleName || "").toLowerCase();
   const isSuperAdmin =
     rawRole === "ADMIN" ||
@@ -204,12 +344,16 @@ export default function MainLayout() {
   const handleBranchSelect = (newStoreId) => {
     setSelectedStoreId(newStoreId);
     localStorage.setItem("pms_selected_store_id", newStoreId);
-    window.dispatchEvent(new CustomEvent("pms:store-changed", { detail: { storeId: newStoreId } }));
+    window.dispatchEvent(
+      new CustomEvent("pms:store-changed", { detail: { storeId: newStoreId } }),
+    );
 
     if (location.pathname.startsWith("/store/")) {
       const searchParams = new URLSearchParams(location.search);
       searchParams.set("storeId", newStoreId);
-      navigate(`${location.pathname}?${searchParams.toString()}`, { replace: true });
+      navigate(`${location.pathname}?${searchParams.toString()}`, {
+        replace: true,
+      });
     }
   };
 
@@ -220,7 +364,7 @@ export default function MainLayout() {
         (r) =>
           r === rawRole ||
           user?.role?.toUpperCase() === `ROLE_${r}` ||
-          rawRoleName.includes(r.toLowerCase())
+          rawRoleName.includes(r.toLowerCase()),
       );
     });
 
@@ -275,7 +419,7 @@ export default function MainLayout() {
 
   // Auto-expand the current active module
   const activeModule = visibleModules.find((m) =>
-    m.items.some((item) => isItemActive(item.to))
+    m.items.some((item) => isItemActive(item.to)),
   );
 
   const toggleModule = (key) => {
@@ -293,7 +437,10 @@ export default function MainLayout() {
     try {
       await logout();
       setShowLogoutModal(false);
-      navigate("/login", { replace: true, state: { message: "Đăng xuất thành công" } });
+      navigate("/login", {
+        replace: true,
+        state: { message: "Đăng xuất thành công" },
+      });
     } finally {
       setIsLoggingOut(false);
     }
@@ -332,8 +479,20 @@ export default function MainLayout() {
       <aside className="pms-sidebar">
         {/* Logo */}
         <div className="pms-sidebar-header">
-          <NavLink to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <img src={logoImg} alt="PharmaChain Logo" className="pms-logo-icon" />
+          <NavLink
+            to="/"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              textDecoration: "none",
+            }}
+          >
+            <img
+              src={logoImg}
+              alt="PharmaChain Logo"
+              className="pms-logo-icon"
+            />
             <div className="pms-logo-text">
               <span className="pms-logo-name">PharmaChain</span>
               <span className="pms-logo-sub">Management System</span>
@@ -351,7 +510,14 @@ export default function MainLayout() {
             }
             style={{ marginBottom: 4 }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
@@ -359,11 +525,19 @@ export default function MainLayout() {
           </NavLink>
 
           {/* Divider */}
-          <div style={{ height: 1, background: "var(--sidebar-border)", margin: "8px 8px 8px" }} />
+          <div
+            style={{
+              height: 1,
+              background: "var(--sidebar-border)",
+              margin: "8px 8px 8px",
+            }}
+          />
 
           {visibleModules.map((module) => {
             const expanded = isExpanded(module.key);
-            const hasActive = module.items.some((item) => isItemActive(item.to));
+            const hasActive = module.items.some((item) =>
+              isItemActive(item.to),
+            );
 
             return (
               <div key={module.key}>
@@ -377,14 +551,23 @@ export default function MainLayout() {
                     marginBottom: 2,
                   }}
                 >
-                  <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span
+                    style={{ display: "flex", alignItems: "center", gap: 10 }}
+                  >
                     {module.icon}
                     <span style={{ fontSize: 12 }}>{module.label}</span>
                   </span>
                   <svg
-                    width="12" height="12"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                    style={{ transform: expanded ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 200ms" }}
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    style={{
+                      transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
+                      transition: "transform 200ms",
+                    }}
                   >
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
@@ -395,7 +578,10 @@ export default function MainLayout() {
                   <div style={{ paddingLeft: 12, marginBottom: 4 }}>
                     {module.subgroups ? (
                       module.subgroups.map((sg) => (
-                        <div key={sg.key || sg.title} style={{ marginBottom: 10 }}>
+                        <div
+                          key={sg.key || sg.title}
+                          style={{ marginBottom: 10 }}
+                        >
                           {/* Subgroup Header */}
                           <div
                             style={{
@@ -424,7 +610,8 @@ export default function MainLayout() {
                                     gap: 6,
                                     padding: "5px 10px",
                                     background: "rgba(16, 185, 129, 0.1)",
-                                    border: "1px solid rgba(16, 185, 129, 0.25)",
+                                    border:
+                                      "1px solid rgba(16, 185, 129, 0.25)",
                                     borderRadius: "6px",
                                     fontSize: "11px",
                                     color: "#34d399",
@@ -432,11 +619,24 @@ export default function MainLayout() {
                                   }}
                                   title="Chi nhánh được phân công"
                                 >
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <svg
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  >
                                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                                     <circle cx="12" cy="10" r="3" />
                                   </svg>
-                                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  <span
+                                    style={{
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
                                     {stores[0].name}
                                   </span>
                                 </div>
@@ -456,11 +656,20 @@ export default function MainLayout() {
                                       cursor: "pointer",
                                     }}
                                     value={selectedStoreId || ""}
-                                    onChange={(e) => handleBranchSelect(e.target.value)}
+                                    onChange={(e) =>
+                                      handleBranchSelect(e.target.value)
+                                    }
                                     title="Chọn chi nhánh làm việc"
                                   >
                                     {stores.map((s) => (
-                                      <option key={s.id} value={s.id} style={{ background: "#1e293b", color: "#f8fafc" }}>
+                                      <option
+                                        key={s.id}
+                                        value={s.id}
+                                        style={{
+                                          background: "#1e293b",
+                                          color: "#f8fafc",
+                                        }}
+                                      >
                                         {s.code} — {s.name}
                                       </option>
                                     ))}
@@ -473,16 +682,31 @@ export default function MainLayout() {
                           {/* Subgroup items */}
                           <div style={{ paddingLeft: 12 }}>
                             {sg.items.map((item) => {
-                              const toUrl = sg.isBranchSection && selectedStoreId ? `${item.to}?storeId=${selectedStoreId}` : item.to;
+                              const toUrl =
+                                sg.isBranchSection && selectedStoreId
+                                  ? `${item.to}?storeId=${selectedStoreId}`
+                                  : item.to;
                               const isActive = isItemActive(item.to);
                               return (
                                 <NavLink
                                   key={item.to}
                                   to={toUrl}
                                   className={`pms-nav-item ${isActive ? "active" : ""}`}
-                                  style={{ fontSize: 12, paddingTop: 6, paddingBottom: 6 }}
+                                  style={{
+                                    fontSize: 12,
+                                    paddingTop: 6,
+                                    paddingBottom: 6,
+                                  }}
                                 >
-                                  <span style={{ width: 4, height: 4, background: "currentColor", borderRadius: "50%", flexShrink: 0 }} />
+                                  <span
+                                    style={{
+                                      width: 4,
+                                      height: 4,
+                                      background: "currentColor",
+                                      borderRadius: "50%",
+                                      flexShrink: 0,
+                                    }}
+                                  />
                                   {item.label}
                                 </NavLink>
                               );
@@ -499,9 +723,21 @@ export default function MainLayout() {
                               key={item.to}
                               to={item.to}
                               className={`pms-nav-item ${isActive ? "active" : ""}`}
-                              style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7 }}
+                              style={{
+                                fontSize: 12,
+                                paddingTop: 7,
+                                paddingBottom: 7,
+                              }}
                             >
-                              <span style={{ width: 4, height: 4, background: "currentColor", borderRadius: "50%", flexShrink: 0 }} />
+                              <span
+                                style={{
+                                  width: 4,
+                                  height: 4,
+                                  background: "currentColor",
+                                  borderRadius: "50%",
+                                  flexShrink: 0,
+                                }}
+                              />
                               {item.label}
                             </NavLink>
                           );
@@ -523,19 +759,34 @@ export default function MainLayout() {
             onClick={() => setShowLogoutModal(true)}
             title="Bấm để đăng xuất"
           >
-            <div className="pms-user-avatar" style={{ overflow: "hidden", background: "#e2e8f0" }}>
-              <img src="/default-avatar.png" alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <div
+              className="pms-user-avatar"
+              style={{ overflow: "hidden", background: "#e2e8f0" }}
+            >
+              <img
+                src="/default-avatar.png"
+                alt="Avatar"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
             </div>
             <div className="pms-user-info" style={{ flex: 1, minWidth: 0 }}>
               <div
                 className="pms-user-name"
-                style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
               >
                 {displayName}
               </div>
               <div
                 className="pms-user-role"
-                style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
               >
                 {displayRole}
               </div>
@@ -550,7 +801,14 @@ export default function MainLayout() {
                 setShowLogoutModal(true);
               }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                 <polyline points="16 17 21 12 16 7" />
                 <line x1="21" y1="12" x2="9" y2="12" />
@@ -565,29 +823,64 @@ export default function MainLayout() {
         {/* Topbar */}
         <header className="pms-topbar">
           <div className="pms-topbar-breadcrumb">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             </svg>
-            {crumbs.length === 0 && <span className="current">Bàn làm việc</span>}
+            {crumbs.length === 0 && (
+              <span className="current">Bàn làm việc</span>
+            )}
             {crumbs.map((c, i) => (
-              <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span
+                key={i}
+                style={{ display: "flex", alignItems: "center", gap: 6 }}
+              >
                 {i > 0 && <span className="sep">/</span>}
-                <span className={i === crumbs.length - 1 ? "current" : ""}>{c}</span>
+                <span className={i === crumbs.length - 1 ? "current" : ""}>
+                  {c}
+                </span>
               </span>
             ))}
           </div>
 
-          <div className="pms-topbar-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button className="btn-pms btn-pms-ghost btn-pms-icon" title="Thông báo" style={{ position: "relative" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div
+            className="pms-topbar-actions"
+            style={{ display: "flex", alignItems: "center", gap: 10 }}
+          >
+            <button
+              className="btn-pms btn-pms-ghost btn-pms-icon"
+              title="Thông báo"
+              style={{ position: "relative" }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
-              <span style={{
-                position: "absolute", top: 6, right: 6,
-                width: 7, height: 7, background: "#ef4444",
-                borderRadius: "50%", border: "1.5px solid white",
-              }} />
+              <span
+                style={{
+                  position: "absolute",
+                  top: 6,
+                  right: 6,
+                  width: 7,
+                  height: 7,
+                  background: "#ef4444",
+                  borderRadius: "50%",
+                  border: "1.5px solid white",
+                }}
+              />
             </button>
 
             {/* User Profile Pill & Dropdown */}
@@ -618,13 +911,29 @@ export default function MainLayout() {
                     flexShrink: 0,
                   }}
                 >
-                  <img src="/default-avatar.png" alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img
+                    src="/default-avatar.png"
+                    alt="Avatar"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
                 </div>
                 <div style={{ textAlign: "left", lineHeight: 1.2 }}>
-                  <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                    }}
+                  >
                     {displayName}
                   </div>
-                  <div style={{ fontSize: "10px", color: "var(--text-secondary)" }}>
+                  <div
+                    style={{ fontSize: "10px", color: "var(--text-secondary)" }}
+                  >
                     {displayRole}
                   </div>
                 </div>
@@ -650,22 +959,44 @@ export default function MainLayout() {
                     top: "calc(100% + 6px)",
                     background: "#ffffff",
                     borderRadius: "12px",
-                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)",
+                    boxShadow:
+                      "0 10px 25px -5px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)",
                     width: "220px",
                     padding: "8px 0",
                     zIndex: 1000,
                   }}
                 >
-                  <div style={{ padding: "8px 16px 10px 16px", borderBottom: "1px solid #f1f5f9" }}>
-                    <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-primary)" }}>
+                  <div
+                    style={{
+                      padding: "8px 16px 10px 16px",
+                      borderBottom: "1px solid #f1f5f9",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        color: "var(--text-primary)",
+                      }}
+                    >
                       {displayName}
                     </div>
-                    <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: 2 }}>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "var(--text-secondary)",
+                        marginTop: 2,
+                      }}
+                    >
                       {user?.email || "Chưa có email"}
                     </div>
                     <span
                       className="pms-badge pms-badge-success"
-                      style={{ marginTop: 6, display: "inline-block", fontSize: "10px" }}
+                      style={{
+                        marginTop: 6,
+                        display: "inline-block",
+                        fontSize: "10px",
+                      }}
                     >
                       {displayRole}
                     </span>
@@ -685,10 +1016,21 @@ export default function MainLayout() {
                         textDecoration: "none",
                         transition: "background 0.15s",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = "#f8fafc")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "transparent")
+                      }
                     >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                       </svg>
@@ -715,18 +1057,42 @@ export default function MainLayout() {
                         textAlign: "left",
                         transition: "background 0.15s",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = "#f8fafc")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "transparent")
+                      }
                     >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <rect
+                          x="3"
+                          y="11"
+                          width="18"
+                          height="11"
+                          rx="2"
+                          ry="2"
+                        />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
                       <span>Đổi mật khẩu</span>
                     </button>
                   </div>
 
-                  <div style={{ height: "1px", background: "#f1f5f9", margin: "4px 0" }} />
+                  <div
+                    style={{
+                      height: "1px",
+                      background: "#f1f5f9",
+                      margin: "4px 0",
+                    }}
+                  />
 
                   <button
                     type="button"
@@ -748,10 +1114,21 @@ export default function MainLayout() {
                       textAlign: "left",
                       transition: "background 0.15s",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#fef2f2")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = "#fef2f2")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
                   >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#ef4444"
+                      strokeWidth="2"
+                    >
                       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                       <polyline points="16 17 21 12 16 7" />
                       <line x1="21" y1="12" x2="9" y2="12" />
@@ -812,7 +1189,14 @@ export default function MainLayout() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Icon & Header */}
-            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+                marginBottom: "16px",
+              }}
+            >
               <div
                 style={{
                   width: "44px",
@@ -826,29 +1210,63 @@ export default function MainLayout() {
                   flexShrink: 0,
                 }}
               >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700, color: "#0f172a" }}>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: "17px",
+                    fontWeight: 700,
+                    color: "#0f172a",
+                  }}
+                >
                   Xác nhận đăng xuất
                 </h3>
-                <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#64748b" }}>
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    fontSize: "12px",
+                    color: "#64748b",
+                  }}
+                >
                   Pharmacy Chain Management System
                 </p>
               </div>
             </div>
 
             {/* Modal Body */}
-            <p style={{ fontSize: "14px", color: "#475569", margin: "0 0 24px 0", lineHeight: 1.5 }}>
-              Bạn có chắc chắn muốn kết thúc phiên làm việc? Mọi thông tin chưa lưu trên màn hình có thể bị mất.
+            <p
+              style={{
+                fontSize: "14px",
+                color: "#475569",
+                margin: "0 0 24px 0",
+                lineHeight: 1.5,
+              }}
+            >
+              Bạn có chắc chắn muốn kết thúc phiên làm việc? Mọi thông tin chưa
+              lưu trên màn hình có thể bị mất.
             </p>
 
             {/* Modal Actions */}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setShowLogoutModal(false)}
@@ -863,7 +1281,13 @@ export default function MainLayout() {
                 onClick={handleConfirmLogout}
                 disabled={isLoggingOut}
                 className="btn-pms btn-pms-danger"
-                style={{ minWidth: "110px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+                style={{
+                  minWidth: "110px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                }}
               >
                 {isLoggingOut ? (
                   <>

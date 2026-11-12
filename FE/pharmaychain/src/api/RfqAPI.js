@@ -14,6 +14,13 @@ export const getEligibleProposals = async () => {
   return unwrapApiResponse(json);
 };
 
+export const getProposalSuppliers = async (purchaseProposalId) => {
+  const json = await get(
+    `${RFQ_BASE_URL}/proposals/${encodeURIComponent(purchaseProposalId)}/suppliers`
+  );
+  return unwrapApiResponse(json);
+};
+
 export const sendRfq = async (payload) => {
   const json = await post(`${RFQ_BASE_URL}/send`, payload);
   return unwrapApiResponse(json);
@@ -66,6 +73,7 @@ export const compareRfqs = async (rfqIds) => {
 
 export default {
   getEligibleProposals,
+  getProposalSuppliers,
   sendRfq,
   getRfqsBySupplier,
   getRfqById,

@@ -4,6 +4,7 @@ import com.pharmacy.dto.rfq.RfqResponse;
 import com.pharmacy.dto.rfq.RfqQuotationResponse;
 import com.pharmacy.dto.rfq.CompareResponse;
 import com.pharmacy.dto.rfq.SendRfqRequest;
+import com.pharmacy.dto.rfq.SupplierRfqStatusResponse;
 import com.pharmacy.dto.purchaseproposal.PurchaseProposalResponse;
 import com.pharmacy.entity.enums.RfqStatus;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,12 @@ import java.util.List;
 public interface RfqService {
     
     List<PurchaseProposalResponse> getEligiblePurchaseProposals();
+    
+    /**
+     * Active suppliers together with the RFQ status they hold for the given
+     * purchase proposal. Used by the supplier selection popup when sending RFQs.
+     */
+    List<SupplierRfqStatusResponse> getSupplierRfqStatuses(Long purchaseProposalId);
     
     RfqResponse sendRfq(SendRfqRequest request);
     

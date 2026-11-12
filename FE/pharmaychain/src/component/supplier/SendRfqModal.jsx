@@ -2,20 +2,24 @@ import { useState, useEffect } from 'react';
 import { useSendRfq } from '../../hooks/rfq/useRfq';
 
 export default function SendRfqModal({ show, onHide, supplier, supplierSelectMode = false, preselectedProposalId = null, onSuccess }) {
-  const [showSuppliers, setShowSuppliers] = useState(true);
+  // Two-step flow: compose the email first ("form"), then pick the suppliers to
+  // invite in a popup ("suppliers") once the email is confirmed.
+  const [step, setStep] = useState('form');
+
   const {
     proposals,
     loading,
     submitting,
     error,
+    setError,
     selectedProposalId,
     setSelectedProposalId,
     subject,
     setSubject,
     content,
     setContent,
-    suppliers,
-    suppliersLoading,
+    proposalSuppliers,
+    proposalSuppliersLoading,
     selectedSupplierIds,
     toggleSupplier,
     selectAllSuppliers,
@@ -23,7 +27,7 @@ export default function SendRfqModal({ show, onHide, supplier, supplierSelectMod
     emailWarning,
     setEmailWarning,
     fetchProposals,
-    fetchSuppliers,
+    fetchProposalSuppliers,
     handleSubmit,
     resetForm,
   } = useSendRfq(supplier, preselectedProposalId);
@@ -32,11 +36,8 @@ export default function SendRfqModal({ show, onHide, supplier, supplierSelectMod
     if (!show) return;
     // Clear any warning from a previous send so it is not shown for a new supplier.
     setEmailWarning(null);
-    setShowSuppliers(true);
+    setStep('form');
     fetchProposals();
-    if (supplierSelectMode) {
-      fetchSuppliers();
-    }
     if (preselectedProposalId) {
       setSelectedProposalId(String(preselectedProposalId));
     }
@@ -50,17 +51,82 @@ Quý công ty vui lòng xem chi tiết và phản hồi đơn giá trực tuyế
 
 Trân trọng cảm ơn,
 Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
-  }, [show, supplier, supplierSelectMode, fetchProposals, fetchSuppliers, setSubject, setContent, setEmailWarning]);
+  }, [show, supplier, preselectedProposalId, fetchProposals, setSubject, setContent, setEmailWarning, setSelectedProposalId]);
 
   const handleClose = () => {
     resetForm();
+    setStep('form');
     onHide();
   };
 
-  const selectedSuppliers = supplierSelectMode
-    ? suppliers.filter((s) => selectedSupplierIds.includes(String(s.id)))
-    : (supplier ? [supplier] : []);
-  const recipientEmails = selectedSuppliers.map((s) => s.email).filter(Boolean);
+  // Step 1 -> 2: validate the email, then load suppliers for the chosen proposal.
+  const handleConfirm = async () => {
+    if (!selectedProposalId) {
+      setError('Vui lòng chọn đề xuất mua hàng');
+      return;
+    }
+    if (!subject.trim()) {
+      setError('Vui lòng nhập tiêu đề email');
+      return;
+    }
+    if (!content.trim()) {
+      setError('Vui lòng nhập nội dung email');
+      return;
+    }
+    setError(null);
+    clearSuppliers();
+    await fetchProposalSuppliers(selectedProposalId);
+    setStep('suppliers');
+  };
+
+  // Step 2: send the RFQ email to every selected supplier.
+  const handleSend = async () => {
+    const result = await handleSubmit();
+    if (result?.success) {
+      if (onSuccess) {
+        onSuccess(result.emailWarning);
+      }
+      // Keep the popup open when the email could not be delivered so the warning
+      // stays visible; the RFQ itself has already been created.
+      if (!result.emailWarning) {
+        onHide();
+      } else {
+        // Refresh statuses so already-invited suppliers become locked.
+        clearSuppliers();
+        await fetchProposalSuppliers(selectedProposalId);
+      }
+    }
+  };
+
+  const renderAlerts = () => (
+    <>
+      {error && (
+        <div className="pms-alert pms-alert-danger" style={{ marginBottom: 16 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          {error}
+        </div>
+      )}
+
+      {emailWarning && (
+        <div className="pms-alert pms-alert-warning" style={{ marginBottom: 16 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          <span>
+            <strong>Đã tạo RFQ nhưng email chưa gửi được.</strong> {emailWarning}
+          </span>
+        </div>
+      )}
+    </>
+  );
+
+  const selectableCount = proposalSuppliers.filter((s) => !s.rfqSent).length;
 
   if (!show) return null;
 
@@ -71,12 +137,13 @@ Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
         if (e.target === e.currentTarget && !submitting) handleClose();
       }}
     >
+      {/* Step 1: compose the RFQ email */}
       <div className="pms-modal" style={{ maxWidth: 640 }}>
         <div className="pms-modal-header">
           <div>
             <div className="pms-modal-title">Gửi Yêu Cầu Báo Giá (RFQ)</div>
             <div className="pms-modal-sub">
-              Soạn thảo email và gửi liên kết báo giá trực tuyến đến nhà cung cấp
+              Soạn thảo email, sau đó chọn nhà cung cấp để gửi liên kết báo giá trực tuyến
             </div>
           </div>
           <button
@@ -85,14 +152,7 @@ Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
             disabled={submitting}
             aria-label="Đóng"
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-            >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -101,199 +161,13 @@ Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
 
         <form
           onSubmit={async (e) => {
-            const result = await handleSubmit(e);
-            if (result?.success) {
-              if (onSuccess) {
-                onSuccess(result.emailWarning);
-              }
-              // Keep the modal open when the email could not be delivered so the
-              // warning stays visible; the RFQ itself has already been created.
-              if (!result.emailWarning) {
-                onHide();
-              }
-            }
+            e.preventDefault();
+            await handleConfirm();
           }}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            flex: 1,
-            minHeight: 0,
-            overflow: 'hidden',
-          }}
+          style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}
         >
           <div className="pms-modal-body" style={{ flex: 1, overflowY: 'auto' }}>
-            {error && (
-              <div className="pms-alert pms-alert-danger" style={{ marginBottom: 16 }}>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                {error}
-              </div>
-            )}
-
-            {emailWarning && (
-              <div className="pms-alert pms-alert-warning" style={{ marginBottom: 16 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                <span>
-                  <strong>Đã tạo RFQ nhưng email chưa gửi được.</strong> {emailWarning}
-                </span>
-              </div>
-            )}
-
-            {/* Supplier Info / Selection */}
-            <div className="pms-form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="pms-label" htmlFor="supplier" style={{ margin: 0 }}>
-                  Nhà Cung Cấp *{supplierSelectMode ? (
-                    <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>
-                      {' '}— Đã chọn <strong style={{ color: 'var(--brand-primary, #059669)' }}>{selectedSupplierIds.length}</strong> nhà cung cấp
-                    </span>
-                  ) : null}
-                </label>
-                {supplierSelectMode && !suppliersLoading && (
-                  <button
-                    type="button"
-                    className="btn-pms btn-pms-ghost"
-                    style={{ fontSize: 12, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                    onClick={() => setShowSuppliers((v) => !v)}
-                  >
-                    {showSuppliers ? 'Thu gọn' : `Chọn nhà cung cấp (${selectedSupplierIds.length})`}
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      style={{ transform: showSuppliers ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms' }}
-                    >
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-              {supplierSelectMode ? (
-                suppliersLoading ? (
-                  <div className="pms-spinner-wrap" style={{ padding: '12px 0' }}>
-                    <div className="pms-spinner" />
-                    <span className="pms-spinner-text">Đang tải danh sách nhà cung cấp...</span>
-                  </div>
-                ) : showSuppliers ? (
-                  <>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 6 }}>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button
-                          type="button"
-                          className="btn-pms btn-pms-secondary"
-                          style={{ fontSize: 12, padding: '4px 10px' }}
-                          onClick={selectAllSuppliers}
-                        >
-                          Chọn tất cả
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-pms btn-pms-secondary"
-                          style={{ fontSize: 12, padding: '4px 10px' }}
-                          onClick={clearSuppliers}
-                          disabled={selectedSupplierIds.length === 0}
-                        >
-                          Bỏ chọn
-                        </button>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        border: '1px solid var(--border-color, #e5e7eb)',
-                        borderRadius: 8,
-                        maxHeight: 220,
-                        overflowY: 'auto',
-                      }}
-                    >
-                      {suppliers.map((s) => {
-                        const checked = selectedSupplierIds.includes(String(s.id));
-                        return (
-                          <label
-                            key={s.id}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 10,
-                              padding: '10px 14px',
-                              cursor: 'pointer',
-                              borderBottom: '1px solid var(--border-color, #e5e7eb)',
-                              background: checked ? 'var(--brand-primary-light, #ecfdf5)' : 'transparent',
-                              transition: 'background 150ms ease',
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleSupplier(s.id)}
-                            />
-                            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                              {s.name}
-                            </span>
-                            <span className="text-muted-color" style={{ fontSize: 12 }}>({s.code})</span>
-                            {s.email && (
-                              <span className="text-muted-color" style={{ fontSize: 12, marginLeft: 'auto' }}>
-                                {s.email}
-                              </span>
-                            )}
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </>
-                ) : null
-              ) : (
-                <div
-                  style={{
-                    padding: '10px 14px',
-                    background: 'var(--bg-secondary)',
-                    borderRadius: 6,
-                    border: '1px solid var(--border-color)',
-                    fontSize: 13,
-                  }}
-                >
-                  <strong style={{ color: 'var(--text-primary)' }}>{supplier?.name}</strong> ({supplier?.code})<br />
-                  {supplier?.contactPerson && (
-                    <span className="text-muted-color" style={{ fontSize: 12 }}>
-                      Người liên hệ: {supplier.contactPerson}
-                    </span>
-                  )}
-                  {supplier?.email && (
-                    <span className="text-muted-color" style={{ fontSize: 12, marginLeft: 12 }}>
-                      Email: {supplier.email}
-                    </span>
-                  )}
-                </div>
-              )}
-              {supplierSelectMode && recipientEmails.length > 0 && (
-                <div className="pms-form-hint">
-                  Người nhận ({recipientEmails.length}):{' '}
-                  <strong>
-                    {recipientEmails.slice(0, 2).join(', ')}
-                    {recipientEmails.length > 2 ? `, +${recipientEmails.length - 2} khác` : ''}
-                  </strong>
-                </div>
-              )}
-              {supplierSelectMode && suppliers.length === 0 && !suppliersLoading && (
-                <div className="pms-form-hint">Không có nhà cung cấp nào đang hoạt động.</div>
-              )}
-            </div>
+            {renderAlerts()}
 
             {/* Purchase Proposal Selection */}
             <div className="pms-form-group">
@@ -391,23 +265,175 @@ Bộ phận Mua Hàng - Hệ thống Dược Phẩm PMS`);
               className="btn-pms btn-pms-primary"
               disabled={submitting || loading}
             >
-              {submitting ? (
-                <>
-                  <div
-                    className="pms-spinner"
-                    style={{ width: 14, height: 14, marginRight: 8 }}
-                  />
-                  Đang gửi…
-                </>
-              ) : (
-                supplierSelectMode && selectedSupplierIds.length > 1
-                  ? `Gửi RFQ (${selectedSupplierIds.length})`
-                  : 'Gửi RFQ'
-              )}
+              Xác nhận
             </button>
           </div>
         </form>
       </div>
+
+      {/* Step 2: supplier selection popup */}
+      {step === 'suppliers' && (
+        <div
+          className="pms-modal-overlay"
+          style={{ zIndex: 1100 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !submitting) setStep('form');
+          }}
+        >
+          <div className="pms-modal pms-modal-lg">
+            <div className="pms-modal-header">
+              <div>
+                <div className="pms-modal-title">Chọn Nhà Cung Cấp Gửi RFQ</div>
+                <div className="pms-modal-sub">
+                  Tick chọn nhà cung cấp cần gửi yêu cầu báo giá cho đề xuất đã chọn
+                </div>
+              </div>
+              <button
+                className="pms-modal-close"
+                onClick={() => setStep('form')}
+                disabled={submitting}
+                aria-label="Đóng"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="pms-modal-body" style={{ overflowY: 'auto' }}>
+              {renderAlerts()}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 12, flexWrap: 'wrap' }}>
+                <div className="pms-form-hint" style={{ margin: 0 }}>
+                  Đã chọn{' '}
+                  <strong style={{ color: 'var(--brand-primary, #059669)' }}>{selectedSupplierIds.length}</strong>{' '}
+                  nhà cung cấp
+                  {selectableCount > 0 ? ` (còn ${selectableCount} có thể gửi)` : ''}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    className="btn-pms btn-pms-secondary"
+                    style={{ fontSize: 12, padding: '4px 10px' }}
+                    onClick={selectAllSuppliers}
+                    disabled={proposalSuppliersLoading || selectableCount === 0}
+                  >
+                    Chọn tất cả
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-pms btn-pms-secondary"
+                    style={{ fontSize: 12, padding: '4px 10px' }}
+                    onClick={clearSuppliers}
+                    disabled={selectedSupplierIds.length === 0}
+                  >
+                    Bỏ chọn
+                  </button>
+                </div>
+              </div>
+
+              <div className="pms-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="pms-table-wrap" style={{ maxHeight: 360, overflowY: 'auto' }}>
+                  <table className="pms-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: 44 }} />
+                        <th style={{ width: 140 }}>MÃ NCC</th>
+                        <th>TÊN NHÀ CUNG CẤP</th>
+                        <th style={{ width: 150 }}>TRẠNG THÁI</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {proposalSuppliersLoading ? (
+                        <tr>
+                          <td colSpan={4} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                            Đang tải danh sách nhà cung cấp...
+                          </td>
+                        </tr>
+                      ) : proposalSuppliers.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                            Không có nhà cung cấp nào đang hoạt động.
+                          </td>
+                        </tr>
+                      ) : (
+                        proposalSuppliers.map((s) => {
+                          const checked = selectedSupplierIds.includes(String(s.id));
+                          const alreadySent = s.rfqSent === true;
+                          return (
+                            <tr
+                              key={s.id}
+                              style={{ background: checked ? 'var(--brand-primary-light, #ecfdf5)' : 'transparent' }}
+                            >
+                              <td style={{ textAlign: 'center' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  disabled={alreadySent || submitting}
+                                  onChange={() => toggleSupplier(s.id)}
+                                />
+                              </td>
+                              <td>
+                                <span className="mono fw-700" style={{ fontSize: 13 }}>{s.code}</span>
+                              </td>
+                              <td>
+                                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</div>
+                                {s.email && (
+                                  <div className="text-muted-color" style={{ fontSize: 12 }}>{s.email}</div>
+                                )}
+                              </td>
+                              <td>
+                                {alreadySent ? (
+                                  <span className="pms-badge pms-badge-success" title={s.rfqCode ? `RFQ: ${s.rfqCode}` : undefined}>
+                                    Đã gửi RFQ
+                                  </span>
+                                ) : (
+                                  <span className="pms-badge pms-badge-neutral">Chưa gửi</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="pms-form-hint" style={{ marginTop: 10 }}>
+                Nhà cung cấp đã được gửi RFQ cho đề xuất này sẽ bị khóa để tránh gửi trùng.
+              </div>
+            </div>
+
+            <div className="pms-modal-footer" style={{ flexShrink: 0 }}>
+              <button
+                type="button"
+                className="btn-pms btn-pms-ghost"
+                onClick={() => setStep('form')}
+                disabled={submitting}
+              >
+                Quay lại
+              </button>
+              <button
+                type="button"
+                className="btn-pms btn-pms-primary"
+                onClick={handleSend}
+                disabled={submitting || proposalSuppliersLoading || selectedSupplierIds.length === 0}
+              >
+                {submitting ? (
+                  <>
+                    <div className="pms-spinner" style={{ width: 14, height: 14, marginRight: 8 }} />
+                    Đang gửi…
+                  </>
+                ) : (
+                  `Gửi RFQ (${selectedSupplierIds.length})`
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

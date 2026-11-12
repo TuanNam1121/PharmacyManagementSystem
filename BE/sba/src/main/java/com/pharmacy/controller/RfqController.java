@@ -5,6 +5,7 @@ import com.pharmacy.dto.ApiResponse;
 import com.pharmacy.dto.PageResponse;
 import com.pharmacy.dto.rfq.RfqResponse;
 import com.pharmacy.dto.rfq.SendRfqRequest;
+import com.pharmacy.dto.rfq.SupplierRfqStatusResponse;
 import com.pharmacy.dto.purchaseproposal.PurchaseProposalResponse;
 import com.pharmacy.service.RfqService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,6 +42,15 @@ public class RfqController {
         List<PurchaseProposalResponse> data = rfqService.getEligiblePurchaseProposals();
         return ResponseEntity.ok(
                 ApiResponse.success("Eligible purchase proposals retrieved successfully", data));
+    }
+
+    @Operation(summary = "Get suppliers with their RFQ status for a purchase proposal")
+    @GetMapping("/proposals/{purchaseProposalId}/suppliers")
+    public ResponseEntity<ApiResponse<List<SupplierRfqStatusResponse>>> getProposalSuppliers(
+            @PathVariable Long purchaseProposalId) {
+        List<SupplierRfqStatusResponse> data = rfqService.getSupplierRfqStatuses(purchaseProposalId);
+        return ResponseEntity.ok(
+                ApiResponse.success("Supplier RFQ statuses retrieved successfully", data));
     }
     
     @Operation(summary = "Send RFQ to supplier")
